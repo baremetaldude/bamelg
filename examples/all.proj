@@ -1,0 +1,27 @@
+<Project DefaultTargets="BuildAll" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ProjectsToBuild Include="e:\Bamelg\Examples\**\*.bmproj"/>
+  </ItemGroup>
+  
+  <Target Name="Reformat">
+    <MSBuild Projects="@(ProjectsToBuild)" BuildInParallel="true" ContinueOnError="false" Properties="Configuration=Debug" Targets="Reformat"><Output ItemName="OutputFiles" TaskParameter="TargetOutputs"/></MSBuild>
+  </Target>
+  
+  <Target Name="Validate">
+    <MSBuild Projects="@(ProjectsToBuild)" BuildInParallel="true" ContinueOnError="false" Properties="Configuration=Validate"><Output ItemName="OutputFiles" TaskParameter="TargetOutputs"/></MSBuild>
+  </Target>
+  
+  <Target Name="BuildDebug">
+    <MSBuild Projects="@(ProjectsToBuild)" BuildInParallel="True" ContinueOnError="false" Properties="Configuration=Debug;SshRemoteBuild=false"><Output ItemName="OutputFiles" TaskParameter="TargetOutputs"/></MSBuild>
+  </Target>
+  
+  <Target Name="BuildRelease">
+    <MSBuild Projects="@(ProjectsToBuild)" BuildInParallel="True" ContinueOnError="false" Properties="Configuration=Release;SshRemoteBuild=false"><Output ItemName="OutputFiles" TaskParameter="TargetOutputs"/></MSBuild>
+  </Target>
+  
+  <Target Name="BuildDistribution">
+    <MSBuild Projects="@(ProjectsToBuild)" BuildInParallel="True" ContinueOnError="false" Properties="Configuration=Distribution;SshRemoteBuild=false"><Output ItemName="OutputFiles" TaskParameter="TargetOutputs"/></MSBuild>
+  </Target>
+  
+  <Target Name="BuildAll" DependsOnTargets="BuildDebug;BuildRelease;BuildDistribution" />
+</Project>
