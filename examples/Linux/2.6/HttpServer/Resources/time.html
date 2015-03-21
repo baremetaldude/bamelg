@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<h1>Getting server time</h1>
+	<div id="result"></div>
+
+	<script>
+		if( typeof ( EventSource ) !== "undefined" ) {
+			var source = new EventSource( "http://172.17.0.5:8080/time.event" );
+
+			source.onmessage = function( event ) {
+				document.getElementById( "result" ).innerHTML = new Date( parseInt( event.data ) );
+			};
+		} else {
+			document.getElementById( "result" ).innerHTML = "Your browser does not support server-sent events";
+		}
+	</script>
+</body>
+</html>
+
