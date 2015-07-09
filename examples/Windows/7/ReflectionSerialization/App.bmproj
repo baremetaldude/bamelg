@@ -13,8 +13,8 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>ReflectionSerialization</AssemblyName>
-    <TargetCpu>X86_32</TargetCpu>
-    <TargetCpuName>pentium</TargetCpuName>
+    <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
+    <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
@@ -24,32 +24,37 @@
     <OptimizationLevel>0</OptimizationLevel>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <StartProgram>
-    </StartProgram>
-    <RemoteDebugMachine>
-    </RemoteDebugMachine>
-    <CmdArgs>
-    </CmdArgs>
+    <StartProgram></StartProgram>
+    <RemoteDebugMachine></RemoteDebugMachine>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <DebugSymbols>false</DebugSymbols>
-    <RunUnitTests>false</RunUnitTests>
+    <DebugSymbols>true</DebugSymbols>
+    <RunUnitTests>true</RunUnitTests>
+    <ModularBuild>true</ModularBuild>
     <OptimizationLevel>0</OptimizationLevel>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <CmdArgs>
-    </CmdArgs>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
     <RunUnitTests>false</RunUnitTests>
-    <OptimizationLevel>3</OptimizationLevel>
+    <OptimizationLevel>1</OptimizationLevel>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
-    <CmdArgs>
-    </CmdArgs>
+    <CmdArgs></CmdArgs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
+    <BuildType>Distribution</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>4</OptimizationLevel>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>false</DebugSymbols>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup>
     <OutputPath>bin/$(BuildType)</OutputPath>

@@ -13,43 +13,43 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>GtkGUI</AssemblyName>
-    <TargetCpu>X86_64</TargetCpu>
-    <TargetCpuName>pentium</TargetCpuName>
+    <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
+    <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
   <PropertyGroup>
     <SshUser Condition=" '$(SshUser)' == '' ">root</SshUser>
     <SshKeyFile Condition=" '$(SshKeyFile)' == '' ">..\..\..\example.private.rsa</SshKeyFile>
-    <RemoteDebugMachine Condition=" '$(RemoteDebugMachine)' == '' ">msvs</RemoteDebugMachine>
+    <RemoteDebugMachine Condition=" '$(RemoteDebugMachine)' == '' ">fedorax86</RemoteDebugMachine>
     <RemoteExecutablePath Condition="'$(RemoteExecutablePath)' == ''">/usr/local/bin/$(AssemblyName)</RemoteExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Validate|AnyCPU' ">
     <GenerateCode>false</GenerateCode>
     <DebugSymbols>false</DebugSymbols>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <StartProgram>
-    </StartProgram>
-    <RemoteDebugMachine>
-    </RemoteDebugMachine>
-    <CmdArgs>
-    </CmdArgs>
+    <StartProgram></StartProgram>
+    <RemoteDebugMachine></RemoteDebugMachine>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - memcheck|AnyCPU' ">
     <BuildType>Debug</BuildType>
     <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - gdb|AnyCPU' ">
     <BuildType>Debug</BuildType>
     <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
@@ -59,15 +59,17 @@
     <BuildType>Debug</BuildType>
     <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <BuildType>Debug</BuildType>
     <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
@@ -76,10 +78,11 @@
     <BuildType>Debug</BuildType>
     <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild>true</ModularBuild>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
@@ -94,8 +97,7 @@
     <OptimizationLevel>4</OptimizationLevel>
     <StripCallerContextExpressions>true</StripCallerContextExpressions>
     <RunUnitTests>false</RunUnitTests>
-    <DefineConstants>
-    </DefineConstants>
+    <DefineConstants></DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
@@ -227,6 +229,15 @@
     <Folder Include="%24%28ModulesFolder%29\X\Platform\Linux\2.6 - X86_64\Platform\" />
     <Folder Include="%24%28ModulesFolder%29\X\Platform\Linux\2.6\" />
     <Folder Include="%24%28ModulesFolder%29\X\Platform\Linux\2.6\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\Linux\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\Linux\2.6 - X86_32\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\Linux\2.6 - X86_32\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\Linux\2.6\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\Platform\Linux\2.6\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\System\" />
+    <Folder Include="%24%28ModulesFolder%29\Zlib\System\IO\" />
     <Folder Include="App.Config\" />
     <Folder Include="App\" />
   </ItemGroup>
