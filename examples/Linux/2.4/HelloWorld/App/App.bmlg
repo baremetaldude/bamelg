@@ -8,6 +8,9 @@ using Platform.Libc;
 
 namespace Example {
 	public partial class App {
+		static int _threadShared = 5;
+		static string _threadShared2 = new string( "global init value" );
+		
 		[ThreadStatic]
 		static int _threadLocal = 7;
 
@@ -22,6 +25,8 @@ namespace Example {
 
 		private static void PrintThreadInfo() {
 			Console.WriteLine( "CurrentThread: {0}", bitcast<void*>( pthread_t.CurrentThread ) );
+			Console.WriteLine( "_threadShared={0} &_threadShared={1}", _threadShared, &_threadShared );
+			Console.WriteLine( "_threadShared2='{0}' &_threadShared2='{1}'", _threadShared2, &_threadShared2 );
 			Console.WriteLine( "_threadLocal={0} &_threadLocal={1}", _threadLocal, &_threadLocal );
 			Console.WriteLine( "_threadLocal2='{0}' &_threadLocal2='{1}'", _threadLocal2, &_threadLocal2 );
 			Console.WriteLine( "_fiberLocal1={0} &_fiberLocal1={1}", _fiberLocal1, &_fiberLocal1 );

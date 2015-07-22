@@ -11,6 +11,8 @@ namespace Example {
 	public partial class App {
 		[EntryPoint]
 		private static void Main() {
+			ThreadPool.Initialize();
+
 			ThreadPool.BeginInvoke( () => {
 				Console.WriteLine( "Message from thread pool worker [{0}]", pthread_t.CurrentThread );
 			} );

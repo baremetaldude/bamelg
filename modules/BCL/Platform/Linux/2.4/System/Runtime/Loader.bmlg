@@ -3,7 +3,7 @@
 //
 // See license at http://bamelg.com/license.txt
 //
-// Old gLibc versions did not have proper implicit TLS support and [ThreadStatic] fields shared(!) between threads. Use 'pthread_key_create' instead.
+// Old gLibc versions did not have proper implicit TLS support.
 //
 
 using System.Runtime.InteropServices;
@@ -37,7 +37,7 @@ namespace System.Runtime {
 
 		private static pthread_key_t _tlsSegmentKey;
 
-		internal static void InitializeTlsSegment( void* segmentStart ) {
+		internal static void CreateTlsSegment( void* segmentStart ) {
 			PthreadsApi.pthread_key_create( &_tlsSegmentKey, null );
 			TlsSegment = segmentStart;
 		}

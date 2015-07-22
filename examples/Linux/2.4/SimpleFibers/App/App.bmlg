@@ -105,12 +105,12 @@ namespace Example {
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
 
-				Fiber.InvokeAsync( () => {
+				using( new Fiber.AsyncCompletionRegion() ) { // following region executed in thread pool
 					Console.WriteLine( "\tWorker thread [{0}] started", pthread_t.CurrentThread );
 					pthread_t.Sleep( 1000 );
 
 					Console.WriteLine( "\tWorker thread [{0}] finished", pthread_t.CurrentThread );
-				} );
+				}
 
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "tp0" );
