@@ -136,8 +136,8 @@ namespace System.IO {
 			}, bitcast<void*>( start ), name );
 		}
 
-		// switch to TP blocks
-		// using( new AsyncCompletionRegion() ) {
+		// Perform enclosing block in thread pool
+		// using( new Fiber.AsyncCompletionRegion() ) { // TP context starts here
 		//		readv( ... ); // no Fiber-related calls may appear here
 		// }
 		public struct AsyncCompletionRegion : System.Threading.ThreadPool.TaskEntry, IDisposable {
