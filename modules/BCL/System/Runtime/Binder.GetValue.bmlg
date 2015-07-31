@@ -518,6 +518,8 @@ namespace System.Runtime {
 				case typeof( double_littleendian ): value.Append( column->GetValue<double_littleendian>( context.Object ) ); return;
 				case typeof( float_bigendian ): value.Append( column->GetValue<float_bigendian>( context.Object ) ); return;
 				case typeof( double_bigendian ): value.Append( column->GetValue<double_bigendian>( context.Object ) ); return;
+				
+				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], ( uint )array.Length, true ); } return;
 			}
 
 			if( TrySerializeText( context, type, column, value, isNull ) ) return;
@@ -561,11 +563,32 @@ namespace System.Runtime {
 				case typeof( double_littleendian ): writer.Write( column->GetValue<double_littleendian>( context.Object ) ); return;
 				case typeof( float_bigendian ): writer.Write( column->GetValue<float_bigendian>( context.Object ) ); return;
 				case typeof( double_bigendian ): writer.Write( column->GetValue<double_bigendian>( context.Object ) ); return;
+			
+				case typeof( byte[] ): writer.Write( column->GetValue<byte[]>( context.Object ) ); return;
 			}
 
 			if( TrySerializeBinary( context, type, column, writer ) ) return;
 
 			context.BinderEvent.IncompatibleMapping( column, typeof( writer ) );
+			return;
+		}
+
+		public void GetValue( Context& context, int index, byte[]& value ) {
+			var column = GetMapping( context, index );
+			if( column == null ) return;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): { var text = column->GetValue<SbcsString>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
+				case typeof( Utf8String ): { var text = column->GetValue<Utf8String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
+				case typeof( Utf16String ): { var text = column->GetValue<Utf16String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
+				case typeof( Utf32String ): { var text = column->GetValue<Utf32String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
+
+				case typeof( byte[] ): value = column->GetValue<byte[]>( context.Object ); return;
+			}
+
+			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 			return;
 		}
 	}

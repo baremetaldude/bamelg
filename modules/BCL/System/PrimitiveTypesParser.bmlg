@@ -358,6 +358,170 @@ namespace System {
 			return TextParseStatus.Format;
 		}
 
+		private static TextParseStatus GetHexArrayLength<TElement>( TElement* buffer, uint length, uint& arrayLength, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			if( buffer == null || length == 0 ) return TextParseStatus.Format;
+
+			var trailingWhitespaceStarted = false;
+
+			var digits = 0;
+			arrayLength = 0;
+			TElement digit;
+
+			var start = SkipWhitespace<TElement>( buffer, length, 0U, trimLeadingWhitespace );
+
+			for( uint i = start; i < length; ++i ) {
+				switch( ( uint ) buffer[i] ) {
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+					case 'a':
+					case 'b':
+					case 'c':
+					case 'd':
+					case 'e':
+					case 'f':
+					case 'A':
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'E':
+					case 'F':
+						++arrayLength;
+						if( trailingWhitespaceStarted ) return TextParseStatus.Format;
+						continue;
+
+					default:
+						if( arrayLength > 0 ) {
+							var end = SkipWhitespace<TElement>( buffer, length, i, trimTrailingWhitespace );
+
+							if( readen != nullref ) {
+								readen = end;
+
+								var result = TextParseStatus.OK;
+								if( ( arrayLength & 1 ) != 0 ) { result = TextParseStatus.Format; arrayLength = 0; }
+								else arrayLength /= 2;
+								return result;
+							}
+							else if( end != length ) {
+								arrayLength = 0;
+								return TextParseStatus.Format;
+							}
+						}
+
+						arrayLength = 0;
+						return TextParseStatus.Format;
+				}
+			}
+
+			if( arrayLength > 0 ) {
+				if( readen != nullref ) readen = length;
+
+				var result = TextParseStatus.OK;
+				if( ( arrayLength & 1 ) != 0 ) { result = TextParseStatus.Format; arrayLength = 0; }
+				else arrayLength /= 2;
+				return result;
+			}
+
+			if( readen != nullref ) readen = 0;
+			arrayLength = 0;
+			return TextParseStatus.Format;
+		}
+
+		private static TextParseStatus TryFetchHexArray<TElement>( TElement* buffer, uint length, byte[]& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			if( buffer == null || length == 0 ) return TextParseStatus.Format;
+		
+			uint arrayLength;
+			var status = GetHexArrayLength<TElement>( buffer, length, arrayLength, readen, trimLeadingWhitespace, trimTrailingWhitespace );
+			if( !status ) return status;
+
+			int digits = 0;
+			var trailingWhitespaceStarted = false;
+
+			byte digit;
+			parsedResult = new[arrayLength] byte;
+			if( parsedResult == null ) return TextParseStatus.Format;
+
+			var start = SkipWhitespace<TElement>( buffer, length, 0U, trimLeadingWhitespace );
+
+			for( uint i = start; i < length; ++i ) {
+				switch( ( uint ) buffer[i] ) {
+					case '0':
+					case '1':
+					case '2':
+					case '3':
+					case '4':
+					case '5':
+					case '6':
+					case '7':
+					case '8':
+					case '9':
+						digit = ( byte )( buffer[i] - '0' );
+						goto got_digit;
+
+					case 'a':
+					case 'b':
+					case 'c':
+					case 'd':
+					case 'e':
+					case 'f':
+						digit = ( byte )( buffer[i] - 'a' + 10 );
+						goto got_digit;
+
+					case 'A':
+					case 'B':
+					case 'C':
+					case 'D':
+					case 'E':
+					case 'F':
+						digit = ( byte )( buffer[i] - 'A' + 10 );
+						goto got_digit;
+
+					default:
+						if( digits > 0 ) {
+							var end = SkipWhitespace<TElement>( buffer, length, i, trimTrailingWhitespace );
+
+							if( readen != nullref ) {
+								readen = end;
+
+								return TextParseStatus.OK;
+							}
+							else if( end != length ) {
+								parsedResult = null;
+								return TextParseStatus.Format;
+							}
+						}
+
+						parsedResult = null;
+						return TextParseStatus.Format;
+				}
+
+			got_digit:
+				if( trailingWhitespaceStarted ) return TextParseStatus.Format;
+
+				if( ( digits & 1 ) == 0 ) parsedResult[i / 2] = digit << 4;
+				else parsedResult[i / 2] |= digit;
+
+				++digits;
+				continue;
+			}
+
+			if( digits > 0 ) {
+				if( readen != nullref ) readen = length;
+				return TextParseStatus.OK;
+			}
+
+			if( readen != nullref ) readen = 0;
+			parsedResult = null;
+			return TextParseStatus.Format;
+		}
+
 		public static TextParseStatus TryFetchWhitespace( byte*& buffer, uint& remaining ) { var end = SkipWhitespace<byte>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
 		public static TextParseStatus TryFetchWhitespace( char*& buffer, uint& remaining ) { var end = SkipWhitespace<char>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
 		public static TextParseStatus TryFetchWhitespace( uint*& buffer, uint& remaining ) { var end = SkipWhitespace<uint>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
@@ -403,6 +567,9 @@ namespace System {
 
 		public static TextParseStatus TryParseSingleIEEE754( byte* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<byte>( buffer, length, parsedResult ); }
 		public static TextParseStatus TryParseDoubleIEEE754( byte* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<byte>( buffer, length, parsedResult ); }
+
+		public static TextParseStatus TryParseByteArray( byte* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<byte>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( byte* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
 
 		public static bool ParseBool( byte* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
 
@@ -463,6 +630,9 @@ namespace System {
 		public static TextParseStatus TryParseSingleIEEE754( char* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<char>( buffer, length, parsedResult ); }
 		public static TextParseStatus TryParseDoubleIEEE754( char* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<char>( buffer, length, parsedResult ); }
 
+		public static TextParseStatus TryParseByteArray( char* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<char>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( char* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		
 		public static bool ParseBool( char* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
 
 		public static sbyte ParseInt8( char* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
@@ -516,6 +686,9 @@ namespace System {
 
 		public static TextParseStatus TryParseSingleIEEE754( uint* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<uint>( buffer, length, parsedResult ); }
 		public static TextParseStatus TryParseDoubleIEEE754( uint* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<uint>( buffer, length, parsedResult ); }
+
+		public static TextParseStatus TryParseByteArray( uint* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<uint>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( uint* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
 
 		public static bool ParseBool( uint* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
 

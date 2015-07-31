@@ -426,7 +426,7 @@ namespace Platform {
 				dataLength2 = dataLength;
 
 				var result = new string.Builder( dataLength / 2 - 1 );
-				code = Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, result.GetChars(), dataLength2 );
+				code = Advapi32Api.RegQueryValueEx( this, valueName, nullref, type2, result.GetChars(), dataLength2 );
 				if( type != type2 || dataLength != dataLength2 || code == SystemErrorCode.ERROR_MORE_DATA ) goto refetch;
 				if( code != 0 ) return null;
 
@@ -453,7 +453,6 @@ namespace Platform {
 					default: return null;
 				}
 
-
 				var result = new[dataLength] byte;
 				code = Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, &result[0], dataLength2 );
 				if( type != type2 || dataLength != dataLength2 || code == SystemErrorCode.ERROR_MORE_DATA ) goto refetch;
@@ -464,6 +463,66 @@ namespace Platform {
 			set {
 				Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_SZ, &value[0], ( uint ) value.Length );
 			}
+		}
+
+		public string GetStringValue( ValueInfo& value ) {
+			return GetStringValue( value.Name, value.Type, value.Length );
+		}
+
+		public string GetStringValue( string valueName, RegValueType type, uint dataLength ) {
+			var dataLengthNew = dataLength;
+			RegValueType typeNew;
+
+		restart:
+			switch( type ) {
+				case RegValueType.REG_SZ:
+				case RegValueType.REG_EXPAND_SZ:
+				case RegValueType.REG_MULTI_SZ:
+					break;
+
+				default: return null;
+			}
+
+			var result = new string.Builder( dataLength / 2 - 1 );
+			var code = Advapi32Api.RegQueryValueEx( this, valueName, nullref, typeNew, result.GetChars(), dataLengthNew );
+			if( type != typeNew || dataLength != dataLengthNew || code == SystemErrorCode.ERROR_MORE_DATA ) {
+				type = typeNew;
+				dataLength = dataLengthNew;
+
+				goto restart;
+			}
+
+			if( code != 0 ) return null;
+
+			return result.Detach();
+		}
+
+		public byte[] GetBinaryValue( ValueInfo& value ) {
+			return GetBinaryValue( value.Name, value.Type, value.Length );
+		}
+
+		public byte[] GetBinaryValue( string valueName, RegValueType type, uint dataLength ) {
+			uint dataLengthNew;
+			RegValueType typeNew;
+
+		restart:
+			switch( type ) {
+				case RegValueType.REG_BINARY: break;
+				default: return null;
+			}
+
+			var result = new[dataLength] byte;
+			var code = Advapi32Api.RegQueryValueEx( this, valueName, nullref, typeNew, &result[0], dataLengthNew );
+			if( type != typeNew || dataLength != dataLengthNew || code == SystemErrorCode.ERROR_MORE_DATA ) {
+				type = typeNew;
+				dataLength = dataLengthNew;
+
+				goto restart;
+			}
+
+			if( code != 0 ) return null;
+
+			return result;
 		}
 
 		public void Flush() {
@@ -525,7 +584,77 @@ namespace Platform {
 			}
 		}
 
-		public void BindValues( Binder.Context& context, Binder.MapperUtf16 idMapping ) {
+		public void SetValues( Binder.Context& context, Binder.MapperUtf16 mapper ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				var valueFormatter = builder.Value;
+				bool isNull;
+
+				foreach( var idMapping in mapper.IdMapping ) {
+					var name = idMapping.Key;
+					var& mapping = context.Binder.Mappings[idMapping.Value];
+
+					// if( mapping.GetDirectType().AsEnum == nullref )
+					switch( mapping.GetType() ) {
+						case typeof( byte ):
+						case typeof( ushort_littleendian ):
+						case typeof( ushort_bigendian ):
+						case typeof( uint_littleendian ):
+						case typeof( uint_bigendian ): {
+								uint uintValue;
+								context.Binder.GetValue( context, idMapping.Value, uintValue );
+								Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &uintValue, ( uint ) sizeof( uintValue ) );
+							} continue;
+
+						case typeof( sbyte ):
+						case typeof( short_littleendian ):
+						case typeof( short_bigendian ):
+						case typeof( int_littleendian ):
+						case typeof( int_bigendian ): {
+								uint intValue;
+								context.Binder.GetValue( context, idMapping.Value, intValue );
+								if( intValue >= 0 ) {
+									Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &intValue, ( uint ) sizeof( intValue ) );
+									continue;
+								}
+							} break;
+
+						case typeof( ulong_littleendian ):
+						case typeof( ulong_bigendian ): {
+								ulong ulongValue;
+								context.Binder.GetValue( context, idMapping.Value, ulongValue );
+								Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &ulongValue, ( uint ) sizeof( ulongValue ) );
+							} continue;
+
+						case typeof( long_littleendian ):
+						case typeof( long_bigendian ): {
+								long longValue;
+								context.Binder.GetValue( context, idMapping.Value, longValue );
+								if( longValue >= 0 ) {
+									Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &longValue, ( uint ) sizeof( longValue ) );
+									continue;
+								}
+							} break;
+
+						case typeof( byte[] ): {
+								byte[] arrayValue;
+								context.Binder.GetValue( context, idMapping.Value, arrayValue );
+								if( arrayValue != null )
+									Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_BINARY, &arrayValue[0], ( uint ) arrayValue.Length );
+							} continue;
+					}
+
+					valueFormatter.Clear();
+					context.Binder.GetValue( context, idMapping.Value, valueFormatter, isNull );
+
+					if( !isNull )
+						Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_SZ, valueFormatter.GetNullTerminatingBuffer().GetChars(), ( uint )( valueFormatter.Length + 1 ) * sizeof( char ) );
+					else
+						Advapi32Api.RegDeleteValue( this, name );
+				}
+			}
+		}
+
+		public void GetValues( Binder.Context& context, Binder.MapperUtf16 idMapping ) {
 			foreach( var value in GetValues() ) {
 				var id = idMapping[value.Name];
 				if( id == -1 ) continue;
@@ -536,13 +665,19 @@ namespace Platform {
 						context.Binder.SetValue( context, id, ValueUInt32[value.Name] );
 						break;
 
-					case RegValueType.REG_QWORD: context.Binder.SetValue( context, id, ValueUInt64[value.Name] ); break;
+					case RegValueType.REG_QWORD:
+						context.Binder.SetValue( context, id, ValueUInt64[value.Name] );
+						break;
 
 					case RegValueType.REG_EXPAND_SZ:
 					case RegValueType.REG_MULTI_SZ:
-					case RegValueType.REG_SZ: context.Binder.SetValue( context, id, ValueString[value.Name] ); break;
+					case RegValueType.REG_SZ:
+						context.Binder.SetValue( context, id, GetStringValue( value ) );
+						break;
 
-					case RegValueType.REG_BINARY: context.Binder.SetValue( context, id, ValueBinary[value.Name] ); break;
+					case RegValueType.REG_BINARY:
+						context.Binder.SetValue( context, id, GetBinaryValue( value ) );
+						break;
 				}
 			}
 		}

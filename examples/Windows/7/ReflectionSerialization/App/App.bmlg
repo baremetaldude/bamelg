@@ -3,9 +3,13 @@
 //
 
 using System;
+using System.Collections;
 using System.IO;
 using System.Net;
+using System.Runtime;
 using System.Serialization;
+
+using Platform;
 
 namespace Example {
 	class Test {
@@ -18,8 +22,11 @@ namespace Example {
 			sbyte SByte;
 			byte Byte;
 
-			short Short;
-			ushort UShort;
+			short_littleendian ShortLE;
+			ushort_littleendian UShortLE;
+
+			short_bigendian ShortBE;
+			ushort_bigendian UShortBE;
 
 			int Int;
 			uint UInt;
@@ -35,6 +42,8 @@ namespace Example {
 			float Float;
 			double Double;
 
+			TestEnum EnumValue;
+
 			Guid Guid;
 
 			DateTime DateTime;
@@ -43,14 +52,19 @@ namespace Example {
 			IPv4Address IPv4Address;
 			IPv4Endpoint IPv4Endpoint;
 
+			byte[] Array;
+
 			static void EnsureEquals( SerializedStructure& x, SerializedStructure& y ) {
 				Assert.IsTrue( x.SByte == y.SByte );
 				Assert.IsTrue( x.Byte == y.Byte );
-				Assert.IsTrue( x.Short == y.Short );
-				Assert.IsTrue( x.UShort == y.UShort );
+				Assert.IsTrue( x.ShortLE == y.ShortLE );
+				Assert.IsTrue( x.UShortLE == y.UShortLE );
+				Assert.IsTrue( x.ShortBE == y.ShortBE );
+				Assert.IsTrue( x.UShortBE == y.UShortBE );
 				Assert.IsTrue( x.UInt == y.UInt );
 				Assert.IsTrue( x.Long == y.Long );
 				Assert.IsTrue( x.ULong == y.ULong );
+				Assert.IsTrue( x.EnumValue == y.EnumValue );
 				Assert.IsTrue( x.SbcsString == y.SbcsString );
 				Assert.IsTrue( x.Utf8String == y.Utf8String );
 				Assert.IsTrue( x.Utf16String == y.Utf16String );
@@ -62,7 +76,10 @@ namespace Example {
 				Assert.IsTrue( x.TimeSpan == y.TimeSpan );
 				Assert.IsTrue( x.IPv4Address == y.IPv4Address );
 				Assert.IsTrue( x.IPv4Endpoint == y.IPv4Endpoint );
+				Assert.IsTrue( CommonCollectionOperations.Compare<byte>( x.Array, y.Array ) );
 			}
+
+			public static Binder.MapperUtf16 MapperUtf16 = new Binder.MapperUtf16( typeof( thistype ) );
 		}
 
 		public enum TestEnum {
@@ -81,12 +98,16 @@ namespace Example {
 			var x = new SerializedStructure() {
 				SByte = 1,
 				Byte = 2,
-				Short = 3,
-				UShort = 4,
+				ShortLE = 3,
+				UShortLE = 4,
 				Int = 5,
 				UInt = 6,
 				Long = 7,
 				ULong = 8,
+				ShortBE = 9,
+				UShortBE = 10,
+				EnumValue = TestEnum.Element2,
+				Array = new[3] byte { 1, 2, 3 },
 
 				SbcsString = new SbcsString( "XYZ1" ),
 				Utf8String = new Utf8String( "XYZ2" ),
@@ -148,6 +169,20 @@ namespace Example {
 					using( var reader = new BinaryReader( stream ) )
 						BinarySerializer<SerializedStructure>.Deserialize( y, reader );
 				}
+
+				SerializedStructure.EnsureEquals( x, y );
+			}
+
+			{
+				Console.WriteLine( "== Check registry binder ==" );
+				SerializedStructure y;
+				var mapper = SerializedStructure.MapperUtf16;
+
+				using( var root = HKEY.HKEY_CURRENT_USER.OpenOrCreate( @"SOFTWARE\Eugeny Grishul\ReflectionSerialization" ) )
+					root.SetValues( mapper.Binder.CreateContext( &x ), mapper );
+
+				using( var root = HKEY.HKEY_CURRENT_USER.OpenRead( @"SOFTWARE\Eugeny Grishul\ReflectionSerialization" ) )
+					root.GetValues( mapper.Binder.CreateContext( &y ), mapper );
 
 				SerializedStructure.EnsureEquals( x, y );
 			}

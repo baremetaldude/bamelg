@@ -179,6 +179,17 @@ namespace System.IO {
 		public void Read( [Out] DateTime& value ) { value = ReadDateTime(); }
 		public void Read( [Out] TimeSpan& value ) { value = ReadTimeSpan(); }
 
+		public byte[] ReadByteArray() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+
+			var result = new[length] byte;
+			Read( &result[0], ( int ) length );
+			return result;
+		}
+
 		public SbcsString ReadSbcsString() {
 			uint_littleendian length;
 			uint_littleendian codePage;

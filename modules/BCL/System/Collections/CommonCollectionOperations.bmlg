@@ -58,6 +58,21 @@ namespace System.Collections {
 			return true;
 		}
 
+		public static bool Compare<T>( T[] source1, T[] source2 ) {
+			if( source1 == null && source2 == null ) return true;
+			if( source1 == null || source2 == null ) return false;
+
+			var count = source1.Length;
+			var psource1 = &source1[0];
+			var psource2 = &source2[0];
+
+			for( int i = 0; i < count; ++i )
+				if( *psource1++ != *psource2++ )
+					return false;
+
+			return true;
+		}
+
 		public static bool Contains<T>( T* source, int count, T& element ) {
 			for( int i = 0; i < count; ++i )
 				if( *source++ == element )

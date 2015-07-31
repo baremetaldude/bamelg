@@ -93,6 +93,16 @@ namespace System.IO {
 			BaseStream.Write( value.GetChars(), ( int ) value.Length * sizeof( value[0] ) );
 		}
 
+		public void Write( byte[] value ) {
+			if( value == null ) {
+				Write( uint.MaxValue );
+				return;
+			}
+
+			Write( value.Length );
+			BaseStream.Write( &value[0], ( int ) value.Length );
+		}
+
 		public void Write( SbcsString value ) {
 			if( value == null ) {
 				Write( uint.MaxValue );
