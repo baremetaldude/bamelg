@@ -145,6 +145,21 @@ namespace Example {
 				Console.WriteLine( "== Check ini serializer: FileStream ==" );
 				SerializedStructure y;
 
+				using( var stream = File.OpenWrite( "SerializedData.json" ) )
+				using( var writer = new StreamWriter( stream ) )
+					JsonSerializer<SerializedStructure>.Serialize( x, writer );
+
+				// using( var stream = File.OpenRead( "SerializedData.ini" ) )
+				// using( var reader = new StreamReader( stream ) )
+				// 	JsonSerializer<SerializedStructure>.Deserialize( y, reader );
+
+				// SerializedStructure.EnsureEquals( x, y );
+			}
+
+			{
+				Console.WriteLine( "== Check ini serializer: FileStream ==" );
+				SerializedStructure y;
+
 				using( var stream = File.OpenWrite( "SerializedData.ini" ) )
 				using( var writer = new StreamWriter( stream ) )
 					IniSerializer<SerializedStructure>.Serialize( x, writer );

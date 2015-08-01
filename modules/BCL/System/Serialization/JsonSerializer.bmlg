@@ -39,17 +39,25 @@ namespace System.Serialization {
 							case typeof( bool ): { bool value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							case typeof( sbyte ):
-							case typeof( short ):
-							case typeof( int ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
-							case typeof( long ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( short_littleendian ):
+							case typeof( short_bigendian ):
+							case typeof( int_littleendian ):
+							case typeof( int_bigendian ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( long_littleendian ):
+							case typeof( long_bigendian ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							case typeof( byte ):
-							case typeof( ushort ):
-							case typeof( uint ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
-							case typeof( ulong ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( ushort_littleendian ):
+							case typeof( ushort_bigendian ):
+							case typeof( uint_littleendian ):
+							case typeof( uint_bigendian ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( ulong_littleendian ):
+							case typeof( ulong_bigendian ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
-							case typeof( float ):
-							case typeof( double ): { double value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( float_littleendian ):
+							case typeof( float_bigendian ):
+							case typeof( double_littleendian ):
+							case typeof( double_bigendian ): { double value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							default:
 								context.Binder.GetValue( context, idMapping.Value, valueFormatter, isNull );
@@ -74,11 +82,14 @@ namespace System.Serialization {
 	public class JsonSerializer<T> {
 		public static readonly Binder.MapperUtf16 Mapper = new Binder.MapperUtf16( typeof( T ) );
 
-		public static JsonSerializer Serialize( T& object, StringBuilder writer ) {
+		public static JsonSerializer Serialize( T& object, ITextWriter writer ) {
 			var binderContext = Mapper.Binder.CreateContext( &object );
-			var context = new JsonSerializer( writer );
-			context.Serialize( Mapper, binderContext );
-			return context;
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				var context = new JsonSerializer( builder.Value );
+				context.Serialize( Mapper, binderContext );
+				writer.Write( builder.Value );
+				return context;
+			}
 		}
 
 		public static JsonSerializer Deserialize( T& object, ITextReader reader ) {
