@@ -73,10 +73,13 @@ namespace System.Reflection {
 			return VirtualMethods[method.VirtualSlot] != method.Address;
 		}
 
+		/// Do not create small hashtables
+		private const int InterfaceHashCapacityThreshold = 50;
+		
 		public void** QueryInterface( [In] InterfaceType& interfaceType ) {
 			if( interfaceType == nullref || interfaceType.FullQualifiedName == null || InterfaceMappingCapacity == 0 ) return null;
 
-			if( InterfaceMappingCapacity <= 5 ) {
+			if( InterfaceMappingCapacity <= InterfaceHashCapacityThreshold ) {
 				var mappings = ( InterfaceMappingArrayEntry* ) InterfaceMappings;
 
 				for( var i = 0U; i < InterfaceMappingCapacity; ++i )
