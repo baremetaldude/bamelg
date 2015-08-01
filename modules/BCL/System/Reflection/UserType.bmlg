@@ -73,20 +73,56 @@ namespace System.Reflection {
 			return VirtualMethods[method.VirtualSlot] != method.Address;
 		}
 
-		/// Do not create small hashtables
-		private const int InterfaceHashCapacityThreshold = 50;
-		
+
+		private const int InterfaceHashCapacityThreshold = 32; /// Do not create hashtables with capacity smaller than 'InterfaceHashCapacityThreshold'
+
 		public void** QueryInterface( [In] InterfaceType& interfaceType ) {
 			if( interfaceType == nullref || interfaceType.FullQualifiedName == null || InterfaceMappingCapacity == 0 ) return null;
 
-			if( InterfaceMappingCapacity <= InterfaceHashCapacityThreshold ) {
-				var mappings = ( InterfaceMappingArrayEntry* ) InterfaceMappings;
+			if( InterfaceMappingCapacity <= InterfaceHashCapacityThreshold ) { /// Guided linear search of 'interfaceType'
+				var interfaces = ( InterfaceType** ) InterfaceMappings;
+				var implementations = ( void*** )( interfaces + InterfaceMappingCapacity );
 
-				for( var i = 0U; i < InterfaceMappingCapacity; ++i )
-					if( mappings[i].Interface == interfaceType )
-						return mappings[i].ImplementedMethods;
+				var start = 0;
+				var end = ( int ) InterfaceMappingCapacity - 1;
+				var median = ( start + end ) >> 1;
+				var compareResult = interfaces[median]->FullQualifiedName.Hash.CompareTo( interfaceType.FullQualifiedName.Hash );
+
+				if( compareResult == 0 ) {
+					if( interfaces[median] == &interfaceType )
+						return implementations[median];
+				}
+				else if( compareResult < 0 ) start = median + 1;
+				else end = median - 1;
+
+				for( var i = start; i <= end; ++i )
+					if( interfaces[i] == &interfaceType )
+						return implementations[i];
+
+				// if( InterfaceMappingCapacity <= 256 / sizeof( InterfaceMappingArrayEntry ) ) { /// Linear search of 'interfaceType'
+				// for( var i = 0U; i < InterfaceMappingCapacity; ++i )
+				// 	if( interfaces[i] == &interfaceType )
+				// 		return implementations[i];
+				// }
+				// else {
+				// var start = 0;
+				// var end = ( int ) InterfaceMappingCapacity - 1;
+
+				// while( start <= end ) {
+				// 	var median = ( start + end ) >> 1;
+
+				// 	var compareResult = interfaces[median]->FullQualifiedName.Hash.CompareTo( interfaceType.FullQualifiedName.Hash );
+
+				// 	if( compareResult == 0 )
+				// 		if( interfaces[median] == &interfaceType )
+				// 			return implementations[median];
+
+				// 	if( compareResult < 0 ) start = median + 1;
+				// 	else end = median - 1;
+				// }
+				// }
 			}
-			else {
+			else { /// Hashtable lookup of 'interfaceType'
 				var mappings = ( InterfaceMappingHashEntry* ) InterfaceMappings;
 
 				var i = cast<int>( interfaceType.FullQualifiedName.Hash % InterfaceMappingCapacity );
@@ -97,11 +133,6 @@ namespace System.Reflection {
 						return mappings[i].ImplementedMethods;
 			}
 			return null;
-		}
-
-		public struct InterfaceMappingArrayEntry {
-			public InterfaceType& Interface;
-			public void** ImplementedMethods;
 		}
 
 		public struct InterfaceMappingHashEntry {
