@@ -284,6 +284,7 @@ namespace Platform.Cairo {
 		public extern static cairo_content_t cairo_surface_get_content( cairo_surface_t* surface );
 		public extern static cairo_device_t* cairo_surface_get_device( cairo_surface_t* surface );
 		public extern static void cairo_surface_get_device_offset( cairo_surface_t* surface, double& xOffset, double& yOffset );
+		public extern static void cairo_surface_get_device_scale( cairo_surface_t* surface, double* xScale, double* yScale );
 		public extern static void cairo_surface_get_fallback_resolution( cairo_surface_t* surface, double* xPixelsPerInch, double* yPixelsPerInch );
 		public extern static void cairo_surface_get_font_options( cairo_surface_t* surface, cairo_font_options_t* options );
 		public extern static void cairo_surface_get_mime_data( cairo_surface_t* surface, sbyte* mimeType, byte** data, uintptr* length );
@@ -305,6 +306,7 @@ namespace Platform.Cairo {
 		public extern static cairo_status_t cairo_surface_observer_print( cairo_surface_t* surface, Functors.Func<void*, byte*, uint, cairo_status_t> writeFunc, void* closure );
 		public extern static cairo_surface_t* cairo_surface_reference( cairo_surface_t* surface );
 		public extern static void cairo_surface_set_device_offset( cairo_surface_t* surface, double xOffset, double yOffset );
+		public extern static void cairo_surface_set_device_scale( cairo_surface_t* surface, double xScale, double yScale );
 		public extern static void cairo_surface_set_fallback_resolution( cairo_surface_t* surface, double xPixelsPerInch, double yPixelsPerInch );
 		public extern static cairo_status_t cairo_surface_set_mime_data( cairo_surface_t* surface, sbyte* mimeType, byte* data, uintptr length, Functors.Action<void*> destroy, void* closure );
 		public extern static cairo_status_t cairo_surface_set_user_data( cairo_surface_t* surface, cairo_user_data_key_t& key, void* userData, Functors.Action<void*> destroy );
@@ -568,7 +570,8 @@ namespace Platform.Cairo {
 		CAIRO_STATUS_DEVICE_ERROR =              35,
 		CAIRO_STATUS_INVALID_MESH_CONSTRUCTION = 36,
 		CAIRO_STATUS_DEVICE_FINISHED =           37,
-		CAIRO_STATUS_LAST_STATUS =               38,
+		CAIRO_STATUS_JBIG2_GLOBAL_MISSING =      38,
+		CAIRO_STATUS_LAST_STATUS =               39,
 	}
 	public enum cairo_subpixel_order_t : uint {
 		CAIRO_SUBPIXEL_ORDER_DEFAULT = 0,
@@ -616,22 +619,6 @@ namespace Platform.Cairo {
 	public enum cairo_text_cluster_flags_t : uint {
 		None =                             0,
 		CAIRO_TEXT_CLUSTER_FLAG_BACKWARD = 1,
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous0 {
-		[ExplicitOffset( Offset = 0 )]
-		public cairo_path_data_type_t type;
-		[ExplicitOffset( Offset = 4 )]
-		public int length;
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous1 {
-		[ExplicitOffset( Offset = 0 )]
-		public double x;
-		[ExplicitOffset( Offset = 8 )]
-		public double y;
 	}
 	public partial struct cairo_device_t {
 	}
@@ -692,8 +679,8 @@ namespace Platform.Cairo {
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct cairo_path_data_t {
-		public Anonymous0& header { get { return *cast<Anonymous0*>( &this ); } }
-		public Anonymous1& point { get { return *cast<Anonymous1*>( &this ); } }
+		public UnnamedStruct_850701E9& header { get { return *cast<UnnamedStruct_850701E9*>( &this ); } }
+		public UnnamedStruct_85084E85& point { get { return *cast<UnnamedStruct_85084E85*>( &this ); } }
 	}
 	public partial struct cairo_pattern_t {
 	}
@@ -768,5 +755,21 @@ namespace Platform.Cairo {
 	public partial struct cairo_user_data_key_t {
 		[ExplicitOffset( Offset = 0 )]
 		public int unused;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_850701E9 {
+		[ExplicitOffset( Offset = 0 )]
+		public cairo_path_data_type_t type;
+		[ExplicitOffset( Offset = 4 )]
+		public int length;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_85084E85 {
+		[ExplicitOffset( Offset = 0 )]
+		public double x;
+		[ExplicitOffset( Offset = 8 )]
+		public double y;
 	}
 }

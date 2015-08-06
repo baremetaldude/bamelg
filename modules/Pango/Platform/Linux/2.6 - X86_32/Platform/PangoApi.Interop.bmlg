@@ -232,6 +232,8 @@ namespace Platform.Pango {
 		public extern static uintptr pango_color_get_type();
 		public extern static Boolean32 pango_color_parse( PangoColor* color, sbyte* spec );
 		public extern static sbyte* pango_color_to_string( PangoColor* color );
+		public extern static Boolean32 pango_markup_parser_finish( GMarkupParseContext* context, PangoAttrList** attrList, sbyte** text, uint* accelChar, GError** error );
+		public extern static GMarkupParseContext* pango_markup_parser_new( uint accelMarker );
 		public extern static Boolean32 pango_parse_markup( CUtf8String markupText, int length, uint accelMarker, PangoAttrList** attrList, sbyte** text, uint* accelChar, GError** error );
 
 		public extern static PangoItem* pango_item_copy( PangoItem* item );
@@ -251,13 +253,16 @@ namespace Platform.Pango {
 		[BackendHintReadNone]
 		public extern static uintptr pango_fontset_get_type();
 
+		public extern static void pango_font_map_changed( PangoFontMap* fontmap );
 		public extern static PangoContext* pango_font_map_create_context( PangoFontMap* fontmap );
+		public extern static uint pango_font_map_get_serial( PangoFontMap* fontmap );
 		[BackendHintReadNone]
 		public extern static uintptr pango_font_map_get_type();
 		public extern static void pango_font_map_list_families( PangoFontMap* fontmap, PangoFontFamily*** families, int* nFamilies );
 		public extern static PangoFont* pango_font_map_load_font( PangoFontMap* fontmap, PangoContext* context, PangoFontDescription* desc );
 		public extern static PangoFontset* pango_font_map_load_fontset( PangoFontMap* fontmap, PangoContext* context, PangoFontDescription* desc, PangoLanguage* language );
 
+		public extern static void pango_context_changed( PangoContext* context );
 		public extern static PangoDirection pango_context_get_base_dir( PangoContext* context );
 		public extern static PangoGravity pango_context_get_base_gravity( PangoContext* context );
 		public extern static PangoFontDescription* pango_context_get_font_description( PangoContext* context );
@@ -267,6 +272,7 @@ namespace Platform.Pango {
 		public extern static PangoLanguage* pango_context_get_language( PangoContext* context );
 		public extern static PangoMatrix* pango_context_get_matrix( PangoContext* context );
 		public extern static PangoFontMetrics* pango_context_get_metrics( PangoContext* context, PangoFontDescription* desc, PangoLanguage* language );
+		public extern static uint pango_context_get_serial( PangoContext* context );
 		[BackendHintReadNone]
 		public extern static uintptr pango_context_get_type();
 		public extern static void pango_context_list_families( PangoContext* context, PangoFontFamily*** families, int* nFamilies );
@@ -390,6 +396,7 @@ namespace Platform.Pango {
 		public extern static PangoLogAttr* pango_layout_get_log_attrs_readonly( PangoLayout* layout, int* nAttrs );
 		public extern static void pango_layout_get_pixel_extents( PangoLayout* layout, PangoRectangle* inkRect, PangoRectangle* logicalRect );
 		public extern static void pango_layout_get_pixel_size( PangoLayout* layout, int* width, int* height );
+		public extern static uint pango_layout_get_serial( PangoLayout* layout );
 		public extern static Boolean32 pango_layout_get_single_paragraph_mode( PangoLayout* layout );
 		public extern static void pango_layout_get_size( PangoLayout* layout, int* width, int* height );
 		public extern static int pango_layout_get_spacing( PangoLayout* layout );
@@ -532,11 +539,6 @@ namespace Platform.Pango {
 		public extern static void pango_cairo_show_layout_line( cairo_t* cr, PangoLayoutLine* line );
 		public extern static void pango_cairo_update_context( cairo_t* cr, PangoContext* context );
 		public extern static void pango_cairo_update_layout( cairo_t* cr, PangoLayout* layout );
-	}
-	public enum Anonymous0 : uint {
-		PANGO_GLYPH_EMPTY =          268435455,
-		PANGO_GLYPH_INVALID_INPUT = 4294967295,
-		PANGO_GLYPH_UNKNOWN_FLAG =   268435456,
 	}
 	public enum PangoAlignment : uint {
 		PANGO_ALIGN_LEFT =   0,
@@ -764,6 +766,7 @@ namespace Platform.Pango {
 		PANGO_WEIGHT_THIN =        100,
 		PANGO_WEIGHT_ULTRALIGHT =  200,
 		PANGO_WEIGHT_LIGHT =       300,
+		PANGO_WEIGHT_SEMILIGHT =   350,
 		PANGO_WEIGHT_BOOK =        380,
 		PANGO_WEIGHT_NORMAL =      400,
 		PANGO_WEIGHT_MEDIUM =      500,

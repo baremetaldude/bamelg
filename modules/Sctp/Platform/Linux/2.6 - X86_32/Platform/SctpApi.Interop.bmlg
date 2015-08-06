@@ -25,16 +25,6 @@ namespace Platform.Sctp {
 		public extern static int sctp_send( int s, void* msg, uint len, sctp_sndrcvinfo* sinfo, int flags );
 		public extern static int sctp_sendmsg( int s, void* msg, uint len, sockaddr* to, uint tolen, uint ppid, uint flags, ushort streamNo, uint timetolive, uint context );
 	}
-	public enum Anonymous0 : uint {
-		SCTP_PARTIAL_DELIVERY_ABORTED = 0,
-	}
-	public enum Anonymous1 : uint {
-		SCTP_AUTH_NEWKEY = 0,
-	}
-	public enum Anonymous2 : uint {
-		SCTP_AUTH_HMAC_ID_SHA1 =   1,
-		SCTP_AUTH_HMAC_ID_SHA256 = 3,
-	}
 	public enum sctp_cmsg_type : uint {
 		SCTP_INIT =   0,
 		SCTP_SNDRCV = 1,
@@ -45,46 +35,46 @@ namespace Platform.Sctp {
 		MSG_NOTIFICATION = 32768,
 	}
 	public enum sctp_optname : uint {
-		SCTP_RTOINFO =                   0,
-		SCTP_ASSOCINFO =                 1,
-		SCTP_INITMSG =                   2,
-		SCTP_NODELAY =                   3,
-		SCTP_AUTOCLOSE =                 4,
-		SCTP_SET_PEER_PRIMARY_ADDR =     5,
-		SCTP_PRIMARY_ADDR =              6,
-		SCTP_ADAPTATION_LAYER =          7,
-		SCTP_DISABLE_FRAGMENTS =         8,
-		SCTP_PEER_ADDR_PARAMS =          9,
-		SCTP_DEFAULT_SEND_PARAM =       10,
-		SCTP_EVENTS =                   11,
-		SCTP_I_WANT_MAPPED_V4_ADDR =    12,
-		SCTP_MAXSEG =                   13,
-		SCTP_STATUS =                   14,
-		SCTP_GET_PEER_ADDR_INFO =       15,
-		SCTP_DELAYED_ACK =              16,
-		SCTP_CONTEXT =                  17,
-		SCTP_FRAGMENT_INTERLEAVE =      18,
-		SCTP_PARTIAL_DELIVERY_POINT =   19,
-		SCTP_MAX_BURST =                20,
-		SCTP_AUTH_CHUNK =               21,
-		SCTP_HMAC_IDENT =               22,
-		SCTP_AUTH_KEY =                 23,
-		SCTP_AUTH_ACTIVE_KEY =          24,
-		SCTP_AUTH_DELETE_KEY =          25,
-		SCTP_PEER_AUTH_CHUNKS =         26,
-		SCTP_LOCAL_AUTH_CHUNKS =        27,
-		SCTP_GET_ASSOC_NUMBER =         28,
-		SCTP_SOCKOPT_BINDX_ADD =       100,
-		SCTP_SOCKOPT_BINDX_REM =       101,
-		SCTP_SOCKOPT_PEELOFF =         102,
-		SCTP_GET_PEER_ADDRS_NUM_OLD =  103,
-		SCTP_GET_PEER_ADDRS_OLD =      104,
-		SCTP_GET_LOCAL_ADDRS_NUM_OLD = 105,
-		SCTP_GET_LOCAL_ADDRS_OLD =     106,
-		SCTP_SOCKOPT_CONNECTX_OLD =    107,
-		SCTP_GET_PEER_ADDRS =          108,
-		SCTP_GET_LOCAL_ADDRS =         109,
-		SCTP_SOCKOPT_CONNECTX =        110,
+		SCTP_RTOINFO =                 0,
+		SCTP_ASSOCINFO =               1,
+		SCTP_INITMSG =                 2,
+		SCTP_NODELAY =                 3,
+		SCTP_AUTOCLOSE =               4,
+		SCTP_SET_PEER_PRIMARY_ADDR =   5,
+		SCTP_PRIMARY_ADDR =            6,
+		SCTP_ADAPTATION_LAYER =        7,
+		SCTP_DISABLE_FRAGMENTS =       8,
+		SCTP_PEER_ADDR_PARAMS =        9,
+		SCTP_DEFAULT_SEND_PARAM =     10,
+		SCTP_EVENTS =                 11,
+		SCTP_I_WANT_MAPPED_V4_ADDR =  12,
+		SCTP_MAXSEG =                 13,
+		SCTP_STATUS =                 14,
+		SCTP_GET_PEER_ADDR_INFO =     15,
+		SCTP_DELAYED_ACK =            16,
+		SCTP_DELAYED_ACK_TIME =       16,
+		SCTP_DELAYED_SACK =           16,
+		SCTP_CONTEXT =                17,
+		SCTP_FRAGMENT_INTERLEAVE =    18,
+		SCTP_PARTIAL_DELIVERY_POINT = 19,
+		SCTP_MAX_BURST =              20,
+		SCTP_AUTH_CHUNK =             21,
+		SCTP_HMAC_IDENT =             22,
+		SCTP_AUTH_KEY =               23,
+		SCTP_AUTH_ACTIVE_KEY =        24,
+		SCTP_AUTH_DELETE_KEY =        25,
+		SCTP_PEER_AUTH_CHUNKS =       26,
+		SCTP_LOCAL_AUTH_CHUNKS =      27,
+		SCTP_GET_ASSOC_NUMBER =       28,
+		SCTP_SOCKOPT_BINDX_ADD =     100,
+		SCTP_SOCKOPT_BINDX_REM =     101,
+		SCTP_SOCKOPT_PEELOFF =       102,
+		SCTP_SOCKOPT_CONNECTX_OLD =  107,
+		SCTP_GET_PEER_ADDRS =        108,
+		SCTP_GET_LOCAL_ADDRS =       109,
+		SCTP_SOCKOPT_CONNECTX =      110,
+		SCTP_SOCKOPT_CONNECTX3 =     111,
+		SCTP_GET_ASSOC_STATS =       112,
 	}
 	public enum sctp_sac_state : uint {
 		SCTP_COMM_UP =        0,
@@ -95,11 +85,12 @@ namespace Platform.Sctp {
 	}
 	[Flags]
 	public enum sctp_sinfo_flags : uint {
-		None =           0,
-		SCTP_UNORDERED = 1,
-		SCTP_ADDR_OVER = 2,
-		SCTP_ABORT =     4,
-		SCTP_EOF =     512,
+		None =                  0,
+		SCTP_UNORDERED =        1,
+		SCTP_ADDR_OVER =        2,
+		SCTP_ABORT =            4,
+		SCTP_SACK_IMMEDIATELY = 8,
+		SCTP_EOF =            512,
 	}
 	public enum sctp_sn_error : uint {
 		SCTP_FAILED_THRESHOLD =       0,
@@ -120,6 +111,7 @@ namespace Platform.Sctp {
 		SCTP_PARTIAL_DELIVERY_EVENT =    32774,
 		SCTP_ADAPTATION_INDICATION =     32775,
 		SCTP_AUTHENTICATION_INDICATION = 32776,
+		SCTP_SENDER_DRY_EVENT =          32777,
 	}
 	public enum sctp_spc_state : uint {
 		SCTP_ADDR_AVAILABLE =   0,
@@ -131,8 +123,10 @@ namespace Platform.Sctp {
 	}
 	public enum sctp_spinfo_state : uint {
 		SCTP_INACTIVE =    0,
-		SCTP_ACTIVE =      1,
-		SCTP_UNCONFIRMED = 2,
+		SCTP_PF =          1,
+		SCTP_ACTIVE =      2,
+		SCTP_UNCONFIRMED = 3,
+		SCTP_UNKNOWN = 65535,
 	}
 	[Flags]
 	public enum sctp_spp_flags : uint {
@@ -165,15 +159,15 @@ namespace Platform.Sctp {
 		SCTP_SHUTDOWN_RECEIVED = 7,
 		SCTP_SHUTDOWN_ACK_SENT = 8,
 	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous3 {
-		[ExplicitOffset( Offset = 0 )]
-		public ushort sn_type;
-		[ExplicitOffset( Offset = 2 )]
-		public ushort sn_flags;
-		[ExplicitOffset( Offset = 4 )]
-		public uint sn_length;
+	public enum UnnamedEnum_AE77C29A : uint {
+		SCTP_PARTIAL_DELIVERY_ABORTED = 0,
+	}
+	public enum UnnamedEnum_AE77C449 : uint {
+		SCTP_AUTH_NEWKEY = 0,
+	}
+	public enum UnnamedEnum_AE78280F : uint {
+		SCTP_AUTH_HMAC_ID_SHA1 =   1,
+		SCTP_AUTH_HMAC_ID_SHA256 = 3,
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
@@ -210,6 +204,44 @@ namespace Platform.Sctp {
 		public int sac_assoc_id;
 		[ExplicitOffset( Offset = 20 )]
 		public byte[0] sac_info;
+	}
+	[ExplicitSize( Size = 252 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assoc_stats {
+		[ExplicitOffset( Offset = 0 )]
+		public int sas_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage sas_obs_rto_ipaddr;
+		[ExplicitOffset( Offset = 132 )]
+		public ulong sas_maxrto;
+		[ExplicitOffset( Offset = 140 )]
+		public ulong sas_isacks;
+		[ExplicitOffset( Offset = 148 )]
+		public ulong sas_osacks;
+		[ExplicitOffset( Offset = 156 )]
+		public ulong sas_opackets;
+		[ExplicitOffset( Offset = 164 )]
+		public ulong sas_ipackets;
+		[ExplicitOffset( Offset = 172 )]
+		public ulong sas_rtxchunks;
+		[ExplicitOffset( Offset = 180 )]
+		public ulong sas_outofseqtsns;
+		[ExplicitOffset( Offset = 188 )]
+		public ulong sas_idupchunks;
+		[ExplicitOffset( Offset = 196 )]
+		public ulong sas_gapcnt;
+		[ExplicitOffset( Offset = 204 )]
+		public ulong sas_ouodchunks;
+		[ExplicitOffset( Offset = 212 )]
+		public ulong sas_iuodchunks;
+		[ExplicitOffset( Offset = 220 )]
+		public ulong sas_oodchunks;
+		[ExplicitOffset( Offset = 228 )]
+		public ulong sas_iodchunks;
+		[ExplicitOffset( Offset = 236 )]
+		public ulong sas_octrlchunks;
+		[ExplicitOffset( Offset = 244 )]
+		public ulong sas_ictrlchunks;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -293,7 +325,7 @@ namespace Platform.Sctp {
 		public sctp_initmsg& init { get { return *cast<sctp_initmsg*>( &this ); } }
 		public sctp_sndrcvinfo& sndrcv { get { return *cast<sctp_sndrcvinfo*>( &this ); } }
 	}
-	[ExplicitSize( Size = 9 )]
+	[ExplicitSize( Size = 10 )]
 	public partial struct sctp_event_subscribe {
 		[ExplicitOffset( Offset = 0 )]
 		public byte sctp_data_io_event;
@@ -313,6 +345,8 @@ namespace Platform.Sctp {
 		public byte sctp_adaptation_layer_event;
 		[ExplicitOffset( Offset = 8 )]
 		public byte sctp_authentication_event;
+		[ExplicitOffset( Offset = 9 )]
+		public byte sctp_sender_dry_event;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -356,7 +390,7 @@ namespace Platform.Sctp {
 	[ExplicitSize( Size = 148 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_notification {
-		public Anonymous3& sn_header { get { return *cast<Anonymous3*>( &this ); } }
+		public UnnamedStruct_AE77AEE0& sn_header { get { return *cast<UnnamedStruct_AE77AEE0*>( &this ); } }
 		public sctp_assoc_change& sn_assoc_change { get { return *cast<sctp_assoc_change*>( &this ); } }
 		public sctp_paddr_change& sn_paddr_change { get { return *cast<sctp_paddr_change*>( &this ); } }
 		public sctp_remote_error& sn_remote_error { get { return *cast<sctp_remote_error*>( &this ); } }
@@ -365,6 +399,7 @@ namespace Platform.Sctp {
 		public sctp_adaptation_event& sn_adaptation_event { get { return *cast<sctp_adaptation_event*>( &this ); } }
 		public sctp_pdapi_event& sn_pdapi_event { get { return *cast<sctp_pdapi_event*>( &this ); } }
 		public sctp_authkey_event& sn_authkey_event { get { return *cast<sctp_authkey_event*>( &this ); } }
+		public sctp_sender_dry_event& sn_sender_dry_event { get { return *cast<sctp_sender_dry_event*>( &this ); } }
 	}
 	[ExplicitSize( Size = 148 )]
 	[Alignment( Boundary = 4 )]
@@ -498,6 +533,18 @@ namespace Platform.Sctp {
 		[ExplicitOffset( Offset = 48 )]
 		public byte[0] ssf_data;
 	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sender_dry_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sender_dry_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sender_dry_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sender_dry_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int sender_dry_assoc_id;
+	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_setadaptation {
@@ -575,5 +622,15 @@ namespace Platform.Sctp {
 		public uint sstat_fragmentation_point;
 		[ExplicitOffset( Offset = 24 )]
 		public sctp_paddrinfo sstat_primary;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_AE77AEE0 {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sn_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sn_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sn_length;
 	}
 }

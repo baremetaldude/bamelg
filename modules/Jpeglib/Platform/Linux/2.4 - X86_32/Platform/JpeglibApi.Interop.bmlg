@@ -81,12 +81,6 @@ namespace Platform.JpegLib {
 		JDITHER_ORDERED = 1,
 		JDITHER_FS =      2,
 	}
-	[ExplicitSize( Size = 80 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous0 {
-		public int[8]& i { get { return *cast<int[8]*>( &this ); } }
-		public sbyte[80]& s { get { return *cast<sbyte[80]*>( &this ); } }
-	}
 	[ExplicitSize( Size = 280 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct JHUFF_TBL {
@@ -531,7 +525,7 @@ namespace Platform.JpegLib {
 		[ExplicitOffset( Offset = 20 )]
 		public int msg_code;
 		[ExplicitOffset( Offset = 24 )]
-		public Anonymous0 msg_parm;
+		public UnnamedUnion_D98B4646 msg_parm;
 		[ExplicitOffset( Offset = 104 )]
 		public int trace_level;
 		[ExplicitOffset( Offset = 108 )]
@@ -662,5 +656,11 @@ namespace Platform.JpegLib {
 	public partial struct jvirt_barray_control {
 	}
 	public partial struct jvirt_sarray_control {
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_D98B4646 {
+		public int[8]& i { get { return *cast<int[8]*>( &this ); } }
+		public sbyte[80]& s { get { return *cast<sbyte[80]*>( &this ); } }
 	}
 }

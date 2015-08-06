@@ -82,6 +82,7 @@ namespace Platform.JpegLib {
 		JCS_EXT_BGRA = 13,
 		JCS_EXT_ABGR = 14,
 		JCS_EXT_ARGB = 15,
+		JCS_RGB565 =   16,
 	}
 	public enum J_DCT_METHOD : uint {
 		JDCT_ISLOW = 0,
@@ -92,12 +93,6 @@ namespace Platform.JpegLib {
 		JDITHER_NONE =    0,
 		JDITHER_ORDERED = 1,
 		JDITHER_FS =      2,
-	}
-	[ExplicitSize( Size = 80 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous0 {
-		public int[8]& i { get { return *cast<int[8]*>( &this ); } }
-		public sbyte[80]& s { get { return *cast<sbyte[80]*>( &this ); } }
 	}
 	[ExplicitSize( Size = 280 )]
 	[Alignment( Boundary = 4 )]
@@ -543,7 +538,7 @@ namespace Platform.JpegLib {
 		[ExplicitOffset( Offset = 40 )]
 		public int msg_code;
 		[ExplicitOffset( Offset = 44 )]
-		public Anonymous0 msg_parm;
+		public UnnamedUnion_D98B4F6F msg_parm;
 		[ExplicitOffset( Offset = 124 )]
 		public int trace_level;
 		[ExplicitOffset( Offset = 128 )]
@@ -674,5 +669,11 @@ namespace Platform.JpegLib {
 	public partial struct jvirt_barray_control {
 	}
 	public partial struct jvirt_sarray_control {
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_D98B4F6F {
+		public int[8]& i { get { return *cast<int[8]*>( &this ); } }
+		public sbyte[80]& s { get { return *cast<sbyte[80]*>( &this ); } }
 	}
 }

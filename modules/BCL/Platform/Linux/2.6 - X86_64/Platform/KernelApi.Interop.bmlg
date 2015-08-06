@@ -86,6 +86,7 @@ namespace Platform.Kernel {
 		PR_TIMING_STATISTICAL =        0,
 		PR_ENDIAN_LITTLE =             1,
 		PR_FP_EXC_NONRECOV =           1,
+		PR_FP_MODE_FR =                1,
 		PR_FPEMU_NOPRINT =             1,
 		PR_MCE_KILL_EARLY =            1,
 		PR_MCE_KILL_SET =              1,
@@ -96,6 +97,7 @@ namespace Platform.Kernel {
 		PR_UNALIGN_NOPRINT =           1,
 		PR_ENDIAN_PPC_LITTLE =         2,
 		PR_FP_EXC_ASYNC =              2,
+		PR_FP_MODE_FRE =               2,
 		PR_FPEMU_SIGFPE =              2,
 		PR_GET_PDEATHSIG =             2,
 		PR_MCE_KILL_DEFAULT =          2,
@@ -125,7 +127,9 @@ namespace Platform.Kernel {
 		PR_SET_MM_AUXV =              12,
 		PR_GET_TIMING =               13,
 		PR_SET_MM_EXE_FILE =          13,
+		PR_SET_MM_MAP =               14,
 		PR_SET_TIMING =               14,
+		PR_SET_MM_MAP_SIZE =          15,
 		PR_SET_NAME =                 15,
 		PR_GET_NAME =                 16,
 		PR_GET_ENDIAN =               19,
@@ -150,6 +154,12 @@ namespace Platform.Kernel {
 		PR_SET_NO_NEW_PRIVS =         38,
 		PR_GET_NO_NEW_PRIVS =         39,
 		PR_GET_TID_ADDRESS =          40,
+		PR_SET_THP_DISABLE =          41,
+		PR_GET_THP_DISABLE =          42,
+		PR_MPX_ENABLE_MANAGEMENT =    43,
+		PR_MPX_DISABLE_MANAGEMENT =   44,
+		PR_SET_FP_MODE =              45,
+		PR_GET_FP_MODE =              46,
 		PR_FP_EXC_SW_ENABLE =        128,
 		PR_FP_EXC_DIV =            65536,
 		PR_FP_EXC_OVF =           131072,
@@ -186,6 +196,7 @@ namespace Platform.Kernel {
 		SO_BINDTODEVICE =                  25,
 		SO_ATTACH_FILTER =                 26,
 		SO_GET_FILTER =                    26,
+		SO_DETACH_BPF =                    27,
 		SO_DETACH_FILTER =                 27,
 		SO_PEERNAME =                      28,
 		SO_TIMESTAMP =                     29,
@@ -203,6 +214,13 @@ namespace Platform.Kernel {
 		SO_WIFI_STATUS =                   41,
 		SO_PEEK_OFF =                      42,
 		SO_NOFCS =                         43,
+		SO_LOCK_FILTER =                   44,
+		SO_SELECT_ERR_QUEUE =              45,
+		SO_BUSY_POLL =                     46,
+		SO_MAX_PACING_RATE =               47,
+		SO_BPF_EXTENSIONS =                48,
+		SO_INCOMING_CPU =                  49,
+		SO_ATTACH_BPF =                    50,
 	}
 	public enum SocketPropertyGroup : uint {
 		SOL_IP =       0,
@@ -226,24 +244,43 @@ namespace Platform.Kernel {
 		SOL_IRDA =   266,
 	}
 	public enum SocketPropertyTcp : int {
-		TCP_NODELAY =           1,
-		TCP_MAXSEG =            2,
-		TCP_CORK =              3,
-		TCP_KEEPIDLE =          4,
-		TCP_KEEPINTVL =         5,
-		TCP_KEEPCNT =           6,
-		TCP_SYNCNT =            7,
-		TCP_LINGER2 =           8,
-		TCP_DEFER_ACCEPT =      9,
-		TCP_WINDOW_CLAMP =     10,
-		TCP_INFO =             11,
-		TCP_QUICKACK =         12,
-		TCP_CONGESTION =       13,
-		TCP_MAX_WINSHIFT =     14,
-		TCP_MD5SIG =           14,
-		TCP_MD5SIG_MAXKEYLEN = 80,
-		TCP_MSS =             512,
-		TCP_MAXWIN =        65535,
+		TCP_COOKIE_IN_ALWAYS =      1,
+		TCP_NODELAY =               1,
+		TCP_COOKIE_OUT_NEVER =      2,
+		TCP_MAXSEG =                2,
+		TCP_CORK =                  3,
+		TCP_KEEPIDLE =              4,
+		TCP_S_DATA_IN =             4,
+		TCP_KEEPINTVL =             5,
+		TCP_KEEPCNT =               6,
+		TCP_SYNCNT =                7,
+		TCP_COOKIE_MIN =            8,
+		TCP_LINGER2 =               8,
+		TCP_S_DATA_OUT =            8,
+		TCP_DEFER_ACCEPT =          9,
+		TCP_WINDOW_CLAMP =         10,
+		TCP_INFO =                 11,
+		TCP_QUICKACK =             12,
+		TCP_CONGESTION =           13,
+		TCP_MAX_WINSHIFT =         14,
+		TCP_MD5SIG =               14,
+		TCP_COOKIE_TRANSACTIONS =  15,
+		TCP_COOKIE_MAX =           16,
+		TCP_THIN_LINEAR_TIMEOUTS = 16,
+		TCP_THIN_DUPACK =          17,
+		TCP_USER_TIMEOUT =         18,
+		TCP_REPAIR =               19,
+		TCP_REPAIR_QUEUE =         20,
+		TCP_QUEUE_SEQ =            21,
+		TCP_REPAIR_OPTIONS =       22,
+		TCP_FASTOPEN =             23,
+		TCP_TIMESTAMP =            24,
+		TCP_COOKIE_PAIR_SIZE =     32,
+		TCP_MD5SIG_MAXKEYLEN =     80,
+		TCP_MSS =                 512,
+		TCP_MSS_DEFAULT =         536,
+		TCP_MSS_DESIRED =        1220,
+		TCP_MAXWIN =            65535,
 	}
 	public enum SystemCall : uint {
 		read =                     0,
@@ -560,6 +597,15 @@ namespace Platform.Kernel {
 		process_vm_writev =      311,
 		kcmp =                   312,
 		finit_module =           313,
+		sched_setattr =          314,
+		sched_getattr =          315,
+		renameat2 =              316,
+		seccomp =                317,
+		getrandom =              318,
+		memfd_create =           319,
+		kexec_file_load =        320,
+		bpf =                    321,
+		execveat =               322,
 	}
 	public enum SystemError : int {
 		None =              0,
@@ -698,45 +744,45 @@ namespace Platform.Kernel {
 		EHWPOISON =       133,
 	}
 	public enum ThreadCapabilities : uint {
-		CAP_CHOWN =              0,
-		CAP_DAC_OVERRIDE =       1,
-		CAP_DAC_READ_SEARCH =    2,
-		CAP_FOWNER =             3,
-		CAP_FSETID =             4,
-		CAP_KILL =               5,
-		CAP_SETGID =             6,
-		CAP_SETUID =             7,
-		CAP_SETPCAP =            8,
-		CAP_LINUX_IMMUTABLE =    9,
-		CAP_NET_BIND_SERVICE =  10,
-		CAP_NET_BROADCAST =     11,
-		CAP_NET_ADMIN =         12,
-		CAP_NET_RAW =           13,
-		CAP_IPC_LOCK =          14,
-		CAP_IPC_OWNER =         15,
-		CAP_SYS_MODULE =        16,
-		CAP_SYS_RAWIO =         17,
-		CAP_SYS_CHROOT =        18,
-		CAP_SYS_PTRACE =        19,
-		CAP_SYS_PACCT =         20,
-		CAP_SYS_ADMIN =         21,
-		CAP_SYS_BOOT =          22,
-		CAP_SYS_NICE =          23,
-		CAP_SYS_RESOURCE =      24,
-		CAP_SYS_TIME =          25,
-		CAP_SYS_TTY_CONFIG =    26,
-		CAP_MKNOD =             27,
-		CAP_LEASE =             28,
-		CAP_AUDIT_WRITE =       29,
-		CAP_AUDIT_CONTROL =     30,
-		CAP_SETFCAP =           31,
-		CAP_MAC_OVERRIDE =      32,
-		CAP_MAC_ADMIN =         33,
-		CAP_SYSLOG =            34,
-		CAP_WAKE_ALARM =        35,
-		CAP_BLOCK_SUSPEND =     36,
-		CAP_COMPROMISE_KERNEL = 37,
-		CAP_LAST_CAP =          37,
+		CAP_CHOWN =             0,
+		CAP_DAC_OVERRIDE =      1,
+		CAP_DAC_READ_SEARCH =   2,
+		CAP_FOWNER =            3,
+		CAP_FSETID =            4,
+		CAP_KILL =              5,
+		CAP_SETGID =            6,
+		CAP_SETUID =            7,
+		CAP_SETPCAP =           8,
+		CAP_LINUX_IMMUTABLE =   9,
+		CAP_NET_BIND_SERVICE = 10,
+		CAP_NET_BROADCAST =    11,
+		CAP_NET_ADMIN =        12,
+		CAP_NET_RAW =          13,
+		CAP_IPC_LOCK =         14,
+		CAP_IPC_OWNER =        15,
+		CAP_SYS_MODULE =       16,
+		CAP_SYS_RAWIO =        17,
+		CAP_SYS_CHROOT =       18,
+		CAP_SYS_PTRACE =       19,
+		CAP_SYS_PACCT =        20,
+		CAP_SYS_ADMIN =        21,
+		CAP_SYS_BOOT =         22,
+		CAP_SYS_NICE =         23,
+		CAP_SYS_RESOURCE =     24,
+		CAP_SYS_TIME =         25,
+		CAP_SYS_TTY_CONFIG =   26,
+		CAP_MKNOD =            27,
+		CAP_LEASE =            28,
+		CAP_AUDIT_WRITE =      29,
+		CAP_AUDIT_CONTROL =    30,
+		CAP_SETFCAP =          31,
+		CAP_MAC_OVERRIDE =     32,
+		CAP_MAC_ADMIN =        33,
+		CAP_SYSLOG =           34,
+		CAP_WAKE_ALARM =       35,
+		CAP_BLOCK_SUSPEND =    36,
+		CAP_AUDIT_READ =       37,
+		CAP_LAST_CAP =         37,
 	}
 	[ExplicitSize( Size = 128 )]
 	[Alignment( Boundary = 8 )]
@@ -757,14 +803,6 @@ namespace Platform.Kernel {
 		public ushort ss_family;
 		[ExplicitOffset( Offset = 2 )]
 		public sbyte[126] __data;
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous0 {
-		[ExplicitOffset( Offset = 0 )]
-		public uint permitted;
-		[ExplicitOffset( Offset = 4 )]
-		public uint inheritable;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 2 )]
@@ -802,6 +840,38 @@ namespace Platform.Kernel {
 		[ExplicitOffset( Offset = 4 )]
 		public int pid;
 	}
+	[ExplicitSize( Size = 104 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct prctl_mm_map {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong start_code;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong end_code;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong start_data;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong end_data;
+		[ExplicitOffset( Offset = 32 )]
+		public ulong start_brk;
+		[ExplicitOffset( Offset = 40 )]
+		public ulong brk;
+		[ExplicitOffset( Offset = 48 )]
+		public ulong start_stack;
+		[ExplicitOffset( Offset = 56 )]
+		public ulong arg_start;
+		[ExplicitOffset( Offset = 64 )]
+		public ulong arg_end;
+		[ExplicitOffset( Offset = 72 )]
+		public ulong env_start;
+		[ExplicitOffset( Offset = 80 )]
+		public ulong env_end;
+		[ExplicitOffset( Offset = 88 )]
+		public ulong* auxv;
+		[ExplicitOffset( Offset = 96 )]
+		public uint auxv_size;
+		[ExplicitOffset( Offset = 100 )]
+		public uint exe_fd;
+	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 2 )]
 	public partial struct sockaddr_at {
@@ -822,6 +892,14 @@ namespace Platform.Kernel {
 		[ExplicitOffset( Offset = 0 )]
 		public uint magic_etc;
 		[ExplicitOffset( Offset = 4 )]
-		public Anonymous0[2] data;
+		public UnnamedStruct_E6848193[2] data;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_E6848193 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint permitted;
+		[ExplicitOffset( Offset = 4 )]
+		public uint inheritable;
 	}
 }

@@ -31,14 +31,6 @@ namespace Platform.Aio {
 		IO_CMD_PREADV =  7,
 		IO_CMD_PWRITEV = 8,
 	}
-	[ExplicitSize( Size = 40 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous0 {
-		public io_iocb_common& c { get { return *cast<io_iocb_common*>( &this ); } }
-		public io_iocb_vector& v { get { return *cast<io_iocb_vector*>( &this ); } }
-		public io_iocb_poll& poll { get { return *cast<io_iocb_poll*>( &this ); } }
-		public io_iocb_sockaddr& saddr { get { return *cast<io_iocb_sockaddr*>( &this ); } }
-	}
 	public partial struct io_context {
 	}
 	[ExplicitSize( Size = 32 )]
@@ -111,6 +103,14 @@ namespace Platform.Aio {
 		[ExplicitOffset( Offset = 20 )]
 		public int aio_fildes;
 		[ExplicitOffset( Offset = 24 )]
-		public Anonymous0 u;
+		public UnnamedUnion_DFC7713A u;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_DFC7713A {
+		public io_iocb_common& c { get { return *cast<io_iocb_common*>( &this ); } }
+		public io_iocb_vector& v { get { return *cast<io_iocb_vector*>( &this ); } }
+		public io_iocb_poll& poll { get { return *cast<io_iocb_poll*>( &this ); } }
+		public io_iocb_sockaddr& saddr { get { return *cast<io_iocb_sockaddr*>( &this ); } }
 	}
 }

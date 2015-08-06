@@ -842,6 +842,7 @@ namespace Platform.Gdk {
 		public extern static int gdk_pixbuf_get_height( GdkPixbuf* pixbuf );
 		public extern static int gdk_pixbuf_get_n_channels( GdkPixbuf* pixbuf );
 		public extern static sbyte* gdk_pixbuf_get_option( GdkPixbuf* pixbuf, sbyte* key );
+		public extern static GHashTable* gdk_pixbuf_get_options( GdkPixbuf* pixbuf );
 		public extern static byte* gdk_pixbuf_get_pixels( GdkPixbuf* pixbuf );
 		public extern static byte* gdk_pixbuf_get_pixels_with_length( GdkPixbuf* pixbuf, uint* length );
 		public extern static int gdk_pixbuf_get_rowstride( GdkPixbuf* pixbuf );
@@ -849,6 +850,7 @@ namespace Platform.Gdk {
 		public extern static GType gdk_pixbuf_get_type();
 		public extern static int gdk_pixbuf_get_width( GdkPixbuf* pixbuf );
 		public extern static GdkPixbuf* gdk_pixbuf_new( GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_bytes( GBytes* data, GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height, int rowstride );
 		public extern static GdkPixbuf* gdk_pixbuf_new_from_data( byte* data, GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height, int rowstride, Functors.Action<byte*, void*> destroyFn, void* destroyFnData );
 		public extern static GdkPixbuf* gdk_pixbuf_new_from_file( CUtf8String filename, GError** error );
 		public extern static GdkPixbuf* gdk_pixbuf_new_from_file_at_scale( CUtf8String filename, int width, int height, Boolean32 preserveAspectRatio, GError** error );
@@ -863,6 +865,8 @@ namespace Platform.Gdk {
 		public extern static GdkPixbuf* gdk_pixbuf_new_from_stream_finish( GAsyncResult* asyncResult, GError** error );
 		public extern static GdkPixbuf* gdk_pixbuf_new_from_xpm_data( sbyte** data );
 		public extern static GdkPixbuf* gdk_pixbuf_new_subpixbuf( GdkPixbuf* srcPixbuf, int srcX, int srcY, int width, int height );
+		public extern static GBytes* gdk_pixbuf_read_pixel_bytes( GdkPixbuf* pixbuf );
+		public extern static byte* gdk_pixbuf_read_pixels( GdkPixbuf* pixbuf );
 		public extern static GdkPixbuf* gdk_pixbuf_ref( GdkPixbuf* pixbuf );
 		public extern static void gdk_pixbuf_saturate_and_pixelate( GdkPixbuf* src, GdkPixbuf* dest, float saturation, Boolean32 pixelate );
 		public extern static Boolean32 gdk_pixbuf_save_to_bufferv( GdkPixbuf* pixbuf, sbyte** buffer, uint* bufferSize, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
@@ -893,6 +897,10 @@ namespace Platform.Gdk {
 		public extern static GType gdk_pixbuf_animation_iter_get_type();
 		public extern static Boolean32 gdk_pixbuf_animation_iter_on_currently_loading_frame( GdkPixbufAnimationIter* iter );
 		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file( CUtf8String filename, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_resource( sbyte* resourcePath, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_stream( GInputStream* stream, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_animation_new_from_stream_async( GInputStream* stream, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_stream_finish( GAsyncResult* asyncResult, GError** error );
 		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_ref( GdkPixbufAnimation* animation );
 		public extern static void gdk_pixbuf_animation_unref( GdkPixbufAnimation* animation );
 
@@ -919,6 +927,8 @@ namespace Platform.Gdk {
 		public extern static Boolean32 gdk_pixbuf_format_is_writable( GdkPixbufFormat* format );
 		public extern static void gdk_pixbuf_format_set_disabled( GdkPixbufFormat* format, Boolean32 disabled );
 		public extern static GdkPixbufFormat* gdk_pixbuf_get_file_info( CUtf8String filename, int* width, int* height );
+		public extern static void gdk_pixbuf_get_file_info_async( CUtf8String filename, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbufFormat* gdk_pixbuf_get_file_info_finish( GAsyncResult* asyncResult, int* width, int* height, GError** error );
 		public extern static GSList* gdk_pixbuf_get_formats();
 
 		public extern static Boolean32 gdk_pixbuf_loader_close( GdkPixbufLoader* loader, GError** error );
@@ -932,6 +942,7 @@ namespace Platform.Gdk {
 		public extern static GdkPixbufLoader* gdk_pixbuf_loader_new_with_type( sbyte* imageType, GError** error );
 		public extern static void gdk_pixbuf_loader_set_size( GdkPixbufLoader* loader, int width, int height );
 		public extern static Boolean32 gdk_pixbuf_loader_write( GdkPixbufLoader* loader, byte* buf, uint count, GError** error );
+		public extern static Boolean32 gdk_pixbuf_loader_write_bytes( GdkPixbufLoader* loader, GBytes* buffer, GError** error );
 
 		[BackendHintReadNone]
 		public extern static GType gdk_colorspace_get_type();
@@ -1469,13 +1480,6 @@ namespace Platform.Gdk {
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous0 {
-		public sbyte[20]& b { get { return *cast<sbyte[20]*>( &this ); } }
-		public short[10]& s { get { return *cast<short[10]*>( &this ); } }
-		public intptr[5]& l { get { return *cast<intptr[5]*>( &this ); } }
-	}
-	[ExplicitSize( Size = 40 )]
-	[Alignment( Boundary = 8 )]
 	public partial struct GdkAppLaunchContext : GAppLaunchContext {
 		[ExplicitSize( Size = 200 )]
 		[Alignment( Boundary = 8 )]
@@ -1823,7 +1827,7 @@ namespace Platform.Gdk {
 		[ExplicitOffset( Offset = 32 )]
 		public ushort data_format;
 		[ExplicitOffset( Offset = 40 )]
-		public Anonymous0 data;
+		public UnnamedUnion_9D49855A data;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
@@ -2646,5 +2650,12 @@ namespace Platform.Gdk {
 		public GdkWindowRedirect* _redirect;
 	}
 	public partial struct GdkWindowRedirect {
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_9D49855A {
+		public sbyte[20]& b { get { return *cast<sbyte[20]*>( &this ); } }
+		public short[10]& s { get { return *cast<short[10]*>( &this ); } }
+		public intptr[5]& l { get { return *cast<intptr[5]*>( &this ); } }
 	}
 }

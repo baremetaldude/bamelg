@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 namespace Platform.Zlib {
 	[ExternLibrary( Image = "/usr/lib64/libz.so" )]
 	public static partial struct ZlibApi {
-		public const SbcsString Version = "1.2.7";
+		public const SbcsString Version = "1.2.8";
 
 		public extern static uintptr adler32( uintptr adler, byte* buf, uint len );
 		public extern static uintptr adler32_combine( uintptr p0, uintptr p1, intptr p2 );
@@ -63,6 +63,7 @@ namespace Platform.Zlib {
 		public extern static intptr gztell( gzFile* p0 );
 		public extern static long gztell64( gzFile* p0 );
 		public extern static int gzungetc( int c, gzFile* file );
+		public extern static int gzvprintf( gzFile* file, sbyte* format, void* va );
 		public extern static int gzwrite( gzFile* file, void* buf, uint len );
 		public extern static ZlibError inflate( z_stream* strm, FlushOptions flush );
 		public extern static ZlibError inflateBack( z_stream* strm, Functors.Func<void*, byte**, uint> in, void* inDesc, Functors.Func<void*, byte*, uint, int> out, void* outDesc );
@@ -70,6 +71,7 @@ namespace Platform.Zlib {
 		public extern static ZlibError inflateBackInit_( z_stream* strm, int windowBits, byte* window, CUtf8String version, int streamSize );
 		public extern static ZlibError inflateCopy( z_stream* dest, z_stream* source );
 		public extern static ZlibError inflateEnd( z_stream* strm );
+		public extern static int inflateGetDictionary( z_stream* strm, byte* dictionary, uint* dictLength );
 		public extern static ZlibError inflateGetHeader( z_stream* strm, gz_header* head );
 		public extern static ZlibError inflateInit_( z_stream* strm, CUtf8String version, int streamSize );
 		public extern static ZlibError inflateInit2_( z_stream* strm, int windowBits, CUtf8String version, int streamSize );

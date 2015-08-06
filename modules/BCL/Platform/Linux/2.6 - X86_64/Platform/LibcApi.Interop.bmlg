@@ -146,7 +146,6 @@ namespace Platform.Libc {
 
 		public extern static SignalCode __libc_current_sigrtmax();
 		public extern static SignalCode __libc_current_sigrtmin();
-		public extern static int __sigpause( int sigOrMask, int isSig );
 		public extern static Functors.Action<int> __sysv_signal( SignalCode sig, Functors.Action<int> handler );
 		public extern static Functors.Action<int> bsd_signal( SignalCode sig, Functors.Action<int> handler );
 		public extern static int gsignal( SignalCode sig );
@@ -212,8 +211,6 @@ namespace Platform.Libc {
 		public extern static int writev( IOHandle fd, iovec* iovec, int count );
 
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
-		public extern static int recvmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags, timespec* tmo );
-		public extern static int sendmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags );
 
 		public extern static SocketHandle accept( IOHandle fd, void* addr, int& addrLen );
 		public extern static SocketHandle accept4( IOHandle fd, void* addr, int& addrLen, SocketAcceptFlag flags );
@@ -226,8 +223,10 @@ namespace Platform.Libc {
 		public extern static int listen( IOHandle fd, int n );
 		public extern static int recv( IOHandle fd, void* buf, int n, MessageFlags flags );
 		public extern static int recvfrom( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int& addrLen );
+		public extern static int recvmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags, timespec* tmo );
 		public extern static int recvmsg( IOHandle fd, msghdr* message, MessageFlags flags );
 		public extern static int send( IOHandle fd, void* buf, int n, MessageFlags flags );
+		public extern static int sendmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags );
 		public extern static int sendmsg( IOHandle fd, msghdr* message, MessageFlags flags );
 		public extern static int sendto( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int addrLen );
 		public extern static int setsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int optlen );
@@ -470,6 +469,7 @@ namespace Platform.Libc {
 		public extern static void* realloc( void* ptr, uint size );
 		public extern static sbyte* realpath( CUtf8String name, sbyte* resolved );
 		public extern static int rpmatch( sbyte* response );
+		public extern static sbyte* secure_getenv( CUtf8String name );
 		public extern static ushort* seed48( ushort* seed16v );
 		public extern static int seed48_r( ushort* seed16v, drand48_data* buffer );
 		public extern static int setenv( CUtf8String name, CUtf8String value, int replace );
@@ -504,12 +504,6 @@ namespace Platform.Libc {
 		public extern static int wctomb( sbyte* s, char wchar );
 
 		[BackendHintReadNone]
-		public extern static int __finite( double value );
-		[BackendHintReadNone]
-		public extern static int __finitef( float value );
-		[BackendHintReadNone]
-		public extern static int __finitel( LittleEndianIEEE754_80 value );
-		[BackendHintReadNone]
 		public extern static int __isinf( double value );
 		[BackendHintReadNone]
 		public extern static int __isinff( float value );
@@ -522,27 +516,6 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static int __isnanl( LittleEndianIEEE754_80 value );
 		[BackendHintReadNone]
-		public extern static int __signbit( double value );
-		[BackendHintReadNone]
-		public extern static int __signbitf( float value );
-		[BackendHintReadNone]
-		public extern static int __signbitl( LittleEndianIEEE754_80 value );
-		[BackendHintReadNone]
-		public extern static double copysign( double x, double y );
-		[BackendHintReadNone]
-		public extern static float copysignf( float x, float y );
-		[BackendHintReadNone]
-		public extern static LittleEndianIEEE754_80 copysignl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
-		[BackendHintReadNone]
-		public extern static int finite( double value );
-		[BackendHintReadNone]
-		public extern static int finitef( float value );
-		[BackendHintReadNone]
-		public extern static int finitel( LittleEndianIEEE754_80 value );
-		public extern static double frexp( double x, int* exponent );
-		public extern static float frexpf( float x, int* exponent );
-		public extern static LittleEndianIEEE754_80 frexpl( LittleEndianIEEE754_80 x, int* exponent );
-		[BackendHintReadNone]
 		public extern static int isinf( double value );
 		[BackendHintReadNone]
 		public extern static int isinff( float value );
@@ -554,15 +527,32 @@ namespace Platform.Libc {
 		public extern static int isnanf( float value );
 		[BackendHintReadNone]
 		public extern static int isnanl( LittleEndianIEEE754_80 value );
-		public extern static double ldexp( double x, int exponent );
-		public extern static float ldexpf( float x, int exponent );
-		public extern static LittleEndianIEEE754_80 ldexpl( LittleEndianIEEE754_80 x, int exponent );
-		public extern static double modf( double x, double* iptr );
-		public extern static float modff( float x, float* iptr );
-		public extern static LittleEndianIEEE754_80 modfl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80* iptr );
-		public extern static double scalbn( double x, int n );
-		public extern static float scalbnf( float x, int n );
-		public extern static LittleEndianIEEE754_80 scalbnl( LittleEndianIEEE754_80 x, int n );
+
+		[BackendHintReadOnly]
+		public extern static int alphasort( dirent** e1, dirent** e2 );
+		[BackendHintReadOnly]
+		public extern static int alphasort64( dirent64** e1, dirent64** e2 );
+		public extern static int closedir( DIR* dirp );
+		public extern static int dirfd( DIR* dirp );
+		public extern static DIR* fdopendir( int fd );
+		public extern static int getdirentries( int fd, sbyte* buf, uint nbytes, intptr* basep );
+		public extern static int getdirentries64( int fd, sbyte* buf, uint nbytes, long* basep );
+		public extern static DIR* opendir( CUtf8String name );
+		public extern static dirent* readdir( DIR* dirp );
+		public extern static int readdir_r( DIR* dirp, dirent* entry, dirent** result );
+		public extern static dirent64* readdir64( DIR* dirp );
+		public extern static int readdir64_r( DIR* dirp, dirent64* entry, dirent64** result );
+		public extern static void rewinddir( DIR* dirp );
+		public extern static int scandir( sbyte* dir, dirent*** namelist, Functors.Func<dirent*, int> selector, Functors.Func<dirent**, dirent**, int> cmp );
+		public extern static int scandir64( sbyte* dir, dirent64*** namelist, Functors.Func<dirent64*, int> selector, Functors.Func<dirent64**, dirent64**, int> cmp );
+		public extern static int scandirat( int dfd, sbyte* dir, dirent*** namelist, Functors.Func<dirent*, int> selector, Functors.Func<dirent**, dirent**, int> cmp );
+		public extern static int scandirat64( int dfd, sbyte* dir, dirent64*** namelist, Functors.Func<dirent64*, int> selector, Functors.Func<dirent64**, dirent64**, int> cmp );
+		public extern static void seekdir( DIR* dirp, intptr pos );
+		public extern static intptr telldir( DIR* dirp );
+		[BackendHintReadOnly]
+		public extern static int versionsort( dirent** e1, dirent** e2 );
+		[BackendHintReadOnly]
+		public extern static int versionsort64( dirent64** e1, dirent64** e2 );
 
 		public extern static cpu_set_t* __sched_cpualloc( uint count );
 		public extern static void __sched_cpufree( cpu_set_t* set );
@@ -848,32 +838,6 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static SystemError* __errno_location();
 
-		[BackendHintReadOnly]
-		public extern static int alphasort( dirent** e1, dirent** e2 );
-		[BackendHintReadOnly]
-		public extern static int alphasort64( dirent64** e1, dirent64** e2 );
-		public extern static int closedir( DIR* dirp );
-		public extern static int dirfd( DIR* dirp );
-		public extern static DIR* fdopendir( int fd );
-		public extern static int getdirentries( int fd, sbyte* buf, uint nbytes, intptr* basep );
-		public extern static int getdirentries64( int fd, sbyte* buf, uint nbytes, long* basep );
-		public extern static DIR* opendir( CUtf8String name );
-		public extern static dirent* readdir( DIR* dirp );
-		public extern static int readdir_r( DIR* dirp, dirent* entry, dirent** result );
-		public extern static dirent64* readdir64( DIR* dirp );
-		public extern static int readdir64_r( DIR* dirp, dirent64* entry, dirent64** result );
-		public extern static void rewinddir( DIR* dirp );
-		public extern static int scandir( sbyte* dir, dirent*** namelist, Functors.Func<dirent*, int> selector, Functors.Func<dirent**, dirent**, int> cmp );
-		public extern static int scandir64( sbyte* dir, dirent64*** namelist, Functors.Func<dirent64*, int> selector, Functors.Func<dirent64**, dirent64**, int> cmp );
-		public extern static int scandirat( int dfd, sbyte* dir, dirent*** namelist, Functors.Func<dirent*, int> selector, Functors.Func<dirent**, dirent**, int> cmp );
-		public extern static int scandirat64( int dfd, sbyte* dir, dirent64*** namelist, Functors.Func<dirent64*, int> selector, Functors.Func<dirent64**, dirent64**, int> cmp );
-		public extern static void seekdir( DIR* dirp, intptr pos );
-		public extern static intptr telldir( DIR* dirp );
-		[BackendHintReadOnly]
-		public extern static int versionsort( dirent** e1, dirent** e2 );
-		[BackendHintReadOnly]
-		public extern static int versionsort64( dirent64** e1, dirent64** e2 );
-
 		public extern static int getcontext( ucontext& ucp );
 		public extern static int setcontext( ucontext& ucp );
 		public extern static int swapcontext( ucontext& oucp, ucontext& ucp );
@@ -957,11 +921,29 @@ namespace Platform.Libc {
 	[ExternLibrary( Image = "/usr/lib64/libm.so" )]
 	public static partial struct MathApi {
 		[BackendHintReadNone]
+		public extern static int __finite( double value );
+		[BackendHintReadNone]
+		public extern static int __finitef( float value );
+		[BackendHintReadNone]
+		public extern static int __finitel( LittleEndianIEEE754_80 value );
+		[BackendHintReadNone]
 		public extern static int __fpclassify( double value );
 		[BackendHintReadNone]
 		public extern static int __fpclassifyf( float value );
 		[BackendHintReadNone]
 		public extern static int __fpclassifyl( LittleEndianIEEE754_80 value );
+		[BackendHintReadNone]
+		public extern static int __issignaling( double value );
+		[BackendHintReadNone]
+		public extern static int __issignalingf( float value );
+		[BackendHintReadNone]
+		public extern static int __issignalingl( LittleEndianIEEE754_80 value );
+		[BackendHintReadNone]
+		public extern static int __signbit( double value );
+		[BackendHintReadNone]
+		public extern static int __signbitf( float value );
+		[BackendHintReadNone]
+		public extern static int __signbitl( LittleEndianIEEE754_80 value );
 		public extern static double acos( double x );
 		public extern static float acosf( float x );
 		public extern static double acosh( double x );
@@ -992,6 +974,12 @@ namespace Platform.Libc {
 		public extern static float ceilf( float x );
 		[BackendHintReadNone]
 		public extern static LittleEndianIEEE754_80 ceill( LittleEndianIEEE754_80 x );
+		[BackendHintReadNone]
+		public extern static double copysign( double x, double y );
+		[BackendHintReadNone]
+		public extern static float copysignf( float x, float y );
+		[BackendHintReadNone]
+		public extern static LittleEndianIEEE754_80 copysignl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double cos( double x );
 		public extern static float cosf( float x );
 		public extern static double cosh( double x );
@@ -1029,12 +1017,17 @@ namespace Platform.Libc {
 		public extern static float fdimf( float x, float y );
 		public extern static LittleEndianIEEE754_80 fdiml( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		[BackendHintReadNone]
+		public extern static int finite( double value );
+		[BackendHintReadNone]
+		public extern static int finitef( float value );
+		[BackendHintReadNone]
+		public extern static int finitel( LittleEndianIEEE754_80 value );
+		[BackendHintReadNone]
 		public extern static double floor( double x );
 		[BackendHintReadNone]
 		public extern static float floorf( float x );
 		[BackendHintReadNone]
 		public extern static LittleEndianIEEE754_80 floorl( LittleEndianIEEE754_80 x );
-		[BackendHintReadNone]
 		public extern static LittleEndianIEEE754_80 fmal( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y, LittleEndianIEEE754_80 z );
 		[BackendHintReadNone]
 		public extern static double fmax( double x, double y );
@@ -1051,6 +1044,9 @@ namespace Platform.Libc {
 		public extern static double fmod( double x, double y );
 		public extern static float fmodf( float x, float y );
 		public extern static LittleEndianIEEE754_80 fmodl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double frexp( double x, int* exponent );
+		public extern static float frexpf( float x, int* exponent );
+		public extern static LittleEndianIEEE754_80 frexpl( LittleEndianIEEE754_80 x, int* exponent );
 		public extern static double gamma( double p0 );
 		public extern static float gammaf( float p0 );
 		public extern static LittleEndianIEEE754_80 gammal( LittleEndianIEEE754_80 p0 );
@@ -1069,6 +1065,9 @@ namespace Platform.Libc {
 		public extern static double jn( int p0, double p1 );
 		public extern static float jnf( int p0, float p1 );
 		public extern static LittleEndianIEEE754_80 jnl( int p0, LittleEndianIEEE754_80 p1 );
+		public extern static double ldexp( double x, int exponent );
+		public extern static float ldexpf( float x, int exponent );
+		public extern static LittleEndianIEEE754_80 ldexpl( LittleEndianIEEE754_80 x, int exponent );
 		public extern static double lgamma( double p0 );
 		public extern static double lgamma_r( double p0, int* signgamp );
 		public extern static float lgammaf( float p0 );
@@ -1102,6 +1101,9 @@ namespace Platform.Libc {
 		public extern static intptr lround( double x );
 		public extern static intptr lroundf( float x );
 		public extern static intptr lroundl( LittleEndianIEEE754_80 x );
+		public extern static double modf( double x, double* iptr );
+		public extern static float modff( float x, float* iptr );
+		public extern static LittleEndianIEEE754_80 modfl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80* iptr );
 		[BackendHintReadNone]
 		public extern static double nan( sbyte* tagb );
 		[BackendHintReadNone]
@@ -1156,6 +1158,9 @@ namespace Platform.Libc {
 		public extern static double scalbln( double x, intptr n );
 		public extern static float scalblnf( float x, intptr n );
 		public extern static LittleEndianIEEE754_80 scalblnl( LittleEndianIEEE754_80 x, intptr n );
+		public extern static double scalbn( double x, int n );
+		public extern static float scalbnf( float x, int n );
+		public extern static LittleEndianIEEE754_80 scalbnl( LittleEndianIEEE754_80 x, int n );
 		public extern static double significand( double x );
 		public extern static float significandf( float x );
 		public extern static LittleEndianIEEE754_80 significandl( LittleEndianIEEE754_80 x );
@@ -1247,6 +1252,7 @@ namespace Platform.Libc {
 		public extern static int pthread_create( pthread_t* newthread, pthread_attr_t* attr, Functors.Func<void*, void*> startRoutine, void* arg );
 		public extern static int pthread_detach( pthread_t th );
 		public extern static int pthread_getaffinity_np( pthread_t th, uint cpusetsize, cpu_set_t* cpuset );
+		public extern static int pthread_getattr_default_np( pthread_attr_t* attr );
 		public extern static int pthread_getattr_np( pthread_t th, pthread_attr_t* attr );
 		public extern static int pthread_getconcurrency();
 		public extern static int pthread_getcpuclockid( pthread_t threadId, int* clockId );
@@ -1292,6 +1298,7 @@ namespace Platform.Libc {
 		public extern static int pthread_rwlockattr_setkind_np( pthread_rwlockattr_t* attr, int pref );
 		public extern static int pthread_rwlockattr_setpshared( pthread_rwlockattr_t* attr, Boolean32 pshared );
 		public extern static int pthread_setaffinity_np( pthread_t th, uint cpusetsize, cpu_set_t* cpuset );
+		public extern static int pthread_setattr_default_np( pthread_attr_t* attr );
 		public extern static int pthread_setconcurrency( int level );
 		public extern static int pthread_setname_np( pthread_t targetThread, CUtf8String name );
 		public extern static int pthread_setschedprio( pthread_t targetThread, int prio );
@@ -1361,15 +1368,6 @@ namespace Platform.Libc {
 		W_OK = 2,
 		R_OK = 4,
 	}
-	public enum Anonymous0 : uint {
-		RT_CONSISTENT = 0,
-		RT_ADD =        1,
-		RT_DELETE =     2,
-	}
-	public enum Anonymous1 : uint {
-		LA_FLG_BINDTO =   1,
-		LA_FLG_BINDFROM = 2,
-	}
 	public enum ApplySignalCommand : uint {
 		SIG_BLOCK =   0,
 		SIG_UNBLOCK = 1,
@@ -1402,6 +1400,7 @@ namespace Platform.Libc {
 		AT_SECURE =         23,
 		AT_BASE_PLATFORM =  24,
 		AT_RANDOM =         25,
+		AT_HWCAP2 =         26,
 		AT_EXECFN =         31,
 		AT_SYSINFO =        32,
 		AT_SYSINFO_EHDR =   33,
@@ -1430,6 +1429,7 @@ namespace Platform.Libc {
 		CLOCK_BOOTTIME =           7,
 		CLOCK_REALTIME_ALARM =     8,
 		CLOCK_BOOTTIME_ALARM =     9,
+		CLOCK_TAI =               11,
 	}
 	public enum ConfigurationProperty : uint {
 		_PC_LINK_MAX =            0,
@@ -1496,84 +1496,87 @@ namespace Platform.Libc {
 		RTLD_BINDING_MASK = 3,
 	}
 	public enum ElfArchitectureKind : ushort {
-		EM_NONE =         0,
-		EM_M32 =          1,
-		EM_SPARC =        2,
-		EM_386 =          3,
-		EM_68K =          4,
-		EM_88K =          5,
-		EM_860 =          7,
-		EM_MIPS =         8,
-		EM_S370 =         9,
-		EM_MIPS_RS3_LE = 10,
-		EM_PARISC =      15,
-		EM_VPP500 =      17,
-		EM_SPARC32PLUS = 18,
-		EM_960 =         19,
-		EM_PPC =         20,
-		EM_PPC64 =       21,
-		EM_S390 =        22,
-		EM_V800 =        36,
-		EM_FR20 =        37,
-		EM_RH32 =        38,
-		EM_RCE =         39,
-		EM_ARM =         40,
-		EM_FAKE_ALPHA =  41,
-		EM_SH =          42,
-		EM_SPARCV9 =     43,
-		EM_TRICORE =     44,
-		EM_ARC =         45,
-		EM_H8_300 =      46,
-		EM_H8_300H =     47,
-		EM_H8S =         48,
-		EM_H8_500 =      49,
-		EM_IA_64 =       50,
-		EM_MIPS_X =      51,
-		EM_COLDFIRE =    52,
-		EM_68HC12 =      53,
-		EM_MMA =         54,
-		EM_PCP =         55,
-		EM_NCPU =        56,
-		EM_NDR1 =        57,
-		EM_STARCORE =    58,
-		EM_ME16 =        59,
-		EM_ST100 =       60,
-		EM_TINYJ =       61,
-		EM_X86_64 =      62,
-		EM_PDSP =        63,
-		EM_FX66 =        66,
-		EM_ST9PLUS =     67,
-		EM_ST7 =         68,
-		EM_68HC16 =      69,
-		EM_68HC11 =      70,
-		EM_68HC08 =      71,
-		EM_68HC05 =      72,
-		EM_SVX =         73,
-		EM_ST19 =        74,
-		EM_VAX =         75,
-		EM_CRIS =        76,
-		EM_JAVELIN =     77,
-		EM_FIREPATH =    78,
-		EM_ZSP =         79,
-		EM_MMIX =        80,
-		EM_HUANY =       81,
-		EM_PRISM =       82,
-		EM_AVR =         83,
-		EM_FR30 =        84,
-		EM_D10V =        85,
-		EM_D30V =        86,
-		EM_V850 =        87,
-		EM_M32R =        88,
-		EM_MN10300 =     89,
-		EM_MN10200 =     90,
-		EM_PJ =          91,
-		EM_OPENRISC =    92,
-		EM_ARC_A5 =      93,
-		EM_XTENSA =      94,
-		EM_TILEPRO =    188,
-		EM_TILEGX =     191,
-		EM_NUM =        192,
-		EM_ALPHA =    36902,
+		EM_NONE =           0,
+		EM_M32 =            1,
+		EM_SPARC =          2,
+		EM_386 =            3,
+		EM_68K =            4,
+		EM_88K =            5,
+		EM_860 =            7,
+		EM_MIPS =           8,
+		EM_S370 =           9,
+		EM_MIPS_RS3_LE =   10,
+		EM_PARISC =        15,
+		EM_VPP500 =        17,
+		EM_SPARC32PLUS =   18,
+		EM_960 =           19,
+		EM_PPC =           20,
+		EM_PPC64 =         21,
+		EM_S390 =          22,
+		EM_V800 =          36,
+		EM_FR20 =          37,
+		EM_RH32 =          38,
+		EM_RCE =           39,
+		EM_ARM =           40,
+		EM_FAKE_ALPHA =    41,
+		EM_SH =            42,
+		EM_SPARCV9 =       43,
+		EM_TRICORE =       44,
+		EM_ARC =           45,
+		EM_H8_300 =        46,
+		EM_H8_300H =       47,
+		EM_H8S =           48,
+		EM_H8_500 =        49,
+		EM_IA_64 =         50,
+		EM_MIPS_X =        51,
+		EM_COLDFIRE =      52,
+		EM_68HC12 =        53,
+		EM_MMA =           54,
+		EM_PCP =           55,
+		EM_NCPU =          56,
+		EM_NDR1 =          57,
+		EM_STARCORE =      58,
+		EM_ME16 =          59,
+		EM_ST100 =         60,
+		EM_TINYJ =         61,
+		EM_X86_64 =        62,
+		EM_PDSP =          63,
+		EM_FX66 =          66,
+		EM_ST9PLUS =       67,
+		EM_ST7 =           68,
+		EM_68HC16 =        69,
+		EM_68HC11 =        70,
+		EM_68HC08 =        71,
+		EM_68HC05 =        72,
+		EM_SVX =           73,
+		EM_ST19 =          74,
+		EM_VAX =           75,
+		EM_CRIS =          76,
+		EM_JAVELIN =       77,
+		EM_FIREPATH =      78,
+		EM_ZSP =           79,
+		EM_MMIX =          80,
+		EM_HUANY =         81,
+		EM_PRISM =         82,
+		EM_AVR =           83,
+		EM_FR30 =          84,
+		EM_D10V =          85,
+		EM_D30V =          86,
+		EM_V850 =          87,
+		EM_M32R =          88,
+		EM_MN10300 =       89,
+		EM_MN10200 =       90,
+		EM_PJ =            91,
+		EM_OPENRISC =      92,
+		EM_ARC_A5 =        93,
+		EM_XTENSA =        94,
+		EM_ALTERA_NIOS2 = 113,
+		EM_AARCH64 =      183,
+		EM_TILEPRO =      188,
+		EM_MICROBLAZE =   189,
+		EM_TILEGX =       191,
+		EM_NUM =          192,
+		EM_ALPHA =      36902,
 	}
 	public enum ElfFileKind : ushort {
 		ET_NONE =       0,
@@ -1633,6 +1636,7 @@ namespace Platform.Libc {
 		PT_MIPS_RTPROC =       1879048193,
 		PT_PARISC_UNWIND =     1879048193,
 		PT_MIPS_OPTIONS =      1879048194,
+		PT_MIPS_ABIFLAGS =     1879048195,
 		PT_HIPROC =            2147483647,
 	}
 	[Flags]
@@ -1803,6 +1807,7 @@ namespace Platform.Libc {
 		EPOLLERR =              8,
 		EPOLLHUP =             16,
 		EPOLLRDHUP =         8192,
+		EPOLLWAKEUP =   536870912,
 		EPOLLONESHOT = 1073741824,
 		EPOLLET =      2147483648,
 	}
@@ -1815,7 +1820,6 @@ namespace Platform.Libc {
 	public enum EpollCreateFlags : uint {
 		None =               0,
 		EPOLL_CLOEXEC = 524288,
-		EPOLL_NONBLOCK =  2048,
 	}
 	[Flags]
 	public enum EventHandleCreateFlag : uint {
@@ -1977,7 +1981,6 @@ namespace Platform.Libc {
 	}
 	public enum IPProtocol : uint {
 		IPPROTO_IP =        0,
-		IPPROTO_HOPOPTS =   0,
 		IPPROTO_ICMP =      1,
 		IPPROTO_IGMP =      2,
 		IPPROTO_IPIP =      4,
@@ -1989,16 +1992,12 @@ namespace Platform.Libc {
 		IPPROTO_TP =       29,
 		IPPROTO_DCCP =     33,
 		IPPROTO_IPV6 =     41,
-		IPPROTO_ROUTING =  43,
-		IPPROTO_FRAGMENT = 44,
 		IPPROTO_RSVP =     46,
 		IPPROTO_GRE =      47,
 		IPPROTO_ESP =      50,
 		IPPROTO_AH =       51,
-		IPPROTO_ICMPV6 =   58,
-		IPPROTO_NONE =     59,
-		IPPROTO_DSTOPTS =  60,
 		IPPROTO_MTP =      92,
+		IPPROTO_BEETPH =   94,
 		IPPROTO_ENCAP =    98,
 		IPPROTO_PIM =     103,
 		IPPROTO_COMP =    108,
@@ -2029,14 +2028,16 @@ namespace Platform.Libc {
 		MADV_DODUMP =      17,
 		MADV_HWPOISON =   100,
 	}
-	[Flags]
 	public enum MemoryMapFlags : int {
 		MAP_FILE =          0,
 		MAP_SHARED =        1,
 		MAP_PRIVATE =       2,
+		MAP_TYPE =         15,
 		MAP_FIXED =        16,
+		MAP_HUGE_SHIFT =   26,
 		MAP_ANON =         32,
 		MAP_ANONYMOUS =    32,
+		MAP_HUGE_MASK =    63,
 		MAP_32BIT =        64,
 		MAP_GROWSDOWN =   256,
 		MAP_DENYWRITE =  2048,
@@ -2047,7 +2048,6 @@ namespace Platform.Libc {
 		MAP_NONBLOCK =  65536,
 		MAP_STACK =    131072,
 		MAP_HUGETLB =  262144,
-		MAP_TYPE =         15,
 	}
 	[Flags]
 	public enum MemoryMapProtection : int {
@@ -2085,6 +2085,7 @@ namespace Platform.Libc {
 		MSG_NOSIGNAL =          16384,
 		MSG_MORE =              32768,
 		MSG_WAITFORONE =        65536,
+		MSG_FASTOPEN =      536870912,
 		MSG_CMSG_CLOEXEC = 1073741824,
 	}
 	[Flags]
@@ -2209,7 +2210,8 @@ namespace Platform.Libc {
 		PF_CAIF =       37,
 		PF_ALG =        38,
 		PF_NFC =        39,
-		PF_MAX =        40,
+		PF_VSOCK =      40,
+		PF_MAX =        41,
 	}
 	public enum ReaderWriterLockBehaviour : uint {
 		PTHREAD_RWLOCK_PREFER_READER_NP =              0,
@@ -2295,9 +2297,11 @@ namespace Platform.Libc {
 		_NSIG =      65,
 	}
 	public enum SignalCodeBUS : uint {
-		BUS_ADRALN = 1,
-		BUS_ADRERR = 2,
-		BUS_OBJERR = 3,
+		BUS_ADRALN =    1,
+		BUS_ADRERR =    2,
+		BUS_OBJERR =    3,
+		BUS_MCEERR_AR = 4,
+		BUS_MCEERR_AO = 5,
 	}
 	public enum SignalCodeCHLD : uint {
 		CLD_EXITED =    1,
@@ -2804,6 +2808,41 @@ namespace Platform.Libc {
 		WNOHANG =   1,
 		WUNTRACED = 2,
 	}
+	public enum UnnamedEnum_37F1AB5B : uint {
+		TCP_NO_QUEUE =   0,
+		TCP_RECV_QUEUE = 1,
+		TCP_SEND_QUEUE = 2,
+		TCP_QUEUES_NR =  3,
+	}
+	public enum UnnamedEnum_672DAEF7 : uint {
+		RT_CONSISTENT = 0,
+		RT_ADD =        1,
+		RT_DELETE =     2,
+	}
+	public enum UnnamedEnum_672DB64A : uint {
+		LA_FLG_BINDTO =   1,
+		LA_FLG_BINDFROM = 2,
+	}
+	public enum UnnamedEnum_79C4A436 : uint {
+		IPPROTO_HOPOPTS =   0,
+		IPPROTO_ROUTING =  43,
+		IPPROTO_FRAGMENT = 44,
+		IPPROTO_ICMPV6 =   58,
+		IPPROTO_NONE =     59,
+		IPPROTO_DSTOPTS =  60,
+		IPPROTO_MH =      135,
+	}
+	public enum UnnamedEnum_94568031 : uint {
+		Val_GNU_MIPS_ABI_FP_ANY =    0,
+		Val_GNU_MIPS_ABI_FP_DOUBLE = 1,
+		Val_GNU_MIPS_ABI_FP_SINGLE = 2,
+		Val_GNU_MIPS_ABI_FP_SOFT =   3,
+		Val_GNU_MIPS_ABI_FP_OLD_64 = 4,
+		Val_GNU_MIPS_ABI_FP_XX =     5,
+		Val_GNU_MIPS_ABI_FP_64 =     6,
+		Val_GNU_MIPS_ABI_FP_64A =    7,
+		Val_GNU_MIPS_ABI_FP_MAX =    7,
+	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct __exception {
@@ -2836,7 +2875,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public int __count;
 		[ExplicitOffset( Offset = 4 )]
-		public Anonymous6 __value;
+		public UnnamedUnion_3CFB4420 __value;
 	}
 	[ExplicitSize( Size = 24 )]
 	[Alignment( Boundary = 8 )]
@@ -2862,7 +2901,7 @@ namespace Platform.Libc {
 	[Alignment( Boundary = 8 )]
 	public partial struct __pthread_unwind_buf_t {
 		[ExplicitOffset( Offset = 0 )]
-		public Anonymous9[1] __cancel_jmp_buf;
+		public UnnamedStruct_BDEC71B8[1] __cancel_jmp_buf;
 		[ExplicitOffset( Offset = 72 )]
 		public void*[4] __pad;
 	}
@@ -3005,218 +3044,6 @@ namespace Platform.Libc {
 	public partial struct _ymmh_state {
 		[ExplicitOffset( Offset = 0 )]
 		public uint[64] ymmh_space;
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous10 {
-		public uint& d_val { get { return *cast<uint*>( &this ); } }
-		public uint& d_ptr { get { return *cast<uint*>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous11 {
-		public uintptr& d_val { get { return *cast<uintptr*>( &this ); } }
-		public uintptr& d_ptr { get { return *cast<uintptr*>( &this ); } }
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous12 {
-		public uint& a_val { get { return *cast<uint*>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous13 {
-		public uintptr& a_val { get { return *cast<uintptr*>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous14 {
-		[ExplicitOffset( Offset = 0 )]
-		public uint gt_current_g_value;
-		[ExplicitOffset( Offset = 4 )]
-		public uint gt_unused;
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous15 {
-		[ExplicitOffset( Offset = 0 )]
-		public uint gt_g_value;
-		[ExplicitOffset( Offset = 4 )]
-		public uint gt_bytes;
-	}
-	[ExplicitSize( Size = 112 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous16 {
-		public int[28]& _pad { get { return *cast<int[28]*>( &this ); } }
-		public Anonymous17& _kill { get { return *cast<Anonymous17*>( &this ); } }
-		public Anonymous18& _timer { get { return *cast<Anonymous18*>( &this ); } }
-		public Anonymous19& _rt { get { return *cast<Anonymous19*>( &this ); } }
-		public Anonymous20& _sigchld { get { return *cast<Anonymous20*>( &this ); } }
-		public Anonymous21& _sigfault { get { return *cast<Anonymous21*>( &this ); } }
-		public Anonymous22& _sigpoll { get { return *cast<Anonymous22*>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous17 {
-		[ExplicitOffset( Offset = 0 )]
-		public int si_pid;
-		[ExplicitOffset( Offset = 4 )]
-		public uint si_uid;
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous18 {
-		[ExplicitOffset( Offset = 0 )]
-		public int si_tid;
-		[ExplicitOffset( Offset = 4 )]
-		public int si_overrun;
-		[ExplicitOffset( Offset = 8 )]
-		public sigval si_sigval;
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous19 {
-		[ExplicitOffset( Offset = 0 )]
-		public int si_pid;
-		[ExplicitOffset( Offset = 4 )]
-		public uint si_uid;
-		[ExplicitOffset( Offset = 8 )]
-		public sigval si_sigval;
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous2 {
-		public byte[16]& __u6_addr8 { get { return *cast<byte[16]*>( &this ); } }
-		public ushort[8]& __u6_addr16 { get { return *cast<ushort[8]*>( &this ); } }
-		public uint[4]& __u6_addr32 { get { return *cast<uint[4]*>( &this ); } }
-	}
-	[ExplicitSize( Size = 32 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous20 {
-		[ExplicitOffset( Offset = 0 )]
-		public int si_pid;
-		[ExplicitOffset( Offset = 4 )]
-		public uint si_uid;
-		[ExplicitOffset( Offset = 8 )]
-		public int si_status;
-		[ExplicitOffset( Offset = 16 )]
-		public intptr si_utime;
-		[ExplicitOffset( Offset = 24 )]
-		public intptr si_stime;
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous21 {
-		[ExplicitOffset( Offset = 0 )]
-		public void* si_addr;
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous22 {
-		[ExplicitOffset( Offset = 0 )]
-		public intptr si_band;
-		[ExplicitOffset( Offset = 8 )]
-		public int si_fd;
-	}
-	[ExplicitSize( Size = 48 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous23 {
-		public int[12]& _pad { get { return *cast<int[12]*>( &this ); } }
-		public int& _tid { get { return *cast<int*>( &this ); } }
-		public Anonymous24& _sigev_thread { get { return *cast<Anonymous24*>( &this ); } }
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous24 {
-		[ExplicitOffset( Offset = 0 )]
-		public Functors.Action<sigval> _function;
-		[ExplicitOffset( Offset = 8 )]
-		public pthread_attr_t* _attribute;
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous25 {
-		public Functors.Action<int>& sa_handler { get { return *cast<Functors.Action<int>*>( &this ); } }
-		public Functors.Action<int, siginfo_t*, void*>& sa_sigaction { get { return *cast<Functors.Action<int, siginfo_t*, void*>*>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous3 {
-		public sockaddr*& ifu_broadaddr { get { return *cast<sockaddr**>( &this ); } }
-		public sockaddr*& ifu_dstaddr { get { return *cast<sockaddr**>( &this ); } }
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous4 {
-		public uint __w_termsig { get { return cast<byte*>( &this )[0] & 127; } set { cast<byte*>( &this )[0] &= 128; cast<byte*>( &this )[0] |= ( cast<byte>( value ) & 127 ); } }
-		public bool __w_coredump { get { return ( cast<byte*>( &this )[0] & 128 ) != 0; } set { cast<byte*>( &this )[0] &= 127; cast<byte*>( &this )[0] |= cast<byte>( value ) << 7; } }
-		public uint __w_retcode { get { return cast<byte*>( &this )[1]; } set { cast<byte*>( &this )[1] = cast<byte>( value ); } }
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous5 {
-		public uint __w_stopval { get { return cast<byte*>( &this )[0]; } set { cast<byte*>( &this )[0] = cast<byte>( value ); } }
-		public uint __w_stopsig { get { return cast<byte*>( &this )[1]; } set { cast<byte*>( &this )[1] = cast<byte>( value ); } }
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous6 {
-		public uint& __wch { get { return *cast<uint*>( &this ); } }
-		public sbyte[4]& __wchb { get { return *cast<sbyte[4]*>( &this ); } }
-	}
-	[ExplicitSize( Size = 48 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous7 {
-		[ExplicitOffset( Offset = 0 )]
-		public int __lock;
-		[ExplicitOffset( Offset = 4 )]
-		public uint __futex;
-		[ExplicitOffset( Offset = 8 )]
-		public ulong __total_seq;
-		[ExplicitOffset( Offset = 16 )]
-		public ulong __wakeup_seq;
-		[ExplicitOffset( Offset = 24 )]
-		public ulong __woken_seq;
-		[ExplicitOffset( Offset = 32 )]
-		public void* __mutex;
-		[ExplicitOffset( Offset = 40 )]
-		public uint __nwaiters;
-		[ExplicitOffset( Offset = 44 )]
-		public uint __broadcast_seq;
-	}
-	[ExplicitSize( Size = 56 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous8 {
-		[ExplicitOffset( Offset = 0 )]
-		public int __lock;
-		[ExplicitOffset( Offset = 4 )]
-		public uint __nr_readers;
-		[ExplicitOffset( Offset = 8 )]
-		public uint __readers_wakeup;
-		[ExplicitOffset( Offset = 12 )]
-		public uint __writer_wakeup;
-		[ExplicitOffset( Offset = 16 )]
-		public uint __nr_readers_queued;
-		[ExplicitOffset( Offset = 20 )]
-		public uint __nr_writers_queued;
-		[ExplicitOffset( Offset = 24 )]
-		public int __writer;
-		[ExplicitOffset( Offset = 28 )]
-		public int __shared;
-		[ExplicitOffset( Offset = 32 )]
-		public uintptr __pad1;
-		[ExplicitOffset( Offset = 40 )]
-		public uintptr __pad2;
-		[ExplicitOffset( Offset = 48 )]
-		public uint __flags;
-	}
-	[ExplicitSize( Size = 72 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct Anonymous9 {
-		[ExplicitOffset( Offset = 0 )]
-		public intptr[8] __cancel_jmp_buf;
-		[ExplicitOffset( Offset = 64 )]
-		public int __mask_was_saved;
 	}
 	[ExplicitSize( Size = 7 )]
 	public partial struct ax25_address {
@@ -3449,6 +3276,32 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 16 )]
 		public ulong __a;
 	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct Elf_MIPS_ABIFlags_v0 {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort version;
+		[ExplicitOffset( Offset = 2 )]
+		public byte isa_level;
+		[ExplicitOffset( Offset = 3 )]
+		public byte isa_rev;
+		[ExplicitOffset( Offset = 4 )]
+		public byte gpr_size;
+		[ExplicitOffset( Offset = 5 )]
+		public byte cpr1_size;
+		[ExplicitOffset( Offset = 6 )]
+		public byte cpr2_size;
+		[ExplicitOffset( Offset = 7 )]
+		public byte fp_abi;
+		[ExplicitOffset( Offset = 8 )]
+		public uint isa_ext;
+		[ExplicitOffset( Offset = 12 )]
+		public uint ases;
+		[ExplicitOffset( Offset = 16 )]
+		public uint flags1;
+		[ExplicitOffset( Offset = 20 )]
+		public uint flags2;
+	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct Elf_Options {
@@ -3475,7 +3328,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public uint a_type;
 		[ExplicitOffset( Offset = 4 )]
-		public Anonymous12 a_un;
+		public UnnamedUnion_9456F1A3 a_un;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -3483,7 +3336,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public int d_tag;
 		[ExplicitOffset( Offset = 4 )]
-		public Anonymous10 d_un;
+		public UnnamedUnion_94570D16 d_un;
 	}
 	[ExplicitSize( Size = 52 )]
 	[Alignment( Boundary = 4 )]
@@ -3520,8 +3373,8 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct Elf32_gptab {
-		public Anonymous14& gt_header { get { return *cast<Anonymous14*>( &this ); } }
-		public Anonymous15& gt_entry { get { return *cast<Anonymous15*>( &this ); } }
+		public UnnamedStruct_9456B2DA& gt_header { get { return *cast<UnnamedStruct_9456B2DA*>( &this ); } }
+		public UnnamedStruct_9456B37D& gt_entry { get { return *cast<UnnamedStruct_9456B37D*>( &this ); } }
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -3717,7 +3570,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public uintptr a_type;
 		[ExplicitOffset( Offset = 8 )]
-		public Anonymous13 a_un;
+		public UnnamedUnion_9456F74F a_un;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 8 )]
@@ -3725,7 +3578,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public intptr d_tag;
 		[ExplicitOffset( Offset = 8 )]
-		public Anonymous11 d_un;
+		public UnnamedUnion_94570E5C d_un;
 	}
 	[ExplicitSize( Size = 64 )]
 	[Alignment( Boundary = 8 )]
@@ -4197,7 +4050,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 32 )]
 		public sockaddr* ifa_netmask;
 		[ExplicitOffset( Offset = 40 )]
-		public Anonymous3 ifa_ifu;
+		public UnnamedUnion_C30EE5A1 ifa_ifu;
 		[ExplicitOffset( Offset = 48 )]
 		public void* ifa_data;
 	}
@@ -4221,7 +4074,7 @@ namespace Platform.Libc {
 	[Alignment( Boundary = 4 )]
 	public partial struct in6_addr {
 		[ExplicitOffset( Offset = 0 )]
-		public Anonymous2 __in6_u;
+		public UnnamedUnion_79C4AE40 __in6_u;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -4366,7 +4219,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 16 )]
 		public timeval it_value;
 	}
-	[ExplicitSize( Size = 704 )]
+	[ExplicitSize( Size = 768 )]
 	[Alignment( Boundary = 16 )]
 	public partial struct La_x86_64_regs {
 		[ExplicitOffset( Offset = 0 )]
@@ -4389,8 +4242,10 @@ namespace Platform.Libc {
 		public float[4][8] lr_xmm;
 		[ExplicitOffset( Offset = 192 )]
 		public La_x86_64_vector[8] lr_vector;
+		[ExplicitOffset( Offset = 704 )]
+		public int16[4] lr_bnd;
 	}
-	[ExplicitSize( Size = 208 )]
+	[ExplicitSize( Size = 240 )]
 	[Alignment( Boundary = 16 )]
 	public partial struct La_x86_64_retval {
 		[ExplicitOffset( Offset = 0 )]
@@ -4409,11 +4264,16 @@ namespace Platform.Libc {
 		public La_x86_64_vector lrv_vector0;
 		[ExplicitOffset( Offset = 144 )]
 		public La_x86_64_vector lrv_vector1;
+		[ExplicitOffset( Offset = 208 )]
+		public int16 lrv_bnd0;
+		[ExplicitOffset( Offset = 224 )]
+		public int16 lrv_bnd1;
 	}
 	[ExplicitSize( Size = 64 )]
 	[Alignment( Boundary = 16 )]
 	public partial struct La_x86_64_vector {
 		public float[8][2]& ymm { get { return *cast<float[8][2]*>( &this ); } }
+		public double[8][1]& zmm { get { return *cast<double[8][1]*>( &this ); } }
 		public float[4][4]& xmm { get { return *cast<float[4][4]*>( &this ); } }
 	}
 	[ExplicitSize( Size = 16 )]
@@ -4619,7 +4479,7 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 48 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct pthread_cond_t {
-		public Anonymous7& __data { get { return *cast<Anonymous7*>( &this ); } }
+		public UnnamedStruct_545DD3F4& __data { get { return *cast<UnnamedStruct_545DD3F4*>( &this ); } }
 		public sbyte[48]& __size { get { return *cast<sbyte[48]*>( &this ); } }
 		public long& __align { get { return *cast<long*>( &this ); } }
 	}
@@ -4649,7 +4509,9 @@ namespace Platform.Libc {
 			[ExplicitOffset( Offset = 16 )]
 			public int __kind;
 			[ExplicitOffset( Offset = 20 )]
-			public int __spins;
+			public short __spins;
+			[ExplicitOffset( Offset = 22 )]
+			public short __elision;
 			[ExplicitOffset( Offset = 24 )]
 			public __pthread_internal_list __list;
 		}
@@ -4666,7 +4528,7 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 56 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct pthread_rwlock_t {
-		public Anonymous8& __data { get { return *cast<Anonymous8*>( &this ); } }
+		public UnnamedStruct_545DDAA8& __data { get { return *cast<UnnamedStruct_545DDAA8*>( &this ); } }
 		public sbyte[56]& __size { get { return *cast<sbyte[56]*>( &this ); } }
 		public intptr& __align { get { return *cast<intptr*>( &this ); } }
 	}
@@ -4685,7 +4547,7 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct r_debug {
-		public enum Anonymous0 : uint {
+		public enum UnnamedEnum_672DAEF7 : uint {
 			RT_CONSISTENT = 0,
 			RT_ADD =        1,
 			RT_DELETE =     2,
@@ -4697,7 +4559,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 16 )]
 		public uintptr r_brk;
 		[ExplicitOffset( Offset = 24 )]
-		public Anonymous0 r_state;
+		public UnnamedEnum_672DAEF7 r_state;
 		[ExplicitOffset( Offset = 32 )]
 		public uintptr r_ldbase;
 	}
@@ -4791,7 +4653,7 @@ namespace Platform.Libc {
 	[Alignment( Boundary = 8 )]
 	public partial struct sigaction {
 		[ExplicitOffset( Offset = 0 )]
-		public Anonymous25 __sigaction_handler;
+		public UnnamedUnion_84CED84E __sigaction_handler;
 		[ExplicitOffset( Offset = 8 )]
 		public sigset_t sa_mask;
 		[ExplicitOffset( Offset = 136 )]
@@ -4864,8 +4726,8 @@ namespace Platform.Libc {
 		public uintptr oldmask;
 		[ExplicitOffset( Offset = 176 )]
 		public uintptr cr2;
-		public _fpstate*& fpstate { get { return *cast<_fpstate**>( ( byte* ) &this + 184 ); } }
-		public uintptr& __fpstate_word { get { return *cast<uintptr*>( ( byte* ) &this + 184 ); } }
+		public _fpstate*& fpstate { get { return *cast<_fpstate**>( cast<byte*>( &this ) + 184 ); } }
+		public uintptr& __fpstate_word { get { return *cast<uintptr*>( cast<byte*>( &this ) + 184 ); } }
 		[ExplicitOffset( Offset = 192 )]
 		public uintptr[8] __reserved1;
 	}
@@ -4879,7 +4741,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 12 )]
 		public int sigev_notify;
 		[ExplicitOffset( Offset = 16 )]
-		public Anonymous23 _sigev_un;
+		public UnnamedUnion_C32573F4 _sigev_un;
 	}
 	[ExplicitSize( Size = 128 )]
 	[Alignment( Boundary = 8 )]
@@ -4891,7 +4753,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 8 )]
 		public int si_code;
 		[ExplicitOffset( Offset = 16 )]
-		public Anonymous16 _sifields;
+		public UnnamedUnion_C3256222 _sifields;
 	}
 	[ExplicitSize( Size = 128 )]
 	[Alignment( Boundary = 8 )]
@@ -4950,16 +4812,6 @@ namespace Platform.Libc {
 	public partial struct sigval {
 		public int& sival_int { get { return *cast<int*>( &this ); } }
 		public void*& sival_ptr { get { return *cast<void**>( &this ); } }
-	}
-	[ExplicitSize( Size = 16 )]
-	[Alignment( Boundary = 8 )]
-	public partial struct sigvec {
-		[ExplicitOffset( Offset = 0 )]
-		public Functors.Action<int> sv_handler;
-		[ExplicitOffset( Offset = 8 )]
-		public int sv_mask;
-		[ExplicitOffset( Offset = 12 )]
-		public int sv_flags;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 2 )]
@@ -5085,7 +4937,7 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 104 )]
 		public timespec st_ctim;
 		[ExplicitOffset( Offset = 120 )]
-		public intptr[3] __unused;
+		public intptr[3] __glibc_reserved;
 	}
 	[ExplicitSize( Size = 144 )]
 	[Alignment( Boundary = 8 )]
@@ -5119,7 +4971,23 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 104 )]
 		public timespec st_ctim;
 		[ExplicitOffset( Offset = 120 )]
-		public intptr[3] __unused;
+		public intptr[3] __glibc_reserved;
+	}
+	[ExplicitSize( Size = 544 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct tcp_cookie_transactions {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort tcpct_flags;
+		[ExplicitOffset( Offset = 2 )]
+		public byte __tcpct_pad1;
+		[ExplicitOffset( Offset = 3 )]
+		public byte tcpct_cookie_desired;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort tcpct_s_data_desired;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort tcpct_used;
+		[ExplicitOffset( Offset = 8 )]
+		public byte[536] tcpct_value;
 	}
 	[ExplicitSize( Size = 104 )]
 	[Alignment( Boundary = 4 )]
@@ -5201,32 +5069,43 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 136 )]
 		public byte[80] tcpm_key;
 	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct tcp_repair_opt {
+		[ExplicitOffset( Offset = 0 )]
+		public uint opt_code;
+		[ExplicitOffset( Offset = 4 )]
+		public uint opt_val;
+	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct tcphdr {
-		[ExplicitOffset( Offset = 0 )]
-		public ushort source;
-		[ExplicitOffset( Offset = 2 )]
-		public ushort dest;
-		[ExplicitOffset( Offset = 4 )]
-		public uint seq;
-		[ExplicitOffset( Offset = 8 )]
-		public uint ack_seq;
-		public ushort res1 { get { return cast<byte*>( &this )[12] & 15; } set { cast<byte*>( &this )[12] &= 240; cast<byte*>( &this )[12] |= ( cast<byte>( value ) & 15 ); } }
-		public ushort doff { get { return cast<byte*>( &this )[12] >> 4; } set { cast<byte*>( &this )[12] &= 15; cast<byte*>( &this )[12] |= ( cast<byte>( value ) & 240 ) << 4; } }
-		public bool fin { get { return ( cast<byte*>( &this )[13] & 1 ) != 0; } set { cast<byte*>( &this )[13] &= 254; cast<byte*>( &this )[13] |= cast<byte>( value ) << 0; } }
-		public bool syn { get { return ( cast<byte*>( &this )[13] & 2 ) != 0; } set { cast<byte*>( &this )[13] &= 253; cast<byte*>( &this )[13] |= cast<byte>( value ) << 1; } }
-		public bool rst { get { return ( cast<byte*>( &this )[13] & 4 ) != 0; } set { cast<byte*>( &this )[13] &= 251; cast<byte*>( &this )[13] |= cast<byte>( value ) << 2; } }
-		public bool psh { get { return ( cast<byte*>( &this )[13] & 8 ) != 0; } set { cast<byte*>( &this )[13] &= 247; cast<byte*>( &this )[13] |= cast<byte>( value ) << 3; } }
-		public bool ack { get { return ( cast<byte*>( &this )[13] & 16 ) != 0; } set { cast<byte*>( &this )[13] &= 239; cast<byte*>( &this )[13] |= cast<byte>( value ) << 4; } }
-		public bool urg { get { return ( cast<byte*>( &this )[13] & 32 ) != 0; } set { cast<byte*>( &this )[13] &= 223; cast<byte*>( &this )[13] |= cast<byte>( value ) << 5; } }
-		public ushort res2 { get { return cast<byte*>( &this )[13] >> 6; } set { cast<byte*>( &this )[13] &= 63; cast<byte*>( &this )[13] |= ( cast<byte>( value ) & 192 ) << 6; } }
-		[ExplicitOffset( Offset = 14 )]
-		public ushort window;
-		[ExplicitOffset( Offset = 16 )]
-		public ushort check;
-		[ExplicitOffset( Offset = 18 )]
-		public ushort urg_ptr;
+		public ushort& th_sport { get { return *cast<ushort*>( &this ); } }
+		public ushort& th_dport { get { return *cast<ushort*>( cast<byte*>( &this ) + 2 ); } }
+		public uint& th_seq { get { return *cast<uint*>( cast<byte*>( &this ) + 4 ); } }
+		public uint& th_ack { get { return *cast<uint*>( cast<byte*>( &this ) + 8 ); } }
+		public byte& th_x2 { get { return *cast<byte*>( cast<byte*>( &this ) + 12 ); } }
+		public byte& th_off { get { return *cast<byte*>( cast<byte*>( &this ) + 12 ); } }
+		public byte& th_flags { get { return *cast<byte*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& th_win { get { return *cast<ushort*>( cast<byte*>( &this ) + 14 ); } }
+		public ushort& th_sum { get { return *cast<ushort*>( cast<byte*>( &this ) + 16 ); } }
+		public ushort& th_urp { get { return *cast<ushort*>( cast<byte*>( &this ) + 18 ); } }
+		public ushort& source { get { return *cast<ushort*>( &this ); } }
+		public ushort& dest { get { return *cast<ushort*>( cast<byte*>( &this ) + 2 ); } }
+		public uint& seq { get { return *cast<uint*>( cast<byte*>( &this ) + 4 ); } }
+		public uint& ack_seq { get { return *cast<uint*>( cast<byte*>( &this ) + 8 ); } }
+		public ushort& res1 { get { return *cast<ushort*>( cast<byte*>( &this ) + 12 ); } }
+		public ushort& doff { get { return *cast<ushort*>( cast<byte*>( &this ) + 12 ); } }
+		public ushort& fin { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& syn { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& rst { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& psh { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& ack { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& urg { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& res2 { get { return *cast<ushort*>( cast<byte*>( &this ) + 13 ); } }
+		public ushort& window { get { return *cast<ushort*>( cast<byte*>( &this ) + 14 ); } }
+		public ushort& check { get { return *cast<ushort*>( cast<byte*>( &this ) + 16 ); } }
+		public ushort& urg_ptr { get { return *cast<ushort*>( cast<byte*>( &this ) + 18 ); } }
 	}
 	[ExplicitSize( Size = 18 )]
 	[Alignment( Boundary = 2 )]
@@ -5399,14 +5278,14 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 2 )]
 	public partial struct udphdr {
-		[ExplicitOffset( Offset = 0 )]
-		public ushort source;
-		[ExplicitOffset( Offset = 2 )]
-		public ushort dest;
-		[ExplicitOffset( Offset = 4 )]
-		public ushort len;
-		[ExplicitOffset( Offset = 6 )]
-		public ushort check;
+		public ushort& uh_sport { get { return *cast<ushort*>( &this ); } }
+		public ushort& uh_dport { get { return *cast<ushort*>( cast<byte*>( &this ) + 2 ); } }
+		public ushort& uh_ulen { get { return *cast<ushort*>( cast<byte*>( &this ) + 4 ); } }
+		public ushort& uh_sum { get { return *cast<ushort*>( cast<byte*>( &this ) + 6 ); } }
+		public ushort& source { get { return *cast<ushort*>( &this ); } }
+		public ushort& dest { get { return *cast<ushort*>( cast<byte*>( &this ) + 2 ); } }
+		public ushort& len { get { return *cast<ushort*>( cast<byte*>( &this ) + 4 ); } }
+		public ushort& check { get { return *cast<ushort*>( cast<byte*>( &this ) + 6 ); } }
 	}
 	[ExplicitSize( Size = 390 )]
 	public partial struct utsname {
@@ -5427,8 +5306,8 @@ namespace Platform.Libc {
 	[Alignment( Boundary = 4 )]
 	public partial struct wait {
 		public int& w_status { get { return *cast<int*>( &this ); } }
-		public Anonymous4& __wait_terminated { get { return *cast<Anonymous4*>( &this ); } }
-		public Anonymous5& __wait_stopped { get { return *cast<Anonymous5*>( &this ); } }
+		public UnnamedStruct_58183DC2& __wait_terminated { get { return *cast<UnnamedStruct_58183DC2*>( &this ); } }
+		public UnnamedStruct_58183FB3& __wait_stopped { get { return *cast<UnnamedStruct_58183FB3*>( &this ); } }
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 2 )]
@@ -5441,5 +5320,232 @@ namespace Platform.Libc {
 		public ushort ws_xpixel;
 		[ExplicitOffset( Offset = 6 )]
 		public ushort ws_ypixel;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_545DD3F4 {
+		[ExplicitOffset( Offset = 0 )]
+		public int __lock;
+		[ExplicitOffset( Offset = 4 )]
+		public uint __futex;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong __total_seq;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong __wakeup_seq;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong __woken_seq;
+		[ExplicitOffset( Offset = 32 )]
+		public void* __mutex;
+		[ExplicitOffset( Offset = 40 )]
+		public uint __nwaiters;
+		[ExplicitOffset( Offset = 44 )]
+		public uint __broadcast_seq;
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_545DDAA8 {
+		[ExplicitOffset( Offset = 0 )]
+		public int __lock;
+		[ExplicitOffset( Offset = 4 )]
+		public uint __nr_readers;
+		[ExplicitOffset( Offset = 8 )]
+		public uint __readers_wakeup;
+		[ExplicitOffset( Offset = 12 )]
+		public uint __writer_wakeup;
+		[ExplicitOffset( Offset = 16 )]
+		public uint __nr_readers_queued;
+		[ExplicitOffset( Offset = 20 )]
+		public uint __nr_writers_queued;
+		[ExplicitOffset( Offset = 24 )]
+		public int __writer;
+		[ExplicitOffset( Offset = 28 )]
+		public int __shared;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte __rwelision;
+		[ExplicitOffset( Offset = 33 )]
+		public byte[7] __pad1;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr __pad2;
+		[ExplicitOffset( Offset = 48 )]
+		public uint __flags;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_58183DC2 {
+		public uint __w_termsig { get { return cast<byte*>( &this )[0] & 127; } set { cast<byte*>( &this )[0] &= 128; cast<byte*>( &this )[0] |= ( cast<byte>( value ) & 127 ); } }
+		public bool __w_coredump { get { return ( cast<byte*>( &this )[0] & 128 ) != 0; } set { cast<byte*>( &this )[0] &= 127; cast<byte*>( &this )[0] |= cast<byte>( value ) << 7; } }
+		public uint __w_retcode { get { return cast<byte*>( &this )[1]; } set { cast<byte*>( &this )[1] = cast<byte>( value ); } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_58183FB3 {
+		public uint __w_stopval { get { return cast<byte*>( &this )[0]; } set { cast<byte*>( &this )[0] = cast<byte>( value ); } }
+		public uint __w_stopsig { get { return cast<byte*>( &this )[1]; } set { cast<byte*>( &this )[1] = cast<byte>( value ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_9456B2DA {
+		[ExplicitOffset( Offset = 0 )]
+		public uint gt_current_g_value;
+		[ExplicitOffset( Offset = 4 )]
+		public uint gt_unused;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_9456B37D {
+		[ExplicitOffset( Offset = 0 )]
+		public uint gt_g_value;
+		[ExplicitOffset( Offset = 4 )]
+		public uint gt_bytes;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_BDEC71B8 {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr[8] __cancel_jmp_buf;
+		[ExplicitOffset( Offset = 64 )]
+		public int __mask_was_saved;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3255B71 {
+		[ExplicitOffset( Offset = 0 )]
+		public void* _call_addr;
+		[ExplicitOffset( Offset = 8 )]
+		public int _syscall;
+		[ExplicitOffset( Offset = 12 )]
+		public uint _arch;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3255C9E {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr si_band;
+		[ExplicitOffset( Offset = 8 )]
+		public int si_fd;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3255DC7 {
+		[ExplicitOffset( Offset = 0 )]
+		public void* si_addr;
+		[ExplicitOffset( Offset = 8 )]
+		public short si_addr_lsb;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3255E89 {
+		[ExplicitOffset( Offset = 0 )]
+		public int si_pid;
+		[ExplicitOffset( Offset = 4 )]
+		public uint si_uid;
+		[ExplicitOffset( Offset = 8 )]
+		public int si_status;
+		[ExplicitOffset( Offset = 16 )]
+		public intptr si_utime;
+		[ExplicitOffset( Offset = 24 )]
+		public intptr si_stime;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3255F91 {
+		[ExplicitOffset( Offset = 0 )]
+		public int si_pid;
+		[ExplicitOffset( Offset = 4 )]
+		public uint si_uid;
+		[ExplicitOffset( Offset = 8 )]
+		public sigval si_sigval;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C3256099 {
+		[ExplicitOffset( Offset = 0 )]
+		public int si_tid;
+		[ExplicitOffset( Offset = 4 )]
+		public int si_overrun;
+		[ExplicitOffset( Offset = 8 )]
+		public sigval si_sigval;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_C32561C6 {
+		[ExplicitOffset( Offset = 0 )]
+		public int si_pid;
+		[ExplicitOffset( Offset = 4 )]
+		public uint si_uid;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_C325836B {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<sigval> _function;
+		[ExplicitOffset( Offset = 8 )]
+		public pthread_attr_t* _attribute;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_3CFB4420 {
+		public uint& __wch { get { return *cast<uint*>( &this ); } }
+		public sbyte[4]& __wchb { get { return *cast<sbyte[4]*>( &this ); } }
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_79C4AE40 {
+		public byte[16]& __u6_addr8 { get { return *cast<byte[16]*>( &this ); } }
+		public ushort[8]& __u6_addr16 { get { return *cast<ushort[8]*>( &this ); } }
+		public uint[4]& __u6_addr32 { get { return *cast<uint[4]*>( &this ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_84CED84E {
+		public Functors.Action<int>& sa_handler { get { return *cast<Functors.Action<int>*>( &this ); } }
+		public Functors.Action<int, siginfo_t*, void*>& sa_sigaction { get { return *cast<Functors.Action<int, siginfo_t*, void*>*>( &this ); } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_9456F1A3 {
+		public uint& a_val { get { return *cast<uint*>( &this ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_9456F74F {
+		public uintptr& a_val { get { return *cast<uintptr*>( &this ); } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_94570D16 {
+		public uint& d_val { get { return *cast<uint*>( &this ); } }
+		public uint& d_ptr { get { return *cast<uint*>( &this ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_94570E5C {
+		public uintptr& d_val { get { return *cast<uintptr*>( &this ); } }
+		public uintptr& d_ptr { get { return *cast<uintptr*>( &this ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_C30EE5A1 {
+		public sockaddr*& ifu_broadaddr { get { return *cast<sockaddr**>( &this ); } }
+		public sockaddr*& ifu_dstaddr { get { return *cast<sockaddr**>( &this ); } }
+	}
+	[ExplicitSize( Size = 112 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_C3256222 {
+		public int[28]& _pad { get { return *cast<int[28]*>( &this ); } }
+		public UnnamedStruct_C32561C6& _kill { get { return *cast<UnnamedStruct_C32561C6*>( &this ); } }
+		public UnnamedStruct_C3256099& _timer { get { return *cast<UnnamedStruct_C3256099*>( &this ); } }
+		public UnnamedStruct_C3255F91& _rt { get { return *cast<UnnamedStruct_C3255F91*>( &this ); } }
+		public UnnamedStruct_C3255E89& _sigchld { get { return *cast<UnnamedStruct_C3255E89*>( &this ); } }
+		public UnnamedStruct_C3255DC7& _sigfault { get { return *cast<UnnamedStruct_C3255DC7*>( &this ); } }
+		public UnnamedStruct_C3255C9E& _sigpoll { get { return *cast<UnnamedStruct_C3255C9E*>( &this ); } }
+		public UnnamedStruct_C3255B71& _sigsys { get { return *cast<UnnamedStruct_C3255B71*>( &this ); } }
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_C32573F4 {
+		public int[12]& _pad { get { return *cast<int[12]*>( &this ); } }
+		public int& _tid { get { return *cast<int*>( &this ); } }
+		public UnnamedStruct_C325836B& _sigev_thread { get { return *cast<UnnamedStruct_C325836B*>( &this ); } }
 	}
 }

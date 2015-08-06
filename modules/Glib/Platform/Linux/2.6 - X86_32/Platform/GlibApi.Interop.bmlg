@@ -46,6 +46,7 @@ namespace Platform.Glib {
 		public extern static void g_ptr_array_add( GPtrArray* array, void* data );
 		public extern static void g_ptr_array_foreach( GPtrArray* array, Functors.Action<void*, void*> func, void* userData );
 		public extern static void** g_ptr_array_free( GPtrArray* array, Boolean32 freeSeg );
+		public extern static void g_ptr_array_insert( GPtrArray* array, int index_, void* data );
 		public extern static GPtrArray* g_ptr_array_new();
 		public extern static GPtrArray* g_ptr_array_new_full( uint reservedSize, Functors.Action<void*> elementFreeFunc );
 		public extern static GPtrArray* g_ptr_array_new_with_free_func( Functors.Action<void*> elementFreeFunc );
@@ -97,12 +98,39 @@ namespace Platform.Glib {
 		public extern static void g_propagate_error( GError** dest, GError* src );
 		public extern static void g_set_error_literal( GError** err, uint domain, int code, sbyte* message );
 
+		public extern static void g_atexit( Functors.Action func );
+		public extern static sbyte* g_find_program_in_path( sbyte* program );
+		public extern static sbyte* g_format_size( ulong size );
+		public extern static sbyte* g_format_size_for_display( long size );
+		public extern static sbyte* g_format_size_full( ulong size, GFormatSizeFlags flags );
+		public extern static sbyte* g_get_application_name();
+		public extern static sbyte* g_get_home_dir();
+		public extern static sbyte* g_get_host_name();
+		public extern static sbyte* g_get_prgname();
+		public extern static sbyte* g_get_real_name();
+		public extern static sbyte** g_get_system_config_dirs();
+		public extern static sbyte** g_get_system_data_dirs();
+		public extern static sbyte* g_get_tmp_dir();
+		public extern static sbyte* g_get_user_cache_dir();
+		public extern static sbyte* g_get_user_config_dir();
+		public extern static sbyte* g_get_user_data_dir();
+		public extern static sbyte* g_get_user_name();
+		public extern static sbyte* g_get_user_runtime_dir();
+		public extern static sbyte* g_get_user_special_dir( GUserDirectory directory );
+		public extern static void g_nullify_pointer( void** nullifyLocation );
+		public extern static uint g_parse_debug_string( sbyte* @string, GDebugKey* keys, uint nkeys );
+		public extern static void g_reload_user_special_dirs_cache();
+		public extern static void g_set_application_name( CUtf8String applicationName );
+		public extern static void g_set_prgname( CUtf8String prgname );
+		public extern static int g_vsnprintf( sbyte* @string, uintptr n, sbyte* format, sbyte* args );
+
 		public extern static void g_cond_broadcast( GCond* cond );
 		public extern static void g_cond_clear( GCond* cond );
 		public extern static void g_cond_init( GCond* cond );
 		public extern static void g_cond_signal( GCond* cond );
 		public extern static void g_cond_wait( GCond* cond, GMutex* mutex );
 		public extern static Boolean32 g_cond_wait_until( GCond* cond, GMutex* mutex, long endTime );
+		public extern static uint g_get_num_processors();
 		public extern static void g_mutex_clear( GMutex* mutex );
 		public extern static void g_mutex_init( GMutex* mutex );
 		public extern static void g_mutex_lock( GMutex* mutex );
@@ -540,6 +568,7 @@ namespace Platform.Glib {
 		public extern static uint g_hash_table_foreach_remove( GHashTable* hashTable, Functors.Func<void*, void*, void*, Boolean32> func, void* userData );
 		public extern static uint g_hash_table_foreach_steal( GHashTable* hashTable, Functors.Func<void*, void*, void*, Boolean32> func, void* userData );
 		public extern static GList* g_hash_table_get_keys( GHashTable* hashTable );
+		public extern static void** g_hash_table_get_keys_as_array( GHashTable* hashTable, uint* length );
 		public extern static GList* g_hash_table_get_values( GHashTable* hashTable );
 		public extern static void g_hash_table_insert( GHashTable* hashTable, void* key, void* value );
 		public extern static GHashTable* g_hash_table_iter_get_hash_table( GHashTableIter* iter );
@@ -688,6 +717,7 @@ namespace Platform.Glib {
 		public extern static void g_main_loop_unref( GMainLoop* loop );
 		public extern static void g_source_add_child_source( GSource* source, GSource* childSource );
 		public extern static void g_source_add_poll( GSource* source, GPollFD* fd );
+		public extern static void* g_source_add_unix_fd( GSource* source, int fd, GIOCondition events );
 		public extern static uint g_source_attach( GSource* source, GMainContext* context );
 		public extern static void g_source_destroy( GSource* source );
 		public extern static Boolean32 g_source_get_can_recurse( GSource* source );
@@ -696,15 +726,19 @@ namespace Platform.Glib {
 		public extern static uint g_source_get_id( GSource* source );
 		public extern static sbyte* g_source_get_name( GSource* source );
 		public extern static int g_source_get_priority( GSource* source );
+		public extern static long g_source_get_ready_time( GSource* source );
 		public extern static long g_source_get_time( GSource* source );
 		public extern static Boolean32 g_source_is_destroyed( GSource* source );
+		public extern static void g_source_modify_unix_fd( GSource* source, void* tag, GIOCondition newEvents );
 		public extern static GSource* g_source_new( GSourceFuncs* sourceFuncs, uint structSize );
+		public extern static GIOCondition g_source_query_unix_fd( GSource* source, void* tag );
 		public extern static GSource* g_source_ref( GSource* source );
 		public extern static Boolean32 g_source_remove( uint tag );
 		public extern static Boolean32 g_source_remove_by_funcs_user_data( GSourceFuncs* funcs, void* userData );
 		public extern static Boolean32 g_source_remove_by_user_data( void* userData );
 		public extern static void g_source_remove_child_source( GSource* source, GSource* childSource );
 		public extern static void g_source_remove_poll( GSource* source, GPollFD* fd );
+		public extern static void g_source_remove_unix_fd( GSource* source, void* tag );
 		public extern static void g_source_set_callback( GSource* source, Functors.Func<void*, Boolean32> func, void* data, Functors.Action<void*> notify );
 		public extern static void g_source_set_callback_indirect( GSource* source, void* callbackData, GSourceCallbackFuncs* callbackFuncs );
 		public extern static void g_source_set_can_recurse( GSource* source, Boolean32 canRecurse );
@@ -712,6 +746,7 @@ namespace Platform.Glib {
 		public extern static void g_source_set_name( GSource* source, CUtf8String name );
 		public extern static void g_source_set_name_by_id( uint tag, CUtf8String name );
 		public extern static void g_source_set_priority( GSource* source, int priority );
+		public extern static void g_source_set_ready_time( GSource* source, long readyTime );
 		public extern static void g_source_unref( GSource* source );
 		public extern static uint g_timeout_add( uint interval, Functors.Func<void*, Boolean32> function, void* data );
 		public extern static uint g_timeout_add_full( int priority, uint interval, Functors.Func<void*, Boolean32> function, void* data, Functors.Action<void*> notify );
@@ -821,32 +856,6 @@ namespace Platform.Glib {
 		public extern static ushort* g_utf8_to_utf16( sbyte* str, intptr len, intptr* itemsRead, intptr* itemsWritten, GError** error );
 		public extern static Boolean32 g_utf8_validate( sbyte* str, int maxLen, sbyte** end );
 
-		public extern static void g_atexit( Functors.Action func );
-		public extern static sbyte* g_find_program_in_path( sbyte* program );
-		public extern static sbyte* g_format_size( ulong size );
-		public extern static sbyte* g_format_size_for_display( long size );
-		public extern static sbyte* g_format_size_full( ulong size, GFormatSizeFlags flags );
-		public extern static sbyte* g_get_application_name();
-		public extern static sbyte* g_get_home_dir();
-		public extern static sbyte* g_get_host_name();
-		public extern static sbyte* g_get_prgname();
-		public extern static sbyte* g_get_real_name();
-		public extern static sbyte** g_get_system_config_dirs();
-		public extern static sbyte** g_get_system_data_dirs();
-		public extern static sbyte* g_get_tmp_dir();
-		public extern static sbyte* g_get_user_cache_dir();
-		public extern static sbyte* g_get_user_config_dir();
-		public extern static sbyte* g_get_user_data_dir();
-		public extern static sbyte* g_get_user_name();
-		public extern static sbyte* g_get_user_runtime_dir();
-		public extern static sbyte* g_get_user_special_dir( GUserDirectory directory );
-		public extern static void g_nullify_pointer( void** nullifyLocation );
-		public extern static uint g_parse_debug_string( sbyte* @string, GDebugKey* keys, uint nkeys );
-		public extern static void g_reload_user_special_dirs_cache();
-		public extern static void g_set_application_name( CUtf8String applicationName );
-		public extern static void g_set_prgname( CUtf8String prgname );
-		public extern static int g_vsnprintf( sbyte* @string, uintptr n, sbyte* format, sbyte* args );
-
 		public extern static GString* g_string_append( GString* @string, sbyte* val );
 		public extern static GString* g_string_append_c( GString* @string, sbyte c );
 		public extern static GString* g_string_append_len( GString* @string, sbyte* val, int len );
@@ -949,6 +958,7 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_key_file_remove_comment( GKeyFile* keyFile, CUtf8String groupName, sbyte* key, GError** error );
 		public extern static Boolean32 g_key_file_remove_group( GKeyFile* keyFile, CUtf8String groupName, GError** error );
 		public extern static Boolean32 g_key_file_remove_key( GKeyFile* keyFile, CUtf8String groupName, sbyte* key, GError** error );
+		public extern static Boolean32 g_key_file_save_to_file( GKeyFile* keyFile, CUtf8String filename, GError** error );
 		public extern static void g_key_file_set_boolean( GKeyFile* keyFile, CUtf8String groupName, sbyte* key, Boolean32 value );
 		public extern static void g_key_file_set_boolean_list( GKeyFile* keyFile, CUtf8String groupName, sbyte* key, Boolean32* list, uint length );
 		public extern static Boolean32 g_key_file_set_comment( GKeyFile* keyFile, CUtf8String groupName, sbyte* key, CUtf8String comment, GError** error );
@@ -988,6 +998,8 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_markup_parse_context_parse( GMarkupParseContext* context, CUtf8String text, int textLen, GError** error );
 		public extern static void* g_markup_parse_context_pop( GMarkupParseContext* context );
 		public extern static void g_markup_parse_context_push( GMarkupParseContext* context, GMarkupParser* parser, void* userData );
+		public extern static GMarkupParseContext* g_markup_parse_context_ref( GMarkupParseContext* context );
+		public extern static void g_markup_parse_context_unref( GMarkupParseContext* context );
 		public extern static sbyte* g_markup_vprintf_escaped( sbyte* format, sbyte* args );
 
 		public extern static void g_assert_warning( sbyte* logDomain, sbyte* file, int line, sbyte* prettyFunction, sbyte* expression );
@@ -1012,13 +1024,16 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_option_context_get_help_enabled( GOptionContext* context );
 		public extern static Boolean32 g_option_context_get_ignore_unknown_options( GOptionContext* context );
 		public extern static GOptionGroup* g_option_context_get_main_group( GOptionContext* context );
+		public extern static Boolean32 g_option_context_get_strict_posix( GOptionContext* context );
 		public extern static sbyte* g_option_context_get_summary( GOptionContext* context );
 		public extern static GOptionContext* g_option_context_new( sbyte* parameterString );
 		public extern static Boolean32 g_option_context_parse( GOptionContext* context, int* argc, sbyte*** argv, GError** error );
+		public extern static Boolean32 g_option_context_parse_strv( GOptionContext* context, sbyte*** arguments, GError** error );
 		public extern static void g_option_context_set_description( GOptionContext* context, CUtf8String description );
 		public extern static void g_option_context_set_help_enabled( GOptionContext* context, Boolean32 helpEnabled );
 		public extern static void g_option_context_set_ignore_unknown_options( GOptionContext* context, Boolean32 ignoreUnknown );
 		public extern static void g_option_context_set_main_group( GOptionContext* context, GOptionGroup* group );
+		public extern static void g_option_context_set_strict_posix( GOptionContext* context, Boolean32 strictPosix );
 		public extern static void g_option_context_set_summary( GOptionContext* context, sbyte* summary );
 		public extern static void g_option_context_set_translate_func( GOptionContext* context, Functors.Func<sbyte*, void*, sbyte*> func, void* data, Functors.Action<void*> destroyNotify );
 		public extern static void g_option_context_set_translation_domain( GOptionContext* context, sbyte* domain );
@@ -1026,10 +1041,12 @@ namespace Platform.Glib {
 		public extern static void g_option_group_add_entries( GOptionGroup* group, GOptionEntry* entries );
 		public extern static void g_option_group_free( GOptionGroup* group );
 		public extern static GOptionGroup* g_option_group_new( CUtf8String name, CUtf8String description, CUtf8String helpDescription, void* userData, Functors.Action<void*> destroy );
+		public extern static GOptionGroup* g_option_group_ref( GOptionGroup* group );
 		public extern static void g_option_group_set_error_hook( GOptionGroup* group, Functors.Action<GOptionContext*, GOptionGroup*, void*, GError**> errorFunc );
 		public extern static void g_option_group_set_parse_hooks( GOptionGroup* group, Functors.Func<GOptionContext*, GOptionGroup*, void*, GError**, Boolean32> preParseFunc, Functors.Func<GOptionContext*, GOptionGroup*, void*, GError**, Boolean32> postParseFunc );
 		public extern static void g_option_group_set_translate_func( GOptionGroup* group, Functors.Func<sbyte*, void*, sbyte*> func, void* data, Functors.Action<void*> destroyNotify );
 		public extern static void g_option_group_set_translation_domain( GOptionGroup* group, sbyte* domain );
+		public extern static void g_option_group_unref( GOptionGroup* group );
 
 		public extern static Boolean32 g_pattern_match( GPatternSpec* pspec, uint stringLength, sbyte* @string, sbyte* stringReversed );
 		public extern static Boolean32 g_pattern_match_simple( sbyte* pattern, sbyte* @string );
@@ -1125,6 +1142,7 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_regex_get_has_cr_or_lf( GRegex* regex );
 		public extern static GRegexMatchFlags g_regex_get_match_flags( GRegex* regex );
 		public extern static int g_regex_get_max_backref( GRegex* regex );
+		public extern static int g_regex_get_max_lookbehind( GRegex* regex );
 		public extern static sbyte* g_regex_get_pattern( GRegex* regex );
 		public extern static int g_regex_get_string_number( GRegex* regex, CUtf8String name );
 		public extern static Boolean32 g_regex_match( GRegex* regex, sbyte* @string, GRegexMatchFlags matchOptions, GMatchInfo** matchInfo );
@@ -1245,6 +1263,10 @@ namespace Platform.Glib {
 		public extern static sbyte* g_stpcpy( sbyte* dest, sbyte* src );
 		public extern static Boolean32 g_str_has_prefix( sbyte* str, sbyte* prefix );
 		public extern static Boolean32 g_str_has_suffix( sbyte* str, sbyte* suffix );
+		public extern static Boolean32 g_str_is_ascii( sbyte* str );
+		public extern static Boolean32 g_str_match_string( sbyte* searchTerm, sbyte* potentialHit, Boolean32 acceptAlternates );
+		public extern static sbyte* g_str_to_ascii( sbyte* str, sbyte* fromLocale );
+		public extern static sbyte** g_str_tokenize_and_fold( sbyte* @string, sbyte* translitLocale, sbyte*** asciiAlternates );
 		public extern static sbyte* g_strcanon( sbyte* @string, sbyte* validChars, sbyte substitutor );
 		public extern static int g_strcasecmp( sbyte* s1, sbyte* s2 );
 		public extern static sbyte* g_strchomp( sbyte* @string );
@@ -1275,6 +1297,7 @@ namespace Platform.Glib {
 		public extern static sbyte* g_strstr_len( sbyte* haystack, int haystackLen, sbyte* needle );
 		public extern static double g_strtod( sbyte* nptr, sbyte** endptr );
 		public extern static sbyte* g_strup( sbyte* @string );
+		public extern static Boolean32 g_strv_contains( sbyte** strv, sbyte* str );
 		public extern static uint g_strv_length( sbyte** strArray );
 
 		public extern static void g_string_chunk_clear( GStringChunk* chunk );
@@ -1301,7 +1324,10 @@ namespace Platform.Glib {
 		public extern static GTestSuite* g_test_create_suite( CUtf8String suiteName );
 		public extern static void g_test_expect_message( sbyte* logDomain, GLogLevelFlags logLevel, sbyte* pattern );
 		public extern static void g_test_fail();
+		public extern static Boolean32 g_test_failed();
+		public extern static sbyte* g_test_get_dir( GTestFileType fileType );
 		public extern static GTestSuite* g_test_get_root();
+		public extern static void g_test_incomplete( sbyte* msg );
 		public extern static void g_test_log_buffer_free( GTestLogBuffer* tbuffer );
 		public extern static GTestLogBuffer* g_test_log_buffer_new();
 		public extern static GTestLogMsg* g_test_log_buffer_pop( GTestLogBuffer* tbuffer );
@@ -1317,6 +1343,9 @@ namespace Platform.Glib {
 		public extern static int g_test_rand_int_range( int begin, int end );
 		public extern static int g_test_run();
 		public extern static int g_test_run_suite( GTestSuite* suite );
+		public extern static void g_test_set_nonfatal_assertions();
+		public extern static void g_test_skip( sbyte* msg );
+		public extern static Boolean32 g_test_subprocess();
 		public extern static void g_test_suite_add( GTestSuite* suite, GTestCase* testCase );
 		public extern static void g_test_suite_add_suite( GTestSuite* suite, GTestSuite* nestedsuite );
 		public extern static double g_test_timer_elapsed();
@@ -1326,6 +1355,7 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_test_trap_fork( ulong usecTimeout, GTestTrapFlags testTrapFlags );
 		public extern static Boolean32 g_test_trap_has_passed();
 		public extern static Boolean32 g_test_trap_reached_timeout();
+		public extern static void g_test_trap_subprocess( sbyte* testPath, ulong usecTimeout, GTestSubprocessFlags testFlags );
 
 		public extern static void g_thread_pool_free( GThreadPool* pool, Boolean32 immediate, Boolean32 wait_ );
 		public extern static uint g_thread_pool_get_max_idle_time();
@@ -1421,6 +1451,16 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_variant_check_format_string( GVariant* value, sbyte* formatString, Boolean32 copyOnly );
 		public extern static GVariantClass g_variant_classify( GVariant* value );
 		public extern static int g_variant_compare( void* one, void* two );
+		public extern static void g_variant_dict_clear( GVariantDict* dict );
+		public extern static Boolean32 g_variant_dict_contains( GVariantDict* dict, sbyte* key );
+		public extern static GVariant* g_variant_dict_end( GVariantDict* dict );
+		public extern static void g_variant_dict_init( GVariantDict* dict, GVariant* fromAsv );
+		public extern static void g_variant_dict_insert_value( GVariantDict* dict, sbyte* key, GVariant* value );
+		public extern static GVariant* g_variant_dict_lookup_value( GVariantDict* dict, sbyte* key, GVariantType* expectedType );
+		public extern static GVariantDict* g_variant_dict_new( GVariant* fromAsv );
+		public extern static GVariantDict* g_variant_dict_ref( GVariantDict* dict );
+		public extern static Boolean32 g_variant_dict_remove( GVariantDict* dict, sbyte* key );
+		public extern static void g_variant_dict_unref( GVariantDict* dict );
 		public extern static sbyte* g_variant_dup_bytestring( GVariant* value, uint* length );
 		public extern static sbyte** g_variant_dup_bytestring_array( GVariant* value, uint* length );
 		public extern static sbyte** g_variant_dup_objv( GVariant* value, uint* length );
@@ -1433,6 +1473,7 @@ namespace Platform.Glib {
 		public extern static sbyte** g_variant_get_bytestring_array( GVariant* value, uint* length );
 		public extern static GVariant* g_variant_get_child_value( GVariant* value, uint index_ );
 		public extern static void* g_variant_get_data( GVariant* value );
+		public extern static GBytes* g_variant_get_data_as_bytes( GVariant* value );
 		public extern static double g_variant_get_double( GVariant* value );
 		public extern static void* g_variant_get_fixed_array( GVariant* value, uint* nElements, uint elementSize );
 		public extern static int g_variant_get_handle( GVariant* value );
@@ -1475,6 +1516,7 @@ namespace Platform.Glib {
 		public extern static GVariant* g_variant_new_dict_entry( GVariant* key, GVariant* value );
 		public extern static GVariant* g_variant_new_double( double value );
 		public extern static GVariant* g_variant_new_fixed_array( GVariantType* elementType, void* elements, uint nElements, uint elementSize );
+		public extern static GVariant* g_variant_new_from_bytes( GVariantType* type, GBytes* bytes, Boolean32 trusted );
 		public extern static GVariant* g_variant_new_from_data( GVariantType* type, void* data, uint size, Boolean32 trusted, Functors.Action<void*> notify, void* userData );
 		public extern static GVariant* g_variant_new_handle( int value );
 		public extern static GVariant* g_variant_new_int16( short value );
@@ -1487,6 +1529,7 @@ namespace Platform.Glib {
 		public extern static GVariant* g_variant_new_signature( sbyte* signature );
 		public extern static GVariant* g_variant_new_string( sbyte* @string );
 		public extern static GVariant* g_variant_new_strv( sbyte** strv, int length );
+		public extern static GVariant* g_variant_new_take_string( sbyte* @string );
 		public extern static GVariant* g_variant_new_tuple( GVariant** children, uint nChildren );
 		public extern static GVariant* g_variant_new_uint16( ushort value );
 		public extern static GVariant* g_variant_new_uint32( uint value );
@@ -1494,6 +1537,8 @@ namespace Platform.Glib {
 		public extern static GVariant* g_variant_new_va( sbyte* formatString, sbyte** endptr, sbyte** app );
 		public extern static GVariant* g_variant_new_variant( GVariant* value );
 		public extern static GVariant* g_variant_parse( GVariantType* type, CUtf8String text, sbyte* limit, sbyte** endptr, GError** error );
+		public extern static sbyte* g_variant_parse_error_print_context( GError* error, sbyte* sourceStr );
+		public extern static uint g_variant_parse_error_quark();
 		public extern static uint g_variant_parser_get_error_quark();
 		public extern static sbyte* g_variant_print( GVariant* value, Boolean32 typeAnnotate );
 		public extern static GString* g_variant_print_string( GVariant* value, GString* @string, Boolean32 typeAnnotate );
@@ -1589,6 +1634,7 @@ namespace Platform.Glib {
 	public static partial struct GObjectApi {
 		public extern static void g_type_add_class_cache_func( void* cacheData, Functors.Func<void*, GTypeClass*, Boolean32> cacheFunc );
 		public extern static void g_type_add_class_private( uintptr classType, uint privateSize );
+		public extern static int g_type_add_instance_private( uintptr classType, uint privateSize );
 		public extern static void g_type_add_interface_check( void* checkData, Functors.Action<void*, void*> checkFunc );
 		public extern static void g_type_add_interface_dynamic( uintptr instanceType, uintptr interfaceType, GTypePlugin* plugin );
 		public extern static void g_type_add_interface_static( uintptr instanceType, uintptr interfaceType, GInterfaceInfo* info );
@@ -1600,6 +1646,8 @@ namespace Platform.Glib {
 		public extern static GTypeInstance* g_type_check_instance_cast( GTypeInstance* instance, uintptr ifaceType );
 		[BackendHintReadOnly]
 		public extern static Boolean32 g_type_check_instance_is_a( GTypeInstance* instance, uintptr ifaceType );
+		[BackendHintReadOnly]
+		public extern static Boolean32 g_type_check_instance_is_fundamentally_a( GTypeInstance* instance, uintptr fundamentalType );
 		[BackendHintReadNone]
 		public extern static Boolean32 g_type_check_is_value_type( uintptr type );
 		[BackendHintReadOnly]
@@ -1608,6 +1656,8 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_type_check_value_holds( GValue* value, uintptr type );
 		public extern static uintptr* g_type_children( uintptr type, uint* nChildren );
 		public extern static void g_type_class_add_private( void* gClass, uint privateSize );
+		public extern static void g_type_class_adjust_private_offset( void* gClass, int* privateSizeOrOffset );
+		public extern static int g_type_class_get_instance_private_offset( void* gClass );
 		public extern static void* g_type_class_get_private( GTypeClass* klass, uintptr privateType );
 		public extern static void* g_type_class_peek( uintptr type );
 		public extern static void* g_type_class_peek_parent( void* gClass );
@@ -1625,8 +1675,10 @@ namespace Platform.Glib {
 		public extern static uintptr g_type_from_name( CUtf8String name );
 		public extern static uintptr g_type_fundamental( uintptr typeId );
 		public extern static uintptr g_type_fundamental_next();
+		public extern static int g_type_get_instance_count( uintptr type );
 		public extern static GTypePlugin* g_type_get_plugin( uintptr type );
 		public extern static void* g_type_get_qdata( uintptr type, uint quark );
+		public extern static uint g_type_get_type_registration_serial();
 		public extern static void g_type_init();
 		public extern static void g_type_init_with_debug_flags( GTypeDebugFlags debugFlags );
 		public extern static void* g_type_instance_get_private( GTypeInstance* instance, uintptr privateType );
@@ -1658,6 +1710,7 @@ namespace Platform.Glib {
 		public extern static void g_value_copy( GValue* srcValue, GValue* destValue );
 		public extern static Boolean32 g_value_fits_pointer( GValue* value );
 		public extern static GValue* g_value_init( GValue* value, uintptr gType );
+		public extern static void g_value_init_from_instance( GValue* value, void* instance );
 		public extern static void* g_value_peek_pointer( GValue* value );
 		public extern static void g_value_register_transform_func( uintptr srcType, uintptr destType, Functors.Action<GValue*, GValue*> transformFunc );
 		public extern static GValue* g_value_reset( GValue* value );
@@ -1668,6 +1721,7 @@ namespace Platform.Glib {
 		public extern static void g_value_unset( GValue* value );
 
 		public extern static sbyte* g_param_spec_get_blurb( GParamSpec* pspec );
+		public extern static GValue* g_param_spec_get_default_value( GParamSpec* param );
 		public extern static sbyte* g_param_spec_get_name( GParamSpec* pspec );
 		public extern static sbyte* g_param_spec_get_nick( GParamSpec* pspec );
 		public extern static void* g_param_spec_get_qdata( GParamSpec* pspec, uint quark );
@@ -1803,6 +1857,8 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_bytes_get_type();
 		[BackendHintReadNone]
+		public extern static GType g_checksum_get_type();
+		[BackendHintReadNone]
 		public extern static GType g_date_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_date_time_get_type();
@@ -1823,7 +1879,15 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_main_loop_get_type();
 		[BackendHintReadNone]
+		public extern static GType g_mapped_file_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_markup_parse_context_get_type();
+		[BackendHintReadNone]
 		public extern static GType g_match_info_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_option_group_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_pollfd_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_ptr_array_get_type();
 		[BackendHintReadNone]
@@ -1833,9 +1897,13 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_strv_get_type();
 		[BackendHintReadNone]
+		public extern static GType g_thread_get_type();
+		[BackendHintReadNone]
 		public extern static GType g_time_zone_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_variant_builder_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_variant_dict_get_type();
 		[BackendHintReadNone]
 		public extern static uintptr g_variant_get_gtype();
 		[BackendHintReadNone]
@@ -1926,6 +1994,7 @@ namespace Platform.Glib {
 		public extern static sbyte* g_binding_get_target_property( GBinding* binding );
 		[BackendHintReadNone]
 		public extern static GType g_binding_get_type();
+		public extern static void g_binding_unbind( GBinding* binding );
 		public extern static GBinding* g_object_bind_property( void* source, sbyte* sourceProperty, void* target, sbyte* targetProperty, GBindingFlags flags );
 		public extern static GBinding* g_object_bind_property_full( void* source, sbyte* sourceProperty, void* target, sbyte* targetProperty, GBindingFlags flags, Functors.Func<GBinding*, GValue*, GValue*, void*, Boolean32> transformTo, Functors.Func<GBinding*, GValue*, GValue*, void*, Boolean32> transformFrom, void* userData, Functors.Action<void*> notify );
 		public extern static GBinding* g_object_bind_property_with_closures( void* source, sbyte* sourceProperty, void* target, sbyte* targetProperty, GBindingFlags flags, GClosure* transformTo, GClosure* transformFrom );
@@ -2073,6 +2142,9 @@ namespace Platform.Glib {
 		public extern static GVariantType* g_action_get_state_type( GAction* action );
 		[BackendHintReadNone]
 		public extern static GType g_action_get_type();
+		public extern static Boolean32 g_action_name_is_valid( CUtf8String actionName );
+		public extern static Boolean32 g_action_parse_detailed_name( CUtf8String detailedName, sbyte** actionName, GVariant** targetValue, GError** error );
+		public extern static sbyte* g_action_print_detailed_name( CUtf8String actionName, GVariant* targetValue );
 
 		public extern static void g_action_group_action_added( GActionGroup* actionGroup, CUtf8String actionName );
 		public extern static void g_action_group_action_enabled_changed( GActionGroup* actionGroup, CUtf8String actionName, Boolean32 enabled );
@@ -2127,6 +2199,8 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_app_info_launch( GAppInfo* appinfo, GList* files, GAppLaunchContext* launchContext, GError** error );
 		public extern static Boolean32 g_app_info_launch_default_for_uri( sbyte* uri, GAppLaunchContext* launchContext, GError** error );
 		public extern static Boolean32 g_app_info_launch_uris( GAppInfo* appinfo, GList* uris, GAppLaunchContext* launchContext, GError** error );
+		public extern static GAppInfoMonitor* g_app_info_monitor_get();
+		public extern static GType g_app_info_monitor_get_type();
 		public extern static Boolean32 g_app_info_remove_supports_type( GAppInfo* appinfo, sbyte* contentType, GError** error );
 		public extern static void g_app_info_reset_type_associations( sbyte* contentType );
 		public extern static Boolean32 g_app_info_set_as_default_for_extension( GAppInfo* appinfo, sbyte* extension, GError** error );
@@ -2146,36 +2220,51 @@ namespace Platform.Glib {
 		public extern static void g_app_launch_context_unsetenv( GAppLaunchContext* context, sbyte* variable );
 
 		public extern static void g_application_activate( GApplication* application );
+		public extern static void g_application_add_main_option( GApplication* application, CUtf8String longName, sbyte shortName, GOptionFlags flags, GOptionArg arg, CUtf8String description, CUtf8String argDescription );
+		public extern static void g_application_add_main_option_entries( GApplication* application, GOptionEntry* entries );
+		public extern static void g_application_add_option_group( GApplication* application, GOptionGroup* group );
+		public extern static void g_application_bind_busy_property( GApplication* application, void* object, sbyte* property );
 		public extern static sbyte* g_application_get_application_id( GApplication* application );
 		public extern static GDBusConnection* g_application_get_dbus_connection( GApplication* application );
 		public extern static sbyte* g_application_get_dbus_object_path( GApplication* application );
 		public extern static GApplication* g_application_get_default();
 		public extern static GApplicationFlags g_application_get_flags( GApplication* application );
 		public extern static uint g_application_get_inactivity_timeout( GApplication* application );
+		public extern static Boolean32 g_application_get_is_busy( GApplication* application );
 		public extern static Boolean32 g_application_get_is_registered( GApplication* application );
 		public extern static Boolean32 g_application_get_is_remote( GApplication* application );
+		public extern static sbyte* g_application_get_resource_base_path( GApplication* application );
 		[BackendHintReadNone]
 		public extern static GType g_application_get_type();
 		public extern static void g_application_hold( GApplication* application );
 		public extern static Boolean32 g_application_id_is_valid( sbyte* applicationId );
+		public extern static void g_application_mark_busy( GApplication* application );
 		public extern static GApplication* g_application_new( sbyte* applicationId, GApplicationFlags flags );
 		public extern static void g_application_open( GApplication* application, GFile** files, int nFiles, sbyte* hint );
 		public extern static void g_application_quit( GApplication* application );
 		public extern static Boolean32 g_application_register( GApplication* application, GCancellable* cancellable, GError** error );
 		public extern static void g_application_release( GApplication* application );
 		public extern static int g_application_run( GApplication* application, int argc, sbyte** argv );
+		public extern static void g_application_send_notification( GApplication* application, sbyte* id, GNotification* notification );
 		public extern static void g_application_set_action_group( GApplication* application, GActionGroup* actionGroup );
 		public extern static void g_application_set_application_id( GApplication* application, sbyte* applicationId );
 		public extern static void g_application_set_default( GApplication* application );
 		public extern static void g_application_set_flags( GApplication* application, GApplicationFlags flags );
 		public extern static void g_application_set_inactivity_timeout( GApplication* application, uint inactivityTimeout );
+		public extern static void g_application_set_resource_base_path( GApplication* application, sbyte* resourcePath );
+		public extern static void g_application_unbind_busy_property( GApplication* application, void* object, sbyte* property );
+		public extern static void g_application_unmark_busy( GApplication* application );
+		public extern static void g_application_withdraw_notification( GApplication* application, sbyte* id );
 
+		public extern static GFile* g_application_command_line_create_file_for_arg( GApplicationCommandLine* cmdline, sbyte* arg );
 		public extern static sbyte** g_application_command_line_get_arguments( GApplicationCommandLine* cmdline, int* argc );
 		public extern static sbyte* g_application_command_line_get_cwd( GApplicationCommandLine* cmdline );
 		public extern static sbyte** g_application_command_line_get_environ( GApplicationCommandLine* cmdline );
 		public extern static int g_application_command_line_get_exit_status( GApplicationCommandLine* cmdline );
 		public extern static Boolean32 g_application_command_line_get_is_remote( GApplicationCommandLine* cmdline );
+		public extern static GVariantDict* g_application_command_line_get_options_dict( GApplicationCommandLine* cmdline );
 		public extern static GVariant* g_application_command_line_get_platform_data( GApplicationCommandLine* cmdline );
+		public extern static GInputStream* g_application_command_line_get_stdin( GApplicationCommandLine* cmdline );
 		[BackendHintReadNone]
 		public extern static GType g_application_command_line_get_type();
 		public extern static sbyte* g_application_command_line_getenv( GApplicationCommandLine* cmdline, CUtf8String name );
@@ -2212,6 +2301,8 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_input_stream_is_closed( GInputStream* stream );
 		public extern static int g_input_stream_read( GInputStream* stream, void* buffer, uint count, GCancellable* cancellable, GError** error );
 		public extern static Boolean32 g_input_stream_read_all( GInputStream* stream, void* buffer, uint count, uint* bytesRead, GCancellable* cancellable, GError** error );
+		public extern static void g_input_stream_read_all_async( GInputStream* stream, void* buffer, uint count, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_input_stream_read_all_finish( GInputStream* stream, GAsyncResult* result, uint* bytesRead, GError** error );
 		public extern static void g_input_stream_read_async( GInputStream* stream, void* buffer, uint count, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static GBytes* g_input_stream_read_bytes( GInputStream* stream, uint count, GCancellable* cancellable, GError** error );
 		public extern static void g_input_stream_read_bytes_async( GInputStream* stream, uint count, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
@@ -2258,8 +2349,11 @@ namespace Platform.Glib {
 		public extern static int g_output_stream_splice( GOutputStream* stream, GInputStream* source, GOutputStreamSpliceFlags flags, GCancellable* cancellable, GError** error );
 		public extern static void g_output_stream_splice_async( GOutputStream* stream, GInputStream* source, GOutputStreamSpliceFlags flags, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static int g_output_stream_splice_finish( GOutputStream* stream, GAsyncResult* result, GError** error );
+		public extern static Boolean32 g_output_stream_vprintf( GOutputStream* stream, uint* bytesWritten, GCancellable* cancellable, GError** error, sbyte* format, sbyte* args );
 		public extern static int g_output_stream_write( GOutputStream* stream, void* buffer, uint count, GCancellable* cancellable, GError** error );
 		public extern static Boolean32 g_output_stream_write_all( GOutputStream* stream, void* buffer, uint count, uint* bytesWritten, GCancellable* cancellable, GError** error );
+		public extern static void g_output_stream_write_all_async( GOutputStream* stream, void* buffer, uint count, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_output_stream_write_all_finish( GOutputStream* stream, GAsyncResult* result, uint* bytesWritten, GError** error );
 		public extern static void g_output_stream_write_async( GOutputStream* stream, void* buffer, uint count, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static int g_output_stream_write_bytes( GOutputStream* stream, GBytes* bytes, GCancellable* cancellable, GError** error );
 		public extern static void g_output_stream_write_bytes_async( GOutputStream* stream, GBytes* bytes, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
@@ -2280,6 +2374,11 @@ namespace Platform.Glib {
 		public extern static GOutputStream* g_buffered_output_stream_new_sized( GOutputStream* baseStream, uint size );
 		public extern static void g_buffered_output_stream_set_auto_grow( GBufferedOutputStream* stream, Boolean32 autoGrow );
 		public extern static void g_buffered_output_stream_set_buffer_size( GBufferedOutputStream* stream, uint size );
+
+		public extern static GBytes* g_bytes_icon_get_bytes( GBytesIcon* icon );
+		[BackendHintReadNone]
+		public extern static GType g_bytes_icon_get_type();
+		public extern static GIcon* g_bytes_icon_new( GBytes* bytes );
 
 		public extern static void g_cancellable_cancel( GCancellable* cancellable );
 		public extern static uintptr g_cancellable_connect( GCancellable* cancellable, Functors.Action callback, void* data, Functors.Action<void*> dataDestroyFunc );
@@ -2337,6 +2436,7 @@ namespace Platform.Glib {
 		public extern static void* g_credentials_get_native( GCredentials* credentials, GCredentialsType nativeType );
 		[BackendHintReadNone]
 		public extern static GType g_credentials_get_type();
+		public extern static int g_credentials_get_unix_pid( GCredentials* credentials, GError** error );
 		public extern static uint g_credentials_get_unix_user( GCredentials* credentials, GError** error );
 		public extern static Boolean32 g_credentials_is_same_user( GCredentials* credentials, GCredentials* otherCredentials, GError** error );
 		public extern static GCredentials* g_credentials_new();
@@ -2384,6 +2484,7 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_data_output_stream_put_uint64( GDataOutputStream* stream, ulong data, GCancellable* cancellable, GError** error );
 		public extern static void g_data_output_stream_set_byte_order( GDataOutputStream* stream, GDataStreamByteOrder order );
 
+		public extern static sbyte* g_dbus_address_escape_value( sbyte* @string );
 		public extern static sbyte* g_dbus_address_get_for_bus_sync( GBusType busType, GCancellable* cancellable, GError** error );
 		public extern static void g_dbus_address_get_stream( sbyte* address, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static GIOStream* g_dbus_address_get_stream_finish( GAsyncResult* res, sbyte** outGuid, GError** error );
@@ -2552,6 +2653,7 @@ namespace Platform.Glib {
 		public extern static sbyte* g_dbus_method_invocation_get_method_name( GDBusMethodInvocation* invocation );
 		public extern static sbyte* g_dbus_method_invocation_get_object_path( GDBusMethodInvocation* invocation );
 		public extern static GVariant* g_dbus_method_invocation_get_parameters( GDBusMethodInvocation* invocation );
+		public extern static GDBusPropertyInfo* g_dbus_method_invocation_get_property_info( GDBusMethodInvocation* invocation );
 		public extern static sbyte* g_dbus_method_invocation_get_sender( GDBusMethodInvocation* invocation );
 		[BackendHintReadNone]
 		public extern static GType g_dbus_method_invocation_get_type();
@@ -2653,11 +2755,13 @@ namespace Platform.Glib {
 		public extern static void g_drive_stop( GDrive* drive, GMountUnmountFlags flags, GMountOperation* mountOperation, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_drive_stop_finish( GDrive* drive, GAsyncResult* result, GError** error );
 
+		public extern static GIcon* g_icon_deserialize( GVariant* value );
 		public extern static Boolean32 g_icon_equal( GIcon* icon1, GIcon* icon2 );
 		[BackendHintReadNone]
 		public extern static GType g_icon_get_type();
 		public extern static uint g_icon_hash( void* icon );
 		public extern static GIcon* g_icon_new_for_string( sbyte* str, GError** error );
+		public extern static GVariant* g_icon_serialize( GIcon* icon );
 		public extern static sbyte* g_icon_to_string( GIcon* icon );
 
 		public extern static GIcon* g_emblem_get_icon( GEmblem* emblem );
@@ -2686,11 +2790,13 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_file_enumerator_close( GFileEnumerator* enumerator, GCancellable* cancellable, GError** error );
 		public extern static void g_file_enumerator_close_async( GFileEnumerator* enumerator, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_file_enumerator_close_finish( GFileEnumerator* enumerator, GAsyncResult* result, GError** error );
+		public extern static GFile* g_file_enumerator_get_child( GFileEnumerator* enumerator, GFileInfo* info );
 		public extern static GFile* g_file_enumerator_get_container( GFileEnumerator* enumerator );
 		[BackendHintReadNone]
 		public extern static GType g_file_enumerator_get_type();
 		public extern static Boolean32 g_file_enumerator_has_pending( GFileEnumerator* enumerator );
 		public extern static Boolean32 g_file_enumerator_is_closed( GFileEnumerator* enumerator );
+		public extern static Boolean32 g_file_enumerator_iterate( GFileEnumerator* direnum, GFileInfo** outInfo, GFile** outChild, GCancellable* cancellable, GError** error );
 		public extern static GFileInfo* g_file_enumerator_next_file( GFileEnumerator* enumerator, GCancellable* cancellable, GError** error );
 		public extern static void g_file_enumerator_next_files_async( GFileEnumerator* enumerator, int numFiles, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static GList* g_file_enumerator_next_files_finish( GFileEnumerator* enumerator, GAsyncResult* result, GError** error );
@@ -2746,8 +2852,13 @@ namespace Platform.Glib {
 		public extern static void g_file_load_partial_contents_async( GFile* file, GCancellable* cancellable, Functors.Func<sbyte*, long, void*, Boolean32> readMoreCallback, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_file_load_partial_contents_finish( GFile* file, GAsyncResult* res, sbyte** contents, uint* length, sbyte** etagOut, GError** error );
 		public extern static Boolean32 g_file_make_directory( GFile* file, GCancellable* cancellable, GError** error );
+		public extern static void g_file_make_directory_async( GFile* file, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_file_make_directory_finish( GFile* file, GAsyncResult* result, GError** error );
 		public extern static Boolean32 g_file_make_directory_with_parents( GFile* file, GCancellable* cancellable, GError** error );
 		public extern static Boolean32 g_file_make_symbolic_link( GFile* file, sbyte* symlinkValue, GCancellable* cancellable, GError** error );
+		public extern static Boolean32 g_file_measure_disk_usage( GFile* file, GFileMeasureFlags flags, GCancellable* cancellable, Functors.Action<Boolean32, ulong, ulong, ulong, void*> progressCallback, void* progressData, ulong* diskUsage, ulong* numDirs, ulong* numFiles, GError** error );
+		public extern static void g_file_measure_disk_usage_async( GFile* file, GFileMeasureFlags flags, int ioPriority, GCancellable* cancellable, Functors.Action<Boolean32, ulong, ulong, ulong, void*> progressCallback, void* progressData, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_file_measure_disk_usage_finish( GFile* file, GAsyncResult* result, ulong* diskUsage, ulong* numDirs, ulong* numFiles, GError** error );
 		public extern static GFileMonitor* g_file_monitor( GFile* file, GFileMonitorFlags flags, GCancellable* cancellable, GError** error );
 		public extern static GFileMonitor* g_file_monitor_directory( GFile* file, GFileMonitorFlags flags, GCancellable* cancellable, GError** error );
 		public extern static GFileMonitor* g_file_monitor_file( GFile* file, GFileMonitorFlags flags, GCancellable* cancellable, GError** error );
@@ -2757,6 +2868,7 @@ namespace Platform.Glib {
 		public extern static GFile* g_file_mount_mountable_finish( GFile* file, GAsyncResult* result, GError** error );
 		public extern static Boolean32 g_file_move( GFile* source, GFile* destination, GFileCopyFlags flags, GCancellable* cancellable, Functors.Action<long, long, void*> progressCallback, void* progressCallbackData, GError** error );
 		public extern static GFile* g_file_new_for_commandline_arg( sbyte* arg );
+		public extern static GFile* g_file_new_for_commandline_arg_and_cwd( sbyte* arg, sbyte* cwd );
 		public extern static GFile* g_file_new_for_path( sbyte* path );
 		public extern static GFile* g_file_new_for_uri( sbyte* uri );
 		public extern static GFile* g_file_new_tmp( sbyte* tmpl, GFileIOStream** iostream, GError** error );
@@ -2784,6 +2896,7 @@ namespace Platform.Glib {
 		public extern static void g_file_replace_async( GFile* file, sbyte* etag, Boolean32 makeBackup, GFileCreateFlags flags, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_file_replace_contents( GFile* file, sbyte* contents, uint length, sbyte* etag, Boolean32 makeBackup, GFileCreateFlags flags, sbyte** newEtag, GCancellable* cancellable, GError** error );
 		public extern static void g_file_replace_contents_async( GFile* file, sbyte* contents, uint length, sbyte* etag, Boolean32 makeBackup, GFileCreateFlags flags, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static void g_file_replace_contents_bytes_async( GFile* file, GBytes* contents, sbyte* etag, Boolean32 makeBackup, GFileCreateFlags flags, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_file_replace_contents_finish( GFile* file, GAsyncResult* res, sbyte** newEtag, GError** error );
 		public extern static GFileOutputStream* g_file_replace_finish( GFile* file, GAsyncResult* res, GError** error );
 		public extern static GFileIOStream* g_file_replace_readwrite( GFile* file, sbyte* etag, Boolean32 makeBackup, GFileCreateFlags flags, GCancellable* cancellable, GError** error );
@@ -2809,6 +2922,8 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_file_stop_mountable_finish( GFile* file, GAsyncResult* result, GError** error );
 		public extern static Boolean32 g_file_supports_thread_contexts( GFile* file );
 		public extern static Boolean32 g_file_trash( GFile* file, GCancellable* cancellable, GError** error );
+		public extern static void g_file_trash_async( GFile* file, int ioPriority, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_file_trash_finish( GFile* file, GAsyncResult* result, GError** error );
 		public extern static void g_file_unmount_mountable( GFile* file, GMountUnmountFlags flags, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_file_unmount_mountable_finish( GFile* file, GAsyncResult* result, GError** error );
 		public extern static void g_file_unmount_mountable_with_operation( GFile* file, GMountUnmountFlags flags, GMountOperation* mountOperation, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
@@ -2847,6 +2962,7 @@ namespace Platform.Glib {
 		public extern static uint g_file_info_get_attribute_uint32( GFileInfo* info, sbyte* attribute );
 		public extern static ulong g_file_info_get_attribute_uint64( GFileInfo* info, sbyte* attribute );
 		public extern static sbyte* g_file_info_get_content_type( GFileInfo* info );
+		public extern static GDateTime* g_file_info_get_deletion_date( GFileInfo* info );
 		public extern static sbyte* g_file_info_get_display_name( GFileInfo* info );
 		public extern static sbyte* g_file_info_get_edit_name( GFileInfo* info );
 		public extern static sbyte* g_file_info_get_etag( GFileInfo* info );
@@ -2993,6 +3109,7 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_inet_socket_address_get_type();
 		public extern static GSocketAddress* g_inet_socket_address_new( GInetAddress* address, ushort port );
+		public extern static GSocketAddress* g_inet_socket_address_new_from_string( sbyte* address, uint port );
 
 		[BackendHintReadNone]
 		public extern static GType g_app_info_create_flags_get_type();
@@ -3065,6 +3182,8 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_file_create_flags_get_type();
 		[BackendHintReadNone]
+		public extern static GType g_file_measure_flags_get_type();
+		[BackendHintReadNone]
 		public extern static GType g_file_monitor_event_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_file_monitor_flags_get_type();
@@ -3086,6 +3205,10 @@ namespace Platform.Glib {
 		public extern static GType g_mount_operation_result_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_mount_unmount_flags_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_network_connectivity_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_notification_priority_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_output_stream_splice_flags_get_type();
 		[BackendHintReadNone]
@@ -3113,11 +3236,15 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_socket_type_get_type();
 		[BackendHintReadNone]
+		public extern static GType g_subprocess_flags_get_type();
+		[BackendHintReadNone]
 		public extern static GType g_test_dbus_flags_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_tls_authentication_mode_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_tls_certificate_flags_get_type();
+		[BackendHintReadNone]
+		public extern static GType g_tls_certificate_request_flags_get_type();
 		[BackendHintReadNone]
 		public extern static GType g_tls_database_lookup_flags_get_type();
 		[BackendHintReadNone]
@@ -3182,6 +3309,7 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_memory_output_stream_get_type();
 		public extern static GOutputStream* g_memory_output_stream_new( void* data, uint size, Functors.Func<void*, uint, void*> reallocFunction, Functors.Action<void*> destroyFunction );
+		public extern static GOutputStream* g_memory_output_stream_new_resizable();
 		public extern static GBytes* g_memory_output_stream_steal_as_bytes( GMemoryOutputStream* ostream );
 		public extern static void* g_memory_output_stream_steal_data( GMemoryOutputStream* ostream );
 
@@ -3251,12 +3379,14 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_network_address_get_type();
 		public extern static GSocketConnectable* g_network_address_new( CUtf8String hostname, ushort port );
+		public extern static GSocketConnectable* g_network_address_new_loopback( ushort port );
 		public extern static GSocketConnectable* g_network_address_parse( sbyte* hostAndPort, ushort defaultPort, GError** error );
 		public extern static GSocketConnectable* g_network_address_parse_uri( sbyte* uri, ushort defaultPort, GError** error );
 
 		public extern static Boolean32 g_network_monitor_can_reach( GNetworkMonitor* monitor, GSocketConnectable* connectable, GCancellable* cancellable, GError** error );
 		public extern static void g_network_monitor_can_reach_async( GNetworkMonitor* monitor, GSocketConnectable* connectable, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 g_network_monitor_can_reach_finish( GNetworkMonitor* monitor, GAsyncResult* result, GError** error );
+		public extern static GNetworkConnectivity g_network_monitor_get_connectivity( GNetworkMonitor* monitor );
 		public extern static GNetworkMonitor* g_network_monitor_get_default();
 		public extern static Boolean32 g_network_monitor_get_network_available( GNetworkMonitor* monitor );
 		[BackendHintReadNone]
@@ -3302,6 +3432,10 @@ namespace Platform.Glib {
 		public extern static int g_pollable_stream_read( GInputStream* stream, void* buffer, uint count, Boolean32 blocking, GCancellable* cancellable, GError** error );
 		public extern static int g_pollable_stream_write( GOutputStream* stream, void* buffer, uint count, Boolean32 blocking, GCancellable* cancellable, GError** error );
 		public extern static Boolean32 g_pollable_stream_write_all( GOutputStream* stream, void* buffer, uint count, Boolean32 blocking, uint* bytesWritten, GCancellable* cancellable, GError** error );
+
+		[BackendHintReadNone]
+		public extern static GType g_property_action_get_type();
+		public extern static GPropertyAction* g_property_action_new( CUtf8String name, void* object, CUtf8String propertyName );
 
 		public extern static GIOStream* g_proxy_connect( GProxy* proxy, GIOStream* connection, GProxyAddress* proxyAddress, GCancellable* cancellable, GError** error );
 		public extern static void g_proxy_connect_async( GProxy* proxy, GIOStream* connection, GProxyAddress* proxyAddress, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
@@ -3389,13 +3523,28 @@ namespace Platform.Glib {
 		public extern static Boolean32 g_seekable_truncate( GSeekable* seekable, long offset, GCancellable* cancellable, GError** error );
 
 		public extern static sbyte* g_settings_schema_get_id( GSettingsSchema* schema );
+		public extern static GSettingsSchemaKey* g_settings_schema_get_key( GSettingsSchema* schema, CUtf8String name );
 		public extern static sbyte* g_settings_schema_get_path( GSettingsSchema* schema );
 		[BackendHintReadNone]
 		public extern static GType g_settings_schema_get_type();
+		public extern static Boolean32 g_settings_schema_has_key( GSettingsSchema* schema, CUtf8String name );
+		public extern static GVariant* g_settings_schema_key_get_default_value( GSettingsSchemaKey* key );
+		public extern static sbyte* g_settings_schema_key_get_description( GSettingsSchemaKey* key );
+		public extern static sbyte* g_settings_schema_key_get_name( GSettingsSchemaKey* key );
+		public extern static GVariant* g_settings_schema_key_get_range( GSettingsSchemaKey* key );
+		public extern static sbyte* g_settings_schema_key_get_summary( GSettingsSchemaKey* key );
+		[BackendHintReadNone]
+		public extern static GType g_settings_schema_key_get_type();
+		public extern static GVariantType* g_settings_schema_key_get_value_type( GSettingsSchemaKey* key );
+		public extern static Boolean32 g_settings_schema_key_range_check( GSettingsSchemaKey* key, GVariant* value );
+		public extern static GSettingsSchemaKey* g_settings_schema_key_ref( GSettingsSchemaKey* key );
+		public extern static void g_settings_schema_key_unref( GSettingsSchemaKey* key );
+		public extern static sbyte** g_settings_schema_list_children( GSettingsSchema* schema );
 		public extern static GSettingsSchema* g_settings_schema_ref( GSettingsSchema* schema );
 		public extern static GSettingsSchemaSource* g_settings_schema_source_get_default();
 		[BackendHintReadNone]
 		public extern static GType g_settings_schema_source_get_type();
+		public extern static void g_settings_schema_source_list_schemas( GSettingsSchemaSource* source, Boolean32 recursive, sbyte*** nonRelocatable, sbyte*** relocatable );
 		public extern static GSettingsSchema* g_settings_schema_source_lookup( GSettingsSchemaSource* source, sbyte* schemaId, Boolean32 recursive );
 		public extern static GSettingsSchemaSource* g_settings_schema_source_new_from_directory( sbyte* directory, GSettingsSchemaSource* parent, Boolean32 trusted, GError** error );
 		public extern static GSettingsSchemaSource* g_settings_schema_source_ref( GSettingsSchemaSource* source );
@@ -3410,6 +3559,7 @@ namespace Platform.Glib {
 		public extern static void g_settings_delay( GSettings* settings );
 		public extern static Boolean32 g_settings_get_boolean( GSettings* settings, sbyte* key );
 		public extern static GSettings* g_settings_get_child( GSettings* settings, CUtf8String name );
+		public extern static GVariant* g_settings_get_default_value( GSettings* settings, sbyte* key );
 		public extern static double g_settings_get_double( GSettings* settings, sbyte* key );
 		public extern static int g_settings_get_enum( GSettings* settings, sbyte* key );
 		public extern static uint g_settings_get_flags( GSettings* settings, sbyte* key );
@@ -3421,6 +3571,7 @@ namespace Platform.Glib {
 		public extern static sbyte** g_settings_get_strv( GSettings* settings, sbyte* key );
 		public extern static GType g_settings_get_type();
 		public extern static uint g_settings_get_uint( GSettings* settings, sbyte* key );
+		public extern static GVariant* g_settings_get_user_value( GSettings* settings, sbyte* key );
 		public extern static GVariant* g_settings_get_value( GSettings* settings, sbyte* key );
 		public extern static Boolean32 g_settings_is_writable( GSettings* settings, CUtf8String name );
 		public extern static sbyte** g_settings_list_children( GSettings* settings );
@@ -3453,6 +3604,7 @@ namespace Platform.Glib {
 		public extern static GSimpleAction* g_simple_action_new_stateful( CUtf8String name, GVariantType* parameterType, GVariant* state );
 		public extern static void g_simple_action_set_enabled( GSimpleAction* simple, Boolean32 enabled );
 		public extern static void g_simple_action_set_state( GSimpleAction* simple, GVariant* value );
+		public extern static void g_simple_action_set_state_hint( GSimpleAction* simple, GVariant* stateHint );
 
 		public extern static void g_simple_action_group_add_entries( GSimpleActionGroup* simple, GActionEntry* entries, int nEntries, void* userData );
 		[BackendHintReadNone]
@@ -3487,6 +3639,10 @@ namespace Platform.Glib {
 		public extern static void g_simple_async_result_set_op_res_gssize( GSimpleAsyncResult* simple, int opRes );
 		public extern static void g_simple_async_result_take_error( GSimpleAsyncResult* simple, GError* error );
 
+		[BackendHintReadNone]
+		public extern static GType g_simple_io_stream_get_type();
+		public extern static GIOStream* g_simple_io_stream_new( GInputStream* inputStream, GOutputStream* outputStream );
+
 		public extern static GType g_simple_permission_get_type();
 		public extern static GPermission* g_simple_permission_new( Boolean32 allowed );
 
@@ -3507,6 +3663,7 @@ namespace Platform.Glib {
 		public extern static GSocketFamily g_socket_client_get_family( GSocketClient* client );
 		public extern static GSocketAddress* g_socket_client_get_local_address( GSocketClient* client );
 		public extern static GSocketProtocol g_socket_client_get_protocol( GSocketClient* client );
+		public extern static GProxyResolver* g_socket_client_get_proxy_resolver( GSocketClient* client );
 		public extern static GSocketType g_socket_client_get_socket_type( GSocketClient* client );
 		public extern static uint g_socket_client_get_timeout( GSocketClient* client );
 		public extern static Boolean32 g_socket_client_get_tls( GSocketClient* client );
@@ -3518,6 +3675,7 @@ namespace Platform.Glib {
 		public extern static void g_socket_client_set_family( GSocketClient* client, GSocketFamily family );
 		public extern static void g_socket_client_set_local_address( GSocketClient* client, GSocketAddress* address );
 		public extern static void g_socket_client_set_protocol( GSocketClient* client, GSocketProtocol protocol );
+		public extern static void g_socket_client_set_proxy_resolver( GSocketClient* client, GProxyResolver* proxyResolver );
 		public extern static void g_socket_client_set_socket_type( GSocketClient* client, GSocketType type );
 		public extern static void g_socket_client_set_timeout( GSocketClient* client, uint timeout );
 		public extern static void g_socket_client_set_tls( GSocketClient* client, Boolean32 tls );
@@ -3548,6 +3706,7 @@ namespace Platform.Glib {
 		public extern static GSocketAddress* g_socket_get_local_address( GSocket* socket, GError** error );
 		public extern static Boolean32 g_socket_get_multicast_loopback( GSocket* socket );
 		public extern static uint g_socket_get_multicast_ttl( GSocket* socket );
+		public extern static Boolean32 g_socket_get_option( GSocket* socket, int level, int optname, int* value, GError** error );
 		public extern static GSocketProtocol g_socket_get_protocol( GSocket* socket );
 		public extern static GSocketAddress* g_socket_get_remote_address( GSocket* socket, GError** error );
 		public extern static GSocketType g_socket_get_socket_type( GSocket* socket );
@@ -3568,6 +3727,7 @@ namespace Platform.Glib {
 		public extern static int g_socket_receive_with_blocking( GSocket* socket, sbyte* buffer, uint size, Boolean32 blocking, GCancellable* cancellable, GError** error );
 		public extern static int g_socket_send( GSocket* socket, sbyte* buffer, uint size, GCancellable* cancellable, GError** error );
 		public extern static int g_socket_send_message( GSocket* socket, GSocketAddress* address, GOutputVector* vectors, int numVectors, GSocketControlMessage** messages, int numMessages, int flags, GCancellable* cancellable, GError** error );
+		public extern static int g_socket_send_messages( GSocket* socket, GOutputMessage* messages, uint numMessages, int flags, GCancellable* cancellable, GError** error );
 		public extern static int g_socket_send_to( GSocket* socket, GSocketAddress* address, sbyte* buffer, uint size, GCancellable* cancellable, GError** error );
 		public extern static int g_socket_send_with_blocking( GSocket* socket, sbyte* buffer, uint size, Boolean32 blocking, GCancellable* cancellable, GError** error );
 		public extern static void g_socket_set_blocking( GSocket* socket, Boolean32 blocking );
@@ -3576,6 +3736,7 @@ namespace Platform.Glib {
 		public extern static void g_socket_set_listen_backlog( GSocket* socket, int backlog );
 		public extern static void g_socket_set_multicast_loopback( GSocket* socket, Boolean32 loopback );
 		public extern static void g_socket_set_multicast_ttl( GSocket* socket, uint ttl );
+		public extern static Boolean32 g_socket_set_option( GSocket* socket, int level, int optname, int value, GError** error );
 		public extern static void g_socket_set_timeout( GSocket* socket, uint timeout );
 		public extern static void g_socket_set_ttl( GSocket* socket, uint ttl );
 		public extern static Boolean32 g_socket_shutdown( GSocket* socket, Boolean32 shutdownRead, Boolean32 shutdownWrite, GError** error );
@@ -3634,6 +3795,92 @@ namespace Platform.Glib {
 		public extern static ushort g_srv_target_get_weight( GSrvTarget* target );
 		public extern static GList* g_srv_target_list_sort( GList* targets );
 		public extern static GSrvTarget* g_srv_target_new( CUtf8String hostname, ushort port, ushort priority, ushort weight );
+
+		[BackendHintReadNone]
+		public extern static GType g_simple_proxy_resolver_get_type();
+		public extern static GProxyResolver* g_simple_proxy_resolver_new( sbyte* defaultProxy, sbyte** ignoreHosts );
+		public extern static void g_simple_proxy_resolver_set_default_proxy( GSimpleProxyResolver* resolver, sbyte* defaultProxy );
+		public extern static void g_simple_proxy_resolver_set_ignore_hosts( GSimpleProxyResolver* resolver, sbyte** ignoreHosts );
+		public extern static void g_simple_proxy_resolver_set_uri_proxy( GSimpleProxyResolver* resolver, sbyte* uriScheme, sbyte* proxy );
+
+		public extern static void g_task_attach_source( GTask* task, GSource* source, Functors.Func<void*, Boolean32> callback );
+		public extern static GCancellable* g_task_get_cancellable( GTask* task );
+		public extern static Boolean32 g_task_get_check_cancellable( GTask* task );
+		public extern static Boolean32 g_task_get_completed( GTask* task );
+		public extern static GMainContext* g_task_get_context( GTask* task );
+		public extern static int g_task_get_priority( GTask* task );
+		public extern static Boolean32 g_task_get_return_on_cancel( GTask* task );
+		public extern static void* g_task_get_source_object( GTask* task );
+		public extern static void* g_task_get_source_tag( GTask* task );
+		public extern static void* g_task_get_task_data( GTask* task );
+		[BackendHintReadNone]
+		public extern static GType g_task_get_type();
+		public extern static Boolean32 g_task_had_error( GTask* task );
+		public extern static Boolean32 g_task_is_valid( void* result, void* sourceObject );
+		public extern static GTask* g_task_new( void* sourceObject, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* callbackData );
+		public extern static Boolean32 g_task_propagate_boolean( GTask* task, GError** error );
+		public extern static int g_task_propagate_int( GTask* task, GError** error );
+		public extern static void* g_task_propagate_pointer( GTask* task, GError** error );
+		public extern static void g_task_report_error( void* sourceObject, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* callbackData, void* sourceTag, GError* error );
+		public extern static void g_task_return_boolean( GTask* task, Boolean32 result );
+		public extern static void g_task_return_error( GTask* task, GError* error );
+		public extern static Boolean32 g_task_return_error_if_cancelled( GTask* task );
+		public extern static void g_task_return_int( GTask* task, int result );
+		public extern static void g_task_return_pointer( GTask* task, void* result, Functors.Action<void*> resultDestroy );
+		public extern static void g_task_run_in_thread( GTask* task, Functors.Action<GTask*, void*, void*, GCancellable*> taskFunc );
+		public extern static void g_task_run_in_thread_sync( GTask* task, Functors.Action<GTask*, void*, void*, GCancellable*> taskFunc );
+		public extern static void g_task_set_check_cancellable( GTask* task, Boolean32 checkCancellable );
+		public extern static void g_task_set_priority( GTask* task, int priority );
+		public extern static Boolean32 g_task_set_return_on_cancel( GTask* task, Boolean32 returnOnCancel );
+		public extern static void g_task_set_source_tag( GTask* task, void* sourceTag );
+		public extern static void g_task_set_task_data( GTask* task, void* taskData, Functors.Action<void*> taskDataDestroy );
+
+		public extern static Boolean32 g_subprocess_communicate( GSubprocess* subprocess, GBytes* stdinBuf, GCancellable* cancellable, GBytes** stdoutBuf, GBytes** stderrBuf, GError** error );
+		public extern static void g_subprocess_communicate_async( GSubprocess* subprocess, GBytes* stdinBuf, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_subprocess_communicate_finish( GSubprocess* subprocess, GAsyncResult* result, GBytes** stdoutBuf, GBytes** stderrBuf, GError** error );
+		public extern static Boolean32 g_subprocess_communicate_utf8( GSubprocess* subprocess, sbyte* stdinBuf, GCancellable* cancellable, sbyte** stdoutBuf, sbyte** stderrBuf, GError** error );
+		public extern static void g_subprocess_communicate_utf8_async( GSubprocess* subprocess, sbyte* stdinBuf, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_subprocess_communicate_utf8_finish( GSubprocess* subprocess, GAsyncResult* result, sbyte** stdoutBuf, sbyte** stderrBuf, GError** error );
+		public extern static void g_subprocess_force_exit( GSubprocess* subprocess );
+		public extern static int g_subprocess_get_exit_status( GSubprocess* subprocess );
+		public extern static sbyte* g_subprocess_get_identifier( GSubprocess* subprocess );
+		public extern static Boolean32 g_subprocess_get_if_exited( GSubprocess* subprocess );
+		public extern static Boolean32 g_subprocess_get_if_signaled( GSubprocess* subprocess );
+		public extern static int g_subprocess_get_status( GSubprocess* subprocess );
+		public extern static GInputStream* g_subprocess_get_stderr_pipe( GSubprocess* subprocess );
+		public extern static GOutputStream* g_subprocess_get_stdin_pipe( GSubprocess* subprocess );
+		public extern static GInputStream* g_subprocess_get_stdout_pipe( GSubprocess* subprocess );
+		public extern static Boolean32 g_subprocess_get_successful( GSubprocess* subprocess );
+		public extern static int g_subprocess_get_term_sig( GSubprocess* subprocess );
+		[BackendHintReadNone]
+		public extern static GType g_subprocess_get_type();
+		public extern static GSubprocess* g_subprocess_newv( sbyte** argv, GSubprocessFlags flags, GError** error );
+		public extern static void g_subprocess_send_signal( GSubprocess* subprocess, int signalNum );
+		public extern static Boolean32 g_subprocess_wait( GSubprocess* subprocess, GCancellable* cancellable, GError** error );
+		public extern static void g_subprocess_wait_async( GSubprocess* subprocess, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_subprocess_wait_check( GSubprocess* subprocess, GCancellable* cancellable, GError** error );
+		public extern static void g_subprocess_wait_check_async( GSubprocess* subprocess, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 g_subprocess_wait_check_finish( GSubprocess* subprocess, GAsyncResult* result, GError** error );
+		public extern static Boolean32 g_subprocess_wait_finish( GSubprocess* subprocess, GAsyncResult* result, GError** error );
+
+		[BackendHintReadNone]
+		public extern static GType g_subprocess_launcher_get_type();
+		public extern static sbyte* g_subprocess_launcher_getenv( GSubprocessLauncher* self, sbyte* variable );
+		public extern static GSubprocessLauncher* g_subprocess_launcher_new( GSubprocessFlags flags );
+		public extern static void g_subprocess_launcher_set_child_setup( GSubprocessLauncher* self, Functors.Action<void*> childSetup, void* userData, Functors.Action<void*> destroyNotify );
+		public extern static void g_subprocess_launcher_set_cwd( GSubprocessLauncher* self, sbyte* cwd );
+		public extern static void g_subprocess_launcher_set_environ( GSubprocessLauncher* self, sbyte** env );
+		public extern static void g_subprocess_launcher_set_flags( GSubprocessLauncher* self, GSubprocessFlags flags );
+		public extern static void g_subprocess_launcher_set_stderr_file_path( GSubprocessLauncher* self, sbyte* path );
+		public extern static void g_subprocess_launcher_set_stdin_file_path( GSubprocessLauncher* self, sbyte* path );
+		public extern static void g_subprocess_launcher_set_stdout_file_path( GSubprocessLauncher* self, sbyte* path );
+		public extern static void g_subprocess_launcher_setenv( GSubprocessLauncher* self, sbyte* variable, sbyte* value, Boolean32 overwrite );
+		public extern static GSubprocess* g_subprocess_launcher_spawnv( GSubprocessLauncher* self, sbyte** argv, GError** error );
+		public extern static void g_subprocess_launcher_take_fd( GSubprocessLauncher* self, int sourceFd, int targetFd );
+		public extern static void g_subprocess_launcher_take_stderr_fd( GSubprocessLauncher* self, int fd );
+		public extern static void g_subprocess_launcher_take_stdin_fd( GSubprocessLauncher* self, int fd );
+		public extern static void g_subprocess_launcher_take_stdout_fd( GSubprocessLauncher* self, int fd );
+		public extern static void g_subprocess_launcher_unsetenv( GSubprocessLauncher* self, sbyte* variable );
 
 		public extern static Boolean32 g_tcp_connection_get_graceful_disconnect( GTcpConnection* connection );
 		[BackendHintReadNone]
@@ -3747,6 +3994,10 @@ namespace Platform.Glib {
 		[BackendHintReadNone]
 		public extern static GType g_tls_interaction_get_type();
 		public extern static GTlsInteractionResult g_tls_interaction_invoke_ask_password( GTlsInteraction* interaction, GTlsPassword* password, GCancellable* cancellable, GError** error );
+		public extern static GTlsInteractionResult g_tls_interaction_invoke_request_certificate( GTlsInteraction* interaction, GTlsConnection* connection, GTlsCertificateRequestFlags flags, GCancellable* cancellable, GError** error );
+		public extern static GTlsInteractionResult g_tls_interaction_request_certificate( GTlsInteraction* interaction, GTlsConnection* connection, GTlsCertificateRequestFlags flags, GCancellable* cancellable, GError** error );
+		public extern static void g_tls_interaction_request_certificate_async( GTlsInteraction* interaction, GTlsConnection* connection, GTlsCertificateRequestFlags flags, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GTlsInteractionResult g_tls_interaction_request_certificate_finish( GTlsInteraction* interaction, GAsyncResult* result, GError** error );
 
 		[BackendHintReadNone]
 		public extern static GType g_tls_server_connection_get_type();
@@ -3934,6 +4185,7 @@ namespace Platform.Glib {
 		public extern static void g_menu_item_set_action_and_target_value( GMenuItem* menuItem, sbyte* action, GVariant* targetValue );
 		public extern static void g_menu_item_set_attribute_value( GMenuItem* menuItem, sbyte* attribute, GVariant* value );
 		public extern static void g_menu_item_set_detailed_action( GMenuItem* menuItem, sbyte* detailedAction );
+		public extern static void g_menu_item_set_icon( GMenuItem* menuItem, GIcon* icon );
 		public extern static void g_menu_item_set_label( GMenuItem* menuItem, sbyte* label );
 		public extern static void g_menu_item_set_link( GMenuItem* menuItem, sbyte* link, GMenuModel* model );
 		public extern static void g_menu_item_set_section( GMenuItem* menuItem, GMenuModel* section );
@@ -3944,6 +4196,7 @@ namespace Platform.Glib {
 		public extern static void g_menu_prepend_section( GMenu* menu, sbyte* label, GMenuModel* section );
 		public extern static void g_menu_prepend_submenu( GMenu* menu, sbyte* label, GMenuModel* submenu );
 		public extern static void g_menu_remove( GMenu* menu, int position );
+		public extern static void g_menu_remove_all( GMenu* menu );
 
 		public extern static uint g_dbus_connection_export_menu_model( GDBusConnection* connection, sbyte* objectPath, GMenuModel* menu, GError** error );
 		public extern static void g_dbus_connection_unexport_menu_model( GDBusConnection* connection, uint exportId );
@@ -3951,6 +4204,35 @@ namespace Platform.Glib {
 		public extern static GDBusMenuModel* g_dbus_menu_model_get( GDBusConnection* connection, CUtf8String busName, sbyte* objectPath );
 		[BackendHintReadNone]
 		public extern static GType g_dbus_menu_model_get_type();
+
+		public extern static void g_notification_add_button( GNotification* notification, sbyte* label, sbyte* detailedAction );
+		public extern static void g_notification_add_button_with_target_value( GNotification* notification, sbyte* label, sbyte* action, GVariant* target );
+		[BackendHintReadNone]
+		public extern static GType g_notification_get_type();
+		public extern static GNotification* g_notification_new( sbyte* title );
+		public extern static void g_notification_set_body( GNotification* notification, sbyte* body );
+		public extern static void g_notification_set_default_action( GNotification* notification, sbyte* detailedAction );
+		public extern static void g_notification_set_default_action_and_target_value( GNotification* notification, sbyte* action, GVariant* target );
+		public extern static void g_notification_set_icon( GNotification* notification, GIcon* icon );
+		public extern static void g_notification_set_priority( GNotification* notification, GNotificationPriority priority );
+		public extern static void g_notification_set_title( GNotification* notification, sbyte* title );
+		public extern static void g_notification_set_urgent( GNotification* notification, Boolean32 urgent );
+
+		public extern static void* g_list_model_get_item( GListModel* list, uint position );
+		public extern static uintptr g_list_model_get_item_type( GListModel* list );
+		public extern static uint g_list_model_get_n_items( GListModel* list );
+		public extern static GObject* g_list_model_get_object( GListModel* list, uint position );
+		public extern static GType g_list_model_get_type();
+		public extern static void g_list_model_items_changed( GListModel* list, uint position, uint removed, uint added );
+
+		public extern static void g_list_store_append( GListStore* store, void* item );
+		public extern static GType g_list_store_get_type();
+		public extern static void g_list_store_insert( GListStore* store, uint position, void* item );
+		public extern static uint g_list_store_insert_sorted( GListStore* store, void* item, Functors.Func<void*, void*, void*, int> compareFunc, void* userData );
+		public extern static GListStore* g_list_store_new( uintptr itemType );
+		public extern static void g_list_store_remove( GListStore* store, uint position );
+		public extern static void g_list_store_remove_all( GListStore* store );
+		public extern static void g_list_store_splice( GListStore* store, uint position, uint nRemovals, void** additions, uint nAdditions );
 	}
 	[Flags]
 	public enum GAppInfoCreateFlags : uint {
@@ -4031,6 +4313,7 @@ namespace Platform.Glib {
 		G_CHECKSUM_MD5 =    0,
 		G_CHECKSUM_SHA1 =   1,
 		G_CHECKSUM_SHA256 = 2,
+		G_CHECKSUM_SHA512 = 3,
 	}
 	[Flags]
 	public enum GConnectFlags : uint {
@@ -4057,12 +4340,15 @@ namespace Platform.Glib {
 		G_CONVERT_ERROR_PARTIAL_INPUT =     3,
 		G_CONVERT_ERROR_BAD_URI =           4,
 		G_CONVERT_ERROR_NOT_ABSOLUTE_PATH = 5,
+		G_CONVERT_ERROR_NO_MEMORY =         6,
 	}
 	public enum GCredentialsType : uint {
 		G_CREDENTIALS_TYPE_INVALID =              0,
 		G_CREDENTIALS_TYPE_LINUX_UCRED =          1,
 		G_CREDENTIALS_TYPE_FREEBSD_CMSGCRED =     2,
 		G_CREDENTIALS_TYPE_OPENBSD_SOCKPEERCRED = 3,
+		G_CREDENTIALS_TYPE_SOLARIS_UCRED =        4,
+		G_CREDENTIALS_TYPE_NETBSD_UNPCBID =       5,
 	}
 	public enum GDataStreamByteOrder : uint {
 		G_DATA_STREAM_BYTE_ORDER_BIG_ENDIAN =    0,
@@ -4166,6 +4452,10 @@ namespace Platform.Glib {
 		G_DBUS_ERROR_SELINUX_SECURITY_CONTEXT_UNKNOWN = 38,
 		G_DBUS_ERROR_ADT_AUDIT_DATA_UNKNOWN =           39,
 		G_DBUS_ERROR_OBJECT_PATH_IN_USE =               40,
+		G_DBUS_ERROR_UNKNOWN_OBJECT =                   41,
+		G_DBUS_ERROR_UNKNOWN_INTERFACE =                42,
+		G_DBUS_ERROR_UNKNOWN_PROPERTY =                 43,
+		G_DBUS_ERROR_PROPERTY_READ_ONLY =               44,
 	}
 	[Flags]
 	public enum GDBusInterfaceSkeletonFlags : uint {
@@ -4214,11 +4504,12 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GDBusProxyFlags : uint {
-		G_DBUS_PROXY_FLAGS_NONE =                       0,
-		G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES =     1,
-		G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS =     2,
-		G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START =          4,
-		G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES = 8,
+		G_DBUS_PROXY_FLAGS_NONE =                               0,
+		G_DBUS_PROXY_FLAGS_DO_NOT_LOAD_PROPERTIES =             1,
+		G_DBUS_PROXY_FLAGS_DO_NOT_CONNECT_SIGNALS =             2,
+		G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START =                  4,
+		G_DBUS_PROXY_FLAGS_GET_INVALIDATED_PROPERTIES =         8,
+		G_DBUS_PROXY_FLAGS_DO_NOT_AUTO_START_AT_CONSTRUCTION = 16,
 	}
 	[Flags]
 	public enum GDBusSendMessageFlags : uint {
@@ -4233,8 +4524,10 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GDBusSignalFlags : uint {
-		G_DBUS_SIGNAL_FLAGS_NONE =          0,
-		G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE = 1,
+		G_DBUS_SIGNAL_FLAGS_NONE =                 0,
+		G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE =        1,
+		G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_NAMESPACE = 2,
+		G_DBUS_SIGNAL_FLAGS_MATCH_ARG0_PATH =      4,
 	}
 	[Flags]
 	public enum GDBusSubtreeFlags : uint {
@@ -4334,6 +4627,13 @@ namespace Platform.Glib {
 		G_FILE_ERROR_NOSYS =      23,
 		G_FILE_ERROR_FAILED =     24,
 	}
+	[Flags]
+	public enum GFileMeasureFlags : uint {
+		G_FILE_MEASURE_NONE =             0,
+		G_FILE_MEASURE_REPORT_ANY_ERROR = 2,
+		G_FILE_MEASURE_APPARENT_SIZE =    4,
+		G_FILE_MEASURE_NO_XDEV =          8,
+	}
 	public enum GFileMonitorEvent : uint {
 		G_FILE_MONITOR_EVENT_CHANGED =           0,
 		G_FILE_MONITOR_EVENT_CHANGES_DONE_HINT = 1,
@@ -4346,9 +4646,10 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GFileMonitorFlags : uint {
-		G_FILE_MONITOR_NONE =         0,
-		G_FILE_MONITOR_WATCH_MOUNTS = 1,
-		G_FILE_MONITOR_SEND_MOVED =   2,
+		G_FILE_MONITOR_NONE =             0,
+		G_FILE_MONITOR_WATCH_MOUNTS =     1,
+		G_FILE_MONITOR_SEND_MOVED =       2,
+		G_FILE_MONITOR_WATCH_HARD_LINKS = 4,
 	}
 	[Flags]
 	public enum GFileQueryInfoFlags : uint {
@@ -4461,6 +4762,9 @@ namespace Platform.Glib {
 		G_IO_ERROR_PROXY_AUTH_FAILED =   41,
 		G_IO_ERROR_PROXY_NEED_AUTH =     42,
 		G_IO_ERROR_PROXY_NOT_ALLOWED =   43,
+		G_IO_ERROR_BROKEN_PIPE =         44,
+		G_IO_ERROR_CONNECTION_CLOSED =   44,
+		G_IO_ERROR_NOT_CONNECTED =       45,
 	}
 	[Flags]
 	public enum GIOFlags : uint {
@@ -4469,6 +4773,7 @@ namespace Platform.Glib {
 		G_IO_FLAG_NONBLOCK =     2,
 		G_IO_FLAG_IS_READABLE =  4,
 		G_IO_FLAG_IS_WRITABLE =  8,
+		G_IO_FLAG_IS_WRITEABLE = 8,
 		G_IO_FLAG_IS_SEEKABLE = 16,
 		G_IO_FLAG_MASK =        31,
 		G_IO_FLAG_GET_MASK =    31,
@@ -4550,6 +4855,7 @@ namespace Platform.Glib {
 		G_MARKUP_DO_NOT_USE_THIS_UNSUPPORTED_FLAG = 1,
 		G_MARKUP_TREAT_CDATA_AS_TEXT =              2,
 		G_MARKUP_PREFIX_ERROR_POSITION =            4,
+		G_MARKUP_IGNORE_QUALIFIED =                 8,
 	}
 	[Flags]
 	public enum GModuleFlags : uint {
@@ -4572,6 +4878,12 @@ namespace Platform.Glib {
 		G_MOUNT_UNMOUNT_NONE =  0,
 		G_MOUNT_UNMOUNT_FORCE = 1,
 	}
+	public enum GNetworkConnectivity : uint {
+		G_NETWORK_CONNECTIVITY_LOCAL =   1,
+		G_NETWORK_CONNECTIVITY_LIMITED = 2,
+		G_NETWORK_CONNECTIVITY_PORTAL =  3,
+		G_NETWORK_CONNECTIVITY_FULL =    4,
+	}
 	public enum GNormalizeMode : uint {
 		G_NORMALIZE_DEFAULT =         0,
 		G_NORMALIZE_NFD =             0,
@@ -4581,6 +4893,12 @@ namespace Platform.Glib {
 		G_NORMALIZE_NFKD =            2,
 		G_NORMALIZE_ALL_COMPOSE =     3,
 		G_NORMALIZE_NFKC =            3,
+	}
+	public enum GNotificationPriority : uint {
+		G_NOTIFICATION_PRIORITY_NORMAL = 0,
+		G_NOTIFICATION_PRIORITY_LOW =    1,
+		G_NOTIFICATION_PRIORITY_HIGH =   2,
+		G_NOTIFICATION_PRIORITY_URGENT = 3,
 	}
 	public enum GOnceStatus : uint {
 		G_ONCE_STATUS_NOTCALLED = 0,
@@ -4605,7 +4923,7 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GOptionFlags : uint {
-		None =                        0,
+		G_OPTION_FLAG_NONE =          0,
 		G_OPTION_FLAG_HIDDEN =        1,
 		G_OPTION_FLAG_IN_MAIN =       2,
 		G_OPTION_FLAG_REVERSE =       4,
@@ -4622,17 +4940,19 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GParamFlags : int {
-		None =                         0,
-		G_PARAM_READABLE =             1,
-		G_PARAM_WRITABLE =             2,
-		G_PARAM_CONSTRUCT =            4,
-		G_PARAM_CONSTRUCT_ONLY =       8,
-		G_PARAM_LAX_VALIDATION =      16,
-		G_PARAM_STATIC_NAME =         32,
-		G_PARAM_PRIVATE =             32,
-		G_PARAM_STATIC_NICK =         64,
-		G_PARAM_STATIC_BLURB =       128,
-		G_PARAM_DEPRECATED = -2147483648,
+		None =                             0,
+		G_PARAM_READABLE =                 1,
+		G_PARAM_WRITABLE =                 2,
+		G_PARAM_READWRITE =                3,
+		G_PARAM_CONSTRUCT =                4,
+		G_PARAM_CONSTRUCT_ONLY =           8,
+		G_PARAM_LAX_VALIDATION =          16,
+		G_PARAM_STATIC_NAME =             32,
+		G_PARAM_PRIVATE =                 32,
+		G_PARAM_STATIC_NICK =             64,
+		G_PARAM_STATIC_BLURB =           128,
+		G_PARAM_EXPLICIT_NOTIFY = 1073741824,
+		G_PARAM_DEPRECATED =     -2147483648,
 	}
 	public enum GPasswordSave : uint {
 		G_PASSWORD_SAVE_NEVER =       0,
@@ -4872,7 +5192,7 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GSpawnFlags : uint {
-		None =                            0,
+		G_SPAWN_DEFAULT =                 0,
 		G_SPAWN_LEAVE_DESCRIPTORS_OPEN =  1,
 		G_SPAWN_DO_NOT_REAP_CHILD =       2,
 		G_SPAWN_SEARCH_PATH =             4,
@@ -4881,6 +5201,19 @@ namespace Platform.Glib {
 		G_SPAWN_CHILD_INHERITS_STDIN =   32,
 		G_SPAWN_FILE_AND_ARGV_ZERO =     64,
 		G_SPAWN_SEARCH_PATH_FROM_ENVP = 128,
+		G_SPAWN_CLOEXEC_PIPES =         256,
+	}
+	[Flags]
+	public enum GSubprocessFlags : uint {
+		G_SUBPROCESS_FLAGS_NONE =            0,
+		G_SUBPROCESS_FLAGS_STDIN_PIPE =      1,
+		G_SUBPROCESS_FLAGS_STDIN_INHERIT =   2,
+		G_SUBPROCESS_FLAGS_STDOUT_PIPE =     4,
+		G_SUBPROCESS_FLAGS_STDOUT_SILENCE =  8,
+		G_SUBPROCESS_FLAGS_STDERR_PIPE =    16,
+		G_SUBPROCESS_FLAGS_STDERR_SILENCE = 32,
+		G_SUBPROCESS_FLAGS_STDERR_MERGE =   64,
+		G_SUBPROCESS_FLAGS_INHERIT_FDS =   128,
 	}
 	public enum GTaskPriority : uint {
 		G_PRIORITY_DEFAULT =        0,
@@ -4893,6 +5226,10 @@ namespace Platform.Glib {
 	public enum GTestDBusFlags : uint {
 		G_TEST_DBUS_NONE = 0,
 	}
+	public enum GTestFileType : uint {
+		G_TEST_DIST =  0,
+		G_TEST_BUILT = 1,
+	}
 	public enum GTestLogType : uint {
 		G_TEST_LOG_NONE =         0,
 		G_TEST_LOG_ERROR =        1,
@@ -4904,6 +5241,15 @@ namespace Platform.Glib {
 		G_TEST_LOG_MIN_RESULT =   7,
 		G_TEST_LOG_MAX_RESULT =   8,
 		G_TEST_LOG_MESSAGE =      9,
+		G_TEST_LOG_START_SUITE = 10,
+		G_TEST_LOG_STOP_SUITE =  11,
+	}
+	[Flags]
+	public enum GTestSubprocessFlags : uint {
+		None =                             0,
+		G_TEST_SUBPROCESS_INHERIT_STDIN =  1,
+		G_TEST_SUBPROCESS_INHERIT_STDOUT = 2,
+		G_TEST_SUBPROCESS_INHERIT_STDERR = 4,
 	}
 	[Flags]
 	public enum GTestTrapFlags : uint {
@@ -4942,6 +5288,10 @@ namespace Platform.Glib {
 		G_TLS_CERTIFICATE_INSECURE =      32,
 		G_TLS_CERTIFICATE_GENERIC_ERROR = 64,
 		G_TLS_CERTIFICATE_VALIDATE_ALL = 127,
+	}
+	[Flags]
+	public enum GTlsCertificateRequestFlags : uint {
+		G_TLS_CERTIFICATE_REQUEST_NONE = 0,
 	}
 	[Flags]
 	public enum GTlsDatabaseLookupFlags : uint {
@@ -5045,10 +5395,11 @@ namespace Platform.Glib {
 	}
 	[Flags]
 	public enum GTypeDebugFlags : uint {
-		G_TYPE_DEBUG_NONE =    0,
-		G_TYPE_DEBUG_OBJECTS = 1,
-		G_TYPE_DEBUG_SIGNALS = 2,
-		G_TYPE_DEBUG_MASK =    3,
+		G_TYPE_DEBUG_NONE =           0,
+		G_TYPE_DEBUG_OBJECTS =        1,
+		G_TYPE_DEBUG_SIGNALS =        2,
+		G_TYPE_DEBUG_INSTANCE_COUNT = 4,
+		G_TYPE_DEBUG_MASK =           7,
 	}
 	[Flags]
 	public enum GTypeFlags : uint {
@@ -5104,6 +5455,7 @@ namespace Platform.Glib {
 		G_UNICODE_BREAK_CLOSE_PARANTHESIS =            36,
 		G_UNICODE_BREAK_CONDITIONAL_JAPANESE_STARTER = 37,
 		G_UNICODE_BREAK_HEBREW_LETTER =                38,
+		G_UNICODE_BREAK_REGIONAL_INDICATOR =           39,
 	}
 	public enum GUnicodeScript : int {
 		G_UNICODE_SCRIPT_INVALID_CODE =           -1,
@@ -5210,6 +5562,29 @@ namespace Platform.Glib {
 		G_UNICODE_SCRIPT_SHARADA =               100,
 		G_UNICODE_SCRIPT_SORA_SOMPENG =          101,
 		G_UNICODE_SCRIPT_TAKRI =                 102,
+		G_UNICODE_SCRIPT_BASSA_VAH =             103,
+		G_UNICODE_SCRIPT_CAUCASIAN_ALBANIAN =    104,
+		G_UNICODE_SCRIPT_DUPLOYAN =              105,
+		G_UNICODE_SCRIPT_ELBASAN =               106,
+		G_UNICODE_SCRIPT_GRANTHA =               107,
+		G_UNICODE_SCRIPT_KHOJKI =                108,
+		G_UNICODE_SCRIPT_KHUDAWADI =             109,
+		G_UNICODE_SCRIPT_LINEAR_A =              110,
+		G_UNICODE_SCRIPT_MAHAJANI =              111,
+		G_UNICODE_SCRIPT_MANICHAEAN =            112,
+		G_UNICODE_SCRIPT_MENDE_KIKAKUI =         113,
+		G_UNICODE_SCRIPT_MODI =                  114,
+		G_UNICODE_SCRIPT_MRO =                   115,
+		G_UNICODE_SCRIPT_NABATAEAN =             116,
+		G_UNICODE_SCRIPT_OLD_NORTH_ARABIAN =     117,
+		G_UNICODE_SCRIPT_OLD_PERMIC =            118,
+		G_UNICODE_SCRIPT_PAHAWH_HMONG =          119,
+		G_UNICODE_SCRIPT_PALMYRENE =             120,
+		G_UNICODE_SCRIPT_PAU_CIN_HAU =           121,
+		G_UNICODE_SCRIPT_PSALTER_PAHLAVI =       122,
+		G_UNICODE_SCRIPT_SIDDHAM =               123,
+		G_UNICODE_SCRIPT_TIRHUTA =               124,
+		G_UNICODE_SCRIPT_WARANG_CITI =           125,
 	}
 	public enum GUnicodeType : uint {
 		G_UNICODE_CONTROL =              0,
@@ -5305,45 +5680,6 @@ namespace Platform.Glib {
 		G_ZLIB_COMPRESSOR_FORMAT_ZLIB = 0,
 		G_ZLIB_COMPRESSOR_FORMAT_GZIP = 1,
 		G_ZLIB_COMPRESSOR_FORMAT_RAW =  2,
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous0 {
-		public void*& p { get { return *cast<void**>( &this ); } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous1 {
-		public pthread_t& owner { get { return *cast<pthread_t*>( &this ); } }
-		public double& dummy { get { return *cast<double*>( &this ); } }
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous2 {
-		public uint mantissa { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] & 127 ) << 16; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] &= 128; cast<byte*>( &this )[2] |= cast<byte>( value >> 16 ) & 127; } }
-		public uint biased_exponent { get { return cast<byte*>( &this )[2] >> 7 | cast<ushort>( cast<byte*>( &this )[3] & 127 ) << 1; } set { cast<byte*>( &this )[2] &= 127; cast<byte*>( &this )[2] |= ( cast<byte>( value ) & 128 ) << 7; cast<byte*>( &this )[3] &= 128; cast<byte*>( &this )[3] |= cast<byte>( value >> 24 ) & 127; } }
-		public bool sign { get { return ( cast<byte*>( &this )[3] & 128 ) != 0; } set { cast<byte*>( &this )[3] &= 127; cast<byte*>( &this )[3] |= cast<byte>( value ) << 7; } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous3 {
-		public uint mantissa_low { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] ) << 16 | cast<uint>( cast<byte*>( &this )[3] ) << 24; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] = cast<byte>( value >> 16 ); cast<byte*>( &this )[3] = cast<byte>( value >> 24 ); } }
-		public uint mantissa_high { get { return cast<byte*>( &this )[4] | cast<ushort>( cast<byte*>( &this )[5] ) << 8 | cast<uint>( cast<byte*>( &this )[6] & 15 ) << 16; } set { cast<byte*>( &this )[4] = cast<byte>( value ); cast<byte*>( &this )[5] = cast<byte>( value >> 8 ); cast<byte*>( &this )[6] &= 240; cast<byte*>( &this )[6] |= cast<byte>( value >> 48 ) & 15; } }
-		public uint biased_exponent { get { return cast<byte*>( &this )[6] >> 4 | cast<ushort>( cast<byte*>( &this )[7] & 127 ) << 4; } set { cast<byte*>( &this )[6] &= 15; cast<byte*>( &this )[6] |= ( cast<byte>( value ) & 240 ) << 4; cast<byte*>( &this )[7] &= 128; cast<byte*>( &this )[7] |= cast<byte>( value >> 56 ) & 127; } }
-		public bool sign { get { return ( cast<byte*>( &this )[7] & 128 ) != 0; } set { cast<byte*>( &this )[7] &= 127; cast<byte*>( &this )[7] |= cast<byte>( value ) << 7; } }
-	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct Anonymous4 {
-		public int& v_int { get { return *cast<int*>( &this ); } }
-		public uint& v_uint { get { return *cast<uint*>( &this ); } }
-		public intptr& v_long { get { return *cast<intptr*>( &this ); } }
-		public uintptr& v_ulong { get { return *cast<uintptr*>( &this ); } }
-		public long& v_int64 { get { return *cast<long*>( &this ); } }
-		public ulong& v_uint64 { get { return *cast<ulong*>( &this ); } }
-		public float& v_float { get { return *cast<float*>( &this ); } }
-		public double& v_double { get { return *cast<double*>( &this ); } }
-		public void*& v_pointer { get { return *cast<void**>( &this ); } }
 	}
 	public partial struct GAction {
 	}
@@ -5483,6 +5819,8 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 96 )]
 		public Functors.Func<GAppInfo*, sbyte**> get_supported_types;
 	}
+	public partial struct GAppInfoMonitor {
+	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GAppLaunchContext : GObject {
@@ -5496,15 +5834,15 @@ namespace Platform.Glib {
 			[ExplicitOffset( Offset = 76 )]
 			public Functors.Action<GAppLaunchContext*, sbyte*> _launch_failed;
 			[ExplicitOffset( Offset = 80 )]
-			public Functors.Action _g_reserved1;
+			public Functors.Action<GAppLaunchContext*, GAppInfo*, GVariant*> _launched;
 			[ExplicitOffset( Offset = 84 )]
-			public Functors.Action _g_reserved2;
+			public Functors.Action _g_reserved1;
 			[ExplicitOffset( Offset = 88 )]
-			public Functors.Action _g_reserved3;
+			public Functors.Action _g_reserved2;
 			[ExplicitOffset( Offset = 92 )]
-			public Functors.Action _g_reserved4;
+			public Functors.Action _g_reserved3;
 			[ExplicitOffset( Offset = 96 )]
-			public Functors.Action _g_reserved5;
+			public Functors.Action _g_reserved4;
 		}
 		[ExplicitOffset( Offset = 12 )]
 		public GAppLaunchContextPrivate* _priv;
@@ -5544,7 +5882,9 @@ namespace Platform.Glib {
 			[ExplicitOffset( Offset = 116 )]
 			public Functors.Action<GApplication*, GDBusConnection*, sbyte*> _dbus_unregister;
 			[ExplicitOffset( Offset = 120 )]
-			public void*[9] _padding;
+			public Functors.Func<GApplication*, GVariantDict*, int> _handle_local_options;
+			[ExplicitOffset( Offset = 124 )]
+			public void*[8] _padding;
 		}
 		[ExplicitOffset( Offset = 12 )]
 		public GApplicationPrivate* _priv;
@@ -5560,7 +5900,9 @@ namespace Platform.Glib {
 			[ExplicitOffset( Offset = 72 )]
 			public Functors.Action<GApplicationCommandLine*, sbyte*> _printerr_literal;
 			[ExplicitOffset( Offset = 76 )]
-			public void*[12] _padding;
+			public Functors.Func<GApplicationCommandLine*, GInputStream*> _get_stdin;
+			[ExplicitOffset( Offset = 80 )]
+			public void*[11] _padding;
 		}
 		[ExplicitOffset( Offset = 12 )]
 		public GApplicationCommandLinePrivate* _priv;
@@ -5658,6 +6000,8 @@ namespace Platform.Glib {
 		public uint len;
 	}
 	public partial struct GBytes {
+	}
+	public partial struct GBytesIcon {
 	}
 	public partial struct GCache {
 	}
@@ -6179,7 +6523,7 @@ namespace Platform.Glib {
 	[Alignment( Boundary = 4 )]
 	public partial struct GDoubleIEEE754 {
 		public double& v_double { get { return *cast<double*>( &this ); } }
-		public Anonymous3& mpn { get { return *cast<Anonymous3*>( &this ); } }
+		public UnnamedStruct_F9005247& mpn { get { return *cast<UnnamedStruct_F9005247*>( &this ); } }
 	}
 	public partial struct GDrive {
 	}
@@ -6365,7 +6709,7 @@ namespace Platform.Glib {
 	}
 	public partial struct GFileIconClass {
 	}
-	[ExplicitSize( Size = 408 )]
+	[ExplicitSize( Size = 420 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GFileIface : GTypeInterface {
 		[ExplicitOffset( Offset = 8 )]
@@ -6481,15 +6825,15 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 228 )]
 		public Functors.Func<GFile*, GCancellable*, GError**, Boolean32> trash;
 		[ExplicitOffset( Offset = 232 )]
-		public Functors.Action _trash_async;
+		public Functors.Action<GFile*, int, GCancellable*, Functors.Action<GObject*, GAsyncResult*, void*>, void*> trash_async;
 		[ExplicitOffset( Offset = 236 )]
-		public Functors.Action _trash_finish;
+		public Functors.Func<GFile*, GAsyncResult*, GError**, Boolean32> trash_finish;
 		[ExplicitOffset( Offset = 240 )]
 		public Functors.Func<GFile*, GCancellable*, GError**, Boolean32> make_directory;
 		[ExplicitOffset( Offset = 244 )]
-		public Functors.Action _make_directory_async;
+		public Functors.Action<GFile*, int, GCancellable*, Functors.Action<GObject*, GAsyncResult*, void*>, void*> make_directory_async;
 		[ExplicitOffset( Offset = 248 )]
-		public Functors.Action _make_directory_finish;
+		public Functors.Func<GFile*, GAsyncResult*, GError**, Boolean32> make_directory_finish;
 		[ExplicitOffset( Offset = 252 )]
 		public Functors.Func<GFile*, sbyte*, GCancellable*, GError**, Boolean32> make_symbolic_link;
 		[ExplicitOffset( Offset = 256 )]
@@ -6568,6 +6912,12 @@ namespace Platform.Glib {
 		public Functors.Action<GFile*, GCancellable*, Functors.Action<GObject*, GAsyncResult*, void*>, void*> poll_mountable;
 		[ExplicitOffset( Offset = 404 )]
 		public Functors.Func<GFile*, GAsyncResult*, GError**, Boolean32> poll_mountable_finish;
+		[ExplicitOffset( Offset = 408 )]
+		public Functors.Func<GFile*, GFileMeasureFlags, GCancellable*, Functors.Action<Boolean32, ulong, ulong, ulong, void*>, void*, ulong*, ulong*, ulong*, GError**, Boolean32> measure_disk_usage;
+		[ExplicitOffset( Offset = 412 )]
+		public Functors.Action<GFile*, GFileMeasureFlags, int, GCancellable*, Functors.Action<Boolean32, ulong, ulong, ulong, void*>, void*, Functors.Action<GObject*, GAsyncResult*, void*>, void*> measure_disk_usage_async;
+		[ExplicitOffset( Offset = 416 )]
+		public Functors.Func<GFile*, GAsyncResult*, ulong*, ulong*, ulong*, GError**, Boolean32> measure_disk_usage_finish;
 	}
 	public partial struct GFileInfo {
 	}
@@ -6785,7 +7135,7 @@ namespace Platform.Glib {
 	[Alignment( Boundary = 4 )]
 	public partial struct GFloatIEEE754 {
 		public float& v_float { get { return *cast<float*>( &this ); } }
-		public Anonymous2& mpn { get { return *cast<Anonymous2*>( &this ); } }
+		public UnnamedStruct_F9004B6C& mpn { get { return *cast<UnnamedStruct_F9004B6C*>( &this ); } }
 	}
 	public partial struct GHashTable {
 	}
@@ -6845,7 +7195,7 @@ namespace Platform.Glib {
 	}
 	public partial struct GIcon {
 	}
-	[ExplicitSize( Size = 24 )]
+	[ExplicitSize( Size = 28 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GIconIface : GTypeInterface {
 		[ExplicitOffset( Offset = 8 )]
@@ -6856,6 +7206,8 @@ namespace Platform.Glib {
 		public Functors.Func<GIcon*, GPtrArray*, int*, Boolean32> to_tokens;
 		[ExplicitOffset( Offset = 20 )]
 		public Functors.Func<sbyte**, int, int, GError**, GIcon*> from_tokens;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<GIcon*, GVariant*> serialize;
 	}
 	public partial struct GIConv {
 	}
@@ -7090,6 +7442,24 @@ namespace Platform.Glib {
 		public GList* next;
 		[ExplicitOffset( Offset = 8 )]
 		public GList* prev;
+	}
+	public partial struct GListModel {
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GListModelInterface : GTypeInterface {
+		[ExplicitOffset( Offset = 8 )]
+		public Functors.Func<GListModel*, uintptr> get_item_type;
+		[ExplicitOffset( Offset = 12 )]
+		public Functors.Func<GListModel*, uint> get_n_items;
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<GListModel*, uint, void*> get_item;
+	}
+	public partial struct GListStore : GObject {
+		[ExplicitSize( Size = 68 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
 	}
 	public partial struct GLoadableIcon {
 	}
@@ -7421,6 +7791,8 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 16 )]
 		public GNode* children;
 	}
+	public partial struct GNotification {
+	}
 	[ExplicitSize( Size = 12 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GObject : GTypeInstance {
@@ -7492,6 +7864,22 @@ namespace Platform.Glib {
 		public CUtf8String arg_description;
 	}
 	public partial struct GOptionGroup {
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GOutputMessage {
+		[ExplicitOffset( Offset = 0 )]
+		public GSocketAddress* address;
+		[ExplicitOffset( Offset = 4 )]
+		public GOutputVector* vectors;
+		[ExplicitOffset( Offset = 8 )]
+		public uint num_vectors;
+		[ExplicitOffset( Offset = 12 )]
+		public uint bytes_sent;
+		[ExplicitOffset( Offset = 16 )]
+		public GSocketControlMessage** control_messages;
+		[ExplicitOffset( Offset = 20 )]
+		public uint num_control_messages;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
@@ -7939,6 +8327,8 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 8 )]
 		public void*[2] future;
 	}
+	public partial struct GPropertyAction {
+	}
 	public partial struct GProxy {
 	}
 	[ExplicitSize( Size = 20 )]
@@ -8229,6 +8619,8 @@ namespace Platform.Glib {
 	}
 	public partial struct GSettingsSchema {
 	}
+	public partial struct GSettingsSchemaKey {
+	}
 	public partial struct GSettingsSchemaSource {
 	}
 	[ExplicitSize( Size = 12 )]
@@ -8279,7 +8671,31 @@ namespace Platform.Glib {
 	}
 	public partial struct GSimpleAsyncResultClass {
 	}
+	public partial struct GSimpleIOStream {
+	}
 	public partial struct GSimplePermission {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GSimpleProxyResolver : GObject {
+		[ExplicitSize( Size = 88 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action _g_reserved1;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action _g_reserved2;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action _g_reserved3;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action _g_reserved4;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action _g_reserved5;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GSimpleProxyResolverPrivate* _priv;
+	}
+	public partial struct GSimpleProxyResolverPrivate {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -8571,7 +8987,7 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 28 )]
 		public uint depth;
 		[ExplicitOffset( Offset = 32 )]
-		public Anonymous1 unused;
+		public UnnamedUnion_32CF014E unused;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -8616,6 +9032,14 @@ namespace Platform.Glib {
 		public uint allocated_len;
 	}
 	public partial struct GStringChunk {
+	}
+	public partial struct GSubprocess {
+	}
+	public partial struct GSubprocessLauncher {
+	}
+	public partial struct GTask {
+	}
+	public partial struct GTaskClass {
 	}
 	[ExplicitSize( Size = 24 )]
 	[Alignment( Boundary = 4 )]
@@ -8916,7 +9340,13 @@ namespace Platform.Glib {
 			[ExplicitOffset( Offset = 76 )]
 			public Functors.Func<GTlsInteraction*, GAsyncResult*, GError**, GTlsInteractionResult> _ask_password_finish;
 			[ExplicitOffset( Offset = 80 )]
-			public void*[24] _padding;
+			public Functors.Func<GTlsInteraction*, GTlsConnection*, GTlsCertificateRequestFlags, GCancellable*, GError**, GTlsInteractionResult> _request_certificate;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action<GTlsInteraction*, GTlsConnection*, GTlsCertificateRequestFlags, GCancellable*, Functors.Action<GObject*, GAsyncResult*, void*>, void*> _request_certificate_async;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Func<GTlsInteraction*, GAsyncResult*, GError**, GTlsInteractionResult> _request_certificate_finish;
+			[ExplicitOffset( Offset = 92 )]
+			public void*[21] _padding;
 		}
 		[ExplicitOffset( Offset = 12 )]
 		public GTlsInteractionPrivate* _priv;
@@ -9115,7 +9545,7 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 0 )]
 		public uintptr g_type;
 		[ExplicitOffset( Offset = 4 )]
-		public Anonymous4[2] data;
+		public UnnamedUnion_DE461C88[2] data;
 	}
 	[ExplicitSize( Size = 12 )]
 	[Alignment( Boundary = 4 )]
@@ -9132,6 +9562,12 @@ namespace Platform.Glib {
 	[ExplicitSize( Size = 64 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GVariantBuilder {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[16] x;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GVariantDict {
 		[ExplicitOffset( Offset = 0 )]
 		public uint[16] x;
 	}
@@ -9170,19 +9606,19 @@ namespace Platform.Glib {
 			[ExplicitOffset( Offset = 104 )]
 			public Functors.Action<GVfs*, sbyte*, sbyte*> _local_file_moved;
 			[ExplicitOffset( Offset = 108 )]
-			public Functors.Action _g_reserved1;
+			public Functors.Func<GVfs*, GVariant*, GIcon*> _deserialize_icon;
 			[ExplicitOffset( Offset = 112 )]
-			public Functors.Action _g_reserved2;
+			public Functors.Action _g_reserved1;
 			[ExplicitOffset( Offset = 116 )]
-			public Functors.Action _g_reserved3;
+			public Functors.Action _g_reserved2;
 			[ExplicitOffset( Offset = 120 )]
-			public Functors.Action _g_reserved4;
+			public Functors.Action _g_reserved3;
 			[ExplicitOffset( Offset = 124 )]
-			public Functors.Action _g_reserved5;
+			public Functors.Action _g_reserved4;
 			[ExplicitOffset( Offset = 128 )]
-			public Functors.Action _g_reserved6;
+			public Functors.Action _g_reserved5;
 			[ExplicitOffset( Offset = 132 )]
-			public Functors.Action _g_reserved7;
+			public Functors.Action _g_reserved6;
 		}
 	}
 	public partial struct GVolume {
@@ -9297,7 +9733,7 @@ namespace Platform.Glib {
 	[Alignment( Boundary = 4 )]
 	public partial struct GWeakRef {
 		[ExplicitOffset( Offset = 0 )]
-		public Anonymous0 priv;
+		public UnnamedUnion_A6B379E6 priv;
 	}
 	public partial struct GZlibCompressor : GObject {
 		[ExplicitSize( Size = 68 )]
@@ -9310,5 +9746,44 @@ namespace Platform.Glib {
 		[Alignment( Boundary = 4 )]
 		public new partial struct Class : basetype.Class {
 		}
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_F9004B6C {
+		public uint mantissa { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] & 127 ) << 16; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] &= 128; cast<byte*>( &this )[2] |= cast<byte>( value >> 16 ) & 127; } }
+		public uint biased_exponent { get { return cast<byte*>( &this )[2] >> 7 | cast<ushort>( cast<byte*>( &this )[3] & 127 ) << 1; } set { cast<byte*>( &this )[2] &= 127; cast<byte*>( &this )[2] |= ( cast<byte>( value ) & 128 ) << 7; cast<byte*>( &this )[3] &= 128; cast<byte*>( &this )[3] |= cast<byte>( value >> 24 ) & 127; } }
+		public bool sign { get { return ( cast<byte*>( &this )[3] & 128 ) != 0; } set { cast<byte*>( &this )[3] &= 127; cast<byte*>( &this )[3] |= cast<byte>( value ) << 7; } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_F9005247 {
+		public uint mantissa_low { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] ) << 16 | cast<uint>( cast<byte*>( &this )[3] ) << 24; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] = cast<byte>( value >> 16 ); cast<byte*>( &this )[3] = cast<byte>( value >> 24 ); } }
+		public uint mantissa_high { get { return cast<byte*>( &this )[4] | cast<ushort>( cast<byte*>( &this )[5] ) << 8 | cast<uint>( cast<byte*>( &this )[6] & 15 ) << 16; } set { cast<byte*>( &this )[4] = cast<byte>( value ); cast<byte*>( &this )[5] = cast<byte>( value >> 8 ); cast<byte*>( &this )[6] &= 240; cast<byte*>( &this )[6] |= cast<byte>( value >> 48 ) & 15; } }
+		public uint biased_exponent { get { return cast<byte*>( &this )[6] >> 4 | cast<ushort>( cast<byte*>( &this )[7] & 127 ) << 4; } set { cast<byte*>( &this )[6] &= 15; cast<byte*>( &this )[6] |= ( cast<byte>( value ) & 240 ) << 4; cast<byte*>( &this )[7] &= 128; cast<byte*>( &this )[7] |= cast<byte>( value >> 56 ) & 127; } }
+		public bool sign { get { return ( cast<byte*>( &this )[7] & 128 ) != 0; } set { cast<byte*>( &this )[7] &= 127; cast<byte*>( &this )[7] |= cast<byte>( value ) << 7; } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_32CF014E {
+		public pthread_t& owner { get { return *cast<pthread_t*>( &this ); } }
+		public double& dummy { get { return *cast<double*>( &this ); } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_A6B379E6 {
+		public void*& p { get { return *cast<void**>( &this ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_DE461C88 {
+		public int& v_int { get { return *cast<int*>( &this ); } }
+		public uint& v_uint { get { return *cast<uint*>( &this ); } }
+		public intptr& v_long { get { return *cast<intptr*>( &this ); } }
+		public uintptr& v_ulong { get { return *cast<uintptr*>( &this ); } }
+		public long& v_int64 { get { return *cast<long*>( &this ); } }
+		public ulong& v_uint64 { get { return *cast<ulong*>( &this ); } }
+		public float& v_float { get { return *cast<float*>( &this ); } }
+		public double& v_double { get { return *cast<double*>( &this ); } }
+		public void*& v_pointer { get { return *cast<void**>( &this ); } }
 	}
 }
