@@ -247,5 +247,47 @@ namespace System.IO {
 				}
 			}
 		}
+
+		public static bool Drain( this IStream stream, int count ) {
+			if( stream == null ) return false;
+			if( count <= 0 ) return true;
+
+			var bufferInfo = stream.BufferInfo;
+			if( bufferInfo == null ) {
+				using( var page = Memory.CachedPages.PopScoped() ) {
+					var buffer = ( byte* ) page.Value;
+					var bufferLength = ( int ) Memory.DefaultPageSize;
+
+					for( ; count > 0; ) {
+						var readen = stream.Read( buffer, bufferLength );
+						if( readen == 0 ) break;
+						count -= readen;
+					}
+				}
+
+				return count == 0;
+			}
+			else {
+				if( count <= bufferInfo->AvailableToRead ) {
+					bufferInfo->AvailableToRead -= count;
+					bufferInfo->Position += count;
+					return true;
+				}
+
+				while( count > 0 ) {
+					if( bufferInfo->AvailableToRead != 0 ) {
+						var bytesToCopy = Math.Min( count, bufferInfo->AvailableToRead );
+						count -= bytesToCopy;
+						bufferInfo->AvailableToRead -= bytesToCopy;
+						bufferInfo->Position += bytesToCopy;
+					}
+
+					if( bufferInfo->AvailableToRead == 0 ) stream.Flush( FlushKind.Read );
+					if( bufferInfo->AvailableToRead == 0 ) return false;
+				}
+
+				return true;
+			}
+		}
 	}
 }

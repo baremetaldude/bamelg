@@ -11,9 +11,10 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
 namespace System.IO {
-	// Reads primitive data types from binary stream. By default data are stored in little-endian form
+	// Reads primitive data types from binary stream. Assumed all data are stored in little-endian form
 	public class BinaryReader {
 		public IStream BaseStream;
+		public uint MaxPrimitiveLength = uint.MaxValue;
 
 		protected StreamingBufferInfo* _bufferInfo;
 
@@ -41,7 +42,7 @@ namespace System.IO {
 
 		private T ReadPrimitive<T>() {
 			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
-				throw new IOException( IOException.ErrorKind.EndOfStream );
+				EventHandler.EndOfStream( this );
 				return default( T );
 			}
 
@@ -52,7 +53,7 @@ namespace System.IO {
 
 		private T PeekPrimitive<T>() {
 			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
-				throw new IOException( IOException.ErrorKind.EndOfStream );
+				EventHandler.EndOfStream( this );
 				return default( T );
 			}
 
@@ -159,7 +160,7 @@ namespace System.IO {
 		public Guid ReadGuid() {
 			if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
 				if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
-					throw new IOException( IOException.ErrorKind.EndOfStream );
+					EventHandler.EndOfStream( this );
 					return default( Guid );
 				}
 
@@ -184,6 +185,11 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
 
 			var result = new[length] byte;
 			Read( &result[0], ( int ) length );
@@ -193,13 +199,16 @@ namespace System.IO {
 		public SbcsString ReadSbcsString() {
 			uint_littleendian length;
 			uint_littleendian codePage;
-			// uint_littleendian hash;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-
 			Read( codePage );
-			// Read( hash );
+
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
 
 			var result = new SbcsString.Builder( length, ( System.Text.CodePageID ) codePage );
 			Read( result.GetChars(), ( int ) length );
@@ -208,13 +217,11 @@ namespace System.IO {
 
 		public Utf8String ReadUtf8String() {
 			uint_littleendian length, byteLength;
-			// uint_littleendian hash;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
 
 			Read( byteLength );
-			// Read( hash );
 
 			var result = new Utf8String.Builder( byteLength );
 			result.Length = length;
@@ -225,12 +232,9 @@ namespace System.IO {
 
 		public Utf16String ReadUtf16String() {
 			uint_littleendian length;
-			// uint_littleendian hash;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-
-			// Read( hash );
 
 			var result = new Utf16String.Builder( length );
 			Read( result.GetChars(), ( int ) result.ByteLength );
@@ -239,12 +243,9 @@ namespace System.IO {
 
 		public Utf32String ReadUtf32String() {
 			uint_littleendian length;
-			// uint_littleendian hash;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-
-			// Read( hash );
 
 			var result = new Utf32String.Builder( length );
 			Read( result.GetChars(), ( int ) result.ByteLength );
@@ -293,5 +294,45 @@ namespace System.IO {
 		public void ReadCompact( uint_littleendian& value ) { value = ReadCompactUInt32(); }
 		public void ReadCompact( int_bigendian& value ) { value = ReadCompactInt32(); }
 		public void ReadCompact( uint_bigendian& value ) { value = ReadCompactUInt32(); }
+
+		public IEventHandler EventHandler = EventHandlerAbort.Instance;
+
+		public interface IEventHandler {
+			void EndOfStream( BinaryReader context );
+			void PrimitiveSizeExceeded( BinaryReader context );
+		}
+
+		public struct EventHandlerNull : IEventHandler {
+			public static readonly thistype Instance;
+
+			#region IEventHandler Members
+
+			public void EndOfStream( BinaryReader context ) { }
+			public void PrimitiveSizeExceeded( BinaryReader context ) { }
+
+			#endregion
+		}
+
+		public struct EventHandlerConsole : IEventHandler {
+			public static readonly thistype Instance;
+
+			#region IEventHandler Members
+
+			public void EndOfStream( BinaryReader context ) { Console.WriteLine( "'{0}': EndOfStream", context ); }
+			public void PrimitiveSizeExceeded( BinaryReader context ) { Console.WriteLine( "'{0}': PrimitiveSizeExceeded", context ); }
+
+			#endregion
+		}
+
+		public struct EventHandlerAbort : IEventHandler {
+			public static readonly thistype Instance;
+
+			#region IEventHandler Members
+
+			public void EndOfStream( BinaryReader context ) { EventHandlerConsole.Instance.EndOfStream( context ); Environment.Abort( 1 ); }
+			public void PrimitiveSizeExceeded( BinaryReader context ) { EventHandlerConsole.Instance.PrimitiveSizeExceeded( context ); Environment.Abort( 1 ); }
+
+			#endregion
+		}
 	}
 }

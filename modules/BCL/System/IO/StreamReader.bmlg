@@ -33,7 +33,7 @@ namespace System.IO {
 					_bom = Unicode.DetectByteOrderMark( data, ( uint ) _stream.Count, bomHeaderLength );
 
 					if( _bom != Unicode.ByteOrderMark.Unknown ) {
-						_stream.Skip( bomHeaderLength );
+						_stream.Drain( bomHeaderLength );
 						break;
 					}
 				}
@@ -62,27 +62,27 @@ namespace System.IO {
 
 		private void SkipLF() {
 			var peekData = _stream.Peek( sizeof( byte ) );
-			if( peekData != null && cast<byte*>( peekData )[0] == '\n' ) _stream.Skip( sizeof( byte ) );
+			if( peekData != null && cast<byte*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( byte ) );
 		}
 
 		private void SkipLF2LE() {
 			var peekData = _stream.Peek( sizeof( char_littleendian ) );
-			if( peekData != null && cast<char_littleendian*>( peekData )[0] == '\n' ) _stream.Skip( sizeof( char_littleendian ) );
+			if( peekData != null && cast<char_littleendian*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( char_littleendian ) );
 		}
 
 		private void SkipLF2BE() {
 			var peekData = _stream.Peek( sizeof( char_bigendian ) );
-			if( peekData != null && cast<char_bigendian*>( peekData )[0] == '\n' ) _stream.Skip( sizeof( char_bigendian ) );
+			if( peekData != null && cast<char_bigendian*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( char_bigendian ) );
 		}
 
 		private void SkipLF4LE() {
 			var peekData = _stream.Peek( sizeof( uint_littleendian ) );
-			if( peekData != null && cast<uint_littleendian*>( peekData )[0] == '\n' ) _stream.Skip( sizeof( uint_littleendian ) );
+			if( peekData != null && cast<uint_littleendian*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( uint_littleendian ) );
 		}
 
 		private void SkipLF4BE() {
 			var peekData = _stream.Peek( sizeof( uint_bigendian ) );
-			if( peekData != null && cast<uint_bigendian*>( peekData )[0] == '\n' ) _stream.Skip( sizeof( uint_bigendian ) );
+			if( peekData != null && cast<uint_bigendian*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( uint_bigendian ) );
 		}
 
 		private bool ReadLine( StringBuilder builder, string* fastString ) {
@@ -114,20 +114,20 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromSBCS( CodePage, data + stringStart, ( uint )( i - stringStart ) );
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 									else {
 										builder.AppendSBCS( CodePage, data + stringStart, ( int )( i - stringStart ) );
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
@@ -142,14 +142,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedBytes );
+								_stream.Drain( bufferedBytes );
 								return bufferedBytes != 0;
 							}
 
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
 							builder.AppendSBCS( CodePage, dataStart + stringStart, ( int )( bufferedBytes - stringStart ) );
-							_stream.Skip( bufferedBytes );
+							_stream.Drain( bufferedBytes );
 
 							stringStart = -1;
 
@@ -179,20 +179,20 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromUtf8( data + stringStart, ( uint )( i - stringStart ) );
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 									else {
 										builder.Append( new CUtf8StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
-										_stream.Skip( i + 1 );
+										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
@@ -207,14 +207,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedBytes );
+								_stream.Drain( bufferedBytes );
 								return bufferedBytes != 0;
 							}
 
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
 							builder.Append( new CUtf8StringSpan( dataStart + stringStart, ( uint )( bufferedBytes - stringStart ) ) );
-							_stream.Skip( bufferedBytes );
+							_stream.Drain( bufferedBytes );
 
 							stringStart = -1;
 
@@ -245,20 +245,20 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromUtf16( data + stringStart, ( uint )( i - stringStart ) );
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
 									}
 									else {
 										builder.Append( new CUtf16StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
 									}
@@ -273,14 +273,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedChars * sizeof( char ) );
+								_stream.Drain( bufferedChars * sizeof( char ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
 
 							builder.Append( new CUtf16StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
-							_stream.Skip( bufferedChars * sizeof( char ) );
+							_stream.Drain( bufferedChars * sizeof( char ) );
 
 							stringStart = -1;
 
@@ -311,7 +311,7 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
 									}
@@ -321,13 +321,13 @@ namespace System.IO {
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromUtf16( stringStartPtr, ( uint )( i - stringStart ) );
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
 									}
 									else {
 										builder.Append( new CUtf16StringSpan( stringStartPtr, ( uint )( i - stringStart ) ) );
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
 									}
@@ -342,14 +342,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedChars * sizeof( char ) );
+								_stream.Drain( bufferedChars * sizeof( char ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
 							System.Runtime.Memory.PerformBswap2( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) );
 							builder.Append( new CUtf16StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
-							_stream.Skip( bufferedChars * sizeof( char ) );
+							_stream.Drain( bufferedChars * sizeof( char ) );
 
 							stringStart = -1;
 
@@ -380,20 +380,20 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( ( i + 1 ) * sizeof( uint ) );
+										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromUtf32( data + stringStart, ( uint )( i - stringStart ) );
-										_stream.Skip( ( i + 1 ) * sizeof( uint ) );
+										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
 									}
 									else {
 										builder.Append( new CUtf32StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
-										_stream.Skip( ( i + 1 ) * sizeof( uint ) );
+										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
 									}
@@ -408,14 +408,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedChars * sizeof( uint ) );
+								_stream.Drain( bufferedChars * sizeof( uint ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
 
 							builder.Append( new CUtf32StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
-							_stream.Skip( bufferedChars * sizeof( uint ) );
+							_stream.Drain( bufferedChars * sizeof( uint ) );
 
 							stringStart = -1;
 
@@ -446,7 +446,7 @@ namespace System.IO {
 									hasCR = isCR;
 
 									if( stringStart == -1 ) {
-										_stream.Skip( ( i + 1 ) * sizeof( uint ) );
+										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4BE();
 										return true;
 									}
@@ -456,13 +456,13 @@ namespace System.IO {
 
 									if( builder.Length == 0 && fastString != null ) {
 										*fastString = string.FromUtf32( stringStartPtr, ( uint )( i - stringStart ) );
-										_stream.Skip( ( i + 1 ) * sizeof( char ) );
+										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF4BE();
 										return true;
 									}
 									else {
 										builder.Append( new CUtf32StringSpan( stringStartPtr, ( uint )( i - stringStart ) ) );
-										_stream.Skip( ( i + 1 ) * sizeof( uint ) );
+										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4BE();
 										return true;
 									}
@@ -477,14 +477,14 @@ namespace System.IO {
 							}
 
 							if( stringStart == -1 ) {
-								_stream.Skip( bufferedChars * sizeof( uint ) );
+								_stream.Drain( bufferedChars * sizeof( uint ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
 							System.Runtime.Memory.PerformBswap4( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) );
 							builder.Append( new CUtf32StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
-							_stream.Skip( bufferedChars * sizeof( uint ) );
+							_stream.Drain( bufferedChars * sizeof( uint ) );
 
 							stringStart = -1;
 

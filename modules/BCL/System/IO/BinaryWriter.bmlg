@@ -87,10 +87,10 @@ namespace System.IO {
 				return;
 			}
 
-			Write( value.Length );
+			var length = value.Length;
+			Write( length );
 			Write( System.Environment.DefaultCodePage );
-			// Write( value.Hash ); not written for security reasons
-			BaseStream.Write( value.GetChars(), ( int ) value.Length * sizeof( value[0] ) );
+			BaseStream.Write( value.GetChars(), ( int ) length * sizeof( value[0] ) );
 		}
 
 		public void Write( byte[] value ) {
@@ -111,7 +111,6 @@ namespace System.IO {
 
 			Write( value.Length );
 			Write( value.CodePage );
-			// Write( value.Hash ); not written for security reasons
 			BaseStream.Write( value.GetChars(), ( int ) value.ByteLength );
 		}
 
@@ -123,7 +122,6 @@ namespace System.IO {
 
 			Write( value.Length );
 			Write( value.ByteLength );
-			// Write( value.Hash ); not written for security reasons
 			BaseStream.Write( value.GetChars(), ( int ) value.ByteLength );
 		}
 
@@ -134,7 +132,6 @@ namespace System.IO {
 			}
 
 			Write( value.Length );
-			// Write( value.Hash ); not written for security reasons
 			BaseStream.Write( value.GetChars(), ( int ) value.ByteLength );
 		}
 
@@ -145,7 +142,6 @@ namespace System.IO {
 			}
 
 			Write( value.Length );
-			// Write( value.Hash ); not written for security reasons
 			BaseStream.Write( value.GetChars(), ( int ) value.ByteLength );
 		}
 
