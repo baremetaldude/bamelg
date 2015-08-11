@@ -94,7 +94,7 @@ namespace System.Serialization.Thrift {
 		public enum Kind {
 			Call =      1,
 			Reply =     2,
-			Exception = 3,
+			Exception = 3, // ServerException
 			Oneway =    4,
 		}
 	}
@@ -104,25 +104,44 @@ namespace System.Serialization.Thrift {
 	}
 
 	public interface IExceptionHandler {
-		void OnException( ProtocolException exception );
+		void OnException( ProtocolError error );
 		void OnException( ServerException exception );
-		void OnException( TransportException exception );
 	}
 
-	public class ExceptionHandlerConsole : IExceptionHandler {
+	public struct ExceptionHandlerNull : IExceptionHandler {
 		public static readonly thistype Instance;
 
 		#region IExceptionHandler Members
 
-		public void OnException( ProtocolException exception ) { Console.WriteLine( exception ); }
-		public void OnException( ServerException exception ) { Console.WriteLine( exception ); }
-		public void OnException( TransportException exception ) { Console.WriteLine( exception ); }
+		public void OnException( ProtocolError error ) { }
+		public void OnException( ServerException exception ) { }
+
+		#endregion
+	}
+
+	public struct ExceptionHandlerConsole : IExceptionHandler {
+		public static readonly thistype Instance;
+
+		#region IExceptionHandler Members
+
+		public void OnException( ProtocolError error ) { Console.WriteLine( "THRIFT: {0}", error ); }
+		public void OnException( ServerException exception ) { Console.WriteLine( "THRIFT: {0}", exception ); }
 
 		#endregion
 	}
 
 	public abstract class ProtocolCodec {
-		protected ProtocolCodec() { }
+		protected ProtocolCodec() {
+			DebugDefaults();
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void DebugDefaults() {
+			ExceptionHandler = ExceptionHandlerConsole.Instance;
+		}
+
+		public bool IsStreamBroken { get; set; } = false;
+		public IExceptionHandler ExceptionHandler = ExceptionHandlerNull.Instance;
 
 		public abstract void WriteMessageBegin( Utf8String name, MessageInfo.Kind type, int seqID );
 		public abstract void WriteMessageEnd();
@@ -229,88 +248,71 @@ namespace System.Serialization.Thrift {
 
 					ReadListEnd();
 					break;
+
+				default:
+					IsStreamBroken = true;
+					ExceptionHandler.OnException( ProtocolError.InvalidData );
+					break;
 			}
 		}
 	}
 
-	public class ProtocolException {
-		protected Kind _type = Kind.Unknown;
-
-		public ProtocolException() {
-		}
-
-		public ProtocolException( Kind type ) {
-			_type = type;
-		}
-
-		public ProtocolException( Kind type, Utf8String message ) {
-			_type = type;
-		}
-
-		public ProtocolException( Utf8String message ) {
-		}
-
-		public Kind Type {
-			get { return _type; }
-		}
-
-		public enum Kind {
-			Unknown =        0,
-			InvalidData =    1,
-			NegativeSize =   2,
-			SizeLimit =      3,
-			BadVersion =     4,
-			NotImplemented = 5,
-		}
+	public enum ProtocolError {
+		[ErrorCodeSuccess]
+		OK =             0,
+		InvalidData =    1,
+		NegativeSize =   2,
+		SizeLimit =      3,
+		BadVersion =     4,
+		NotImplemented = 5,
 	}
 
-	[Throwable]
 	public struct ServerException {
-		protected Kind _type;
+		public Kind Type;
 		public Utf8String Message;
 
 		public ServerException() {
 		}
 
 		public ServerException( Kind type ) {
-			_type = type;
+			Type = type;
 		}
 
 		public ServerException( Kind type, Utf8String message ) {
-			_type = type;
+			Type = type;
 		}
 
-		public static ServerException Read( ProtocolCodec iprot ) {
+		public static ServerException Read( ProtocolCodec reader ) {
 			Utf8String message = null;
 			var type = Kind.Unknown;
 
-			iprot.ReadStructBegin();
+			reader.ReadStructBegin();
 			while( true ) {
-				var field = iprot.ReadFieldBegin();
+				var field = reader.ReadFieldBegin();
 				if( field.Type == TypeKind.Stop )
 					break;
 
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.String )
-							message = iprot.ReadString();
-						else iprot.Skip( field.Type );
+							message = reader.ReadString();
+						else reader.Skip( field.Type );
 						break;
 					case 2:
 						if( field.Type == TypeKind.Int32 )
-							type = ( Kind ) iprot.ReadInt32();
-						else iprot.Skip( field.Type );
+							type = ( Kind ) reader.ReadInt32();
+						else reader.Skip( field.Type );
 						break;
 
 					default:
-						iprot.Skip( field.Type );
+						reader.Skip( field.Type );
 						break;
 				}
 
-				iprot.ReadFieldEnd();
+				reader.ReadFieldEnd();
 			}
 
-			iprot.ReadStructEnd();
+			reader.ReadStructEnd();
 
 			return new ServerException( type, message );
 		}
@@ -325,7 +327,7 @@ namespace System.Serialization.Thrift {
 			}
 
 			writer.WriteFieldBegin( "type", TypeKind.Int32, 2 );
-			writer.WriteInt32( ( int ) _type );
+			writer.WriteInt32( ( int ) Type );
 			writer.WriteFieldEnd();
 			writer.WriteFieldStop();
 			writer.WriteStructEnd();
@@ -338,37 +340,6 @@ namespace System.Serialization.Thrift {
 			WrongMethodName,
 			BadSequenceID,
 			MissingResult,
-		}
-	}
-
-	[Throwable]
-	public struct TransportException {
-		protected Kind _type;
-
-		public TransportException() {
-		}
-
-		public TransportException( Kind type ) {
-			_type = type;
-		}
-
-		public TransportException( Kind type, Utf8String message ) {
-			_type = type;
-		}
-
-		public TransportException( Utf8String message ) {
-		}
-
-		public Kind Type {
-			get { return _type; }
-		}
-
-		public enum Kind {
-			Unknown,
-			NotOpen,
-			AlreadyOpen,
-			TimedOut,
-			EndOfFile,
 		}
 	}
 }

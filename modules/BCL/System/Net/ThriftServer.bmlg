@@ -13,7 +13,13 @@ using System.Web;
 
 namespace System.Net {
 	public partial class ThriftServer : NetworkServer {
+		#region config
+		public bool Framed = true; ///< TFramedTransport
+		public bool StrictRead = false, StrictWrite = true;
+		#endregion
+
 		private IRequestHandler _requestHandler;
+		public IExceptionHandler ExceptionHandler;
 
 		public ThriftServer( IRequestHandler requestHandler ) {
 			_requestHandler = requestHandler;
@@ -28,7 +34,8 @@ namespace System.Net {
 
 			public SessionHandler( declaringtype parent, IStream stream )
 				: base( parent, stream ) {
-				_codec = new BinaryProtocolCodec( _readStream, _writeStream );
+				_codec = new BinaryProtocolCodec( _readStream, _writeStream, parent.Framed, parent.StrictRead, parent.StrictWrite );
+				if( parent.ExceptionHandler != null ) _codec.ExceptionHandler = parent.ExceptionHandler;
 			}
 
 			protected override void Worker() {
@@ -36,15 +43,20 @@ namespace System.Net {
 				var requestBuffer = _readStream.BufferInfo;
 
 				while( !Fiber.IsCancelled ) {
-					int readen = requestBuffer->AvailableToRead;
-					if( readen == 0 ) _writeStream.Flush( FlushKind.SynchronizeWrite ); // for corking
+					if( requestBuffer->AvailableToRead == 0 ) {
+						_writeStream.Flush( FlushKind.SynchronizeWrite ); // for corking
 
-					using( new Fiber.CancellationRegion() )
-						if( !_readStream.EnsureReadable( 1 ) )
-							break;
+						using( new Fiber.CancellationRegion() )
+							if( !_readStream.EnsureReadable( 1 ) )
+								break;
+					}
 
 					server._requestHandler.Process( _codec, _codec );
+
+					if( _codec.IsStreamBroken ) break;
 				}
+
+				_codec.Dispose();
 			}
 		}
 	}

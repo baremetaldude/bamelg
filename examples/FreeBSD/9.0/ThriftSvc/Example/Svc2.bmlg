@@ -14,67 +14,61 @@ namespace Example {
 		}
 
 		public class Client : Svc1.Client, IApi {
+			private IExceptionHandler _exceptionHandler;
+			public new IExceptionHandler ExceptionHandler {
+				get { return _exceptionHandler; }
+				set { _exceptionHandler = value; base.ExceptionHandler = value; }
+			}
+
 			public Client( ProtocolCodec prot )
 				: this( prot, prot ) { }
+
 			public Client( ProtocolCodec reader, ProtocolCodec writer )
 				: base( reader, writer ) {
 			}
 
-
 			public HashSet<Utf8String> get_strings2() {
-				send_get_strings2();
-				return recv_get_strings2();
-			}
-
-			private void send_get_strings2() {
 				_writer.WriteMessageBegin( "get_strings2", MessageInfo.Kind.Call, _seqid );
 				var args = new get_strings2_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private HashSet<Utf8String> recv_get_strings2() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( HashSet<Utf8String> );
 				}
+
 				var result = new get_strings2_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( HashSet<Utf8String> );
 			}
 
 			public KVP echo2( KVP value ) {
-				send_echo2( value );
-				return recv_echo2();
-			}
-
-			private void send_echo2( KVP value ) {
 				_writer.WriteMessageBegin( "echo2", MessageInfo.Kind.Call, _seqid );
 				var args = new echo2_args();
 				args.Value = value;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private KVP recv_echo2() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( KVP );
 				}
+
 				var result = new echo2_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( KVP );
 			}
 		}
@@ -108,10 +102,11 @@ namespace Example {
 				}
 			}
 
-			public void get_strings2_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_strings2_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_strings2_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new get_strings2_result();
 				result.Success = _delegate.get_strings2();
 				writer.WriteMessageBegin( "get_strings2", MessageInfo.Kind.Reply, seqid );
@@ -119,22 +114,19 @@ namespace Example {
 				writer.WriteMessageEnd();
 			}
 
-			public void echo2_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void echo2_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new echo2_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new echo2_result();
 				result.Success = _delegate.echo2( args.Value );
 				writer.WriteMessageBegin( "echo2", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
-
 		}
-
-
 		public partial struct get_strings2_args : IFormattable {
-
 			public get_strings2_args() {
 			}
 
@@ -162,9 +154,7 @@ namespace Example {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct get_strings2_result : IFormattable {
 			private HashSet<Utf8String> _success;
 
@@ -230,9 +220,7 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct echo2_args : IFormattable {
 			private KVP _value;
 
@@ -284,9 +272,7 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Value: ", Value );
 			}
-
 		}
-
 		public partial struct echo2_result : IFormattable {
 			private KVP _success;
 
@@ -341,7 +327,6 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
 	}
 }

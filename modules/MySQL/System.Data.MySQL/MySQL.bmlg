@@ -98,7 +98,7 @@ namespace System.Data.MySQL {
 			if( length == 0 || contents == null ) return "";
 
 			var result = Utf8String.FromUtf8( contents, length );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -117,7 +117,7 @@ namespace System.Data.MySQL {
 			bool isNull;
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( length == 0 || isNull ) return;
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 		}
 
 		private void WriteNullTerminatedString( Utf8String value ) {
@@ -131,7 +131,7 @@ namespace System.Data.MySQL {
 			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
 			if( contents == null ) return false;
 
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return *contents != 0;
 		}
 
@@ -144,7 +144,7 @@ namespace System.Data.MySQL {
 
 			sbyte result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt8( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -157,7 +157,7 @@ namespace System.Data.MySQL {
 
 			byte result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt8( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -170,7 +170,7 @@ namespace System.Data.MySQL {
 
 			short result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt16( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -183,7 +183,7 @@ namespace System.Data.MySQL {
 
 			ushort result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt16( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -196,7 +196,7 @@ namespace System.Data.MySQL {
 
 			int result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt32( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -209,7 +209,7 @@ namespace System.Data.MySQL {
 
 			uint result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt32( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -222,7 +222,7 @@ namespace System.Data.MySQL {
 
 			long result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt64( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -235,7 +235,7 @@ namespace System.Data.MySQL {
 
 			ulong result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt64( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -248,7 +248,7 @@ namespace System.Data.MySQL {
 
 			double result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseDoubleIEEE754( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return ( float ) result;
 		}
 
@@ -261,7 +261,7 @@ namespace System.Data.MySQL {
 
 			double result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseDoubleIEEE754( contents, length, result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -274,7 +274,7 @@ namespace System.Data.MySQL {
 
 			DateTime result;
 			Assert.IsTrue( DateTime.TryParse( new CStringSpan( contents, length ), result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -287,7 +287,7 @@ namespace System.Data.MySQL {
 
 			TimeSpan result;
 			Assert.IsTrue( TimeSpan.TryParse( new CStringSpan( contents, length ), result ) );
-			_bufferedReadStream.Skip( ( int ) length );
+			_bufferedReadStream.Drain( ( int ) length );
 			return result;
 		}
 
@@ -786,7 +786,7 @@ namespace System.Data.MySQL {
 			var stringLength = ( int ) header.PacketLength - 3;
 			var start = _bufferedReadStream.Peek( stringLength );
 			Console.WriteLine( "Server error: {0}", Utf8String.FromUtf8( ( byte* ) start, ( uint ) stringLength ) );
-			_bufferedReadStream.Skip( stringLength );
+			_bufferedReadStream.Drain( stringLength );
 		}
 
 		private bool EnsureOK() {

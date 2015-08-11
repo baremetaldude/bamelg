@@ -5,22 +5,18 @@
 using System;
 using System.Serialization.Thrift;
 
-namespace Apache.Cassandra {
-	/// <summary>
-	/// Invalid request could mean keyspace or column family does not exist, required parameters are missing, or a parameter is malformed.
-	/// why contains an associated error message.
-	/// </summary>
-	public partial struct InvalidRequestException : IFormattable {
-		private Utf8String _why;
+namespace Example {
+	public partial struct ExceptionWithMessage : IFormattable {
+		private Utf8String _text;
 
-		public Utf8String Why { get { return _why; } set { __isset.why = true; _why = value; } }
+		public Utf8String Text { get { return _text; } set { __isset.Text = true; _text = value; } }
 
 		public Isset __isset = default( Isset );
 		public struct Isset {
-			public bool why { get; set; }
+			public bool Text { get; set; }
 		}
 
-		public InvalidRequestException() {
+		public ExceptionWithMessage() {
 		}
 
 		public void Read( ProtocolCodec reader ) {
@@ -32,7 +28,7 @@ namespace Apache.Cassandra {
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.String ) {
-							Why = reader.ReadString();
+							Text = reader.ReadString();
 						}
 						else reader.Skip( field.Type );
 						break;
@@ -47,10 +43,10 @@ namespace Apache.Cassandra {
 		}
 
 		public void Write( ProtocolCodec writer ) {
-			writer.WriteStructBegin( "InvalidRequestException" );
-			if( Why != null && __isset.why ) {
-				writer.WriteFieldBegin( "why", TypeKind.String, 1 );
-				writer.WriteString( _why );
+			writer.WriteStructBegin( "ExceptionWithMessage" );
+			if( Text != null && __isset.Text ) {
+				writer.WriteFieldBegin( "Text", TypeKind.String, 1 );
+				writer.WriteString( _text );
 				writer.WriteFieldEnd();
 			}
 			writer.WriteFieldStop();
@@ -58,7 +54,7 @@ namespace Apache.Cassandra {
 		}
 
 		public void ToString( StringBuilder builder, string format ) {
-			builder.Concat( "Why: ", Why );
+			builder.Concat( "Text: ", Text );
 		}
 	}
 }

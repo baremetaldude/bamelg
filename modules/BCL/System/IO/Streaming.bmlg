@@ -93,30 +93,30 @@ namespace System.IO {
 	}
 
 	public static class IStreamExtensions {
-		public static IStream GetBufferedReadStream( this IStream @this ) {
+		public static IStream GetBufferedReadStream( this IStream @this, int bufferSize = 16384 ) {
 			StreamingBufferInfo* bufferInfo;
-			return GetBufferedReadStream( @this, bufferInfo );
+			return GetBufferedReadStream( @this, bufferInfo, bufferSize );
 		}
 
-		public static IStream GetBufferedWriteStream( this IStream @this ) {
+		public static IStream GetBufferedWriteStream( this IStream @this, int bufferSize = 16384 ) {
 			StreamingBufferInfo* bufferInfo;
-			return GetBufferedWriteStream( @this, bufferInfo );
+			return GetBufferedWriteStream( @this, bufferInfo, bufferSize );
 		}
 
-		public static IStream GetBufferedReadStream( this IStream @this, StreamingBufferInfo*& bufferInfo ) {
+		public static IStream GetBufferedReadStream( this IStream @this, StreamingBufferInfo*& bufferInfo, int bufferSize = 16384 ) {
 			if( ( bufferInfo = @this.BufferInfo ) != null )
 				return @this;
 
-			var result = new BufferedStream.ReadStream( @this );
+			var result = new BufferedStream.ReadStream( @this, bufferSize );
 			bufferInfo = result.BufferInfo;
 			return result;
 		}
 
-		public static IStream GetBufferedWriteStream( this IStream @this, StreamingBufferInfo*& bufferInfo ) {
+		public static IStream GetBufferedWriteStream( this IStream @this, StreamingBufferInfo*& bufferInfo, int bufferSize = 16384 ) {
 			if( ( bufferInfo = @this.BufferInfo ) != null )
 				return @this;
 
-			var result = new BufferedStream.WriteStream( @this );
+			var result = new BufferedStream.WriteStream( @this, bufferSize );
 			bufferInfo = result.BufferInfo;
 			return result;
 		}

@@ -16,105 +16,96 @@ namespace Example {
 
 		public class Client : IApi {
 			protected ProtocolCodec _reader, _writer;
-			public IExceptionHandler ExceptionHandler = ExceptionHandlerConsole.Instance;
 			protected int _seqid;
+			private IExceptionHandler _exceptionHandler = ExceptionHandlerConsole.Instance;
+			public IExceptionHandler ExceptionHandler {
+				get { return _exceptionHandler; }
+				set { _exceptionHandler = value; }
+			}
+
 
 			public Client( ProtocolCodec prot )
 				: this( prot, prot ) { }
+
 			public Client( ProtocolCodec reader, ProtocolCodec writer ) {
 				_reader = reader;
 				_writer = writer;
 			}
 
-
 			public int add( int left, int right ) {
-				send_add( left, right );
-				return recv_add();
-			}
-
-			private void send_add( int left, int right ) {
 				_writer.WriteMessageBegin( "add", MessageInfo.Kind.Call, _seqid );
 				var args = new add_args();
 				args.Left = left;
 				args.Right = right;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private int recv_add() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( int );
 				}
+
 				var result = new add_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( int );
 			}
 
 			public List<Utf8String> get_strings() {
-				send_get_strings();
-				return recv_get_strings();
-			}
-
-			private void send_get_strings() {
 				_writer.WriteMessageBegin( "get_strings", MessageInfo.Kind.Call, _seqid );
 				var args = new get_strings_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<Utf8String> recv_get_strings() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<Utf8String> );
 				}
+
 				var result = new get_strings_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<Utf8String> );
 			}
 
 			public Dictionary<Utf8String, Utf8String> echo() {
-				send_echo();
-				return recv_echo();
-			}
-
-			private void send_echo() {
 				_writer.WriteMessageBegin( "echo", MessageInfo.Kind.Call, _seqid );
 				var args = new echo_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Dictionary<Utf8String, Utf8String> recv_echo() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Dictionary<Utf8String, Utf8String> );
 				}
+
 				var result = new echo_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Dictionary<Utf8String, Utf8String> );
 			}
 		}
 
 		public class RequestHandler : IRequestHandler {
+			protected uint _pendingException = 0;
+			public void OnException( ServerException exception ) { }
+			public void OnException( ProtocolError exception ) { }
+
 			public RequestHandler( IApi @delegate ) {
 				_delegate = @delegate;
 			}
@@ -140,10 +131,11 @@ namespace Example {
 				}
 			}
 
-			public void add_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void add_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new add_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new add_result();
 				result.Success = _delegate.add( args.Left, args.Right );
 				writer.WriteMessageBegin( "add", MessageInfo.Kind.Reply, seqid );
@@ -151,10 +143,11 @@ namespace Example {
 				writer.WriteMessageEnd();
 			}
 
-			public void get_strings_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_strings_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_strings_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new get_strings_result();
 				result.Success = _delegate.get_strings();
 				writer.WriteMessageBegin( "get_strings", MessageInfo.Kind.Reply, seqid );
@@ -162,20 +155,18 @@ namespace Example {
 				writer.WriteMessageEnd();
 			}
 
-			public void echo_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void echo_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new echo_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new echo_result();
 				result.Success = _delegate.echo();
 				writer.WriteMessageBegin( "echo", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
-
 		}
-
-
 		public partial struct add_args : IFormattable {
 			private int _left;
 			private int _right;
@@ -241,9 +232,7 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Left: ", Left, " Right: ", Right );
 			}
-
 		}
-
 		public partial struct add_result : IFormattable {
 			private int _success;
 
@@ -295,11 +284,8 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct get_strings_args : IFormattable {
-
 			public get_strings_args() {
 			}
 
@@ -327,9 +313,7 @@ namespace Example {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct get_strings_result : IFormattable {
 			private List<Utf8String> _success;
 
@@ -395,11 +379,8 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct echo_args : IFormattable {
-
 			public echo_args() {
 			}
 
@@ -427,9 +408,7 @@ namespace Example {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct echo_result : IFormattable {
 			private Dictionary<Utf8String, Utf8String> _success;
 
@@ -497,7 +476,6 @@ namespace Example {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
 	}
 }

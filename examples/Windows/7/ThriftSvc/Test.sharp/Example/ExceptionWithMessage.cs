@@ -21,19 +21,33 @@ namespace Example
   #if !SILVERLIGHT
   [Serializable]
   #endif
-  public partial class KVP : TBase
+  public partial class ExceptionWithMessage : TException, TBase
   {
+    private string _Text;
 
-    public byte[] Name { get; set; }
-
-    public byte[] Value { get; set; }
-
-    public KVP() {
+    public string Text
+    {
+      get
+      {
+        return _Text;
+      }
+      set
+      {
+        __isset.Text = true;
+        this._Text = value;
+      }
     }
 
-    public KVP(byte[] name, byte[] value) : this() {
-      this.Name = name;
-      this.Value = value;
+
+    public Isset __isset;
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public struct Isset {
+      public bool Text;
+    }
+
+    public ExceptionWithMessage() {
     }
 
     public void Read (TProtocol iprot)
@@ -41,8 +55,6 @@ namespace Example
       iprot.IncrementRecursionDepth();
       try
       {
-        bool isset_name = false;
-        bool isset_value = false;
         TField field;
         iprot.ReadStructBegin();
         while (true)
@@ -55,16 +67,7 @@ namespace Example
           {
             case 1:
               if (field.Type == TType.String) {
-                Name = iprot.ReadBinary();
-                isset_name = true;
-              } else { 
-                TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            case 2:
-              if (field.Type == TType.String) {
-                Value = iprot.ReadBinary();
-                isset_value = true;
+                Text = iprot.ReadString();
               } else { 
                 TProtocolUtil.Skip(iprot, field.Type);
               }
@@ -76,10 +79,6 @@ namespace Example
           iprot.ReadFieldEnd();
         }
         iprot.ReadStructEnd();
-        if (!isset_name)
-          throw new TProtocolException(TProtocolException.INVALID_DATA);
-        if (!isset_value)
-          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
       finally
       {
@@ -91,21 +90,17 @@ namespace Example
       oprot.IncrementRecursionDepth();
       try
       {
-        TStruct struc = new TStruct("KVP");
+        TStruct struc = new TStruct("ExceptionWithMessage");
         oprot.WriteStructBegin(struc);
         TField field = new TField();
-        field.Name = "name";
-        field.Type = TType.String;
-        field.ID = 1;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Name);
-        oprot.WriteFieldEnd();
-        field.Name = "value";
-        field.Type = TType.String;
-        field.ID = 2;
-        oprot.WriteFieldBegin(field);
-        oprot.WriteBinary(Value);
-        oprot.WriteFieldEnd();
+        if (Text != null && __isset.Text) {
+          field.Name = "Text";
+          field.Type = TType.String;
+          field.ID = 1;
+          oprot.WriteFieldBegin(field);
+          oprot.WriteString(Text);
+          oprot.WriteFieldEnd();
+        }
         oprot.WriteFieldStop();
         oprot.WriteStructEnd();
       }
@@ -116,11 +111,14 @@ namespace Example
     }
 
     public override string ToString() {
-      StringBuilder __sb = new StringBuilder("KVP(");
-      __sb.Append(", Name: ");
-      __sb.Append(Name);
-      __sb.Append(", Value: ");
-      __sb.Append(Value);
+      StringBuilder __sb = new StringBuilder("ExceptionWithMessage(");
+      bool __first = true;
+      if (Text != null && __isset.Text) {
+        if(!__first) { __sb.Append(", "); }
+        __first = false;
+        __sb.Append("Text: ");
+        __sb.Append(Text);
+      }
       __sb.Append(")");
       return __sb.ToString();
     }

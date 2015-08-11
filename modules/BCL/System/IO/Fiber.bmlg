@@ -614,11 +614,15 @@ namespace System.IO {
 
 				private DateTime _lastSwitch = DateTime.UnbiasedNow;
 
+				#region Tracing
+			
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceSwitch( FiberInfo* current, FiberInfo* next ) {
 					var now = DateTime.UnbiasedNow;
 					var elapsed = now - _lastSwitch;
 					current->RunTime += elapsed;
+
+					++TracedContextSwitches;
 
 					Trace.Write( new Console.OutputAttributes() {
 						ForegroundColor = RgbColor.Green,
@@ -627,8 +631,6 @@ namespace System.IO {
 
 					_lastSwitch = now;
 				}
-
-				/// @{ Tracing
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReady( FiberInfo* current ) {
@@ -696,7 +698,14 @@ namespace System.IO {
 					}, "Cancel all ({0}) fibers", FiberManager.FiberCount );
 				}
 
-				/// @}
+				[Conditional( ConditionString = TraceConditionString )]
+				private void TraceUsageStats() {
+					Trace.Write( "Fiber: ContextSwitches = {0}", TracedContextSwitches );
+				}
+
+				public int TracedContextSwitches = 0;
+
+				#endregion
 			}
 
 			void IFormattable.ToString( StringBuilder result, string format ) {
@@ -716,7 +725,7 @@ namespace System.IO {
 		private static void TraceInformation() {
 			Trace.Write( "Fiber: sizeof( FiberInfo ) == {0}; alignof( FiberInfo ) == {1}", sizeof( FiberInfo ), typeof( FiberInfo ).InstanceAlignment );
 			Trace.Write( "Fiber: sizeof( FLS ) == {0}; alignof( FLS ) = {1}", Loader._flsSnapshotSize, Loader._flsSnapshotAlignment );
-		}
+		} 
 		/// @}
 	}
 }

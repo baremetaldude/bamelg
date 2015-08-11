@@ -291,71 +291,64 @@ namespace Apache.Cassandra {
 
 		public class Client : IApi {
 			protected ProtocolCodec _reader, _writer;
-			public IExceptionHandler ExceptionHandler = ExceptionHandlerConsole.Instance;
 			protected int _seqid;
+			private IExceptionHandler _exceptionHandler = ExceptionHandlerConsole.Instance;
+			public IExceptionHandler ExceptionHandler {
+				get { return _exceptionHandler; }
+				set { _exceptionHandler = value; }
+			}
+
 
 			public Client( ProtocolCodec prot )
 				: this( prot, prot ) { }
+
 			public Client( ProtocolCodec reader, ProtocolCodec writer ) {
 				_reader = reader;
 				_writer = writer;
 			}
 
-
 			public void login( AuthenticationRequest auth_request ) {
-				send_login( auth_request );
-				recv_login();
-			}
-
-			private void send_login( AuthenticationRequest auth_request ) {
 				_writer.WriteMessageBegin( "login", MessageInfo.Kind.Call, _seqid );
 				var args = new login_args();
 				args.Auth_request = auth_request;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_login() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new login_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.authnx ) { ExceptionHandler.OnException( result.Authnx ); return; }
-				if( result.__isset.authzx ) { ExceptionHandler.OnException( result.Authzx ); return; }
+				if( result.__isset.authnx ) { _exceptionHandler.OnException( result.Authnx ); return; }
+				if( result.__isset.authzx ) { _exceptionHandler.OnException( result.Authzx ); return; }
 				return;
 			}
 
 			public void set_keyspace( Utf8String keyspace ) {
-				send_set_keyspace( keyspace );
-				recv_set_keyspace();
-			}
-
-			private void send_set_keyspace( Utf8String keyspace ) {
 				_writer.WriteMessageBegin( "set_keyspace", MessageInfo.Kind.Call, _seqid );
 				var args = new set_keyspace_args();
 				args.Keyspace = keyspace;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_set_keyspace() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new set_keyspace_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
 				return;
 			}
 
@@ -366,11 +359,6 @@ namespace Apache.Cassandra {
 			/// \param column_path
 			/// \param consistency_level
 			public ColumnOrSuperColumn get( byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level ) {
-				send_get( key, column_path, consistency_level );
-				return recv_get();
-			}
-
-			private void send_get( byte[] key, ColumnPath column_path, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get", MessageInfo.Kind.Call, _seqid );
 				var args = new get_args();
 				args.Key = key;
@@ -378,25 +366,24 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private ColumnOrSuperColumn recv_get() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( ColumnOrSuperColumn );
 				}
+
 				var result = new get_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( ColumnOrSuperColumn ); }
-				if( result.__isset.nfe ) { ExceptionHandler.OnException( result.Nfe ); return default( ColumnOrSuperColumn ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( ColumnOrSuperColumn ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( ColumnOrSuperColumn ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( ColumnOrSuperColumn ); }
+				if( result.__isset.nfe ) { _exceptionHandler.OnException( result.Nfe ); return default( ColumnOrSuperColumn ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( ColumnOrSuperColumn ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( ColumnOrSuperColumn ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( ColumnOrSuperColumn );
 			}
 
@@ -408,11 +395,6 @@ namespace Apache.Cassandra {
 			/// \param predicate
 			/// \param consistency_level
 			public List<ColumnOrSuperColumn> get_slice( byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
-				send_get_slice( key, column_parent, predicate, consistency_level );
-				return recv_get_slice();
-			}
-
-			private void send_get_slice( byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get_slice", MessageInfo.Kind.Call, _seqid );
 				var args = new get_slice_args();
 				args.Key = key;
@@ -421,24 +403,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<ColumnOrSuperColumn> recv_get_slice() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<ColumnOrSuperColumn> );
 				}
+
 				var result = new get_slice_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<ColumnOrSuperColumn> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( List<ColumnOrSuperColumn> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( List<ColumnOrSuperColumn> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<ColumnOrSuperColumn> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( List<ColumnOrSuperColumn> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( List<ColumnOrSuperColumn> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<ColumnOrSuperColumn> );
 			}
 
@@ -450,11 +431,6 @@ namespace Apache.Cassandra {
 			/// \param predicate
 			/// \param consistency_level
 			public int get_count( byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
-				send_get_count( key, column_parent, predicate, consistency_level );
-				return recv_get_count();
-			}
-
-			private void send_get_count( byte[] key, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get_count", MessageInfo.Kind.Call, _seqid );
 				var args = new get_count_args();
 				args.Key = key;
@@ -463,24 +439,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private int recv_get_count() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( int );
 				}
+
 				var result = new get_count_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( int ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( int ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( int ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( int ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( int ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( int ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( int );
 			}
 
@@ -491,11 +466,6 @@ namespace Apache.Cassandra {
 			/// \param predicate
 			/// \param consistency_level
 			public Dictionary<byte[], List<ColumnOrSuperColumn>> multiget_slice( List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
-				send_multiget_slice( keys, column_parent, predicate, consistency_level );
-				return recv_multiget_slice();
-			}
-
-			private void send_multiget_slice( List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "multiget_slice", MessageInfo.Kind.Call, _seqid );
 				var args = new multiget_slice_args();
 				args.Keys = keys;
@@ -504,24 +474,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Dictionary<byte[], List<ColumnOrSuperColumn>> recv_multiget_slice() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Dictionary<byte[], List<ColumnOrSuperColumn>> );
 				}
+
 				var result = new multiget_slice_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( Dictionary<byte[], List<ColumnOrSuperColumn>> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Dictionary<byte[], List<ColumnOrSuperColumn>> );
 			}
 
@@ -532,11 +501,6 @@ namespace Apache.Cassandra {
 			/// \param predicate
 			/// \param consistency_level
 			public Dictionary<byte[], int> multiget_count( List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
-				send_multiget_count( keys, column_parent, predicate, consistency_level );
-				return recv_multiget_count();
-			}
-
-			private void send_multiget_count( List<byte[]> keys, ColumnParent column_parent, SlicePredicate predicate, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "multiget_count", MessageInfo.Kind.Call, _seqid );
 				var args = new multiget_count_args();
 				args.Keys = keys;
@@ -545,24 +509,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Dictionary<byte[], int> recv_multiget_count() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Dictionary<byte[], int> );
 				}
+
 				var result = new multiget_count_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Dictionary<byte[], int> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( Dictionary<byte[], int> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( Dictionary<byte[], int> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Dictionary<byte[], int> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( Dictionary<byte[], int> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( Dictionary<byte[], int> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Dictionary<byte[], int> );
 			}
 
@@ -573,11 +536,6 @@ namespace Apache.Cassandra {
 			/// \param range
 			/// \param consistency_level
 			public List<KeySlice> get_range_slices( ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level ) {
-				send_get_range_slices( column_parent, predicate, range, consistency_level );
-				return recv_get_range_slices();
-			}
-
-			private void send_get_range_slices( ColumnParent column_parent, SlicePredicate predicate, KeyRange range, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get_range_slices", MessageInfo.Kind.Call, _seqid );
 				var args = new get_range_slices_args();
 				args.Column_parent = column_parent;
@@ -586,24 +544,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<KeySlice> recv_get_range_slices() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<KeySlice> );
 				}
+
 				var result = new get_range_slices_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<KeySlice> );
 			}
 
@@ -614,11 +571,6 @@ namespace Apache.Cassandra {
 			/// \param start_column
 			/// \param consistency_level
 			public List<KeySlice> get_paged_slice( Utf8String column_family, KeyRange range, byte[] start_column, ConsistencyLevel consistency_level ) {
-				send_get_paged_slice( column_family, range, start_column, consistency_level );
-				return recv_get_paged_slice();
-			}
-
-			private void send_get_paged_slice( Utf8String column_family, KeyRange range, byte[] start_column, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get_paged_slice", MessageInfo.Kind.Call, _seqid );
 				var args = new get_paged_slice_args();
 				args.Column_family = column_family;
@@ -627,24 +579,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<KeySlice> recv_get_paged_slice() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<KeySlice> );
 				}
+
 				var result = new get_paged_slice_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<KeySlice> );
 			}
 
@@ -656,11 +607,6 @@ namespace Apache.Cassandra {
 			/// \param column_predicate
 			/// \param consistency_level
 			public List<KeySlice> get_indexed_slices( ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level ) {
-				send_get_indexed_slices( column_parent, index_clause, column_predicate, consistency_level );
-				return recv_get_indexed_slices();
-			}
-
-			private void send_get_indexed_slices( ColumnParent column_parent, IndexClause index_clause, SlicePredicate column_predicate, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "get_indexed_slices", MessageInfo.Kind.Call, _seqid );
 				var args = new get_indexed_slices_args();
 				args.Column_parent = column_parent;
@@ -669,24 +615,23 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<KeySlice> recv_get_indexed_slices() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<KeySlice> );
 				}
+
 				var result = new get_indexed_slices_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<KeySlice> ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( List<KeySlice> ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( List<KeySlice> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<KeySlice> );
 			}
 
@@ -697,11 +642,6 @@ namespace Apache.Cassandra {
 			/// \param column
 			/// \param consistency_level
 			public void insert( byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level ) {
-				send_insert( key, column_parent, column, consistency_level );
-				recv_insert();
-			}
-
-			private void send_insert( byte[] key, ColumnParent column_parent, Column column, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "insert", MessageInfo.Kind.Call, _seqid );
 				var args = new insert_args();
 				args.Key = key;
@@ -710,22 +650,21 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_insert() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new insert_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -736,11 +675,6 @@ namespace Apache.Cassandra {
 			/// \param column
 			/// \param consistency_level
 			public void add( byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level ) {
-				send_add( key, column_parent, column, consistency_level );
-				recv_add();
-			}
-
-			private void send_add( byte[] key, ColumnParent column_parent, CounterColumn column, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "add", MessageInfo.Kind.Call, _seqid );
 				var args = new add_args();
 				args.Key = key;
@@ -749,22 +683,21 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_add() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new add_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -790,11 +723,6 @@ namespace Apache.Cassandra {
 			/// \param serial_consistency_level
 			/// \param commit_consistency_level
 			public CASResult cas( byte[] key, Utf8String column_family, List<Column> expected, List<Column> updates, ConsistencyLevel serial_consistency_level, ConsistencyLevel commit_consistency_level ) {
-				send_cas( key, column_family, expected, updates, serial_consistency_level, commit_consistency_level );
-				return recv_cas();
-			}
-
-			private void send_cas( byte[] key, Utf8String column_family, List<Column> expected, List<Column> updates, ConsistencyLevel serial_consistency_level, ConsistencyLevel commit_consistency_level ) {
 				_writer.WriteMessageBegin( "cas", MessageInfo.Kind.Call, _seqid );
 				var args = new cas_args();
 				args.Key = key;
@@ -805,24 +733,23 @@ namespace Apache.Cassandra {
 				args.Commit_consistency_level = commit_consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CASResult recv_cas() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CASResult );
 				}
+
 				var result = new cas_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CASResult ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( CASResult ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( CASResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CASResult ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( CASResult ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( CASResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CASResult );
 			}
 
@@ -835,11 +762,6 @@ namespace Apache.Cassandra {
 			/// \param timestamp
 			/// \param consistency_level
 			public void remove( byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level ) {
-				send_remove( key, column_path, timestamp, consistency_level );
-				recv_remove();
-			}
-
-			private void send_remove( byte[] key, ColumnPath column_path, long timestamp, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "remove", MessageInfo.Kind.Call, _seqid );
 				var args = new remove_args();
 				args.Key = key;
@@ -848,22 +770,21 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_remove() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new remove_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -875,11 +796,6 @@ namespace Apache.Cassandra {
 			/// \param path
 			/// \param consistency_level
 			public void remove_counter( byte[] key, ColumnPath path, ConsistencyLevel consistency_level ) {
-				send_remove_counter( key, path, consistency_level );
-				recv_remove_counter();
-			}
-
-			private void send_remove_counter( byte[] key, ColumnPath path, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "remove_counter", MessageInfo.Kind.Call, _seqid );
 				var args = new remove_counter_args();
 				args.Key = key;
@@ -887,22 +803,21 @@ namespace Apache.Cassandra {
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_remove_counter() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new remove_counter_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -914,33 +829,27 @@ namespace Apache.Cassandra {
 			/// \param mutation_map
 			/// \param consistency_level
 			public void batch_mutate( Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level ) {
-				send_batch_mutate( mutation_map, consistency_level );
-				recv_batch_mutate();
-			}
-
-			private void send_batch_mutate( Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "batch_mutate", MessageInfo.Kind.Call, _seqid );
 				var args = new batch_mutate_args();
 				args.Mutation_map = mutation_map;
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_batch_mutate() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new batch_mutate_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -952,33 +861,27 @@ namespace Apache.Cassandra {
 			/// \param mutation_map
 			/// \param consistency_level
 			public void atomic_batch_mutate( Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level ) {
-				send_atomic_batch_mutate( mutation_map, consistency_level );
-				recv_atomic_batch_mutate();
-			}
-
-			private void send_atomic_batch_mutate( Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> mutation_map, ConsistencyLevel consistency_level ) {
 				_writer.WriteMessageBegin( "atomic_batch_mutate", MessageInfo.Kind.Call, _seqid );
 				var args = new atomic_batch_mutate_args();
 				args.Mutation_map = mutation_map;
 				args.Consistency_level = consistency_level;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_atomic_batch_mutate() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new atomic_batch_mutate_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -991,32 +894,26 @@ namespace Apache.Cassandra {
 			///
 			/// \param cfname
 			public void truncate( Utf8String cfname ) {
-				send_truncate( cfname );
-				recv_truncate();
-			}
-
-			private void send_truncate( Utf8String cfname ) {
 				_writer.WriteMessageBegin( "truncate", MessageInfo.Kind.Call, _seqid );
 				var args = new truncate_args();
 				args.Cfname = cfname;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_truncate() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new truncate_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return; }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return; }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return; }
 				return;
 			}
 
@@ -1024,119 +921,95 @@ namespace Apache.Cassandra {
 			/// hosts that do not respond will be under the key DatabaseDescriptor.INITIAL_VERSION.
 			/// the cluster is all on the same version if the size of the map is 1.
 			public Dictionary<Utf8String, List<Utf8String>> describe_schema_versions() {
-				send_describe_schema_versions();
-				return recv_describe_schema_versions();
-			}
-
-			private void send_describe_schema_versions() {
 				_writer.WriteMessageBegin( "describe_schema_versions", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_schema_versions_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Dictionary<Utf8String, List<Utf8String>> recv_describe_schema_versions() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Dictionary<Utf8String, List<Utf8String>> );
 				}
+
 				var result = new describe_schema_versions_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Dictionary<Utf8String, List<Utf8String>> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Dictionary<Utf8String, List<Utf8String>> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Dictionary<Utf8String, List<Utf8String>> );
 			}
 
 			/// list the defined keyspaces in this cluster
 			public List<KsDef> describe_keyspaces() {
-				send_describe_keyspaces();
-				return recv_describe_keyspaces();
-			}
-
-			private void send_describe_keyspaces() {
 				_writer.WriteMessageBegin( "describe_keyspaces", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_keyspaces_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<KsDef> recv_describe_keyspaces() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<KsDef> );
 				}
+
 				var result = new describe_keyspaces_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<KsDef> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<KsDef> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<KsDef> );
 			}
 
 			/// get the cluster name
 			public Utf8String describe_cluster_name() {
-				send_describe_cluster_name();
-				return recv_describe_cluster_name();
-			}
-
-			private void send_describe_cluster_name() {
 				_writer.WriteMessageBegin( "describe_cluster_name", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_cluster_name_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_describe_cluster_name() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new describe_cluster_name_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
 			/// get the thrift api version
 			public Utf8String describe_version() {
-				send_describe_version();
-				return recv_describe_version();
-			}
-
-			private void send_describe_version() {
 				_writer.WriteMessageBegin( "describe_version", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_version_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_describe_version() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new describe_version_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1151,32 +1024,26 @@ namespace Apache.Cassandra {
 			///
 			/// \param keyspace
 			public List<TokenRange> describe_ring( Utf8String keyspace ) {
-				send_describe_ring( keyspace );
-				return recv_describe_ring();
-			}
-
-			private void send_describe_ring( Utf8String keyspace ) {
 				_writer.WriteMessageBegin( "describe_ring", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_ring_args();
 				args.Keyspace = keyspace;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<TokenRange> recv_describe_ring() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<TokenRange> );
 				}
+
 				var result = new describe_ring_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<TokenRange> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<TokenRange> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<TokenRange> );
 			}
 
@@ -1184,32 +1051,26 @@ namespace Apache.Cassandra {
 			///
 			/// \param keyspace
 			public List<TokenRange> describe_local_ring( Utf8String keyspace ) {
-				send_describe_local_ring( keyspace );
-				return recv_describe_local_ring();
-			}
-
-			private void send_describe_local_ring( Utf8String keyspace ) {
 				_writer.WriteMessageBegin( "describe_local_ring", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_local_ring_args();
 				args.Keyspace = keyspace;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<TokenRange> recv_describe_local_ring() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<TokenRange> );
 				}
+
 				var result = new describe_local_ring_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<TokenRange> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<TokenRange> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<TokenRange> );
 			}
 
@@ -1217,89 +1078,71 @@ namespace Apache.Cassandra {
 			/// without taking replication into consideration
 			/// https://issues.apache.org/jira/browse/CASSANDRA-4092
 			public Dictionary<Utf8String, Utf8String> describe_token_map() {
-				send_describe_token_map();
-				return recv_describe_token_map();
-			}
-
-			private void send_describe_token_map() {
 				_writer.WriteMessageBegin( "describe_token_map", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_token_map_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Dictionary<Utf8String, Utf8String> recv_describe_token_map() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Dictionary<Utf8String, Utf8String> );
 				}
+
 				var result = new describe_token_map_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Dictionary<Utf8String, Utf8String> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Dictionary<Utf8String, Utf8String> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Dictionary<Utf8String, Utf8String> );
 			}
 
 			/// returns the partitioner used by this cluster
 			public Utf8String describe_partitioner() {
-				send_describe_partitioner();
-				return recv_describe_partitioner();
-			}
-
-			private void send_describe_partitioner() {
 				_writer.WriteMessageBegin( "describe_partitioner", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_partitioner_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_describe_partitioner() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new describe_partitioner_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
 			/// returns the snitch used by this cluster
 			public Utf8String describe_snitch() {
-				send_describe_snitch();
-				return recv_describe_snitch();
-			}
-
-			private void send_describe_snitch() {
 				_writer.WriteMessageBegin( "describe_snitch", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_snitch_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_describe_snitch() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new describe_snitch_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1307,33 +1150,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param keyspace
 			public KsDef describe_keyspace( Utf8String keyspace ) {
-				send_describe_keyspace( keyspace );
-				return recv_describe_keyspace();
-			}
-
-			private void send_describe_keyspace( Utf8String keyspace ) {
 				_writer.WriteMessageBegin( "describe_keyspace", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_keyspace_args();
 				args.Keyspace = keyspace;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private KsDef recv_describe_keyspace() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( KsDef );
 				}
+
 				var result = new describe_keyspace_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.nfe ) { ExceptionHandler.OnException( result.Nfe ); return default( KsDef ); }
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( KsDef ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.nfe ) { _exceptionHandler.OnException( result.Nfe ); return default( KsDef ); }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( KsDef ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( KsDef );
 			}
 
@@ -1348,11 +1185,6 @@ namespace Apache.Cassandra {
 			/// \param end_token
 			/// \param keys_per_split
 			public List<Utf8String> describe_splits( Utf8String cfName, Utf8String start_token, Utf8String end_token, int keys_per_split ) {
-				send_describe_splits( cfName, start_token, end_token, keys_per_split );
-				return recv_describe_splits();
-			}
-
-			private void send_describe_splits( Utf8String cfName, Utf8String start_token, Utf8String end_token, int keys_per_split ) {
 				_writer.WriteMessageBegin( "describe_splits", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_splits_args();
 				args.CfName = cfName;
@@ -1361,61 +1193,49 @@ namespace Apache.Cassandra {
 				args.Keys_per_split = keys_per_split;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<Utf8String> recv_describe_splits() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<Utf8String> );
 				}
+
 				var result = new describe_splits_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<Utf8String> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<Utf8String> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<Utf8String> );
 			}
 
 			/// Enables tracing for the next query in this connection and returns the UUID for that trace session
 			/// The next query will be traced idependently of trace probability and the returned UUID can be used to query the trace keyspace
 			public byte[] trace_next_query() {
-				send_trace_next_query();
-				return recv_trace_next_query();
-			}
-
-			private void send_trace_next_query() {
 				_writer.WriteMessageBegin( "trace_next_query", MessageInfo.Kind.Call, _seqid );
 				var args = new trace_next_query_args();
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private byte[] recv_trace_next_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( byte[] );
 				}
+
 				var result = new trace_next_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( byte[] );
 			}
 
 			public List<CfSplit> describe_splits_ex( Utf8String cfName, Utf8String start_token, Utf8String end_token, int keys_per_split ) {
-				send_describe_splits_ex( cfName, start_token, end_token, keys_per_split );
-				return recv_describe_splits_ex();
-			}
-
-			private void send_describe_splits_ex( Utf8String cfName, Utf8String start_token, Utf8String end_token, int keys_per_split ) {
 				_writer.WriteMessageBegin( "describe_splits_ex", MessageInfo.Kind.Call, _seqid );
 				var args = new describe_splits_ex_args();
 				args.CfName = cfName;
@@ -1424,22 +1244,21 @@ namespace Apache.Cassandra {
 				args.Keys_per_split = keys_per_split;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private List<CfSplit> recv_describe_splits_ex() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( List<CfSplit> );
 				}
+
 				var result = new describe_splits_ex_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( List<CfSplit> ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( List<CfSplit> ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( List<CfSplit> );
 			}
 
@@ -1447,33 +1266,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param cf_def
 			public Utf8String system_add_column_family( CfDef cf_def ) {
-				send_system_add_column_family( cf_def );
-				return recv_system_add_column_family();
-			}
-
-			private void send_system_add_column_family( CfDef cf_def ) {
 				_writer.WriteMessageBegin( "system_add_column_family", MessageInfo.Kind.Call, _seqid );
 				var args = new system_add_column_family_args();
 				args.Cf_def = cf_def;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_add_column_family() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_add_column_family_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1481,33 +1294,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param column_family
 			public Utf8String system_drop_column_family( Utf8String column_family ) {
-				send_system_drop_column_family( column_family );
-				return recv_system_drop_column_family();
-			}
-
-			private void send_system_drop_column_family( Utf8String column_family ) {
 				_writer.WriteMessageBegin( "system_drop_column_family", MessageInfo.Kind.Call, _seqid );
 				var args = new system_drop_column_family_args();
 				args.Column_family = column_family;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_drop_column_family() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_drop_column_family_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1515,33 +1322,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param ks_def
 			public Utf8String system_add_keyspace( KsDef ks_def ) {
-				send_system_add_keyspace( ks_def );
-				return recv_system_add_keyspace();
-			}
-
-			private void send_system_add_keyspace( KsDef ks_def ) {
 				_writer.WriteMessageBegin( "system_add_keyspace", MessageInfo.Kind.Call, _seqid );
 				var args = new system_add_keyspace_args();
 				args.Ks_def = ks_def;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_add_keyspace() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_add_keyspace_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1549,33 +1350,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param keyspace
 			public Utf8String system_drop_keyspace( Utf8String keyspace ) {
-				send_system_drop_keyspace( keyspace );
-				return recv_system_drop_keyspace();
-			}
-
-			private void send_system_drop_keyspace( Utf8String keyspace ) {
 				_writer.WriteMessageBegin( "system_drop_keyspace", MessageInfo.Kind.Call, _seqid );
 				var args = new system_drop_keyspace_args();
 				args.Keyspace = keyspace;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_drop_keyspace() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_drop_keyspace_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1583,33 +1378,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param ks_def
 			public Utf8String system_update_keyspace( KsDef ks_def ) {
-				send_system_update_keyspace( ks_def );
-				return recv_system_update_keyspace();
-			}
-
-			private void send_system_update_keyspace( KsDef ks_def ) {
 				_writer.WriteMessageBegin( "system_update_keyspace", MessageInfo.Kind.Call, _seqid );
 				var args = new system_update_keyspace_args();
 				args.Ks_def = ks_def;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_update_keyspace() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_update_keyspace_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1617,33 +1406,27 @@ namespace Apache.Cassandra {
 			///
 			/// \param cf_def
 			public Utf8String system_update_column_family( CfDef cf_def ) {
-				send_system_update_column_family( cf_def );
-				return recv_system_update_column_family();
-			}
-
-			private void send_system_update_column_family( CfDef cf_def ) {
 				_writer.WriteMessageBegin( "system_update_column_family", MessageInfo.Kind.Call, _seqid );
 				var args = new system_update_column_family_args();
 				args.Cf_def = cf_def;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private Utf8String recv_system_update_column_family() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( Utf8String );
 				}
+
 				var result = new system_update_column_family_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( Utf8String ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( Utf8String ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( Utf8String );
 			}
 
@@ -1652,36 +1435,30 @@ namespace Apache.Cassandra {
 			/// \param query
 			/// \param compression
 			public CqlResult execute_cql_query( byte[] query, Compression compression ) {
-				send_execute_cql_query( query, compression );
-				return recv_execute_cql_query();
-			}
-
-			private void send_execute_cql_query( byte[] query, Compression compression ) {
 				_writer.WriteMessageBegin( "execute_cql_query", MessageInfo.Kind.Call, _seqid );
 				var args = new execute_cql_query_args();
 				args.Query = query;
 				args.Compression = compression;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlResult recv_execute_cql_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlResult );
 				}
+
 				var result = new execute_cql_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( CqlResult ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( CqlResult ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlResult );
 			}
 
@@ -1692,11 +1469,6 @@ namespace Apache.Cassandra {
 			/// \param compression
 			/// \param consistency
 			public CqlResult execute_cql3_query( byte[] query, Compression compression, ConsistencyLevel consistency ) {
-				send_execute_cql3_query( query, compression, consistency );
-				return recv_execute_cql3_query();
-			}
-
-			private void send_execute_cql3_query( byte[] query, Compression compression, ConsistencyLevel consistency ) {
 				_writer.WriteMessageBegin( "execute_cql3_query", MessageInfo.Kind.Call, _seqid );
 				var args = new execute_cql3_query_args();
 				args.Query = query;
@@ -1704,25 +1476,24 @@ namespace Apache.Cassandra {
 				args.Consistency = consistency;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlResult recv_execute_cql3_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlResult );
 				}
+
 				var result = new execute_cql3_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( CqlResult ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( CqlResult ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlResult );
 			}
 
@@ -1731,33 +1502,27 @@ namespace Apache.Cassandra {
 			/// \param query
 			/// \param compression
 			public CqlPreparedResult prepare_cql_query( byte[] query, Compression compression ) {
-				send_prepare_cql_query( query, compression );
-				return recv_prepare_cql_query();
-			}
-
-			private void send_prepare_cql_query( byte[] query, Compression compression ) {
 				_writer.WriteMessageBegin( "prepare_cql_query", MessageInfo.Kind.Call, _seqid );
 				var args = new prepare_cql_query_args();
 				args.Query = query;
 				args.Compression = compression;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlPreparedResult recv_prepare_cql_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlPreparedResult );
 				}
+
 				var result = new prepare_cql_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlPreparedResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlPreparedResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlPreparedResult );
 			}
 
@@ -1769,33 +1534,27 @@ namespace Apache.Cassandra {
 			/// \param query
 			/// \param compression
 			public CqlPreparedResult prepare_cql3_query( byte[] query, Compression compression ) {
-				send_prepare_cql3_query( query, compression );
-				return recv_prepare_cql3_query();
-			}
-
-			private void send_prepare_cql3_query( byte[] query, Compression compression ) {
 				_writer.WriteMessageBegin( "prepare_cql3_query", MessageInfo.Kind.Call, _seqid );
 				var args = new prepare_cql3_query_args();
 				args.Query = query;
 				args.Compression = compression;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlPreparedResult recv_prepare_cql3_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlPreparedResult );
 				}
+
 				var result = new prepare_cql3_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlPreparedResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlPreparedResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlPreparedResult );
 			}
 
@@ -1804,36 +1563,30 @@ namespace Apache.Cassandra {
 			/// \param itemId
 			/// \param values
 			public CqlResult execute_prepared_cql_query( int itemId, List<byte[]> values ) {
-				send_execute_prepared_cql_query( itemId, values );
-				return recv_execute_prepared_cql_query();
-			}
-
-			private void send_execute_prepared_cql_query( int itemId, List<byte[]> values ) {
 				_writer.WriteMessageBegin( "execute_prepared_cql_query", MessageInfo.Kind.Call, _seqid );
 				var args = new execute_prepared_cql_query_args();
 				args.ItemId = itemId;
 				args.Values = values;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlResult recv_execute_prepared_cql_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlResult );
 				}
+
 				var result = new execute_prepared_cql_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( CqlResult ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( CqlResult ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlResult );
 			}
 
@@ -1844,11 +1597,6 @@ namespace Apache.Cassandra {
 			/// \param values
 			/// \param consistency
 			public CqlResult execute_prepared_cql3_query( int itemId, List<byte[]> values, ConsistencyLevel consistency ) {
-				send_execute_prepared_cql3_query( itemId, values, consistency );
-				return recv_execute_prepared_cql3_query();
-			}
-
-			private void send_execute_prepared_cql3_query( int itemId, List<byte[]> values, ConsistencyLevel consistency ) {
 				_writer.WriteMessageBegin( "execute_prepared_cql3_query", MessageInfo.Kind.Call, _seqid );
 				var args = new execute_prepared_cql3_query_args();
 				args.ItemId = itemId;
@@ -1856,25 +1604,24 @@ namespace Apache.Cassandra {
 				args.Consistency = consistency;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private CqlResult recv_execute_prepared_cql3_query() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return default( CqlResult );
 				}
+
 				var result = new execute_prepared_cql3_query_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
 				if( result.__isset.success ) return result.Success;
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
-				if( result.__isset.ue ) { ExceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
-				if( result.__isset.te ) { ExceptionHandler.OnException( result.Te ); return default( CqlResult ); }
-				if( result.__isset.sde ) { ExceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
-				ExceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return default( CqlResult ); }
+				if( result.__isset.ue ) { _exceptionHandler.OnException( result.Ue ); return default( CqlResult ); }
+				if( result.__isset.te ) { _exceptionHandler.OnException( result.Te ); return default( CqlResult ); }
+				if( result.__isset.sde ) { _exceptionHandler.OnException( result.Sde ); return default( CqlResult ); }
+				_exceptionHandler.OnException( new ServerException( ServerException.Kind.MissingResult ) );
 				return default( CqlResult );
 			}
 
@@ -1882,35 +1629,33 @@ namespace Apache.Cassandra {
 			///
 			/// \param version
 			public void set_cql_version( Utf8String version ) {
-				send_set_cql_version( version );
-				recv_set_cql_version();
-			}
-
-			private void send_set_cql_version( Utf8String version ) {
 				_writer.WriteMessageBegin( "set_cql_version", MessageInfo.Kind.Call, _seqid );
 				var args = new set_cql_version_args();
 				args.Version = version;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
-			}
 
-			private void recv_set_cql_version() {
 				var msg = _reader.ReadMessageBegin();
 				if( msg.Type == MessageInfo.Kind.Exception ) {
 					var x = ServerException.Read( _reader );
 					_reader.ReadMessageEnd();
-					ExceptionHandler.OnException( x );
+					_exceptionHandler.OnException( x );
 					return;
 				}
+
 				var result = new set_cql_version_result();
 				result.Read( _reader );
 				_reader.ReadMessageEnd();
-				if( result.__isset.ire ) { ExceptionHandler.OnException( result.Ire ); return; }
+				if( result.__isset.ire ) { _exceptionHandler.OnException( result.Ire ); return; }
 				return;
 			}
 		}
 
 		public class RequestHandler : IRequestHandler {
+			protected uint _pendingException = 0;
+			public void OnException( ServerException exception ) { }
+			public void OnException( ProtocolError exception ) { }
+
 			public RequestHandler( IApi @delegate ) {
 				_delegate = @delegate;
 			}
@@ -1977,452 +1722,418 @@ namespace Apache.Cassandra {
 				}
 			}
 
-			public void login_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected NotFoundException _pendingNotFoundException;
+			public void SendException( NotFoundException exception ) {
+				_pendingException = 4;
+				_pendingNotFoundException = exception;
+			}
+
+			protected InvalidRequestException _pendingInvalidRequestException;
+			public void SendException( InvalidRequestException exception ) {
+				_pendingException = 3;
+				_pendingInvalidRequestException = exception;
+			}
+
+			protected UnavailableException _pendingUnavailableException;
+			public void SendException( UnavailableException exception ) {
+				_pendingException = 5;
+				_pendingUnavailableException = exception;
+			}
+
+			protected TimedOutException _pendingTimedOutException;
+			public void SendException( TimedOutException exception ) {
+				_pendingException = 6;
+				_pendingTimedOutException = exception;
+			}
+
+			protected AuthenticationException _pendingAuthenticationException;
+			public void SendException( AuthenticationException exception ) {
+				_pendingException = 1;
+				_pendingAuthenticationException = exception;
+			}
+
+			protected AuthorizationException _pendingAuthorizationException;
+			public void SendException( AuthorizationException exception ) {
+				_pendingException = 2;
+				_pendingAuthorizationException = exception;
+			}
+
+			protected SchemaDisagreementException _pendingSchemaDisagreementException;
+			public void SendException( SchemaDisagreementException exception ) {
+				_pendingException = 7;
+				_pendingSchemaDisagreementException = exception;
+			}
+
+			protected void login_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new login_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new login_result();
-				try {
-					_delegate.login( args.Auth_request );
-				}
-				catch( AuthenticationException authnx ) {
-					result.Authnx = authnx;
-				}
-				catch( AuthorizationException authzx ) {
-					result.Authzx = authzx;
-				}
 
+				var result = new login_result();
+				_delegate.login( args.Auth_request );
+				switch( _pendingException ) {
+					case 1: result.Authnx = _pendingAuthenticationException; break;
+					case 2: result.Authzx = _pendingAuthorizationException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "login", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void set_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void set_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new set_keyspace_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new set_keyspace_result();
-				try {
-					_delegate.set_keyspace( args.Keyspace );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new set_keyspace_result();
+				_delegate.set_keyspace( args.Keyspace );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "set_keyspace", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_result();
-				try {
-					result.Success = _delegate.get( args.Key, args.Column_path, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( NotFoundException nfe ) {
-					result.Nfe = nfe;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_result();
+				var success = _delegate.get( args.Key, args.Column_path, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 4: result.Nfe = _pendingNotFoundException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_slice_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_slice_result();
-				try {
-					result.Success = _delegate.get_slice( args.Key, args.Column_parent, args.Predicate, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_slice_result();
+				var success = _delegate.get_slice( args.Key, args.Column_parent, args.Predicate, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get_slice", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_count_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_count_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_count_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_count_result();
-				try {
-					result.Success = _delegate.get_count( args.Key, args.Column_parent, args.Predicate, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_count_result();
+				var success = _delegate.get_count( args.Key, args.Column_parent, args.Predicate, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get_count", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void multiget_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void multiget_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new multiget_slice_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new multiget_slice_result();
-				try {
-					result.Success = _delegate.multiget_slice( args.Keys, args.Column_parent, args.Predicate, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new multiget_slice_result();
+				var success = _delegate.multiget_slice( args.Keys, args.Column_parent, args.Predicate, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "multiget_slice", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void multiget_count_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void multiget_count_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new multiget_count_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new multiget_count_result();
-				try {
-					result.Success = _delegate.multiget_count( args.Keys, args.Column_parent, args.Predicate, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new multiget_count_result();
+				var success = _delegate.multiget_count( args.Keys, args.Column_parent, args.Predicate, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "multiget_count", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_range_slices_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_range_slices_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_range_slices_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_range_slices_result();
-				try {
-					result.Success = _delegate.get_range_slices( args.Column_parent, args.Predicate, args.Range, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_range_slices_result();
+				var success = _delegate.get_range_slices( args.Column_parent, args.Predicate, args.Range, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get_range_slices", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_paged_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_paged_slice_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_paged_slice_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_paged_slice_result();
-				try {
-					result.Success = _delegate.get_paged_slice( args.Column_family, args.Range, args.Start_column, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_paged_slice_result();
+				var success = _delegate.get_paged_slice( args.Column_family, args.Range, args.Start_column, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get_paged_slice", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void get_indexed_slices_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void get_indexed_slices_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new get_indexed_slices_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new get_indexed_slices_result();
-				try {
-					result.Success = _delegate.get_indexed_slices( args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new get_indexed_slices_result();
+				var success = _delegate.get_indexed_slices( args.Column_parent, args.Index_clause, args.Column_predicate, args.Consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "get_indexed_slices", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void insert_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void insert_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new insert_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new insert_result();
-				try {
-					_delegate.insert( args.Key, args.Column_parent, args.Column, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new insert_result();
+				_delegate.insert( args.Key, args.Column_parent, args.Column, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "insert", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void add_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void add_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new add_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new add_result();
-				try {
-					_delegate.add( args.Key, args.Column_parent, args.Column, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new add_result();
+				_delegate.add( args.Key, args.Column_parent, args.Column, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "add", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void cas_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void cas_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new cas_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new cas_result();
-				try {
-					result.Success = _delegate.cas( args.Key, args.Column_family, args.Expected, args.Updates, args.Serial_consistency_level, args.Commit_consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new cas_result();
+				var success = _delegate.cas( args.Key, args.Column_family, args.Expected, args.Updates, args.Serial_consistency_level, args.Commit_consistency_level );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "cas", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void remove_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void remove_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new remove_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new remove_result();
-				try {
-					_delegate.remove( args.Key, args.Column_path, args.Timestamp, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new remove_result();
+				_delegate.remove( args.Key, args.Column_path, args.Timestamp, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "remove", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void remove_counter_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void remove_counter_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new remove_counter_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new remove_counter_result();
-				try {
-					_delegate.remove_counter( args.Key, args.Path, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new remove_counter_result();
+				_delegate.remove_counter( args.Key, args.Path, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "remove_counter", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void batch_mutate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void batch_mutate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new batch_mutate_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new batch_mutate_result();
-				try {
-					_delegate.batch_mutate( args.Mutation_map, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new batch_mutate_result();
+				_delegate.batch_mutate( args.Mutation_map, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "batch_mutate", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void atomic_batch_mutate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void atomic_batch_mutate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new atomic_batch_mutate_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new atomic_batch_mutate_result();
-				try {
-					_delegate.atomic_batch_mutate( args.Mutation_map, args.Consistency_level );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new atomic_batch_mutate_result();
+				_delegate.atomic_batch_mutate( args.Mutation_map, args.Consistency_level );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "atomic_batch_mutate", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void truncate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void truncate_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new truncate_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new truncate_result();
-				try {
-					_delegate.truncate( args.Cfname );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
 
+				var result = new truncate_result();
+				_delegate.truncate( args.Cfname );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "truncate", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_schema_versions_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_schema_versions_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_schema_versions_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_schema_versions_result();
-				try {
-					result.Success = _delegate.describe_schema_versions();
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_schema_versions_result();
+				var success = _delegate.describe_schema_versions();
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_schema_versions", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_keyspaces_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_keyspaces_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_keyspaces_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_keyspaces_result();
-				try {
-					result.Success = _delegate.describe_keyspaces();
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_keyspaces_result();
+				var success = _delegate.describe_keyspaces();
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_keyspaces", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_cluster_name_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_cluster_name_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_cluster_name_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new describe_cluster_name_result();
 				result.Success = _delegate.describe_cluster_name();
 				writer.WriteMessageBegin( "describe_cluster_name", MessageInfo.Kind.Reply, seqid );
@@ -2430,10 +2141,11 @@ namespace Apache.Cassandra {
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_version_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_version_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_version_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new describe_version_result();
 				result.Success = _delegate.describe_version();
 				writer.WriteMessageBegin( "describe_version", MessageInfo.Kind.Reply, seqid );
@@ -2441,61 +2153,62 @@ namespace Apache.Cassandra {
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_ring_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_ring_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_ring_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_ring_result();
-				try {
-					result.Success = _delegate.describe_ring( args.Keyspace );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_ring_result();
+				var success = _delegate.describe_ring( args.Keyspace );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_ring", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_local_ring_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_local_ring_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_local_ring_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_local_ring_result();
-				try {
-					result.Success = _delegate.describe_local_ring( args.Keyspace );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_local_ring_result();
+				var success = _delegate.describe_local_ring( args.Keyspace );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_local_ring", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_token_map_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_token_map_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_token_map_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_token_map_result();
-				try {
-					result.Success = _delegate.describe_token_map();
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_token_map_result();
+				var success = _delegate.describe_token_map();
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_token_map", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_partitioner_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_partitioner_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_partitioner_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new describe_partitioner_result();
 				result.Success = _delegate.describe_partitioner();
 				writer.WriteMessageBegin( "describe_partitioner", MessageInfo.Kind.Reply, seqid );
@@ -2503,10 +2216,11 @@ namespace Apache.Cassandra {
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_snitch_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_snitch_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_snitch_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new describe_snitch_result();
 				result.Success = _delegate.describe_snitch();
 				writer.WriteMessageBegin( "describe_snitch", MessageInfo.Kind.Reply, seqid );
@@ -2514,47 +2228,46 @@ namespace Apache.Cassandra {
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_keyspace_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_keyspace_result();
-				try {
-					result.Success = _delegate.describe_keyspace( args.Keyspace );
-				}
-				catch( NotFoundException nfe ) {
-					result.Nfe = nfe;
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_keyspace_result();
+				var success = _delegate.describe_keyspace( args.Keyspace );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 4: result.Nfe = _pendingNotFoundException; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_keyspace", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_splits_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_splits_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_splits_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_splits_result();
-				try {
-					result.Success = _delegate.describe_splits( args.CfName, args.Start_token, args.End_token, args.Keys_per_split );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_splits_result();
+				var success = _delegate.describe_splits( args.CfName, args.Start_token, args.End_token, args.Keys_per_split );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_splits", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void trace_next_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void trace_next_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new trace_next_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
+
 				var result = new trace_next_query_result();
 				result.Success = _delegate.trace_next_query();
 				writer.WriteMessageBegin( "trace_next_query", MessageInfo.Kind.Reply, seqid );
@@ -2562,301 +2275,261 @@ namespace Apache.Cassandra {
 				writer.WriteMessageEnd();
 			}
 
-			public void describe_splits_ex_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void describe_splits_ex_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new describe_splits_ex_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new describe_splits_ex_result();
-				try {
-					result.Success = _delegate.describe_splits_ex( args.CfName, args.Start_token, args.End_token, args.Keys_per_split );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new describe_splits_ex_result();
+				var success = _delegate.describe_splits_ex( args.CfName, args.Start_token, args.End_token, args.Keys_per_split );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "describe_splits_ex", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_add_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_add_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_add_column_family_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_add_column_family_result();
-				try {
-					result.Success = _delegate.system_add_column_family( args.Cf_def );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_add_column_family_result();
+				var success = _delegate.system_add_column_family( args.Cf_def );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_add_column_family", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_drop_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_drop_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_drop_column_family_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_drop_column_family_result();
-				try {
-					result.Success = _delegate.system_drop_column_family( args.Column_family );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_drop_column_family_result();
+				var success = _delegate.system_drop_column_family( args.Column_family );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_drop_column_family", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_add_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_add_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_add_keyspace_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_add_keyspace_result();
-				try {
-					result.Success = _delegate.system_add_keyspace( args.Ks_def );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_add_keyspace_result();
+				var success = _delegate.system_add_keyspace( args.Ks_def );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_add_keyspace", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_drop_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_drop_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_drop_keyspace_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_drop_keyspace_result();
-				try {
-					result.Success = _delegate.system_drop_keyspace( args.Keyspace );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_drop_keyspace_result();
+				var success = _delegate.system_drop_keyspace( args.Keyspace );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_drop_keyspace", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_update_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_update_keyspace_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_update_keyspace_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_update_keyspace_result();
-				try {
-					result.Success = _delegate.system_update_keyspace( args.Ks_def );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_update_keyspace_result();
+				var success = _delegate.system_update_keyspace( args.Ks_def );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_update_keyspace", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void system_update_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void system_update_column_family_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new system_update_column_family_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new system_update_column_family_result();
-				try {
-					result.Success = _delegate.system_update_column_family( args.Cf_def );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new system_update_column_family_result();
+				var success = _delegate.system_update_column_family( args.Cf_def );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "system_update_column_family", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void execute_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void execute_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new execute_cql_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new execute_cql_query_result();
-				try {
-					result.Success = _delegate.execute_cql_query( args.Query, args.Compression );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new execute_cql_query_result();
+				var success = _delegate.execute_cql_query( args.Query, args.Compression );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "execute_cql_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void execute_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void execute_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new execute_cql3_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new execute_cql3_query_result();
-				try {
-					result.Success = _delegate.execute_cql3_query( args.Query, args.Compression, args.Consistency );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new execute_cql3_query_result();
+				var success = _delegate.execute_cql3_query( args.Query, args.Compression, args.Consistency );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "execute_cql3_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void prepare_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void prepare_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new prepare_cql_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new prepare_cql_query_result();
-				try {
-					result.Success = _delegate.prepare_cql_query( args.Query, args.Compression );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new prepare_cql_query_result();
+				var success = _delegate.prepare_cql_query( args.Query, args.Compression );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "prepare_cql_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void prepare_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void prepare_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new prepare_cql3_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new prepare_cql3_query_result();
-				try {
-					result.Success = _delegate.prepare_cql3_query( args.Query, args.Compression );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new prepare_cql3_query_result();
+				var success = _delegate.prepare_cql3_query( args.Query, args.Compression );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "prepare_cql3_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void execute_prepared_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void execute_prepared_cql_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new execute_prepared_cql_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new execute_prepared_cql_query_result();
-				try {
-					result.Success = _delegate.execute_prepared_cql_query( args.ItemId, args.Values );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new execute_prepared_cql_query_result();
+				var success = _delegate.execute_prepared_cql_query( args.ItemId, args.Values );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "execute_prepared_cql_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void execute_prepared_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void execute_prepared_cql3_query_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new execute_prepared_cql3_query_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new execute_prepared_cql3_query_result();
-				try {
-					result.Success = _delegate.execute_prepared_cql3_query( args.ItemId, args.Values, args.Consistency );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
-				catch( UnavailableException ue ) {
-					result.Ue = ue;
-				}
-				catch( TimedOutException te ) {
-					result.Te = te;
-				}
-				catch( SchemaDisagreementException sde ) {
-					result.Sde = sde;
-				}
 
+				var result = new execute_prepared_cql3_query_result();
+				var success = _delegate.execute_prepared_cql3_query( args.ItemId, args.Values, args.Consistency );
+				switch( _pendingException ) {
+					case 0: result.Success = success; break;
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+					case 5: result.Ue = _pendingUnavailableException; break;
+					case 6: result.Te = _pendingTimedOutException; break;
+					case 7: result.Sde = _pendingSchemaDisagreementException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "execute_prepared_cql3_query", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
 
-			public void set_cql_version_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+			protected void set_cql_version_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
 				var args = new set_cql_version_args();
 				args.Read( reader );
 				reader.ReadMessageEnd();
-				var result = new set_cql_version_result();
-				try {
-					_delegate.set_cql_version( args.Version );
-				}
-				catch( InvalidRequestException ire ) {
-					result.Ire = ire;
-				}
 
+				var result = new set_cql_version_result();
+				_delegate.set_cql_version( args.Version );
+				switch( _pendingException ) {
+					case 3: result.Ire = _pendingInvalidRequestException; break;
+				}
+				_pendingException = 0;
 				writer.WriteMessageBegin( "set_cql_version", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
 			}
-
 		}
-
-
 		public partial struct login_args : IFormattable {
 			private AuthenticationRequest _auth_request;
 
@@ -2908,9 +2581,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Auth_request: ", Auth_request );
 			}
-
 		}
-
 		public partial struct login_result : IFormattable {
 			private AuthenticationException _authnx;
 			private AuthorizationException _authzx;
@@ -2978,9 +2649,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Authnx: ", Authnx, " Authzx: ", Authzx );
 			}
-
 		}
-
 		public partial struct set_keyspace_args : IFormattable {
 			private Utf8String _keyspace;
 
@@ -3031,9 +2700,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keyspace: ", Keyspace );
 			}
-
 		}
-
 		public partial struct set_keyspace_result : IFormattable {
 			private InvalidRequestException _ire;
 
@@ -3086,9 +2753,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct get_args : IFormattable {
 			private byte[] _key;
 			private ColumnPath _column_path;
@@ -3175,9 +2840,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_path: ", Column_path, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_result : IFormattable {
 			private ColumnOrSuperColumn _success;
 			private InvalidRequestException _ire;
@@ -3292,9 +2955,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Nfe: ", Nfe, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct get_slice_args : IFormattable {
 			private byte[] _key;
 			private ColumnParent _column_parent;
@@ -3397,9 +3058,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_parent: ", Column_parent, " Predicate: ", Predicate, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_slice_result : IFormattable {
 			private List<ColumnOrSuperColumn> _success;
 			private InvalidRequestException _ire;
@@ -3511,9 +3170,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct get_count_args : IFormattable {
 			private byte[] _key;
 			private ColumnParent _column_parent;
@@ -3616,9 +3273,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_parent: ", Column_parent, " Predicate: ", Predicate, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_count_result : IFormattable {
 			private int _success;
 			private InvalidRequestException _ire;
@@ -3715,9 +3370,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct multiget_slice_args : IFormattable {
 			private List<byte[]> _keys;
 			private ColumnParent _column_parent;
@@ -3832,9 +3485,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keys: ", Keys, " Column_parent: ", Column_parent, " Predicate: ", Predicate, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct multiget_slice_result : IFormattable {
 			private Dictionary<byte[], List<ColumnOrSuperColumn>> _success;
 			private InvalidRequestException _ire;
@@ -3960,9 +3611,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct multiget_count_args : IFormattable {
 			private List<byte[]> _keys;
 			private ColumnParent _column_parent;
@@ -4077,9 +3726,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keys: ", Keys, " Column_parent: ", Column_parent, " Predicate: ", Predicate, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct multiget_count_result : IFormattable {
 			private Dictionary<byte[], int> _success;
 			private InvalidRequestException _ire;
@@ -4192,9 +3839,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct get_range_slices_args : IFormattable {
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
@@ -4298,9 +3943,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Column_parent: ", Column_parent, " Predicate: ", Predicate, " Range: ", Range, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_range_slices_result : IFormattable {
 			private List<KeySlice> _success;
 			private InvalidRequestException _ire;
@@ -4412,9 +4055,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct get_paged_slice_args : IFormattable {
 			private Utf8String _column_family;
 			private KeyRange _range;
@@ -4516,9 +4157,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Column_family: ", Column_family, " Range: ", Range, " Start_column: ", Start_column, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_paged_slice_result : IFormattable {
 			private List<KeySlice> _success;
 			private InvalidRequestException _ire;
@@ -4630,9 +4269,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct get_indexed_slices_args : IFormattable {
 			private ColumnParent _column_parent;
 			private IndexClause _index_clause;
@@ -4736,9 +4373,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Column_parent: ", Column_parent, " Index_clause: ", Index_clause, " Column_predicate: ", Column_predicate, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct get_indexed_slices_result : IFormattable {
 			private List<KeySlice> _success;
 			private InvalidRequestException _ire;
@@ -4850,9 +4485,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct insert_args : IFormattable {
 			private byte[] _key;
 			private ColumnParent _column_parent;
@@ -4955,9 +4588,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_parent: ", Column_parent, " Column: ", Column, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct insert_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -5040,9 +4671,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct add_args : IFormattable {
 			private byte[] _key;
 			private ColumnParent _column_parent;
@@ -5145,9 +4774,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_parent: ", Column_parent, " Column: ", Column, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct add_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -5230,9 +4857,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct cas_args : IFormattable {
 			private byte[] _key;
 			private Utf8String _column_family;
@@ -5394,9 +5019,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_family: ", Column_family, " Expected: ", Expected, " Updates: ", Updates, " Serial_consistency_level: ", Serial_consistency_level, " Commit_consistency_level: ", Commit_consistency_level );
 			}
-
 		}
-
 		public partial struct cas_result : IFormattable {
 			private CASResult _success;
 			private InvalidRequestException _ire;
@@ -5496,9 +5119,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct remove_args : IFormattable {
 			private byte[] _key;
 			private ColumnPath _column_path;
@@ -5600,9 +5221,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Column_path: ", Column_path, " Timestamp: ", Timestamp, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct remove_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -5685,9 +5304,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct remove_counter_args : IFormattable {
 			private byte[] _key;
 			private ColumnPath _path;
@@ -5774,9 +5391,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Key: ", Key, " Path: ", Path, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct remove_counter_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -5859,9 +5474,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct batch_mutate_args : IFormattable {
 			private Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> _mutation_map;
 			private ConsistencyLevel _consistency_level;
@@ -5973,9 +5586,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Mutation_map: ", Mutation_map, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct batch_mutate_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -6058,9 +5669,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct atomic_batch_mutate_args : IFormattable {
 			private Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> _mutation_map;
 			private ConsistencyLevel _consistency_level;
@@ -6172,9 +5781,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Mutation_map: ", Mutation_map, " Consistency_level: ", Consistency_level );
 			}
-
 		}
-
 		public partial struct atomic_batch_mutate_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -6257,9 +5864,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct truncate_args : IFormattable {
 			private Utf8String _cfname;
 
@@ -6310,9 +5915,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Cfname: ", Cfname );
 			}
-
 		}
-
 		public partial struct truncate_result : IFormattable {
 			private InvalidRequestException _ire;
 			private UnavailableException _ue;
@@ -6395,11 +5998,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire, " Ue: ", Ue, " Te: ", Te );
 			}
-
 		}
-
 		public partial struct describe_schema_versions_args : IFormattable {
-
 			public describe_schema_versions_args() {
 			}
 
@@ -6427,9 +6027,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_schema_versions_result : IFormattable {
 			private Dictionary<Utf8String, List<Utf8String>> _success;
 			private InvalidRequestException _ire;
@@ -6524,11 +6122,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_keyspaces_args : IFormattable {
-
 			public describe_keyspaces_args() {
 			}
 
@@ -6556,9 +6151,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_keyspaces_result : IFormattable {
 			private List<KsDef> _success;
 			private InvalidRequestException _ire;
@@ -6640,11 +6233,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_cluster_name_args : IFormattable {
-
 			public describe_cluster_name_args() {
 			}
 
@@ -6672,9 +6262,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_cluster_name_result : IFormattable {
 			private Utf8String _success;
 
@@ -6728,11 +6316,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct describe_version_args : IFormattable {
-
 			public describe_version_args() {
 			}
 
@@ -6760,9 +6345,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_version_result : IFormattable {
 			private Utf8String _success;
 
@@ -6816,9 +6399,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct describe_ring_args : IFormattable {
 			private Utf8String _keyspace;
 
@@ -6869,9 +6450,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keyspace: ", Keyspace );
 			}
-
 		}
-
 		public partial struct describe_ring_result : IFormattable {
 			private List<TokenRange> _success;
 			private InvalidRequestException _ire;
@@ -6953,9 +6532,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_local_ring_args : IFormattable {
 			private Utf8String _keyspace;
 
@@ -7006,9 +6583,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keyspace: ", Keyspace );
 			}
-
 		}
-
 		public partial struct describe_local_ring_result : IFormattable {
 			private List<TokenRange> _success;
 			private InvalidRequestException _ire;
@@ -7090,11 +6665,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_token_map_args : IFormattable {
-
 			public describe_token_map_args() {
 			}
 
@@ -7122,9 +6694,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_token_map_result : IFormattable {
 			private Dictionary<Utf8String, Utf8String> _success;
 			private InvalidRequestException _ire;
@@ -7207,11 +6777,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_partitioner_args : IFormattable {
-
 			public describe_partitioner_args() {
 			}
 
@@ -7239,9 +6806,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_partitioner_result : IFormattable {
 			private Utf8String _success;
 
@@ -7295,11 +6860,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct describe_snitch_args : IFormattable {
-
 			public describe_snitch_args() {
 			}
 
@@ -7327,9 +6889,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct describe_snitch_result : IFormattable {
 			private Utf8String _success;
 
@@ -7383,9 +6943,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct describe_keyspace_args : IFormattable {
 			private Utf8String _keyspace;
 
@@ -7436,9 +6994,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keyspace: ", Keyspace );
 			}
-
 		}
-
 		public partial struct describe_keyspace_result : IFormattable {
 			private KsDef _success;
 			private NotFoundException _nfe;
@@ -7523,9 +7079,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Nfe: ", Nfe, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct describe_splits_args : IFormattable {
 			private Utf8String _cfName;
 			private Utf8String _start_token;
@@ -7621,9 +7175,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "CfName: ", CfName, " Start_token: ", Start_token, " End_token: ", End_token, " Keys_per_split: ", Keys_per_split );
 			}
-
 		}
-
 		public partial struct describe_splits_result : IFormattable {
 			private List<Utf8String> _success;
 			private InvalidRequestException _ire;
@@ -7704,11 +7256,8 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct trace_next_query_args : IFormattable {
-
 			public trace_next_query_args() {
 			}
 
@@ -7736,9 +7285,7 @@ namespace Apache.Cassandra {
 
 			public void ToString( StringBuilder builder, string format ) {
 			}
-
 		}
-
 		public partial struct trace_next_query_result : IFormattable {
 			private byte[] _success;
 
@@ -7792,9 +7339,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success );
 			}
-
 		}
-
 		public partial struct describe_splits_ex_args : IFormattable {
 			private Utf8String _cfName;
 			private Utf8String _start_token;
@@ -7890,9 +7435,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "CfName: ", CfName, " Start_token: ", Start_token, " End_token: ", End_token, " Keys_per_split: ", Keys_per_split );
 			}
-
 		}
-
 		public partial struct describe_splits_ex_result : IFormattable {
 			private List<CfSplit> _success;
 			private InvalidRequestException _ire;
@@ -7974,9 +7517,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct system_add_column_family_args : IFormattable {
 			private CfDef _cf_def;
 
@@ -8028,9 +7569,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Cf_def: ", Cf_def );
 			}
-
 		}
-
 		public partial struct system_add_column_family_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8114,9 +7653,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct system_drop_column_family_args : IFormattable {
 			private Utf8String _column_family;
 
@@ -8167,9 +7704,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Column_family: ", Column_family );
 			}
-
 		}
-
 		public partial struct system_drop_column_family_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8253,9 +7788,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct system_add_keyspace_args : IFormattable {
 			private KsDef _ks_def;
 
@@ -8307,9 +7840,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ks_def: ", Ks_def );
 			}
-
 		}
-
 		public partial struct system_add_keyspace_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8393,9 +7924,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct system_drop_keyspace_args : IFormattable {
 			private Utf8String _keyspace;
 
@@ -8446,9 +7975,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Keyspace: ", Keyspace );
 			}
-
 		}
-
 		public partial struct system_drop_keyspace_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8532,9 +8059,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct system_update_keyspace_args : IFormattable {
 			private KsDef _ks_def;
 
@@ -8586,9 +8111,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ks_def: ", Ks_def );
 			}
-
 		}
-
 		public partial struct system_update_keyspace_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8672,9 +8195,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct system_update_column_family_args : IFormattable {
 			private CfDef _cf_def;
 
@@ -8726,9 +8247,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Cf_def: ", Cf_def );
 			}
-
 		}
-
 		public partial struct system_update_column_family_result : IFormattable {
 			private Utf8String _success;
 			private InvalidRequestException _ire;
@@ -8812,9 +8331,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct execute_cql_query_args : IFormattable {
 			private byte[] _query;
 			private Compression _compression;
@@ -8884,9 +8401,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Query: ", Query, " Compression: ", Compression );
 			}
-
 		}
-
 		public partial struct execute_cql_query_result : IFormattable {
 			private CqlResult _success;
 			private InvalidRequestException _ire;
@@ -9001,9 +8516,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct execute_cql3_query_args : IFormattable {
 			private byte[] _query;
 			private Compression _compression;
@@ -9092,9 +8605,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Query: ", Query, " Compression: ", Compression, " Consistency: ", Consistency );
 			}
-
 		}
-
 		public partial struct execute_cql3_query_result : IFormattable {
 			private CqlResult _success;
 			private InvalidRequestException _ire;
@@ -9209,9 +8720,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct prepare_cql_query_args : IFormattable {
 			private byte[] _query;
 			private Compression _compression;
@@ -9281,9 +8790,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Query: ", Query, " Compression: ", Compression );
 			}
-
 		}
-
 		public partial struct prepare_cql_query_result : IFormattable {
 			private CqlPreparedResult _success;
 			private InvalidRequestException _ire;
@@ -9353,9 +8860,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct prepare_cql3_query_args : IFormattable {
 			private byte[] _query;
 			private Compression _compression;
@@ -9425,9 +8930,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Query: ", Query, " Compression: ", Compression );
 			}
-
 		}
-
 		public partial struct prepare_cql3_query_result : IFormattable {
 			private CqlPreparedResult _success;
 			private InvalidRequestException _ire;
@@ -9497,9 +9000,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire );
 			}
-
 		}
-
 		public partial struct execute_prepared_cql_query_args : IFormattable {
 			private int _itemId;
 			private List<byte[]> _values;
@@ -9577,9 +9078,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "ItemId: ", ItemId, " Values: ", Values );
 			}
-
 		}
-
 		public partial struct execute_prepared_cql_query_result : IFormattable {
 			private CqlResult _success;
 			private InvalidRequestException _ire;
@@ -9694,9 +9193,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct execute_prepared_cql3_query_args : IFormattable {
 			private int _itemId;
 			private List<byte[]> _values;
@@ -9793,9 +9290,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "ItemId: ", ItemId, " Values: ", Values, " Consistency: ", Consistency );
 			}
-
 		}
-
 		public partial struct execute_prepared_cql3_query_result : IFormattable {
 			private CqlResult _success;
 			private InvalidRequestException _ire;
@@ -9910,9 +9405,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Success: ", Success, " Ire: ", Ire, " Ue: ", Ue, " Te: ", Te, " Sde: ", Sde );
 			}
-
 		}
-
 		public partial struct set_cql_version_args : IFormattable {
 			private Utf8String _version;
 
@@ -9963,9 +9456,7 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Version: ", Version );
 			}
-
 		}
-
 		public partial struct set_cql_version_result : IFormattable {
 			private InvalidRequestException _ire;
 
@@ -10018,7 +9509,6 @@ namespace Apache.Cassandra {
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Ire: ", Ire );
 			}
-
 		}
 	}
 }

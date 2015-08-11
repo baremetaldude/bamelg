@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Net;
+using System.Serialization.Thrift;
 
 using Platform;
 using Platform.IO;
@@ -14,6 +15,9 @@ namespace Example {
 	public partial class App {
 		static ushort TcpConnectionPort = 7070;
 		static string NamedPipeConnectionPath = @"\\.\pipe\bamelg.thrift.example";
+
+		static ushort TcpConnectionPortFramed = 7071;
+		static string NamedPipeConnectionPathFramed = @"\\.\pipe\bamelg.thrift.example.framed";
 
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
 
@@ -24,8 +28,17 @@ namespace Example {
 
 			// @{ setup server
 
-			var serverHandler = new ThriftServerImpl();
-			var server = new ThriftServer( new Svc2.RequestHandler( serverHandler ) );
+			var serverImpl = new ServerImpl();
+			var requestHandler = new Svc2.RequestHandler( serverImpl );
+			serverImpl.RequestHandler = requestHandler; // for sending exceptions
+
+			var server = new ThriftServer( requestHandler );
+			server.Framed = false;
+			server.ExceptionHandler = serverImpl;
+
+			var serverFramed = new ThriftServer( requestHandler );
+			serverFramed.Framed = true;
+			serverFramed.ExceptionHandler = serverImpl;
 
 			Fiber.Start( 16, () => {
 				var tcpListen = false;
@@ -34,12 +47,18 @@ namespace Example {
 				var pipeListen = false;
 				var pipeListenReported = false;
 
+				var tcpListenFramed = false;
+				var tcpListenReportedFramed = false;
+
+				var pipeListenFramed = false;
+				var pipeListenReportedFramed = false;
+
 				while( true ) {
 					if( !tcpListen ) {
 						tcpListen = server.Listen( TcpConnectionPort );
 
 						if( tcpListen )
-							Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
+							Console.WriteLine( "Listen TCP port {0}. Framed=false", TcpConnectionPort );
 						else if( !tcpListenReported ) {
 							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
 							tcpListenReported = true;
@@ -50,17 +69,40 @@ namespace Example {
 						pipeListen = server.Listen( NamedPipeConnectionPath );
 
 						if( pipeListen )
-							Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
+							Console.WriteLine( "Listen named pipe '{0}'. Framed=false", NamedPipeConnectionPath );
 						else if( !pipeListenReported ) {
 							Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
 							pipeListenReported = true;
 						}
 					}
 
+					if( !tcpListenFramed ) {
+						tcpListenFramed = serverFramed.Listen( TcpConnectionPortFramed );
+
+						if( tcpListenFramed )
+							Console.WriteLine( "Listen TCP port {0}. Framed=true", TcpConnectionPortFramed );
+						else if( !tcpListenReportedFramed ) {
+							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPortFramed );
+							tcpListenReportedFramed = true;
+						}
+					}
+
+					if( !pipeListenFramed ) {
+						pipeListenFramed = serverFramed.Listen( NamedPipeConnectionPathFramed );
+
+						if( pipeListenFramed )
+							Console.WriteLine( "Listen named pipe '{0}'. Framed=true", NamedPipeConnectionPathFramed );
+						else if( !pipeListenReportedFramed ) {
+							Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPathFramed );
+							pipeListenReportedFramed = true;
+						}
+					}
 					var all = true;
 
 					all &= tcpListen;
 					all &= pipeListen;
+					all &= tcpListenFramed;
+					all &= pipeListenFramed;
 
 					if( !all ) {
 						using( new Fiber.CancellationRegion() ) {
@@ -80,14 +122,24 @@ namespace Example {
 			// @}
 
 			eventLoop.DispatchSync();
+
+			serverImpl.Dispose(); // break cycle refs
 		}
 
 		static void PrintConnectionOptions() {
 			Console.WriteConcatLine( "Dispatching started: use port ", TcpConnectionPort, " or '", NamedPipeConnectionPath, "' to connect" );
 		}
 
-		public class ThriftServerImpl : Svc2.IApi {
-			public ThriftServerImpl() {
+		public class ServerImpl : Svc2.IApi, IExceptionHandler {
+			public Svc2.RequestHandler RequestHandler;
+
+			public ServerImpl() {
+			}
+
+			public override void Dispose() {
+				RequestHandler = null;
+
+				base.Dispose();
 			}
 
 			public int add( int left, int right ) {
@@ -118,6 +170,20 @@ namespace Example {
 			public KVP echo2( KVP value ) {
 				return value;
 			}
+
+			public void some_event( Utf8String text ) {
+				Console.WriteLine( text );
+			}
+
+			public int ThrowException( int value ) {
+				if( value == 1 ) { RequestHandler.SendException( new ExceptionWithMessage() { Text = "Exception message" } ); return 1; }
+				else if( value == 2 ) { RequestHandler.SendException( new ExceptionWithCode() { Code = 111 } ); return 2; }
+
+				return 333;
+			}
+
+			void IExceptionHandler.OnException( ProtocolError error ) { Console.WriteLine( "THRIFT: ProtocolError={0}", error ); }
+			void IExceptionHandler.OnException( ServerException exception ) { Console.WriteLine( "THRIFT: ServerException={0}", exception ); }
 		}
 	}
 }

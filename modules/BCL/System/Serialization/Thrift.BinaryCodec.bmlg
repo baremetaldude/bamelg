@@ -9,22 +9,25 @@ using System.IO;
 using System.Text;
 
 namespace System.Serialization.Thrift {
-	public class BinaryProtocolCodec : ProtocolCodec {
+	public class BinaryProtocolCodec : ProtocolCodec, BinaryReader.IEventHandler {
 		protected const uint VersionMask = 0xFFFF0000;
 		protected const uint Version1 = 0x80010000;
 
-		protected bool _strictRead = false;
-		protected bool _strictWrite = true;
-		protected bool _framed = true;
+		protected bool _strictRead { get; set; } = false;
+		protected bool _strictWrite { get; set; } = true;
+		protected bool _framed { get; set; } = true;
 
-		protected int _readLength;
-		protected bool _checkReadLength = false;
+		public int MaxStringSize = int.MaxValue;
+		public int MaxArraySize = int.MaxValue;
 
 		protected BinaryWriter _writer;
 		protected BinaryReader _reader;
 
 		protected int _frameLength;
 		protected StreamingBufferInfo* _readBuffer, _writeBuffer;
+
+		void BinaryReader.IEventHandler.EndOfStream( BinaryReader context ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
+		void BinaryReader.IEventHandler.PrimitiveSizeExceeded( BinaryReader context ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
 
 		private BinaryProtocolCodec( bool framed, bool strictRead, bool strictWrite ) {
 			_strictRead = strictRead;
@@ -39,6 +42,8 @@ namespace System.Serialization.Thrift {
 
 			_readBuffer = _reader.BaseStream.BufferInfo;
 			_writeBuffer = _writer.BaseStream.BufferInfo;
+
+			_reader.EventHandler = this;
 		}
 
 		public BinaryProtocolCodec( IStream input, IStream output, bool framed = true, bool strictRead = false, bool strictWrite = true )
@@ -48,6 +53,14 @@ namespace System.Serialization.Thrift {
 
 			_readBuffer = _reader.BaseStream.BufferInfo;
 			_writeBuffer = _writer.BaseStream.BufferInfo;
+
+			_reader.EventHandler = this;
+		}
+
+		public override void Dispose() { // remove cyclic deps
+			_reader.EventHandler = null;
+
+			base.Dispose();
 		}
 
 		public override void WriteMessageBegin( Utf8String name, MessageInfo.Kind type, int seqID ) {
@@ -67,33 +80,44 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override MessageInfo ReadMessageBegin() {
+			var message = default( MessageInfo );
+
 			if( _framed ) {
 				_frameLength = _reader.ReadInt32BigEndian();
-				Assert.IsTrue( _frameLength <= _readBuffer->Capacity );
-				_reader.EnsureReadable( _frameLength );
+				if( !_reader.EnsureReadable( _frameLength ) ) {
+					ExceptionHandler.OnException( ProtocolError.SizeLimit );
+					IsStreamBroken = true;
+					return message;
+				}
 			}
 
-			var message = default( MessageInfo );
 			var size = _reader.PeekInt32BigEndian();
 			if( size < 0 ) {
 				ReadInt32();
 
 				var version = ( uint ) size & VersionMask;
-				// if( version != Version1 )
-				//	throw new ProtocolException( ProtocolException.Kind.BadVersion, "Bad version in ReadMessageBegin: " + version );
+				if( version != Version1 ) {
+					ExceptionHandler.OnException( ProtocolError.BadVersion );
+					IsStreamBroken = true;
+					return message;
+				}
 
 				message.Type = ( MessageInfo.Kind )( size & 0x000000FF );
 				message.Name = ReadString();
 				message.SeqID = ReadInt32();
 			}
 			else {
-				// if( _strictRead )
-				//	throw new ProtocolException( ProtocolException.Kind.BadVersion, "Missing version in ReadMessageBegin" );
+				if( _strictRead ) {
+					ExceptionHandler.OnException( ProtocolError.BadVersion );
+					IsStreamBroken = true;
+					return message;
+				}
 
 				message.Name = ReadString();
 				message.Type = ( MessageInfo.Kind ) ReadByte();
 				message.SeqID = ReadInt32();
 			}
+
 			return message;
 		}
 
@@ -175,6 +199,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override bool ReadBool() {
+			if( IsStreamBroken ) return false;
+
 			return ReadByte() == 1;
 		}
 
@@ -183,6 +209,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override byte ReadByte() {
+			if( IsStreamBroken ) return 0;
+
 			return _reader.ReadUInt8();
 		}
 
@@ -191,6 +219,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override short ReadInt16() {
+			if( IsStreamBroken ) return 0;
+
 			return _reader.ReadInt16BigEndian();
 		}
 
@@ -199,6 +229,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override int ReadInt32() {
+			if( IsStreamBroken ) return 0;
+
 			return _reader.ReadInt32BigEndian();
 		}
 
@@ -207,6 +239,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override long ReadInt64() {
+			if( IsStreamBroken ) return 0;
+
 			return _reader.ReadInt64BigEndian();
 		}
 
@@ -215,6 +249,8 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override double ReadDouble() {
+			if( IsStreamBroken ) return 0;
+
 			return _reader.ReadDoubleBigEndian();
 		}
 
@@ -224,12 +260,18 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override byte[] ReadBinary() {
+			if( IsStreamBroken ) return null;
+
 			var size = ReadInt32();
-			if( _framed ) Assert.IsTrue( size <= _readBuffer->AvailableToRead );
-			else Assert.IsTrue( size <= _readBuffer->Capacity );
+			if( size > MaxArraySize ) {
+				ExceptionHandler.OnException( ProtocolError.SizeLimit );
+				_reader.BaseStream.Drain( size );
+				return null;
+			}
 
 			var buf = new[size] byte;
-			_reader.Read( &buf[0], size );
+			var readen = _reader.Read( &buf[0], size );
+			if( readen != size ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
 			return buf;
 		}
 
@@ -239,12 +281,18 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override Utf8String ReadString() {
+			if( IsStreamBroken ) return null;
+
 			var byteLength = ReadInt32();
-			if( _framed ) Assert.IsTrue( byteLength <= _readBuffer->AvailableToRead );
-			else Assert.IsTrue( byteLength <= _readBuffer->Capacity );
+			if( byteLength > MaxStringSize ) {
+				ExceptionHandler.OnException( ProtocolError.SizeLimit );
+				_reader.BaseStream.Drain( byteLength );
+				return null;
+			}
 
 			var builder = new Utf8String.Builder( ( uint ) byteLength );
-			_reader.Read( builder.GetChars(), ( int ) byteLength );
+			var readen = _reader.Read( builder.GetChars(), ( int ) byteLength );
+			if( readen != byteLength ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
 			return builder.Detach();
 		}
 

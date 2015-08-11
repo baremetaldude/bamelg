@@ -13,6 +13,7 @@ namespace System.Net {
 		// @{ config
 		public int ClientFiberStackPages = 2;
 		public int MaxClientRequestLength = 16384;
+		public int ResponseBufferLength = 16384;
 		public int MaxSessions = 0; // 0 - unlimited
 
 		public int ListenBacklog = 128;
@@ -51,8 +52,8 @@ namespace System.Net {
 				_parent = parent;
 
 				_stream = stream;
-				_readStream = _stream.GetBufferedReadStream( _readStreamBuffer );
-				_writeStream = _stream.GetBufferedWriteStream( _writeStreamBuffer );
+				_readStream = _stream.GetBufferedReadStream( _readStreamBuffer, parent.MaxClientRequestLength );
+				_writeStream = _stream.GetBufferedWriteStream( _writeStreamBuffer, parent.ResponseBufferLength );
 			}
 
 			public void StartFiber() {
