@@ -38,65 +38,81 @@ namespace Example
 
     public void Read (TProtocol iprot)
     {
-      bool isset_name = false;
-      bool isset_value = false;
-      TField field;
-      iprot.ReadStructBegin();
-      while (true)
+      iprot.IncrementRecursionDepth();
+      try
       {
-        field = iprot.ReadFieldBegin();
-        if (field.Type == TType.Stop) { 
-          break;
-        }
-        switch (field.ID)
+        bool isset_name = false;
+        bool isset_value = false;
+        TField field;
+        iprot.ReadStructBegin();
+        while (true)
         {
-          case 1:
-            if (field.Type == TType.String) {
-              Name = iprot.ReadBinary();
-              isset_name = true;
-            } else { 
+          field = iprot.ReadFieldBegin();
+          if (field.Type == TType.Stop) { 
+            break;
+          }
+          switch (field.ID)
+          {
+            case 1:
+              if (field.Type == TType.String) {
+                Name = iprot.ReadBinary();
+                isset_name = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            case 2:
+              if (field.Type == TType.String) {
+                Value = iprot.ReadBinary();
+                isset_value = true;
+              } else { 
+                TProtocolUtil.Skip(iprot, field.Type);
+              }
+              break;
+            default: 
               TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          case 2:
-            if (field.Type == TType.String) {
-              Value = iprot.ReadBinary();
-              isset_value = true;
-            } else { 
-              TProtocolUtil.Skip(iprot, field.Type);
-            }
-            break;
-          default: 
-            TProtocolUtil.Skip(iprot, field.Type);
-            break;
+              break;
+          }
+          iprot.ReadFieldEnd();
         }
-        iprot.ReadFieldEnd();
+        iprot.ReadStructEnd();
+        if (!isset_name)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
+        if (!isset_value)
+          throw new TProtocolException(TProtocolException.INVALID_DATA);
       }
-      iprot.ReadStructEnd();
-      if (!isset_name)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
-      if (!isset_value)
-        throw new TProtocolException(TProtocolException.INVALID_DATA);
+      finally
+      {
+        iprot.DecrementRecursionDepth();
+      }
     }
 
     public void Write(TProtocol oprot) {
-      TStruct struc = new TStruct("KVP");
-      oprot.WriteStructBegin(struc);
-      TField field = new TField();
-      field.Name = "name";
-      field.Type = TType.String;
-      field.ID = 1;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteBinary(Name);
-      oprot.WriteFieldEnd();
-      field.Name = "value";
-      field.Type = TType.String;
-      field.ID = 2;
-      oprot.WriteFieldBegin(field);
-      oprot.WriteBinary(Value);
-      oprot.WriteFieldEnd();
-      oprot.WriteFieldStop();
-      oprot.WriteStructEnd();
+      oprot.IncrementRecursionDepth();
+      try
+      {
+        TStruct struc = new TStruct("KVP");
+        oprot.WriteStructBegin(struc);
+        TField field = new TField();
+        field.Name = "name";
+        field.Type = TType.String;
+        field.ID = 1;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteBinary(Name);
+        oprot.WriteFieldEnd();
+        field.Name = "value";
+        field.Type = TType.String;
+        field.ID = 2;
+        oprot.WriteFieldBegin(field);
+        oprot.WriteBinary(Value);
+        oprot.WriteFieldEnd();
+        oprot.WriteFieldStop();
+        oprot.WriteStructEnd();
+      }
+      finally
+      {
+        oprot.DecrementRecursionDepth();
+      }
     }
 
     public override string ToString() {

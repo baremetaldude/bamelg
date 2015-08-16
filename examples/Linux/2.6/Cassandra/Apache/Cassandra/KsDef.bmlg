@@ -13,7 +13,7 @@ namespace Apache.Cassandra {
 		private Dictionary<Utf8String, Utf8String> _strategy_options;
 		private int _replication_factor;
 		private List<CfDef> _cf_defs;
-		private bool _durable_writes;
+		private bool _durable_writes = true;
 
 		public Utf8String Name { get { return _name; } set { __isset.name = true; _name = value; } }
 		public Utf8String Strategy_class { get { return _strategy_class; } set { __isset.strategy_class = true; _strategy_class = value; } }
@@ -25,18 +25,19 @@ namespace Apache.Cassandra {
 		public List<CfDef> Cf_defs { get { return _cf_defs; } set { __isset.cf_defs = true; _cf_defs = value; } }
 		public bool Durable_writes { get { return _durable_writes; } set { __isset.durable_writes = true; _durable_writes = value; } }
 
-		public Isset __isset = default( Isset );
+		public Isset __isset = new Isset();
 		public struct Isset {
+			public Isset() { }
+
 			public bool name { get; set; }
 			public bool strategy_class { get; set; }
 			public bool strategy_options { get; set; }
 			public bool replication_factor { get; set; }
 			public bool cf_defs { get; set; }
-			public bool durable_writes { get; set; }
+			public bool durable_writes { get; set; } = true;
 		}
 
 		public KsDef() {
-			_durable_writes = true;
 		}
 
 		public void Read( ProtocolCodec reader ) {
@@ -67,7 +68,7 @@ namespace Apache.Cassandra {
 							for( var _i57 = 0; _i57 < _map56.Count; ++_i57 ) {
 								var _key58 = reader.ReadString();
 								var _val59 = reader.ReadString();
-								Strategy_options[_key58] = _val59;
+								_strategy_options[_key58] = _val59;
 							}
 							reader.ReadMapEnd();
 						}
@@ -88,7 +89,7 @@ namespace Apache.Cassandra {
 							for( var _i61 = 0; _i61 < _list60.Count; ++_i61 ) {
 								var _elem62 = new CfDef();
 								_elem62.Read( reader );
-								Cf_defs.Add( _elem62 );
+								_cf_defs.Add( _elem62 );
 							}
 							reader.ReadListEnd();
 						}

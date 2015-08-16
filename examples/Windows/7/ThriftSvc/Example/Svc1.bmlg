@@ -135,6 +135,7 @@ namespace Example {
 
 			public bool Process( ProtocolCodec reader, ProtocolCodec writer ) {
 				var msg = reader.ReadMessageBegin();
+				if( msg.Name == null ) return false;
 				switch( msg.Name ) {
 					case "add": add_Process( msg.SeqID, reader, writer ); return true;
 					case "echo": echo_Process( msg.SeqID, reader, writer ); return true;
@@ -396,7 +397,7 @@ namespace Example {
 								Success = new List<Utf8String>( _list0.Count );
 								for( var _i1 = 0; _i1 < _list0.Count; ++_i1 ) {
 									var _elem2 = reader.ReadString();
-									Success.Add( _elem2 );
+									_success.Add( _elem2 );
 								}
 								reader.ReadListEnd();
 							}
@@ -463,7 +464,7 @@ namespace Example {
 								for( var _i4 = 0; _i4 < _map3.Count; ++_i4 ) {
 									var _key5 = reader.ReadString();
 									var _val6 = reader.ReadString();
-									Value[_key5] = _val6;
+									_value[_key5] = _val6;
 								}
 								reader.ReadMapEnd();
 							}
@@ -528,7 +529,7 @@ namespace Example {
 								for( var _i8 = 0; _i8 < _map7.Count; ++_i8 ) {
 									var _key9 = reader.ReadString();
 									var _val10 = reader.ReadString();
-									Success[_key9] = _val10;
+									_success[_key9] = _val10;
 								}
 								reader.ReadMapEnd();
 							}

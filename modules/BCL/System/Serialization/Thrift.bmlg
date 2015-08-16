@@ -198,6 +198,44 @@ namespace System.Serialization.Thrift {
 		public abstract byte[] ReadBinary();
 
 		public abstract void WriteFieldStop();
+		
+		public int MaxStringSize = int.MaxValue;
+		public int MaxBlobSize = int.MaxValue;
+		public int MaxContainerSize = int.MaxValue;
+
+		protected void ValidateCount( int count ) {
+			if( count < 0 ) {
+				ExceptionHandler.OnException( ProtocolError.NegativeSize );
+				IsStreamBroken = true;
+			}
+		}
+
+		protected void ValidateContainerSize( int size ) {
+			ValidateCount( size );
+
+			if( size > MaxContainerSize ) {
+				ExceptionHandler.OnException( ProtocolError.SizeLimit );
+				IsStreamBroken = true;
+			}
+		}
+
+		protected void ValidateStringSize( int size ) {
+			ValidateCount( size );
+
+			if( size > MaxStringSize ) {
+				ExceptionHandler.OnException( ProtocolError.SizeLimit );
+				IsStreamBroken = true;
+			}
+		}
+
+		protected void ValidateBlobSize( int size ) {
+			ValidateCount( size );
+
+			if( size > MaxBlobSize ) {
+				ExceptionHandler.OnException( ProtocolError.SizeLimit );
+				IsStreamBroken = true;
+			}
+		}
 
 		public void Skip( TypeKind type ) {
 			switch( type ) {

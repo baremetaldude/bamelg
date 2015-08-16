@@ -1664,6 +1664,7 @@ namespace Apache.Cassandra {
 
 			public bool Process( ProtocolCodec reader, ProtocolCodec writer ) {
 				var msg = reader.ReadMessageBegin();
+				if( msg.Name == null ) return false;
 				switch( msg.Name ) {
 					case "add": add_Process( msg.SeqID, reader, writer ); return true;
 					case "atomic_batch_mutate": atomic_batch_mutate_Process( msg.SeqID, reader, writer ); return true;
@@ -2757,7 +2758,7 @@ namespace Apache.Cassandra {
 		public partial struct get_args : IFormattable {
 			private byte[] _key;
 			private ColumnPath _column_path;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnPath Column_path { get { return _column_path; } set { __isset.column_path = true; _column_path = value; } }
@@ -2767,15 +2768,16 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_path { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -2960,7 +2962,7 @@ namespace Apache.Cassandra {
 			private byte[] _key;
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -2971,16 +2973,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_parent { get; set; }
 				public bool predicate { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_slice_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -3095,7 +3098,7 @@ namespace Apache.Cassandra {
 								for( var _i84 = 0; _i84 < _list83.Count; ++_i84 ) {
 									var _elem85 = new ColumnOrSuperColumn();
 									_elem85.Read( reader );
-									Success.Add( _elem85 );
+									_success.Add( _elem85 );
 								}
 								reader.ReadListEnd();
 							}
@@ -3175,7 +3178,7 @@ namespace Apache.Cassandra {
 			private byte[] _key;
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -3186,16 +3189,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_parent { get; set; }
 				public bool predicate { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_count_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -3375,7 +3379,7 @@ namespace Apache.Cassandra {
 			private List<byte[]> _keys;
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public List<byte[]> Keys { get { return _keys; } set { __isset.keys = true; _keys = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -3386,16 +3390,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool keys { get; set; }
 				public bool column_parent { get; set; }
 				public bool predicate { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public multiget_slice_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -3411,7 +3416,7 @@ namespace Apache.Cassandra {
 								Keys = new List<byte[]>( _list86.Count );
 								for( var _i87 = 0; _i87 < _list86.Count; ++_i87 ) {
 									var _elem88 = reader.ReadBinary();
-									Keys.Add( _elem88 );
+									_keys.Add( _elem88 );
 								}
 								reader.ReadListEnd();
 							}
@@ -3529,7 +3534,7 @@ namespace Apache.Cassandra {
 										_val92.Add( _elem95 );
 									}
 									reader.ReadListEnd();
-									Success[_key91] = _val92;
+									_success[_key91] = _val92;
 								}
 								reader.ReadMapEnd();
 							}
@@ -3616,7 +3621,7 @@ namespace Apache.Cassandra {
 			private List<byte[]> _keys;
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public List<byte[]> Keys { get { return _keys; } set { __isset.keys = true; _keys = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -3627,16 +3632,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool keys { get; set; }
 				public bool column_parent { get; set; }
 				public bool predicate { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public multiget_count_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -3652,7 +3658,7 @@ namespace Apache.Cassandra {
 								Keys = new List<byte[]>( _list96.Count );
 								for( var _i97 = 0; _i97 < _list96.Count; ++_i97 ) {
 									var _elem98 = reader.ReadBinary();
-									Keys.Add( _elem98 );
+									_keys.Add( _elem98 );
 								}
 								reader.ReadListEnd();
 							}
@@ -3763,7 +3769,7 @@ namespace Apache.Cassandra {
 								for( var _i100 = 0; _i100 < _map99.Count; ++_i100 ) {
 									var _key101 = reader.ReadBinary();
 									var _val102 = reader.ReadInt32();
-									Success[_key101] = _val102;
+									_success[_key101] = _val102;
 								}
 								reader.ReadMapEnd();
 							}
@@ -3844,7 +3850,7 @@ namespace Apache.Cassandra {
 			private ColumnParent _column_parent;
 			private SlicePredicate _predicate;
 			private KeyRange _range;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
 			public SlicePredicate Predicate { get { return _predicate; } set { __isset.predicate = true; _predicate = value; } }
@@ -3855,16 +3861,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool column_parent { get; set; }
 				public bool predicate { get; set; }
 				public bool range { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_range_slices_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -3980,7 +3987,7 @@ namespace Apache.Cassandra {
 								for( var _i104 = 0; _i104 < _list103.Count; ++_i104 ) {
 									var _elem105 = new KeySlice();
 									_elem105.Read( reader );
-									Success.Add( _elem105 );
+									_success.Add( _elem105 );
 								}
 								reader.ReadListEnd();
 							}
@@ -4060,7 +4067,7 @@ namespace Apache.Cassandra {
 			private Utf8String _column_family;
 			private KeyRange _range;
 			private byte[] _start_column;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public Utf8String Column_family { get { return _column_family; } set { __isset.column_family = true; _column_family = value; } }
 			public KeyRange Range { get { return _range; } set { __isset.range = true; _range = value; } }
@@ -4071,16 +4078,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool column_family { get; set; }
 				public bool range { get; set; }
 				public bool start_column { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_paged_slice_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -4194,7 +4202,7 @@ namespace Apache.Cassandra {
 								for( var _i107 = 0; _i107 < _list106.Count; ++_i107 ) {
 									var _elem108 = new KeySlice();
 									_elem108.Read( reader );
-									Success.Add( _elem108 );
+									_success.Add( _elem108 );
 								}
 								reader.ReadListEnd();
 							}
@@ -4274,7 +4282,7 @@ namespace Apache.Cassandra {
 			private ColumnParent _column_parent;
 			private IndexClause _index_clause;
 			private SlicePredicate _column_predicate;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
 			public IndexClause Index_clause { get { return _index_clause; } set { __isset.index_clause = true; _index_clause = value; } }
@@ -4285,16 +4293,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool column_parent { get; set; }
 				public bool index_clause { get; set; }
 				public bool column_predicate { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public get_indexed_slices_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -4410,7 +4419,7 @@ namespace Apache.Cassandra {
 								for( var _i110 = 0; _i110 < _list109.Count; ++_i110 ) {
 									var _elem111 = new KeySlice();
 									_elem111.Read( reader );
-									Success.Add( _elem111 );
+									_success.Add( _elem111 );
 								}
 								reader.ReadListEnd();
 							}
@@ -4490,7 +4499,7 @@ namespace Apache.Cassandra {
 			private byte[] _key;
 			private ColumnParent _column_parent;
 			private Column _column;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -4501,16 +4510,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_parent { get; set; }
 				public bool column { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public insert_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -4676,7 +4686,7 @@ namespace Apache.Cassandra {
 			private byte[] _key;
 			private ColumnParent _column_parent;
 			private CounterColumn _column;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnParent Column_parent { get { return _column_parent; } set { __isset.column_parent = true; _column_parent = value; } }
@@ -4687,16 +4697,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_parent { get; set; }
 				public bool column { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public add_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -4863,8 +4874,8 @@ namespace Apache.Cassandra {
 			private Utf8String _column_family;
 			private List<Column> _expected;
 			private List<Column> _updates;
-			private ConsistencyLevel _serial_consistency_level;
-			private ConsistencyLevel _commit_consistency_level;
+			private ConsistencyLevel _serial_consistency_level = ConsistencyLevel.SERIAL;
+			private ConsistencyLevel _commit_consistency_level = ConsistencyLevel.QUORUM;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public Utf8String Column_family { get { return _column_family; } set { __isset.column_family = true; _column_family = value; } }
@@ -4881,19 +4892,19 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Commit_consistency_level { get { return _commit_consistency_level; } set { __isset.commit_consistency_level = true; _commit_consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_family { get; set; }
 				public bool expected { get; set; }
 				public bool updates { get; set; }
-				public bool serial_consistency_level { get; set; }
-				public bool commit_consistency_level { get; set; }
+				public bool serial_consistency_level { get; set; } = true;
+				public bool commit_consistency_level { get; set; } = true;
 			}
 
 			public cas_args() {
-				_serial_consistency_level = ( ConsistencyLevel ) 9;
-				_commit_consistency_level = ( ConsistencyLevel ) 2;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -4924,7 +4935,7 @@ namespace Apache.Cassandra {
 								for( var _i113 = 0; _i113 < _list112.Count; ++_i113 ) {
 									var _elem114 = new Column();
 									_elem114.Read( reader );
-									Expected.Add( _elem114 );
+									_expected.Add( _elem114 );
 								}
 								reader.ReadListEnd();
 							}
@@ -4938,7 +4949,7 @@ namespace Apache.Cassandra {
 								for( var _i116 = 0; _i116 < _list115.Count; ++_i116 ) {
 									var _elem117 = new Column();
 									_elem117.Read( reader );
-									Updates.Add( _elem117 );
+									_updates.Add( _elem117 );
 								}
 								reader.ReadListEnd();
 							}
@@ -5124,7 +5135,7 @@ namespace Apache.Cassandra {
 			private byte[] _key;
 			private ColumnPath _column_path;
 			private long _timestamp;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnPath Column_path { get { return _column_path; } set { __isset.column_path = true; _column_path = value; } }
@@ -5135,16 +5146,17 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool column_path { get; set; }
 				public bool timestamp { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public remove_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -5308,7 +5320,7 @@ namespace Apache.Cassandra {
 		public partial struct remove_counter_args : IFormattable {
 			private byte[] _key;
 			private ColumnPath _path;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public byte[] Key { get { return _key; } set { __isset.key = true; _key = value; } }
 			public ColumnPath Path { get { return _path; } set { __isset.path = true; _path = value; } }
@@ -5318,15 +5330,16 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool key { get; set; }
 				public bool path { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public remove_counter_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -5477,7 +5490,7 @@ namespace Apache.Cassandra {
 		}
 		public partial struct batch_mutate_args : IFormattable {
 			private Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> _mutation_map;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> Mutation_map { get { return _mutation_map; } set { __isset.mutation_map = true; _mutation_map = value; } }
 			/// <summary>
@@ -5486,14 +5499,15 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool mutation_map { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public batch_mutate_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -5524,7 +5538,7 @@ namespace Apache.Cassandra {
 										_val121[_key124] = _val125;
 									}
 									reader.ReadMapEnd();
-									Mutation_map[_key120] = _val121;
+									_mutation_map[_key120] = _val121;
 								}
 								reader.ReadMapEnd();
 							}
@@ -5672,7 +5686,7 @@ namespace Apache.Cassandra {
 		}
 		public partial struct atomic_batch_mutate_args : IFormattable {
 			private Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> _mutation_map;
-			private ConsistencyLevel _consistency_level;
+			private ConsistencyLevel _consistency_level = ConsistencyLevel.ONE;
 
 			public Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>> Mutation_map { get { return _mutation_map; } set { __isset.mutation_map = true; _mutation_map = value; } }
 			/// <summary>
@@ -5681,14 +5695,15 @@ namespace Apache.Cassandra {
 			/// </summary>
 			public ConsistencyLevel Consistency_level { get { return _consistency_level; } set { __isset.consistency_level = true; _consistency_level = value; } }
 
-			public Isset __isset = default( Isset );
+			public Isset __isset = new Isset();
 			public struct Isset {
+				public Isset() { }
+
 				public bool mutation_map { get; set; }
-				public bool consistency_level { get; set; }
+				public bool consistency_level { get; set; } = true;
 			}
 
 			public atomic_batch_mutate_args() {
-				_consistency_level = ( ConsistencyLevel ) 1;
 			}
 
 			public void Read( ProtocolCodec reader ) {
@@ -5719,7 +5734,7 @@ namespace Apache.Cassandra {
 										_val132[_key135] = _val136;
 									}
 									reader.ReadMapEnd();
-									Mutation_map[_key131] = _val132;
+									_mutation_map[_key131] = _val132;
 								}
 								reader.ReadMapEnd();
 							}
@@ -6064,7 +6079,7 @@ namespace Apache.Cassandra {
 										_val143.Add( _elem146 );
 									}
 									reader.ReadListEnd();
-									Success[_key142] = _val143;
+									_success[_key142] = _val143;
 								}
 								reader.ReadMapEnd();
 							}
@@ -6182,7 +6197,7 @@ namespace Apache.Cassandra {
 								for( var _i148 = 0; _i148 < _list147.Count; ++_i148 ) {
 									var _elem149 = new KsDef();
 									_elem149.Read( reader );
-									Success.Add( _elem149 );
+									_success.Add( _elem149 );
 								}
 								reader.ReadListEnd();
 							}
@@ -6481,7 +6496,7 @@ namespace Apache.Cassandra {
 								for( var _i151 = 0; _i151 < _list150.Count; ++_i151 ) {
 									var _elem152 = new TokenRange();
 									_elem152.Read( reader );
-									Success.Add( _elem152 );
+									_success.Add( _elem152 );
 								}
 								reader.ReadListEnd();
 							}
@@ -6614,7 +6629,7 @@ namespace Apache.Cassandra {
 								for( var _i154 = 0; _i154 < _list153.Count; ++_i154 ) {
 									var _elem155 = new TokenRange();
 									_elem155.Read( reader );
-									Success.Add( _elem155 );
+									_success.Add( _elem155 );
 								}
 								reader.ReadListEnd();
 							}
@@ -6725,7 +6740,7 @@ namespace Apache.Cassandra {
 								for( var _i157 = 0; _i157 < _map156.Count; ++_i157 ) {
 									var _key158 = reader.ReadString();
 									var _val159 = reader.ReadString();
-									Success[_key158] = _val159;
+									_success[_key158] = _val159;
 								}
 								reader.ReadMapEnd();
 							}
@@ -7205,7 +7220,7 @@ namespace Apache.Cassandra {
 								Success = new List<Utf8String>( _list160.Count );
 								for( var _i161 = 0; _i161 < _list160.Count; ++_i161 ) {
 									var _elem162 = reader.ReadString();
-									Success.Add( _elem162 );
+									_success.Add( _elem162 );
 								}
 								reader.ReadListEnd();
 							}
@@ -7466,7 +7481,7 @@ namespace Apache.Cassandra {
 								for( var _i164 = 0; _i164 < _list163.Count; ++_i164 ) {
 									var _elem165 = new CfSplit();
 									_elem165.Read( reader );
-									Success.Add( _elem165 );
+									_success.Add( _elem165 );
 								}
 								reader.ReadListEnd();
 							}
@@ -9037,7 +9052,7 @@ namespace Apache.Cassandra {
 								Values = new List<byte[]>( _list166.Count );
 								for( var _i167 = 0; _i167 < _list166.Count; ++_i167 ) {
 									var _elem168 = reader.ReadBinary();
-									Values.Add( _elem168 );
+									_values.Add( _elem168 );
 								}
 								reader.ReadListEnd();
 							}
@@ -9237,7 +9252,7 @@ namespace Apache.Cassandra {
 								Values = new List<byte[]>( _list169.Count );
 								for( var _i170 = 0; _i170 < _list169.Count; ++_i170 ) {
 									var _elem171 = reader.ReadBinary();
-									Values.Add( _elem171 );
+									_values.Add( _elem171 );
 								}
 								reader.ReadListEnd();
 							}

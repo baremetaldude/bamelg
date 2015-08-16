@@ -21,7 +21,7 @@ namespace Apache.Cassandra {
 		private Utf8String _start_token;
 		private Utf8String _end_token;
 		private List<IndexExpression> _row_filter;
-		private int _count;
+		private int _count = 100;
 
 		public byte[] Start_key { get { return _start_key; } set { __isset.start_key = true; _start_key = value; } }
 		public byte[] End_key { get { return _end_key; } set { __isset.end_key = true; _end_key = value; } }
@@ -30,18 +30,19 @@ namespace Apache.Cassandra {
 		public List<IndexExpression> Row_filter { get { return _row_filter; } set { __isset.row_filter = true; _row_filter = value; } }
 		public int Count { get { return _count; } set { __isset.count = true; _count = value; } }
 
-		public Isset __isset = default( Isset );
+		public Isset __isset = new Isset();
 		public struct Isset {
+			public Isset() { }
+
 			public bool start_key { get; set; }
 			public bool end_key { get; set; }
 			public bool start_token { get; set; }
 			public bool end_token { get; set; }
 			public bool row_filter { get; set; }
-			public bool count { get; set; }
+			public bool count { get; set; } = true;
 		}
 
 		public KeyRange() {
-			_count = 100;
 		}
 
 		public void Read( ProtocolCodec reader ) {
@@ -86,7 +87,7 @@ namespace Apache.Cassandra {
 							for( var _i13 = 0; _i13 < _list12.Count; ++_i13 ) {
 								var _elem14 = new IndexExpression();
 								_elem14.Read( reader );
-								Row_filter.Add( _elem14 );
+								_row_filter.Add( _elem14 );
 							}
 							reader.ReadListEnd();
 						}

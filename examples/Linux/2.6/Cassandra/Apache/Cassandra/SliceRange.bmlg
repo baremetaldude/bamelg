@@ -25,25 +25,25 @@ namespace Apache.Cassandra {
 	public partial class SliceRange : IFormattable {
 		private byte[] _start;
 		private byte[] _finish;
-		private bool _reversed;
-		private int _count;
+		private bool _reversed = false;
+		private int _count = 100;
 
 		public byte[] Start { get { return _start; } set { __isset.start = true; _start = value; } }
 		public byte[] Finish { get { return _finish; } set { __isset.finish = true; _finish = value; } }
 		public bool Reversed { get { return _reversed; } set { __isset.reversed = true; _reversed = value; } }
 		public int Count { get { return _count; } set { __isset.count = true; _count = value; } }
 
-		public Isset __isset = default( Isset );
+		public Isset __isset = new Isset();
 		public struct Isset {
+			public Isset() { }
+
 			public bool start { get; set; }
 			public bool finish { get; set; }
-			public bool reversed { get; set; }
-			public bool count { get; set; }
+			public bool reversed { get; set; } = true;
+			public bool count { get; set; } = true;
 		}
 
 		public SliceRange() {
-			_reversed = false;
-			_count = 100;
 		}
 
 		public void Read( ProtocolCodec reader ) {

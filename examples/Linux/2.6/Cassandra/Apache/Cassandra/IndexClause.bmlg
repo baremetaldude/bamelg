@@ -13,21 +13,22 @@ namespace Apache.Cassandra {
 	public partial class IndexClause : IFormattable {
 		private List<IndexExpression> _expressions;
 		private byte[] _start_key;
-		private int _count;
+		private int _count = 100;
 
 		public List<IndexExpression> Expressions { get { return _expressions; } set { __isset.expressions = true; _expressions = value; } }
 		public byte[] Start_key { get { return _start_key; } set { __isset.start_key = true; _start_key = value; } }
 		public int Count { get { return _count; } set { __isset.count = true; _count = value; } }
 
-		public Isset __isset = default( Isset );
+		public Isset __isset = new Isset();
 		public struct Isset {
+			public Isset() { }
+
 			public bool expressions { get; set; }
 			public bool start_key { get; set; }
-			public bool count { get; set; }
+			public bool count { get; set; } = true;
 		}
 
 		public IndexClause() {
-			_count = 100;
 		}
 
 		public void Read( ProtocolCodec reader ) {
@@ -44,7 +45,7 @@ namespace Apache.Cassandra {
 							for( var _i10 = 0; _i10 < _list9.Count; ++_i10 ) {
 								var _elem11 = new IndexExpression();
 								_elem11.Read( reader );
-								Expressions.Add( _elem11 );
+								_expressions.Add( _elem11 );
 							}
 							reader.ReadListEnd();
 						}

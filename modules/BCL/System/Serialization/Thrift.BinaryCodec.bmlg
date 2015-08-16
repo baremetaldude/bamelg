@@ -17,9 +17,6 @@ namespace System.Serialization.Thrift {
 		protected bool _strictWrite { get; set; } = true;
 		protected bool _framed { get; set; } = true;
 
-		public int MaxStringSize = int.MaxValue;
-		public int MaxArraySize = int.MaxValue;
-
 		protected BinaryWriter _writer;
 		protected BinaryReader _reader;
 
@@ -146,6 +143,8 @@ namespace System.Serialization.Thrift {
 			FieldInfo field;
 			field.Type = ( TypeKind ) ReadByte();
 
+			if( !field.Type.IsValid ) { IsStreamBroken = true; return default( FieldInfo ); }
+
 			if( field.Type != TypeKind.Stop )
 				field.ID = ReadInt16();
 
@@ -163,11 +162,44 @@ namespace System.Serialization.Thrift {
 		}
 
 		public override MapInfo ReadMapBegin() {
-			return new MapInfo {
+			var result = new MapInfo {
 				KeyType = ( TypeKind ) ReadByte(),
 				ValueType = ( TypeKind ) ReadByte(),
 				Count = ReadInt32()
 			};
+
+			ValidateContainerSize( result.Count );
+			if( !result.KeyType.IsValid ) IsStreamBroken = true;
+			if( !result.ValueType.IsValid ) IsStreamBroken = true;
+			if( IsStreamBroken ) return default( MapInfo );
+
+			return result;
+		}
+
+		public override ListInfo ReadListBegin() {
+			var result = new ListInfo {
+				ElementType = ( TypeKind ) ReadByte(),
+				Count = ReadInt32()
+			};
+
+			ValidateContainerSize( result.Count );
+			if( !result.ElementType.IsValid ) IsStreamBroken = true;
+			if( IsStreamBroken ) return default( ListInfo );
+
+			return result;
+		}
+
+		public override SetInfo ReadSetBegin() {
+			var result = new SetInfo {
+				ElementType = ( TypeKind ) ReadByte(),
+				Count = ReadInt32()
+			};
+
+			ValidateContainerSize( result.Count );
+			if( !result.ElementType.IsValid ) IsStreamBroken = true;
+			if( IsStreamBroken ) return default( SetInfo );
+
+			return result;
 		}
 
 		public override void WriteListBegin( TypeKind elementType, int count ) {
@@ -175,23 +207,9 @@ namespace System.Serialization.Thrift {
 			WriteInt32( count );
 		}
 
-		public override ListInfo ReadListBegin() {
-			return new ListInfo {
-				ElementType = ( TypeKind ) ReadByte(),
-				Count = ReadInt32()
-			};
-		}
-
 		public override void WriteSetBegin( TypeKind elementType, int count ) {
 			WriteByte( ( byte ) elementType );
 			WriteInt32( count );
-		}
-
-		public override SetInfo ReadSetBegin() {
-			return new SetInfo {
-				ElementType = ( TypeKind ) ReadByte(),
-				Count = ReadInt32()
-			};
 		}
 
 		public override void WriteBool( bool b ) {
@@ -263,11 +281,8 @@ namespace System.Serialization.Thrift {
 			if( IsStreamBroken ) return null;
 
 			var size = ReadInt32();
-			if( size > MaxArraySize ) {
-				ExceptionHandler.OnException( ProtocolError.SizeLimit );
-				_reader.BaseStream.Drain( size );
-				return null;
-			}
+			ValidateBlobSize( size );
+			if( IsStreamBroken ) return null;
 
 			var buf = new[size] byte;
 			var readen = _reader.Read( &buf[0], size );
@@ -284,11 +299,8 @@ namespace System.Serialization.Thrift {
 			if( IsStreamBroken ) return null;
 
 			var byteLength = ReadInt32();
-			if( byteLength > MaxStringSize ) {
-				ExceptionHandler.OnException( ProtocolError.SizeLimit );
-				_reader.BaseStream.Drain( byteLength );
-				return null;
-			}
+			ValidateStringSize( byteLength );
+			if( IsStreamBroken ) return null;
 
 			var builder = new Utf8String.Builder( ( uint ) byteLength );
 			var readen = _reader.Read( builder.GetChars(), ( int ) byteLength );

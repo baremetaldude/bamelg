@@ -83,6 +83,7 @@ namespace Example {
 
 			public new bool Process( ProtocolCodec reader, ProtocolCodec writer ) {
 				var msg = reader.ReadMessageBegin();
+				if( msg.Name == null ) return false;
 				switch( msg.Name ) {
 					case "add": add_Process( msg.SeqID, reader, writer ); return true;
 					case "echo": echo_Process( msg.SeqID, reader, writer ); return true;
@@ -177,11 +178,11 @@ namespace Example {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Set ) {
-								var _set7 = reader.ReadSetBegin();
-								Success = new HashSet<Utf8String>( _set7.Count );
-								for( var _i8 = 0; _i8 < _set7.Count; ++_i8 ) {
-									var _elem9 = reader.ReadString();
-									Success.Add( _elem9 );
+								var _set11 = reader.ReadSetBegin();
+								Success = new HashSet<Utf8String>( _set11.Count );
+								for( var _i12 = 0; _i12 < _set11.Count; ++_i12 ) {
+									var _elem13 = reader.ReadString();
+									_success.Add( _elem13 );
 								}
 								reader.ReadSetEnd();
 							}

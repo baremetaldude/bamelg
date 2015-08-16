@@ -24,9 +24,9 @@ namespace Example
       IAsyncResult Begin_get_strings2(AsyncCallback callback, object state);
       THashSet<string> End_get_strings2(IAsyncResult asyncResult);
       #endif
-      KVP echo2(KVP value);
+      KVP echo2(KVP @value);
       #if SILVERLIGHT
-      IAsyncResult Begin_echo2(AsyncCallback callback, object state, KVP value);
+      IAsyncResult Begin_echo2(AsyncCallback callback, object state, KVP @value);
       KVP End_echo2(IAsyncResult asyncResult);
       #endif
     }
@@ -103,9 +103,9 @@ namespace Example
 
       
       #if SILVERLIGHT
-      public IAsyncResult Begin_echo2(AsyncCallback callback, object state, KVP value)
+      public IAsyncResult Begin_echo2(AsyncCallback callback, object state, KVP @value)
       {
-        return send_echo2(callback, state, value);
+        return send_echo2(callback, state, @value);
       }
 
       public KVP End_echo2(IAsyncResult asyncResult)
@@ -116,27 +116,27 @@ namespace Example
 
       #endif
 
-      public KVP echo2(KVP value)
+      public KVP echo2(KVP @value)
       {
         #if !SILVERLIGHT
-        send_echo2(value);
+        send_echo2(@value);
         return recv_echo2();
 
         #else
-        var asyncResult = Begin_echo2(null, null, value);
+        var asyncResult = Begin_echo2(null, null, @value);
         return End_echo2(asyncResult);
 
         #endif
       }
       #if SILVERLIGHT
-      public IAsyncResult send_echo2(AsyncCallback callback, object state, KVP value)
+      public IAsyncResult send_echo2(AsyncCallback callback, object state, KVP @value)
       #else
-      public void send_echo2(KVP value)
+      public void send_echo2(KVP @value)
       #endif
       {
         oprot_.WriteMessageBegin(new TMessage("echo2", TMessageType.Call, seqid_));
         echo2_args args = new echo2_args();
-        args.Value = value;
+        args.Value = @value;
         args.Write(oprot_);
         oprot_.WriteMessageEnd();
         #if SILVERLIGHT
@@ -240,30 +240,46 @@ namespace Example
 
       public void Read (TProtocol iprot)
       {
-        TField field;
-        iprot.ReadStructBegin();
-        while (true)
+        iprot.IncrementRecursionDepth();
+        try
         {
-          field = iprot.ReadFieldBegin();
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
           {
-            default: 
-              TProtocolUtil.Skip(iprot, field.Type);
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
               break;
+            }
+            switch (field.ID)
+            {
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
           }
-          iprot.ReadFieldEnd();
+          iprot.ReadStructEnd();
         }
-        iprot.ReadStructEnd();
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
       }
 
       public void Write(TProtocol oprot) {
-        TStruct struc = new TStruct("get_strings2_args");
-        oprot.WriteStructBegin(struc);
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("get_strings2_args");
+          oprot.WriteStructBegin(struc);
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
       }
 
       public override string ToString() {
@@ -309,66 +325,82 @@ namespace Example
 
       public void Read (TProtocol iprot)
       {
-        TField field;
-        iprot.ReadStructBegin();
-        while (true)
+        iprot.IncrementRecursionDepth();
+        try
         {
-          field = iprot.ReadFieldBegin();
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
           {
-            case 0:
-              if (field.Type == TType.Set) {
-                {
-                  Success = new THashSet<string>();
-                  TSet _set14 = iprot.ReadSetBegin();
-                  for( int _i15 = 0; _i15 < _set14.Count; ++_i15)
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 0:
+                if (field.Type == TType.Set) {
                   {
-                    string _elem16 = null;
-                    _elem16 = iprot.ReadString();
-                    Success.Add(_elem16);
+                    Success = new THashSet<string>();
+                    TSet _set14 = iprot.ReadSetBegin();
+                    for( int _i15 = 0; _i15 < _set14.Count; ++_i15)
+                    {
+                      string _elem16;
+                      _elem16 = iprot.ReadString();
+                      Success.Add(_elem16);
+                    }
+                    iprot.ReadSetEnd();
                   }
-                  iprot.ReadSetEnd();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
                 }
-              } else { 
+                break;
+              default: 
                 TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            default: 
-              TProtocolUtil.Skip(iprot, field.Type);
-              break;
+                break;
+            }
+            iprot.ReadFieldEnd();
           }
-          iprot.ReadFieldEnd();
+          iprot.ReadStructEnd();
         }
-        iprot.ReadStructEnd();
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
       }
 
       public void Write(TProtocol oprot) {
-        TStruct struc = new TStruct("get_strings2_result");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("get_strings2_result");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
 
-        if (this.__isset.success) {
-          if (Success != null) {
-            field.Name = "Success";
-            field.Type = TType.Set;
-            field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            {
-              oprot.WriteSetBegin(new TSet(TType.String, Success.Count));
-              foreach (string _iter17 in Success)
+          if (this.__isset.success) {
+            if (Success != null) {
+              field.Name = "Success";
+              field.Type = TType.Set;
+              field.ID = 0;
+              oprot.WriteFieldBegin(field);
               {
-                oprot.WriteString(_iter17);
+                oprot.WriteSetBegin(new TSet(TType.String, Success.Count));
+                foreach (string _iter17 in Success)
+                {
+                  oprot.WriteString(_iter17);
+                }
+                oprot.WriteSetEnd();
               }
-              oprot.WriteSetEnd();
+              oprot.WriteFieldEnd();
             }
-            oprot.WriteFieldEnd();
           }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
       }
 
       public override string ToString() {
@@ -402,7 +434,7 @@ namespace Example
         }
         set
         {
-          __isset.value = true;
+          __isset.@value = true;
           this._value = value;
         }
       }
@@ -413,7 +445,7 @@ namespace Example
       [Serializable]
       #endif
       public struct Isset {
-        public bool value;
+        public bool @value;
       }
 
       public echo2_args() {
@@ -421,53 +453,69 @@ namespace Example
 
       public void Read (TProtocol iprot)
       {
-        TField field;
-        iprot.ReadStructBegin();
-        while (true)
+        iprot.IncrementRecursionDepth();
+        try
         {
-          field = iprot.ReadFieldBegin();
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
           {
-            case 1:
-              if (field.Type == TType.Struct) {
-                Value = new KVP();
-                Value.Read(iprot);
-              } else { 
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 1:
+                if (field.Type == TType.Struct) {
+                  Value = new KVP();
+                  Value.Read(iprot);
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
                 TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            default: 
-              TProtocolUtil.Skip(iprot, field.Type);
-              break;
+                break;
+            }
+            iprot.ReadFieldEnd();
           }
-          iprot.ReadFieldEnd();
+          iprot.ReadStructEnd();
         }
-        iprot.ReadStructEnd();
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
       }
 
       public void Write(TProtocol oprot) {
-        TStruct struc = new TStruct("echo2_args");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
-        if (Value != null && __isset.value) {
-          field.Name = "value";
-          field.Type = TType.Struct;
-          field.ID = 1;
-          oprot.WriteFieldBegin(field);
-          Value.Write(oprot);
-          oprot.WriteFieldEnd();
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("echo2_args");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+          if (Value != null && __isset.@value) {
+            field.Name = "value";
+            field.Type = TType.Struct;
+            field.ID = 1;
+            oprot.WriteFieldBegin(field);
+            Value.Write(oprot);
+            oprot.WriteFieldEnd();
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
       }
 
       public override string ToString() {
         StringBuilder __sb = new StringBuilder("echo2_args(");
         bool __first = true;
-        if (Value != null && __isset.value) {
+        if (Value != null && __isset.@value) {
           if(!__first) { __sb.Append(", "); }
           __first = false;
           __sb.Append("Value: ");
@@ -514,50 +562,66 @@ namespace Example
 
       public void Read (TProtocol iprot)
       {
-        TField field;
-        iprot.ReadStructBegin();
-        while (true)
+        iprot.IncrementRecursionDepth();
+        try
         {
-          field = iprot.ReadFieldBegin();
-          if (field.Type == TType.Stop) { 
-            break;
-          }
-          switch (field.ID)
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
           {
-            case 0:
-              if (field.Type == TType.Struct) {
-                Success = new KVP();
-                Success.Read(iprot);
-              } else { 
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 0:
+                if (field.Type == TType.Struct) {
+                  Success = new KVP();
+                  Success.Read(iprot);
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
                 TProtocolUtil.Skip(iprot, field.Type);
-              }
-              break;
-            default: 
-              TProtocolUtil.Skip(iprot, field.Type);
-              break;
+                break;
+            }
+            iprot.ReadFieldEnd();
           }
-          iprot.ReadFieldEnd();
+          iprot.ReadStructEnd();
         }
-        iprot.ReadStructEnd();
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
       }
 
       public void Write(TProtocol oprot) {
-        TStruct struc = new TStruct("echo2_result");
-        oprot.WriteStructBegin(struc);
-        TField field = new TField();
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("echo2_result");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
 
-        if (this.__isset.success) {
-          if (Success != null) {
-            field.Name = "Success";
-            field.Type = TType.Struct;
-            field.ID = 0;
-            oprot.WriteFieldBegin(field);
-            Success.Write(oprot);
-            oprot.WriteFieldEnd();
+          if (this.__isset.success) {
+            if (Success != null) {
+              field.Name = "Success";
+              field.Type = TType.Struct;
+              field.ID = 0;
+              oprot.WriteFieldBegin(field);
+              Success.Write(oprot);
+              oprot.WriteFieldEnd();
+            }
           }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
         }
-        oprot.WriteFieldStop();
-        oprot.WriteStructEnd();
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
       }
 
       public override string ToString() {

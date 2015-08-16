@@ -11,7 +11,7 @@ namespace Example {
 		public interface IApi {
 			int add( int left, int right );
 			List<Utf8String> get_strings();
-			Dictionary<Utf8String, Utf8String> echo();
+			Dictionary<Utf8String, Utf8String> echo( Dictionary<Utf8String, Utf8String> value );
 		}
 
 		public class Client : IApi {
@@ -78,9 +78,10 @@ namespace Example {
 				return default( List<Utf8String> );
 			}
 
-			public Dictionary<Utf8String, Utf8String> echo() {
+			public Dictionary<Utf8String, Utf8String> echo( Dictionary<Utf8String, Utf8String> value ) {
 				_writer.WriteMessageBegin( "echo", MessageInfo.Kind.Call, _seqid );
 				var args = new echo_args();
+				args.Value = value;
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
 
@@ -114,6 +115,7 @@ namespace Example {
 
 			public bool Process( ProtocolCodec reader, ProtocolCodec writer ) {
 				var msg = reader.ReadMessageBegin();
+				if( msg.Name == null ) return false;
 				switch( msg.Name ) {
 					case "add": add_Process( msg.SeqID, reader, writer ); return true;
 					case "echo": echo_Process( msg.SeqID, reader, writer ); return true;
@@ -161,7 +163,7 @@ namespace Example {
 				reader.ReadMessageEnd();
 
 				var result = new echo_result();
-				result.Success = _delegate.echo();
+				result.Success = _delegate.echo( args.Value );
 				writer.WriteMessageBegin( "echo", MessageInfo.Kind.Reply, seqid );
 				result.Write( writer );
 				writer.WriteMessageEnd();
@@ -340,7 +342,7 @@ namespace Example {
 								Success = new List<Utf8String>( _list0.Count );
 								for( var _i1 = 0; _i1 < _list0.Count; ++_i1 ) {
 									var _elem2 = reader.ReadString();
-									Success.Add( _elem2 );
+									_success.Add( _elem2 );
 								}
 								reader.ReadListEnd();
 							}
@@ -381,6 +383,15 @@ namespace Example {
 			}
 		}
 		public partial struct echo_args : IFormattable {
+			private Dictionary<Utf8String, Utf8String> _value;
+
+			public Dictionary<Utf8String, Utf8String> Value { get { return _value; } set { __isset.value = true; _value = value; } }
+
+			public Isset __isset = default( Isset );
+			public struct Isset {
+				public bool value { get; set; }
+			}
+
 			public echo_args() {
 			}
 
@@ -391,6 +402,20 @@ namespace Example {
 					if( field.Type == TypeKind.Stop ) break;
 
 					switch( field.ID ) {
+						case 1:
+							if( field.Type == TypeKind.Map ) {
+								var _map3 = reader.ReadMapBegin();
+								Value = new Dictionary<Utf8String, Utf8String>( _map3.Count );
+								for( var _i4 = 0; _i4 < _map3.Count; ++_i4 ) {
+									var _key5 = reader.ReadString();
+									var _val6 = reader.ReadString();
+									_value[_key5] = _val6;
+								}
+								reader.ReadMapEnd();
+							}
+							else reader.Skip( field.Type );
+							break;
+
 						default:
 							reader.Skip( field.Type );
 							break;
@@ -402,11 +427,24 @@ namespace Example {
 
 			public void Write( ProtocolCodec writer ) {
 				writer.WriteStructBegin( "echo_args" );
+				if( Value != null && __isset.value ) {
+					writer.WriteFieldBegin( "value", TypeKind.Map, 1 );
+					{
+						writer.WriteMapBegin( TypeKind.String, TypeKind.String, _value.Count );
+						foreach( var item in _value ) {
+							writer.WriteString( item.Key );
+							writer.WriteString( item.Value );
+						}
+						writer.WriteMapEnd();
+					}
+					writer.WriteFieldEnd();
+				}
 				writer.WriteFieldStop();
 				writer.WriteStructEnd();
 			}
 
 			public void ToString( StringBuilder builder, string format ) {
+				builder.Concat( "Value: ", Value );
 			}
 		}
 		public partial struct echo_result : IFormattable {
@@ -431,12 +469,12 @@ namespace Example {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map3 = reader.ReadMapBegin();
-								Success = new Dictionary<Utf8String, Utf8String>( _map3.Count );
-								for( var _i4 = 0; _i4 < _map3.Count; ++_i4 ) {
-									var _key5 = reader.ReadString();
-									var _val6 = reader.ReadString();
-									Success[_key5] = _val6;
+								var _map7 = reader.ReadMapBegin();
+								Success = new Dictionary<Utf8String, Utf8String>( _map7.Count );
+								for( var _i8 = 0; _i8 < _map7.Count; ++_i8 ) {
+									var _key9 = reader.ReadString();
+									var _val10 = reader.ReadString();
+									_success[_key9] = _val10;
 								}
 								reader.ReadMapEnd();
 							}

@@ -157,6 +157,9 @@ namespace Example
         if (result.__isset.success) {
           return result.Success;
         }
+        if (result.__isset.excpt) {
+          throw result.Excpt;
+        }
         throw new TApplicationException(TApplicationException.ExceptionType.MissingResult, "add failed: unknown result");
       }
 
@@ -372,7 +375,11 @@ namespace Example
         args.Read(iprot);
         iprot.ReadMessageEnd();
         add_result result = new add_result();
-        result.Success = iface_.@add(args.Left, args.Right);
+        try {
+          result.Success = iface_.@add(args.Left, args.Right);
+        } catch (ExceptionWithMessage excpt) {
+          result.Excpt = excpt;
+        }
         oprot.WriteMessageBegin(new TMessage("add", TMessageType.Reply, seqid)); 
         result.Write(oprot);
         oprot.WriteMessageEnd();
@@ -566,6 +573,7 @@ namespace Example
     public partial class add_result : TBase
     {
       private int _success;
+      private ExceptionWithMessage _excpt;
 
       public int Success
       {
@@ -580,6 +588,19 @@ namespace Example
         }
       }
 
+      public ExceptionWithMessage Excpt
+      {
+        get
+        {
+          return _excpt;
+        }
+        set
+        {
+          __isset.excpt = true;
+          this._excpt = value;
+        }
+      }
+
 
       public Isset __isset;
       #if !SILVERLIGHT
@@ -587,6 +608,7 @@ namespace Example
       #endif
       public struct Isset {
         public bool success;
+        public bool excpt;
       }
 
       public add_result() {
@@ -610,6 +632,14 @@ namespace Example
               case 0:
                 if (field.Type == TType.I32) {
                   Success = iprot.ReadI32();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              case 1:
+                if (field.Type == TType.Struct) {
+                  Excpt = new ExceptionWithMessage();
+                  Excpt.Read(iprot);
                 } else { 
                   TProtocolUtil.Skip(iprot, field.Type);
                 }
@@ -643,6 +673,15 @@ namespace Example
             oprot.WriteFieldBegin(field);
             oprot.WriteI32(Success);
             oprot.WriteFieldEnd();
+          } else if (this.__isset.excpt) {
+            if (Excpt != null) {
+              field.Name = "Excpt";
+              field.Type = TType.Struct;
+              field.ID = 1;
+              oprot.WriteFieldBegin(field);
+              Excpt.Write(oprot);
+              oprot.WriteFieldEnd();
+            }
           }
           oprot.WriteFieldStop();
           oprot.WriteStructEnd();
@@ -661,6 +700,12 @@ namespace Example
           __first = false;
           __sb.Append("Success: ");
           __sb.Append(Success);
+        }
+        if (Excpt != null && __isset.excpt) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Excpt: ");
+          __sb.Append(Excpt== null ? "<null>" : Excpt.ToString());
         }
         __sb.Append(")");
         return __sb.ToString();

@@ -16,7 +16,7 @@ struct KVP {
 service Svc1 {
   i32 add( 1: i32 left, 2: i32 right ),
   list<string> get_strings(),
-  map<string,string> echo(),
+  map<string,string> echo( 1: map<string,string> value ),
 }
 
 service Svc2 extends Svc1 {

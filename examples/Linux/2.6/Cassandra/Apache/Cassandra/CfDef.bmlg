@@ -10,8 +10,8 @@ namespace Apache.Cassandra {
 	public partial class CfDef : IFormattable {
 		private Utf8String _keyspace;
 		private Utf8String _name;
-		private Utf8String _column_type;
-		private Utf8String _comparator_type;
+		private Utf8String _column_type = "Standard";
+		private Utf8String _comparator_type = "BytesType";
 		private Utf8String _subcomparator_type;
 		private Utf8String _comment;
 		private double _read_repair_chance;
@@ -28,13 +28,13 @@ namespace Apache.Cassandra {
 		private Dictionary<Utf8String, Utf8String> _compaction_strategy_options;
 		private Dictionary<Utf8String, Utf8String> _compression_options;
 		private double _bloom_filter_fp_chance;
-		private Utf8String _caching;
-		private double _dclocal_read_repair_chance;
+		private Utf8String _caching = "keys_only";
+		private double _dclocal_read_repair_chance = 0;
 		private bool _populate_io_cache_on_flush;
 		private int _memtable_flush_period_in_ms;
 		private int _default_time_to_live;
 		private int _index_interval;
-		private Utf8String _speculative_retry;
+		private Utf8String _speculative_retry = "NONE";
 		private List<TriggerDef> _triggers;
 		private double _row_cache_size;
 		private double _key_cache_size;
@@ -116,12 +116,14 @@ namespace Apache.Cassandra {
 		/// </summary>
 		public int Row_cache_keys_to_save { get { return _row_cache_keys_to_save; } set { __isset.row_cache_keys_to_save = true; _row_cache_keys_to_save = value; } }
 
-		public Isset __isset = default( Isset );
+		public Isset __isset = new Isset();
 		public struct Isset {
+			public Isset() { }
+
 			public bool keyspace { get; set; }
 			public bool name { get; set; }
-			public bool column_type { get; set; }
-			public bool comparator_type { get; set; }
+			public bool column_type { get; set; } = true;
+			public bool comparator_type { get; set; } = true;
 			public bool subcomparator_type { get; set; }
 			public bool comment { get; set; }
 			public bool read_repair_chance { get; set; }
@@ -138,13 +140,13 @@ namespace Apache.Cassandra {
 			public bool compaction_strategy_options { get; set; }
 			public bool compression_options { get; set; }
 			public bool bloom_filter_fp_chance { get; set; }
-			public bool caching { get; set; }
-			public bool dclocal_read_repair_chance { get; set; }
+			public bool caching { get; set; } = true;
+			public bool dclocal_read_repair_chance { get; set; } = true;
 			public bool populate_io_cache_on_flush { get; set; }
 			public bool memtable_flush_period_in_ms { get; set; }
 			public bool default_time_to_live { get; set; }
 			public bool index_interval { get; set; }
-			public bool speculative_retry { get; set; }
+			public bool speculative_retry { get; set; } = true;
 			public bool triggers { get; set; }
 			public bool row_cache_size { get; set; }
 			public bool key_cache_size { get; set; }
@@ -159,11 +161,6 @@ namespace Apache.Cassandra {
 		}
 
 		public CfDef() {
-			_column_type = "Standard";
-			_comparator_type = "BytesType";
-			_caching = "keys_only";
-			_dclocal_read_repair_chance = 0;
-			_speculative_retry = "NONE";
 		}
 
 		public void Read( ProtocolCodec reader ) {
@@ -229,7 +226,7 @@ namespace Apache.Cassandra {
 							for( var _i43 = 0; _i43 < _list42.Count; ++_i43 ) {
 								var _elem44 = new ColumnDef();
 								_elem44.Read( reader );
-								Column_metadata.Add( _elem44 );
+								_column_metadata.Add( _elem44 );
 							}
 							reader.ReadListEnd();
 						}
@@ -306,7 +303,7 @@ namespace Apache.Cassandra {
 							for( var _i46 = 0; _i46 < _map45.Count; ++_i46 ) {
 								var _key47 = reader.ReadString();
 								var _val48 = reader.ReadString();
-								Compaction_strategy_options[_key47] = _val48;
+								_compaction_strategy_options[_key47] = _val48;
 							}
 							reader.ReadMapEnd();
 						}
@@ -320,7 +317,7 @@ namespace Apache.Cassandra {
 							for( var _i50 = 0; _i50 < _map49.Count; ++_i50 ) {
 								var _key51 = reader.ReadString();
 								var _val52 = reader.ReadString();
-								Compression_options[_key51] = _val52;
+								_compression_options[_key51] = _val52;
 							}
 							reader.ReadMapEnd();
 						}
@@ -390,7 +387,7 @@ namespace Apache.Cassandra {
 							for( var _i54 = 0; _i54 < _list53.Count; ++_i54 ) {
 								var _elem55 = new TriggerDef();
 								_elem55.Read( reader );
-								Triggers.Add( _elem55 );
+								_triggers.Add( _elem55 );
 							}
 							reader.ReadListEnd();
 						}
