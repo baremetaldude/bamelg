@@ -39,6 +39,16 @@ namespace Example
       IAsyncResult Begin_some_event(AsyncCallback callback, object state, string text);
       void End_some_event(IAsyncResult asyncResult);
       #endif
+      void log(long date, byte[] id, string text);
+      #if SILVERLIGHT
+      IAsyncResult Begin_log(AsyncCallback callback, object state, long date, byte[] id, string text);
+      void End_log(IAsyncResult asyncResult);
+      #endif
+      void ts(List<long> span);
+      #if SILVERLIGHT
+      IAsyncResult Begin_ts(AsyncCallback callback, object state, List<long> span);
+      void End_ts(IAsyncResult asyncResult);
+      #endif
     }
 
     public class Client : IDisposable, Iface {
@@ -328,6 +338,92 @@ namespace Example
         #endif
       }
 
+      
+      #if SILVERLIGHT
+      public IAsyncResult Begin_log(AsyncCallback callback, object state, long date, byte[] id, string text)
+      {
+        return send_log(callback, state, date, id, text);
+      }
+
+      public void End_log(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+      }
+
+      #endif
+
+      public void log(long date, byte[] id, string text)
+      {
+        #if !SILVERLIGHT
+        send_log(date, id, text);
+
+        #else
+        var asyncResult = Begin_log(null, null, date, id, text);
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_log(AsyncCallback callback, object state, long date, byte[] id, string text)
+      #else
+      public void send_log(long date, byte[] id, string text)
+      #endif
+      {
+        oprot_.WriteMessageBegin(new TMessage("log", TMessageType.Oneway, seqid_));
+        log_args args = new log_args();
+        args.Date = date;
+        args.Id = id;
+        args.Text = text;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        #if SILVERLIGHT
+        return oprot_.Transport.BeginFlush(callback, state);
+        #else
+        oprot_.Transport.Flush();
+        #endif
+      }
+
+      
+      #if SILVERLIGHT
+      public IAsyncResult Begin_ts(AsyncCallback callback, object state, List<long> span)
+      {
+        return send_ts(callback, state, span);
+      }
+
+      public void End_ts(IAsyncResult asyncResult)
+      {
+        oprot_.Transport.EndFlush(asyncResult);
+      }
+
+      #endif
+
+      public void ts(List<long> span)
+      {
+        #if !SILVERLIGHT
+        send_ts(span);
+
+        #else
+        var asyncResult = Begin_ts(null, null, span);
+
+        #endif
+      }
+      #if SILVERLIGHT
+      public IAsyncResult send_ts(AsyncCallback callback, object state, List<long> span)
+      #else
+      public void send_ts(List<long> span)
+      #endif
+      {
+        oprot_.WriteMessageBegin(new TMessage("ts", TMessageType.Oneway, seqid_));
+        ts_args args = new ts_args();
+        args.Span = span;
+        args.Write(oprot_);
+        oprot_.WriteMessageEnd();
+        #if SILVERLIGHT
+        return oprot_.Transport.BeginFlush(callback, state);
+        #else
+        oprot_.Transport.Flush();
+        #endif
+      }
+
     }
     public class Processor : TProcessor {
       public Processor(Iface iface)
@@ -337,6 +433,8 @@ namespace Example
         processMap_["get_strings"] = get_strings_Process;
         processMap_["echo"] = echo_Process;
         processMap_["some_event"] = some_event_Process;
+        processMap_["log"] = log_Process;
+        processMap_["ts"] = ts_Process;
       }
 
       protected delegate void ProcessFunction(int seqid, TProtocol iprot, TProtocol oprot);
@@ -418,6 +516,22 @@ namespace Example
         args.Read(iprot);
         iprot.ReadMessageEnd();
         iface_.some_event(args.Text);
+        return;
+      }
+      public void log_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        log_args args = new log_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        iface_.log(args.Date, args.Id, args.Text);
+        return;
+      }
+      public void ts_Process(int seqid, TProtocol iprot, TProtocol oprot)
+      {
+        ts_args args = new ts_args();
+        args.Read(iprot);
+        iprot.ReadMessageEnd();
+        iface_.ts(args.Span);
         return;
       }
     }
@@ -1263,6 +1377,311 @@ namespace Example
           __first = false;
           __sb.Append("Text: ");
           __sb.Append(Text);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class log_args : TBase
+    {
+      private long _date;
+      private byte[] _id;
+      private string _text;
+
+      public long Date
+      {
+        get
+        {
+          return _date;
+        }
+        set
+        {
+          __isset.date = true;
+          this._date = value;
+        }
+      }
+
+      public byte[] Id
+      {
+        get
+        {
+          return _id;
+        }
+        set
+        {
+          __isset.id = true;
+          this._id = value;
+        }
+      }
+
+      public string Text
+      {
+        get
+        {
+          return _text;
+        }
+        set
+        {
+          __isset.text = true;
+          this._text = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool date;
+        public bool id;
+        public bool text;
+      }
+
+      public log_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 1:
+                if (field.Type == TType.I64) {
+                  Date = iprot.ReadI64();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              case 2:
+                if (field.Type == TType.String) {
+                  Id = iprot.ReadBinary();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              case 3:
+                if (field.Type == TType.String) {
+                  Text = iprot.ReadString();
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("log_args");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+          if (__isset.date) {
+            field.Name = "date";
+            field.Type = TType.I64;
+            field.ID = 1;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteI64(Date);
+            oprot.WriteFieldEnd();
+          }
+          if (Id != null && __isset.id) {
+            field.Name = "id";
+            field.Type = TType.String;
+            field.ID = 2;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteBinary(Id);
+            oprot.WriteFieldEnd();
+          }
+          if (Text != null && __isset.text) {
+            field.Name = "text";
+            field.Type = TType.String;
+            field.ID = 3;
+            oprot.WriteFieldBegin(field);
+            oprot.WriteString(Text);
+            oprot.WriteFieldEnd();
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("log_args(");
+        bool __first = true;
+        if (__isset.date) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Date: ");
+          __sb.Append(Date);
+        }
+        if (Id != null && __isset.id) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Id: ");
+          __sb.Append(Id);
+        }
+        if (Text != null && __isset.text) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Text: ");
+          __sb.Append(Text);
+        }
+        __sb.Append(")");
+        return __sb.ToString();
+      }
+
+    }
+
+
+    #if !SILVERLIGHT
+    [Serializable]
+    #endif
+    public partial class ts_args : TBase
+    {
+      private List<long> _span;
+
+      public List<long> Span
+      {
+        get
+        {
+          return _span;
+        }
+        set
+        {
+          __isset.span = true;
+          this._span = value;
+        }
+      }
+
+
+      public Isset __isset;
+      #if !SILVERLIGHT
+      [Serializable]
+      #endif
+      public struct Isset {
+        public bool span;
+      }
+
+      public ts_args() {
+      }
+
+      public void Read (TProtocol iprot)
+      {
+        iprot.IncrementRecursionDepth();
+        try
+        {
+          TField field;
+          iprot.ReadStructBegin();
+          while (true)
+          {
+            field = iprot.ReadFieldBegin();
+            if (field.Type == TType.Stop) { 
+              break;
+            }
+            switch (field.ID)
+            {
+              case 1:
+                if (field.Type == TType.List) {
+                  {
+                    Span = new List<long>();
+                    TList _list14 = iprot.ReadListBegin();
+                    for( int _i15 = 0; _i15 < _list14.Count; ++_i15)
+                    {
+                      long _elem16;
+                      _elem16 = iprot.ReadI64();
+                      Span.Add(_elem16);
+                    }
+                    iprot.ReadListEnd();
+                  }
+                } else { 
+                  TProtocolUtil.Skip(iprot, field.Type);
+                }
+                break;
+              default: 
+                TProtocolUtil.Skip(iprot, field.Type);
+                break;
+            }
+            iprot.ReadFieldEnd();
+          }
+          iprot.ReadStructEnd();
+        }
+        finally
+        {
+          iprot.DecrementRecursionDepth();
+        }
+      }
+
+      public void Write(TProtocol oprot) {
+        oprot.IncrementRecursionDepth();
+        try
+        {
+          TStruct struc = new TStruct("ts_args");
+          oprot.WriteStructBegin(struc);
+          TField field = new TField();
+          if (Span != null && __isset.span) {
+            field.Name = "span";
+            field.Type = TType.List;
+            field.ID = 1;
+            oprot.WriteFieldBegin(field);
+            {
+              oprot.WriteListBegin(new TList(TType.I64, Span.Count));
+              foreach (long _iter17 in Span)
+              {
+                oprot.WriteI64(_iter17);
+              }
+              oprot.WriteListEnd();
+            }
+            oprot.WriteFieldEnd();
+          }
+          oprot.WriteFieldStop();
+          oprot.WriteStructEnd();
+        }
+        finally
+        {
+          oprot.DecrementRecursionDepth();
+        }
+      }
+
+      public override string ToString() {
+        StringBuilder __sb = new StringBuilder("ts_args(");
+        bool __first = true;
+        if (Span != null && __isset.span) {
+          if(!__first) { __sb.Append(", "); }
+          __first = false;
+          __sb.Append("Span: ");
+          __sb.Append(Span);
         }
         __sb.Append(")");
         return __sb.ToString();

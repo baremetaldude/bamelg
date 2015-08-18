@@ -63,12 +63,12 @@ namespace Apache.Cassandra {
 
 					case 3:
 						if( field.Type == TypeKind.Map ) {
-							var _map56 = reader.ReadMapBegin();
-							Strategy_options = new Dictionary<Utf8String, Utf8String>( _map56.Count );
-							for( var _i57 = 0; _i57 < _map56.Count; ++_i57 ) {
-								var _key58 = reader.ReadString();
-								var _val59 = reader.ReadString();
-								_strategy_options[_key58] = _val59;
+							var localMap = reader.ReadMapBegin();
+							Strategy_options = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+							for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+								var localKey = reader.ReadString();
+								var localValue = reader.ReadString();
+								_strategy_options[localKey] = localValue;
 							}
 							reader.ReadMapEnd();
 						}
@@ -84,12 +84,12 @@ namespace Apache.Cassandra {
 
 					case 5:
 						if( field.Type == TypeKind.List ) {
-							var _list60 = reader.ReadListBegin();
-							Cf_defs = new List<CfDef>( _list60.Count );
-							for( var _i61 = 0; _i61 < _list60.Count; ++_i61 ) {
-								var _elem62 = new CfDef();
-								_elem62.Read( reader );
-								_cf_defs.Add( _elem62 );
+							var localList = reader.ReadListBegin();
+							Cf_defs = new List<CfDef>( localList.Count );
+							for( var localCounter1 = 0; localCounter1 < localList.Count; ++localCounter1 ) {
+								var localElement = new CfDef();
+								localElement.Read( reader );
+								_cf_defs.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

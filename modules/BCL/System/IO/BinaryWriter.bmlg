@@ -63,15 +63,8 @@ namespace System.IO {
 		public void WriteBigEndian( double_bigendian value ) { WritePrimitive<double_bigendian>( value ); }
 
 		public void Write( [In] Guid& value ) {
-			if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
-				WriteBigEndian( *cast<uint_littleendian*>( &value.Data[0] ) );
-				WriteBigEndian( *cast<ushort_littleendian*>( &value.Data[4] ) );
-				WriteBigEndian( *cast<ushort_littleendian*>( &value.Data[6] ) );
-				WriteBigEndian( *cast<ulong_bigendian*>( &value.Data[8] ) );
-			}
-			else {
-				WritePrimitive<Guid>( value );
-			}
+			var bytes = value.Bytes;
+			Write( &bytes[0], bytes.Length );
 		}
 
 		public void Write( [In] DateTime& value ) { WritePrimitive<DateTime>( value ); }

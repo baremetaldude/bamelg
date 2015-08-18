@@ -198,7 +198,7 @@ namespace System.Serialization.Thrift {
 		public abstract byte[] ReadBinary();
 
 		public abstract void WriteFieldStop();
-		
+
 		public int MaxStringSize = int.MaxValue;
 		public int MaxBlobSize = int.MaxValue;
 		public int MaxContainerSize = int.MaxValue;
@@ -235,6 +235,39 @@ namespace System.Serialization.Thrift {
 				ExceptionHandler.OnException( ProtocolError.SizeLimit );
 				IsStreamBroken = true;
 			}
+		}
+
+		public void WriteDateTime( DateTime value ) {
+			WriteInt64( *( long* ) &value );
+		}
+
+		public void WriteTimeSpan( TimeSpan value ) {
+			WriteInt64( *( long* ) &value );
+		}
+
+		public void WriteGuid( Guid value ) {
+			var result = new[16] byte;
+			*( byte[16]* ) &result[0] = value.Bytes;
+			WriteBinary( result );
+		}
+
+		public DateTime ReadDateTime() {
+			var result = ReadInt64();
+			return *( DateTime* ) &result;
+		}
+
+		public TimeSpan ReadTimeSpan() {
+			var result = ReadInt64();
+			return *( TimeSpan* ) &result;
+		}
+
+		public Guid ReadGuid() {
+			var value = ReadBinary();
+			if( value == null || value.Length != 16 ) return default( Guid );
+
+			Guid result;
+			result.Bytes = *( byte[16]* ) &value[0];
+			return result;
 		}
 
 		public void Skip( TypeKind type ) {

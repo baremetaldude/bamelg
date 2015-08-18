@@ -10,6 +10,8 @@ using System.Serialization;
 
 namespace System {
 	public sealed partial struct Guid : IBinarySerializable, ITextSerializable, IFormattable {
+		private byte[16] Data; 
+
 		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
 		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadGuid(); }
 
@@ -19,7 +21,7 @@ namespace System {
 		public void ToString( StringBuilder builder, string format ) {
 			switch( format ) {
 				case "":
-				case "D":
+				case "D": // 6F9619FF-8B86-D011-B42D-00CF4FC964FF
 					if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
 						builder.Append( *( uint_littleendian* ) &Data[0], "X8" );
 						builder.Append( '-' );
@@ -42,7 +44,7 @@ namespace System {
 					builder.Append( *( ushort_bigendian* ) &Data[14], "X4" );
 					break;
 
-				case "B":
+				case "B": // {6F9619FF-8B86-D011-B42D-00CF4FC964FF}
 					builder.Append( '{' );
 					if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
 						builder.Append( *( uint_littleendian* ) &Data[0], "X8" );
@@ -67,7 +69,7 @@ namespace System {
 					builder.Append( '}' );
 					break;
 
-				case "P":
+				case "P": // (6F9619FF-8B86-D011-B42D-00CF4FC964FF)
 					builder.Append( '(' );
 					if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
 						builder.Append( *( uint_littleendian* ) &Data[0], "X8" );
@@ -120,7 +122,7 @@ namespace System {
 					builder.Append( "}}" );
 					break;
 
-				case "N":
+				case "N": // 6F9619FF8B86D011B42D00CF4FC964FF
 					if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
 						builder.Append( *( uint_littleendian* ) &Data[0], "X8" );
 						builder.Append( *( ushort_littleendian* ) &Data[4], "X4" );
@@ -132,6 +134,62 @@ namespace System {
 
 					builder.Append( *( ulong_bigendian* ) &Data[8], "X16" );
 					break;
+			}
+		}
+
+		public byte[16] Bytes {
+			get {
+				byte[16] result;
+				if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
+					result[0] = Data[3];
+					result[1] = Data[2];
+					result[2] = Data[1];
+					result[3] = Data[0];
+
+					result[4] = Data[5];
+					result[5] = Data[4];
+
+					result[6] = Data[7];
+					result[7] = Data[6];
+
+					result[8] = Data[8];
+					result[9] = Data[9];
+					result[10] = Data[10];
+					result[11] = Data[11];
+					result[12] = Data[12];
+					result[13] = Data[13];
+					result[14] = Data[14];
+					result[15] = Data[15];
+				}
+				else
+					result = Data;
+
+				return result;
+			}
+			set {
+				if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
+					Data[0] = value[3];
+					Data[1] = value[2];
+					Data[2] = value[1];
+					Data[3] = value[0];
+
+					Data[4] = value[5];
+					Data[5] = value[4];
+
+					Data[6] = value[7];
+					Data[7] = value[6];
+
+					Data[8] = value[8];
+					Data[9] = value[9];
+					Data[10] = value[10];
+					Data[11] = value[11];
+					Data[12] = value[12];
+					Data[13] = value[13];
+					Data[14] = value[14];
+					Data[15] = value[15];
+				}
+				else
+					Data = value;
 			}
 		}
 

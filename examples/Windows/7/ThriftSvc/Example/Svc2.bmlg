@@ -127,7 +127,9 @@ namespace Example {
 					case "echo2": echo2_Process( msg.SeqID, reader, writer ); return true;
 					case "get_strings": get_strings_Process( msg.SeqID, reader, writer ); return true;
 					case "get_strings2": get_strings2_Process( msg.SeqID, reader, writer ); return true;
+					case "log": log_Process( msg.SeqID, reader, writer ); return true;
 					case "some_event": some_event_Process( msg.SeqID, reader, writer ); return true;
+					case "ts": ts_Process( msg.SeqID, reader, writer ); return true;
 
 					default: {
 							reader.Skip( TypeKind.Struct );
@@ -240,11 +242,11 @@ namespace Example {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Set ) {
-								var _set11 = reader.ReadSetBegin();
-								Success = new HashSet<Utf8String>( _set11.Count );
-								for( var _i12 = 0; _i12 < _set11.Count; ++_i12 ) {
-									var _elem13 = reader.ReadString();
-									_success.Add( _elem13 );
+								var localSet = reader.ReadSetBegin();
+								Success = new HashSet<Utf8String>( localSet.Count );
+								for( var localCounter = 0; localCounter < localSet.Count; ++localCounter ) {
+									var localElement = reader.ReadString();
+									_success.Add( localElement );
 								}
 								reader.ReadSetEnd();
 							}

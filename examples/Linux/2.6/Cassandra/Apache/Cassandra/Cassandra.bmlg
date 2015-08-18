@@ -3093,12 +3093,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list83 = reader.ReadListBegin();
-								Success = new List<ColumnOrSuperColumn>( _list83.Count );
-								for( var _i84 = 0; _i84 < _list83.Count; ++_i84 ) {
-									var _elem85 = new ColumnOrSuperColumn();
-									_elem85.Read( reader );
-									_success.Add( _elem85 );
+								var localList = reader.ReadListBegin();
+								Success = new List<ColumnOrSuperColumn>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new ColumnOrSuperColumn();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -3412,11 +3412,11 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 1:
 							if( field.Type == TypeKind.List ) {
-								var _list86 = reader.ReadListBegin();
-								Keys = new List<byte[]>( _list86.Count );
-								for( var _i87 = 0; _i87 < _list86.Count; ++_i87 ) {
-									var _elem88 = reader.ReadBinary();
-									_keys.Add( _elem88 );
+								var localList = reader.ReadListBegin();
+								Keys = new List<byte[]>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadBinary();
+									_keys.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -3522,19 +3522,19 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map89 = reader.ReadMapBegin();
-								Success = new Dictionary<byte[], List<ColumnOrSuperColumn>>( _map89.Count );
-								for( var _i90 = 0; _i90 < _map89.Count; ++_i90 ) {
-									var _key91 = reader.ReadBinary();
-									var _list93 = reader.ReadListBegin();
-									var _val92 = new List<ColumnOrSuperColumn>( _list93.Count );
-									for( var _i94 = 0; _i94 < _list93.Count; ++_i94 ) {
-										var _elem95 = new ColumnOrSuperColumn();
-										_elem95.Read( reader );
-										_val92.Add( _elem95 );
+								var localMap = reader.ReadMapBegin();
+								Success = new Dictionary<byte[], List<ColumnOrSuperColumn>>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadBinary();
+									var localList = reader.ReadListBegin();
+									var localValue = new List<ColumnOrSuperColumn>( localList.Count );
+									for( var localCounter1 = 0; localCounter1 < localList.Count; ++localCounter1 ) {
+										var localElement = new ColumnOrSuperColumn();
+										localElement.Read( reader );
+										localValue.Add( localElement );
 									}
 									reader.ReadListEnd();
-									_success[_key91] = _val92;
+									_success[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -3654,11 +3654,11 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 1:
 							if( field.Type == TypeKind.List ) {
-								var _list96 = reader.ReadListBegin();
-								Keys = new List<byte[]>( _list96.Count );
-								for( var _i97 = 0; _i97 < _list96.Count; ++_i97 ) {
-									var _elem98 = reader.ReadBinary();
-									_keys.Add( _elem98 );
+								var localList = reader.ReadListBegin();
+								Keys = new List<byte[]>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadBinary();
+									_keys.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -3764,12 +3764,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map99 = reader.ReadMapBegin();
-								Success = new Dictionary<byte[], int>( _map99.Count );
-								for( var _i100 = 0; _i100 < _map99.Count; ++_i100 ) {
-									var _key101 = reader.ReadBinary();
-									var _val102 = reader.ReadInt32();
-									_success[_key101] = _val102;
+								var localMap = reader.ReadMapBegin();
+								Success = new Dictionary<byte[], int>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadBinary();
+									var localValue = reader.ReadInt32();
+									_success[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -3982,12 +3982,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list103 = reader.ReadListBegin();
-								Success = new List<KeySlice>( _list103.Count );
-								for( var _i104 = 0; _i104 < _list103.Count; ++_i104 ) {
-									var _elem105 = new KeySlice();
-									_elem105.Read( reader );
-									_success.Add( _elem105 );
+								var localList = reader.ReadListBegin();
+								Success = new List<KeySlice>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new KeySlice();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -4197,12 +4197,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list106 = reader.ReadListBegin();
-								Success = new List<KeySlice>( _list106.Count );
-								for( var _i107 = 0; _i107 < _list106.Count; ++_i107 ) {
-									var _elem108 = new KeySlice();
-									_elem108.Read( reader );
-									_success.Add( _elem108 );
+								var localList = reader.ReadListBegin();
+								Success = new List<KeySlice>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new KeySlice();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -4414,12 +4414,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list109 = reader.ReadListBegin();
-								Success = new List<KeySlice>( _list109.Count );
-								for( var _i110 = 0; _i110 < _list109.Count; ++_i110 ) {
-									var _elem111 = new KeySlice();
-									_elem111.Read( reader );
-									_success.Add( _elem111 );
+								var localList = reader.ReadListBegin();
+								Success = new List<KeySlice>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new KeySlice();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -4930,12 +4930,12 @@ namespace Apache.Cassandra {
 
 						case 3:
 							if( field.Type == TypeKind.List ) {
-								var _list112 = reader.ReadListBegin();
-								Expected = new List<Column>( _list112.Count );
-								for( var _i113 = 0; _i113 < _list112.Count; ++_i113 ) {
-									var _elem114 = new Column();
-									_elem114.Read( reader );
-									_expected.Add( _elem114 );
+								var localList = reader.ReadListBegin();
+								Expected = new List<Column>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new Column();
+									localElement.Read( reader );
+									_expected.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -4944,12 +4944,12 @@ namespace Apache.Cassandra {
 
 						case 4:
 							if( field.Type == TypeKind.List ) {
-								var _list115 = reader.ReadListBegin();
-								Updates = new List<Column>( _list115.Count );
-								for( var _i116 = 0; _i116 < _list115.Count; ++_i116 ) {
-									var _elem117 = new Column();
-									_elem117.Read( reader );
-									_updates.Add( _elem117 );
+								var localList1 = reader.ReadListBegin();
+								Updates = new List<Column>( localList1.Count );
+								for( var localCounter1 = 0; localCounter1 < localList1.Count; ++localCounter1 ) {
+									var localElement1 = new Column();
+									localElement1.Read( reader );
+									_updates.Add( localElement1 );
 								}
 								reader.ReadListEnd();
 							}
@@ -5519,26 +5519,26 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 1:
 							if( field.Type == TypeKind.Map ) {
-								var _map118 = reader.ReadMapBegin();
-								Mutation_map = new Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>>( _map118.Count );
-								for( var _i119 = 0; _i119 < _map118.Count; ++_i119 ) {
-									var _key120 = reader.ReadBinary();
-									var _map122 = reader.ReadMapBegin();
-									var _val121 = new Dictionary<Utf8String, List<Mutation>>( _map122.Count );
-									for( var _i123 = 0; _i123 < _map122.Count; ++_i123 ) {
-										var _key124 = reader.ReadString();
-										var _list126 = reader.ReadListBegin();
-										var _val125 = new List<Mutation>( _list126.Count );
-										for( var _i127 = 0; _i127 < _list126.Count; ++_i127 ) {
-											var _elem128 = new Mutation();
-											_elem128.Read( reader );
-											_val125.Add( _elem128 );
+								var localMap = reader.ReadMapBegin();
+								Mutation_map = new Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadBinary();
+									var localMap1 = reader.ReadMapBegin();
+									var localValue = new Dictionary<Utf8String, List<Mutation>>( localMap1.Count );
+									for( var localCounter1 = 0; localCounter1 < localMap1.Count; ++localCounter1 ) {
+										var localKey1 = reader.ReadString();
+										var localList = reader.ReadListBegin();
+										var localValue1 = new List<Mutation>( localList.Count );
+										for( var localCounter2 = 0; localCounter2 < localList.Count; ++localCounter2 ) {
+											var localElement = new Mutation();
+											localElement.Read( reader );
+											localValue1.Add( localElement );
 										}
 										reader.ReadListEnd();
-										_val121[_key124] = _val125;
+										localValue[localKey1] = localValue1;
 									}
 									reader.ReadMapEnd();
-									_mutation_map[_key120] = _val121;
+									_mutation_map[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -5715,26 +5715,26 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 1:
 							if( field.Type == TypeKind.Map ) {
-								var _map129 = reader.ReadMapBegin();
-								Mutation_map = new Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>>( _map129.Count );
-								for( var _i130 = 0; _i130 < _map129.Count; ++_i130 ) {
-									var _key131 = reader.ReadBinary();
-									var _map133 = reader.ReadMapBegin();
-									var _val132 = new Dictionary<Utf8String, List<Mutation>>( _map133.Count );
-									for( var _i134 = 0; _i134 < _map133.Count; ++_i134 ) {
-										var _key135 = reader.ReadString();
-										var _list137 = reader.ReadListBegin();
-										var _val136 = new List<Mutation>( _list137.Count );
-										for( var _i138 = 0; _i138 < _list137.Count; ++_i138 ) {
-											var _elem139 = new Mutation();
-											_elem139.Read( reader );
-											_val136.Add( _elem139 );
+								var localMap = reader.ReadMapBegin();
+								Mutation_map = new Dictionary<byte[], Dictionary<Utf8String, List<Mutation>>>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadBinary();
+									var localMap1 = reader.ReadMapBegin();
+									var localValue = new Dictionary<Utf8String, List<Mutation>>( localMap1.Count );
+									for( var localCounter1 = 0; localCounter1 < localMap1.Count; ++localCounter1 ) {
+										var localKey1 = reader.ReadString();
+										var localList = reader.ReadListBegin();
+										var localValue1 = new List<Mutation>( localList.Count );
+										for( var localCounter2 = 0; localCounter2 < localList.Count; ++localCounter2 ) {
+											var localElement = new Mutation();
+											localElement.Read( reader );
+											localValue1.Add( localElement );
 										}
 										reader.ReadListEnd();
-										_val132[_key135] = _val136;
+										localValue[localKey1] = localValue1;
 									}
 									reader.ReadMapEnd();
-									_mutation_map[_key131] = _val132;
+									_mutation_map[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -6068,18 +6068,18 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map140 = reader.ReadMapBegin();
-								Success = new Dictionary<Utf8String, List<Utf8String>>( _map140.Count );
-								for( var _i141 = 0; _i141 < _map140.Count; ++_i141 ) {
-									var _key142 = reader.ReadString();
-									var _list144 = reader.ReadListBegin();
-									var _val143 = new List<Utf8String>( _list144.Count );
-									for( var _i145 = 0; _i145 < _list144.Count; ++_i145 ) {
-										var _elem146 = reader.ReadString();
-										_val143.Add( _elem146 );
+								var localMap = reader.ReadMapBegin();
+								Success = new Dictionary<Utf8String, List<Utf8String>>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadString();
+									var localList = reader.ReadListBegin();
+									var localValue = new List<Utf8String>( localList.Count );
+									for( var localCounter1 = 0; localCounter1 < localList.Count; ++localCounter1 ) {
+										var localElement = reader.ReadString();
+										localValue.Add( localElement );
 									}
 									reader.ReadListEnd();
-									_success[_key142] = _val143;
+									_success[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -6192,12 +6192,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list147 = reader.ReadListBegin();
-								Success = new List<KsDef>( _list147.Count );
-								for( var _i148 = 0; _i148 < _list147.Count; ++_i148 ) {
-									var _elem149 = new KsDef();
-									_elem149.Read( reader );
-									_success.Add( _elem149 );
+								var localList = reader.ReadListBegin();
+								Success = new List<KsDef>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new KsDef();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -6491,12 +6491,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list150 = reader.ReadListBegin();
-								Success = new List<TokenRange>( _list150.Count );
-								for( var _i151 = 0; _i151 < _list150.Count; ++_i151 ) {
-									var _elem152 = new TokenRange();
-									_elem152.Read( reader );
-									_success.Add( _elem152 );
+								var localList = reader.ReadListBegin();
+								Success = new List<TokenRange>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new TokenRange();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -6624,12 +6624,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list153 = reader.ReadListBegin();
-								Success = new List<TokenRange>( _list153.Count );
-								for( var _i154 = 0; _i154 < _list153.Count; ++_i154 ) {
-									var _elem155 = new TokenRange();
-									_elem155.Read( reader );
-									_success.Add( _elem155 );
+								var localList = reader.ReadListBegin();
+								Success = new List<TokenRange>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new TokenRange();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -6735,12 +6735,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map156 = reader.ReadMapBegin();
-								Success = new Dictionary<Utf8String, Utf8String>( _map156.Count );
-								for( var _i157 = 0; _i157 < _map156.Count; ++_i157 ) {
-									var _key158 = reader.ReadString();
-									var _val159 = reader.ReadString();
-									_success[_key158] = _val159;
+								var localMap = reader.ReadMapBegin();
+								Success = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadString();
+									var localValue = reader.ReadString();
+									_success[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -7216,11 +7216,11 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list160 = reader.ReadListBegin();
-								Success = new List<Utf8String>( _list160.Count );
-								for( var _i161 = 0; _i161 < _list160.Count; ++_i161 ) {
-									var _elem162 = reader.ReadString();
-									_success.Add( _elem162 );
+								var localList = reader.ReadListBegin();
+								Success = new List<Utf8String>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadString();
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -7476,12 +7476,12 @@ namespace Apache.Cassandra {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list163 = reader.ReadListBegin();
-								Success = new List<CfSplit>( _list163.Count );
-								for( var _i164 = 0; _i164 < _list163.Count; ++_i164 ) {
-									var _elem165 = new CfSplit();
-									_elem165.Read( reader );
-									_success.Add( _elem165 );
+								var localList = reader.ReadListBegin();
+								Success = new List<CfSplit>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = new CfSplit();
+									localElement.Read( reader );
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -9048,11 +9048,11 @@ namespace Apache.Cassandra {
 
 						case 2:
 							if( field.Type == TypeKind.List ) {
-								var _list166 = reader.ReadListBegin();
-								Values = new List<byte[]>( _list166.Count );
-								for( var _i167 = 0; _i167 < _list166.Count; ++_i167 ) {
-									var _elem168 = reader.ReadBinary();
-									_values.Add( _elem168 );
+								var localList = reader.ReadListBegin();
+								Values = new List<byte[]>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadBinary();
+									_values.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -9248,11 +9248,11 @@ namespace Apache.Cassandra {
 
 						case 2:
 							if( field.Type == TypeKind.List ) {
-								var _list169 = reader.ReadListBegin();
-								Values = new List<byte[]>( _list169.Count );
-								for( var _i170 = 0; _i170 < _list169.Count; ++_i170 ) {
-									var _elem171 = reader.ReadBinary();
-									_values.Add( _elem171 );
+								var localList = reader.ReadListBegin();
+								Values = new List<byte[]>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadBinary();
+									_values.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}

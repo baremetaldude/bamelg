@@ -49,12 +49,12 @@ namespace Apache.Cassandra {
 
 					case 2:
 						if( field.Type == TypeKind.List ) {
-							var _list74 = reader.ReadListBegin();
-							Rows = new List<CqlRow>( _list74.Count );
-							for( var _i75 = 0; _i75 < _list74.Count; ++_i75 ) {
-								var _elem76 = new CqlRow();
-								_elem76.Read( reader );
-								_rows.Add( _elem76 );
+							var localList = reader.ReadListBegin();
+							Rows = new List<CqlRow>( localList.Count );
+							for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+								var localElement = new CqlRow();
+								localElement.Read( reader );
+								_rows.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

@@ -73,12 +73,12 @@ namespace Apache.Cassandra {
 
 					case 5:
 						if( field.Type == TypeKind.Map ) {
-							var _map34 = reader.ReadMapBegin();
-							Index_options = new Dictionary<Utf8String, Utf8String>( _map34.Count );
-							for( var _i35 = 0; _i35 < _map34.Count; ++_i35 ) {
-								var _key36 = reader.ReadString();
-								var _val37 = reader.ReadString();
-								_index_options[_key36] = _val37;
+							var localMap = reader.ReadMapBegin();
+							Index_options = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+							for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+								var localKey = reader.ReadString();
+								var localValue = reader.ReadString();
+								_index_options[localKey] = localValue;
 							}
 							reader.ReadMapEnd();
 						}

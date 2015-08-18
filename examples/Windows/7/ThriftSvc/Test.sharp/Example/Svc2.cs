@@ -435,12 +435,12 @@ namespace Example
                 if (field.Type == TType.Set) {
                   {
                     Success = new THashSet<string>();
-                    TSet _set14 = iprot.ReadSetBegin();
-                    for( int _i15 = 0; _i15 < _set14.Count; ++_i15)
+                    TSet _set18 = iprot.ReadSetBegin();
+                    for( int _i19 = 0; _i19 < _set18.Count; ++_i19)
                     {
-                      string _elem16;
-                      _elem16 = iprot.ReadString();
-                      Success.Add(_elem16);
+                      string _elem20;
+                      _elem20 = iprot.ReadString();
+                      Success.Add(_elem20);
                     }
                     iprot.ReadSetEnd();
                   }
@@ -478,9 +478,9 @@ namespace Example
               oprot.WriteFieldBegin(field);
               {
                 oprot.WriteSetBegin(new TSet(TType.String, Success.Count));
-                foreach (string _iter17 in Success)
+                foreach (string _iter21 in Success)
                 {
-                  oprot.WriteString(_iter17);
+                  oprot.WriteString(_iter21);
                 }
                 oprot.WriteSetEnd();
               }

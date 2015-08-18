@@ -44,11 +44,11 @@ namespace Apache.Cassandra {
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.List ) {
-							var _list6 = reader.ReadListBegin();
-							Column_names = new List<byte[]>( _list6.Count );
-							for( var _i7 = 0; _i7 < _list6.Count; ++_i7 ) {
-								var _elem8 = reader.ReadBinary();
-								_column_names.Add( _elem8 );
+							var localList = reader.ReadListBegin();
+							Column_names = new List<byte[]>( localList.Count );
+							for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+								var localElement = reader.ReadBinary();
+								_column_names.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

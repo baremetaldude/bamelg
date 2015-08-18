@@ -44,12 +44,12 @@ namespace Apache.Cassandra {
 
 					case 2:
 						if( field.Type == TypeKind.Map ) {
-							var _map38 = reader.ReadMapBegin();
-							Options = new Dictionary<Utf8String, Utf8String>( _map38.Count );
-							for( var _i39 = 0; _i39 < _map38.Count; ++_i39 ) {
-								var _key40 = reader.ReadString();
-								var _val41 = reader.ReadString();
-								_options[_key40] = _val41;
+							var localMap = reader.ReadMapBegin();
+							Options = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+							for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+								var localKey = reader.ReadString();
+								var localValue = reader.ReadString();
+								_options[localKey] = localValue;
 							}
 							reader.ReadMapEnd();
 						}

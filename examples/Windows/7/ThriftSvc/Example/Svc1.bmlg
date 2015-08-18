@@ -13,6 +13,8 @@ namespace Example {
 			List<Utf8String> get_strings();
 			Dictionary<Utf8String, Utf8String> echo( Dictionary<Utf8String, Utf8String> value );
 			void some_event( Utf8String text );
+			void log( DateTime date, Guid id, Utf8String text );
+			void ts( List<TimeSpan> span );
 		}
 
 		public interface IExceptionHandler : System.Serialization.Thrift.IExceptionHandler {
@@ -120,6 +122,24 @@ namespace Example {
 				args.Write( _writer );
 				_writer.WriteMessageEnd();
 			}
+
+			public void log( DateTime date, Guid id, Utf8String text ) {
+				_writer.WriteMessageBegin( "log", MessageInfo.Kind.Call, _seqid );
+				var args = new log_args();
+				args.Date = date;
+				args.Id = id;
+				args.Text = text;
+				args.Write( _writer );
+				_writer.WriteMessageEnd();
+			}
+
+			public void ts( List<TimeSpan> span ) {
+				_writer.WriteMessageBegin( "ts", MessageInfo.Kind.Call, _seqid );
+				var args = new ts_args();
+				args.Span = span;
+				args.Write( _writer );
+				_writer.WriteMessageEnd();
+			}
 		}
 
 		public class RequestHandler : IRequestHandler {
@@ -140,7 +160,9 @@ namespace Example {
 					case "add": add_Process( msg.SeqID, reader, writer ); return true;
 					case "echo": echo_Process( msg.SeqID, reader, writer ); return true;
 					case "get_strings": get_strings_Process( msg.SeqID, reader, writer ); return true;
+					case "log": log_Process( msg.SeqID, reader, writer ); return true;
 					case "some_event": some_event_Process( msg.SeqID, reader, writer ); return true;
+					case "ts": ts_Process( msg.SeqID, reader, writer ); return true;
 
 					default: {
 							reader.Skip( TypeKind.Struct );
@@ -206,6 +228,22 @@ namespace Example {
 				args.Read( reader );
 				reader.ReadMessageEnd();
 				_delegate.some_event( args.Text );
+				return;
+			}
+
+			protected void log_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+				var args = new log_args();
+				args.Read( reader );
+				reader.ReadMessageEnd();
+				_delegate.log( args.Date, args.Id, args.Text );
+				return;
+			}
+
+			protected void ts_Process( int seqid, ProtocolCodec reader, ProtocolCodec writer ) {
+				var args = new ts_args();
+				args.Read( reader );
+				reader.ReadMessageEnd();
+				_delegate.ts( args.Span );
 				return;
 			}
 		}
@@ -393,11 +431,11 @@ namespace Example {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.List ) {
-								var _list0 = reader.ReadListBegin();
-								Success = new List<Utf8String>( _list0.Count );
-								for( var _i1 = 0; _i1 < _list0.Count; ++_i1 ) {
-									var _elem2 = reader.ReadString();
-									_success.Add( _elem2 );
+								var localList = reader.ReadListBegin();
+								Success = new List<Utf8String>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadString();
+									_success.Add( localElement );
 								}
 								reader.ReadListEnd();
 							}
@@ -459,12 +497,12 @@ namespace Example {
 					switch( field.ID ) {
 						case 1:
 							if( field.Type == TypeKind.Map ) {
-								var _map3 = reader.ReadMapBegin();
-								Value = new Dictionary<Utf8String, Utf8String>( _map3.Count );
-								for( var _i4 = 0; _i4 < _map3.Count; ++_i4 ) {
-									var _key5 = reader.ReadString();
-									var _val6 = reader.ReadString();
-									_value[_key5] = _val6;
+								var localMap = reader.ReadMapBegin();
+								Value = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadString();
+									var localValue = reader.ReadString();
+									_value[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -524,12 +562,12 @@ namespace Example {
 					switch( field.ID ) {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
-								var _map7 = reader.ReadMapBegin();
-								Success = new Dictionary<Utf8String, Utf8String>( _map7.Count );
-								for( var _i8 = 0; _i8 < _map7.Count; ++_i8 ) {
-									var _key9 = reader.ReadString();
-									var _val10 = reader.ReadString();
-									_success[_key9] = _val10;
+								var localMap = reader.ReadMapBegin();
+								Success = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+									var localKey = reader.ReadString();
+									var localValue = reader.ReadString();
+									_success[localKey] = localValue;
 								}
 								reader.ReadMapEnd();
 							}
@@ -619,6 +657,150 @@ namespace Example {
 
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Concat( "Text: ", Text );
+			}
+		}
+		public partial struct log_args : IFormattable {
+			private DateTime _date;
+			private Guid _id;
+			private Utf8String _text;
+
+			public DateTime Date { get { return _date; } set { __isset.date = true; _date = value; } }
+			public Guid Id { get { return _id; } set { __isset.id = true; _id = value; } }
+			public Utf8String Text { get { return _text; } set { __isset.text = true; _text = value; } }
+
+			public Isset __isset = default( Isset );
+			public struct Isset {
+				public bool date { get; set; }
+				public bool id { get; set; }
+				public bool text { get; set; }
+			}
+
+			public log_args() {
+			}
+
+			public void Read( ProtocolCodec reader ) {
+				reader.ReadStructBegin();
+				while( true ) {
+					var field = reader.ReadFieldBegin();
+					if( field.Type == TypeKind.Stop ) break;
+
+					switch( field.ID ) {
+						case 1:
+							if( field.Type == TypeKind.Int64 ) {
+								Date = reader.ReadDateTime();
+							}
+							else reader.Skip( field.Type );
+							break;
+
+						case 2:
+							if( field.Type == TypeKind.String ) {
+								Id = reader.ReadGuid();
+							}
+							else reader.Skip( field.Type );
+							break;
+
+						case 3:
+							if( field.Type == TypeKind.String ) {
+								Text = reader.ReadString();
+							}
+							else reader.Skip( field.Type );
+							break;
+
+						default:
+							reader.Skip( field.Type );
+							break;
+					}
+					reader.ReadFieldEnd();
+				}
+				reader.ReadStructEnd();
+			}
+
+			public void Write( ProtocolCodec writer ) {
+				writer.WriteStructBegin( "log_args" );
+				if( __isset.date ) {
+					writer.WriteFieldBegin( "date", TypeKind.Int64, 1 );
+					writer.WriteDateTime( _date );
+					writer.WriteFieldEnd();
+				}
+				if( __isset.id ) {
+					writer.WriteFieldBegin( "id", TypeKind.String, 2 );
+					writer.WriteGuid( _id );
+					writer.WriteFieldEnd();
+				}
+				if( Text != null && __isset.text ) {
+					writer.WriteFieldBegin( "text", TypeKind.String, 3 );
+					writer.WriteString( _text );
+					writer.WriteFieldEnd();
+				}
+				writer.WriteFieldStop();
+				writer.WriteStructEnd();
+			}
+
+			public void ToString( StringBuilder builder, string format ) {
+				builder.Concat( "Date: ", Date, " Id: ", Id, " Text: ", Text );
+			}
+		}
+		public partial struct ts_args : IFormattable {
+			private List<TimeSpan> _span;
+
+			public List<TimeSpan> Span { get { return _span; } set { __isset.span = true; _span = value; } }
+
+			public Isset __isset = default( Isset );
+			public struct Isset {
+				public bool span { get; set; }
+			}
+
+			public ts_args() {
+			}
+
+			public void Read( ProtocolCodec reader ) {
+				reader.ReadStructBegin();
+				while( true ) {
+					var field = reader.ReadFieldBegin();
+					if( field.Type == TypeKind.Stop ) break;
+
+					switch( field.ID ) {
+						case 1:
+							if( field.Type == TypeKind.List ) {
+								var localList = reader.ReadListBegin();
+								Span = new List<TimeSpan>( localList.Count );
+								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+									var localElement = reader.ReadTimeSpan();
+									_span.Add( localElement );
+								}
+								reader.ReadListEnd();
+							}
+							else reader.Skip( field.Type );
+							break;
+
+						default:
+							reader.Skip( field.Type );
+							break;
+					}
+					reader.ReadFieldEnd();
+				}
+				reader.ReadStructEnd();
+			}
+
+			public void Write( ProtocolCodec writer ) {
+				writer.WriteStructBegin( "ts_args" );
+				if( Span != null && __isset.span ) {
+					writer.WriteFieldBegin( "span", TypeKind.List, 1 );
+					{
+						writer.WriteListBegin( TypeKind.Int64, _span.Count );
+						foreach( var item in _span ) {
+							writer.WriteTimeSpan( item );
+						}
+						writer.WriteListEnd();
+					}
+					writer.WriteFieldEnd();
+				}
+				writer.WriteFieldStop();
+				writer.WriteStructEnd();
+			}
+
+			public void ToString( StringBuilder builder, string format ) {
+				builder.Concat( "Span: ", Span );
 			}
 		}
 	}

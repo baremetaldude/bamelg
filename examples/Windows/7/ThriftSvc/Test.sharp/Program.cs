@@ -38,7 +38,7 @@ namespace TestThrift {
 			}
 
 			try {
-				using( var transport = new TNamedPipeClientTransport( PipeName ) ) { // non buffered transport generates a lot of small writes
+				using( var transport = new TFramedTransport( new TNamedPipeClientTransport( PipeNameFramed ) ) ) {
 					transport.Open();
 
 					var client = new Svc2.Client( new TBinaryProtocol( transport ) );
@@ -52,7 +52,7 @@ namespace TestThrift {
 			}
 
 			try {
-				using( var transport = new TNamedPipeClientTransport( PipeName ) ) { // non buffered transport generates a lot of small writes
+				using( var transport = new TFramedTransport( new TNamedPipeClientTransport( PipeNameFramed ) ) ) {
 					transport.Open();
 
 					var client = new Svc2.Client( new TBinaryProtocol( transport ) );
@@ -65,7 +65,7 @@ namespace TestThrift {
 				Debug.Assert( message.Code == 111 );
 			}
 
-			using( var transport = new TNamedPipeClientTransport( PipeName ) ) { // non buffered transport generates a lot of small writes
+			using( var transport = new TFramedTransport( new TNamedPipeClientTransport( PipeNameFramed ) ) ) {
 				transport.Open();
 
 				var client = new Svc2.Client( new TBinaryProtocol( transport ) );
@@ -91,11 +91,14 @@ namespace TestThrift {
 			}
 		}
 
-		static void DoWork( Svc2.Client client ) {
+		unsafe static void DoWork( Svc2.Client client ) {
 			client.some_event( "Oneway RPC by C# app" );
 			var r1 = client.echo( new Dictionary<string, string> { { "microsoft", "http://www.bing.com/maps/" } } );
 			var r2 = client.add( 10, 30 );
 			var r3 = client.echo2( new KVP() { Name = new byte[] { 1, 2 }, Value = new byte[] { 3, 4 } } );
+
+			var dt = DateTime.UtcNow;
+			client.log( *( long* ) &dt, new byte[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 }, "Some message" );
 		}
 	}
 }

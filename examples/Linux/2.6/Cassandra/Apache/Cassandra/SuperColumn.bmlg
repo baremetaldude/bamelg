@@ -45,12 +45,12 @@ namespace Apache.Cassandra {
 
 					case 2:
 						if( field.Type == TypeKind.List ) {
-							var _list0 = reader.ReadListBegin();
-							Columns = new List<Column>( _list0.Count );
-							for( var _i1 = 0; _i1 < _list0.Count; ++_i1 ) {
-								var _elem2 = new Column();
-								_elem2.Read( reader );
-								_columns.Add( _elem2 );
+							var localList = reader.ReadListBegin();
+							Columns = new List<Column>( localList.Count );
+							for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+								var localElement = new Column();
+								localElement.Read( reader );
+								_columns.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

@@ -38,12 +38,12 @@ namespace Apache.Cassandra {
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.Map ) {
-							var _map66 = reader.ReadMapBegin();
-							Name_types = new Dictionary<byte[], Utf8String>( _map66.Count );
-							for( var _i67 = 0; _i67 < _map66.Count; ++_i67 ) {
-								var _key68 = reader.ReadBinary();
-								var _val69 = reader.ReadString();
-								_name_types[_key68] = _val69;
+							var localMap = reader.ReadMapBegin();
+							Name_types = new Dictionary<byte[], Utf8String>( localMap.Count );
+							for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+								var localKey = reader.ReadBinary();
+								var localValue = reader.ReadString();
+								_name_types[localKey] = localValue;
 							}
 							reader.ReadMapEnd();
 						}
@@ -52,12 +52,12 @@ namespace Apache.Cassandra {
 
 					case 2:
 						if( field.Type == TypeKind.Map ) {
-							var _map70 = reader.ReadMapBegin();
-							Value_types = new Dictionary<byte[], Utf8String>( _map70.Count );
-							for( var _i71 = 0; _i71 < _map70.Count; ++_i71 ) {
-								var _key72 = reader.ReadBinary();
-								var _val73 = reader.ReadString();
-								_value_types[_key72] = _val73;
+							var localMap1 = reader.ReadMapBegin();
+							Value_types = new Dictionary<byte[], Utf8String>( localMap1.Count );
+							for( var localCounter1 = 0; localCounter1 < localMap1.Count; ++localCounter1 ) {
+								var localKey1 = reader.ReadBinary();
+								var localValue1 = reader.ReadString();
+								_value_types[localKey1] = localValue1;
 							}
 							reader.ReadMapEnd();
 						}

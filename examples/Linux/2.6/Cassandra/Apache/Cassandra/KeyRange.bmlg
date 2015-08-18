@@ -82,12 +82,12 @@ namespace Apache.Cassandra {
 
 					case 6:
 						if( field.Type == TypeKind.List ) {
-							var _list12 = reader.ReadListBegin();
-							Row_filter = new List<IndexExpression>( _list12.Count );
-							for( var _i13 = 0; _i13 < _list12.Count; ++_i13 ) {
-								var _elem14 = new IndexExpression();
-								_elem14.Read( reader );
-								_row_filter.Add( _elem14 );
+							var localList = reader.ReadListBegin();
+							Row_filter = new List<IndexExpression>( localList.Count );
+							for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+								var localElement = new IndexExpression();
+								localElement.Read( reader );
+								_row_filter.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

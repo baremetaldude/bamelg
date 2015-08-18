@@ -40,12 +40,12 @@ namespace Apache.Cassandra {
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.List ) {
-							var _list9 = reader.ReadListBegin();
-							Expressions = new List<IndexExpression>( _list9.Count );
-							for( var _i10 = 0; _i10 < _list9.Count; ++_i10 ) {
-								var _elem11 = new IndexExpression();
-								_elem11.Read( reader );
-								_expressions.Add( _elem11 );
+							var localList = reader.ReadListBegin();
+							Expressions = new List<IndexExpression>( localList.Count );
+							for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
+								var localElement = new IndexExpression();
+								localElement.Read( reader );
+								_expressions.Add( localElement );
 							}
 							reader.ReadListEnd();
 						}

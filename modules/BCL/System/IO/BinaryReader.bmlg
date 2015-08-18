@@ -158,21 +158,16 @@ namespace System.IO {
 
 		/// @{ common types
 		public Guid ReadGuid() {
-			if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
-				if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
-					EventHandler.EndOfStream( this );
-					return default( Guid );
-				}
-
-				Guid value;
-				*cast<uint_littleendian*>( &value.Data[0] ) = ReadPrimitive<uint_bigendian>();
-				*cast<ushort_littleendian*>( &value.Data[4] ) = ReadPrimitive<ushort_bigendian>();
-				*cast<ushort_littleendian*>( &value.Data[6] ) = ReadPrimitive<ushort_bigendian>();
-				*cast<ulong_bigendian*>( &value.Data[8] ) = ReadPrimitive<ulong_bigendian>();
-				return value;
+			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
+				EventHandler.EndOfStream( this );
+				return default( Guid );
 			}
-			else return ReadPrimitive<Guid>();
+
+			byte[sizeof( Guid )] tmp;
+			Read( &tmp[0], sizeof( Guid ) );
+			return new Guid { Bytes = tmp };
 		}
+
 		public DateTime ReadDateTime() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( DateTime* ) &nativeLayout; }
 		public TimeSpan ReadTimeSpan() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( TimeSpan* ) &nativeLayout; }
 

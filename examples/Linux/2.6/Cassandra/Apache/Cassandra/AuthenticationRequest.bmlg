@@ -32,12 +32,12 @@ namespace Apache.Cassandra {
 				switch( field.ID ) {
 					case 1:
 						if( field.Type == TypeKind.Map ) {
-							var _map30 = reader.ReadMapBegin();
-							Credentials = new Dictionary<Utf8String, Utf8String>( _map30.Count );
-							for( var _i31 = 0; _i31 < _map30.Count; ++_i31 ) {
-								var _key32 = reader.ReadString();
-								var _val33 = reader.ReadString();
-								_credentials[_key32] = _val33;
+							var localMap = reader.ReadMapBegin();
+							Credentials = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+							for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
+								var localKey = reader.ReadString();
+								var localValue = reader.ReadString();
+								_credentials[localKey] = localValue;
 							}
 							reader.ReadMapEnd();
 						}
