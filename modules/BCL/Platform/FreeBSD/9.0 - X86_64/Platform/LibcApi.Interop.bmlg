@@ -2936,14 +2936,18 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct __infinity_un {
-		public byte[8]& __uc { get { return *cast<byte[8]*>( &this ); } }
-		public double& __ud { get { return *cast<double*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public byte[8] __uc;
+		[Overlapped( Offset = 0 )]
+		public double __ud;
 	}
 	[ExplicitSize( Size = 128 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct __mbstate_t {
-		public sbyte[128]& __mbstate8 { get { return *cast<sbyte[128]*>( &this ); } }
-		public intptr& _mbstateL { get { return *cast<intptr*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sbyte[128] __mbstate8;
+		[Overlapped( Offset = 0 )]
+		public intptr _mbstateL;
 	}
 	[ExplicitSize( Size = 152 )]
 	[Alignment( Boundary = 8 )]
@@ -2962,8 +2966,10 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct __nan_un {
-		public byte[4]& __uc { get { return *cast<byte[4]*>( &this ); } }
-		public float& __uf { get { return *cast<float*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public byte[4] __uc;
+		[Overlapped( Offset = 0 )]
+		public float __uf;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 8 )]
@@ -5044,21 +5050,36 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 152 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct sctp_notification {
-		public sctp_tlv& sn_header { get { return *cast<sctp_tlv*>( &this ); } }
-		public sctp_assoc_change& sn_assoc_change { get { return *cast<sctp_assoc_change*>( &this ); } }
-		public sctp_paddr_change& sn_paddr_change { get { return *cast<sctp_paddr_change*>( &this ); } }
-		public sctp_remote_error& sn_remote_error { get { return *cast<sctp_remote_error*>( &this ); } }
-		public sctp_send_failed& sn_send_failed { get { return *cast<sctp_send_failed*>( &this ); } }
-		public sctp_shutdown_event& sn_shutdown_event { get { return *cast<sctp_shutdown_event*>( &this ); } }
-		public sctp_adaptation_event& sn_adaptation_event { get { return *cast<sctp_adaptation_event*>( &this ); } }
-		public sctp_adaption_event& sn_adaption_event { get { return *cast<sctp_adaption_event*>( &this ); } }
-		public sctp_pdapi_event& sn_pdapi_event { get { return *cast<sctp_pdapi_event*>( &this ); } }
-		public sctp_authkey_event& sn_auth_event { get { return *cast<sctp_authkey_event*>( &this ); } }
-		public sctp_sender_dry_event& sn_sender_dry_event { get { return *cast<sctp_sender_dry_event*>( &this ); } }
-		public sctp_send_failed_event& sn_send_failed_event { get { return *cast<sctp_send_failed_event*>( &this ); } }
-		public sctp_stream_reset_event& sn_strreset_event { get { return *cast<sctp_stream_reset_event*>( &this ); } }
-		public sctp_assoc_reset_event& sn_assocreset_event { get { return *cast<sctp_assoc_reset_event*>( &this ); } }
-		public sctp_stream_change_event& sn_strchange_event { get { return *cast<sctp_stream_change_event*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sctp_tlv sn_header;
+		[Overlapped( Offset = 0 )]
+		public sctp_assoc_change sn_assoc_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_paddr_change sn_paddr_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_remote_error sn_remote_error;
+		[Overlapped( Offset = 0 )]
+		public sctp_send_failed sn_send_failed;
+		[Overlapped( Offset = 0 )]
+		public sctp_shutdown_event sn_shutdown_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_adaptation_event sn_adaptation_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_adaption_event sn_adaption_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_pdapi_event sn_pdapi_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_authkey_event sn_auth_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_sender_dry_event sn_sender_dry_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_send_failed_event sn_send_failed_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_stream_reset_event sn_strreset_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_assoc_reset_event sn_assocreset_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_stream_change_event sn_strchange_event;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
@@ -5515,9 +5536,12 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 28 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_sockstore {
-		public sockaddr_in& sin { get { return *cast<sockaddr_in*>( &this ); } }
-		public sockaddr_in6& sin6 { get { return *cast<sockaddr_in6*>( &this ); } }
-		public sockaddr& sa { get { return *cast<sockaddr*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sockaddr_in sin;
+		[Overlapped( Offset = 0 )]
+		public sockaddr_in6 sin6;
+		[Overlapped( Offset = 0 )]
+		public sockaddr sa;
 	}
 	[ExplicitSize( Size = 176 )]
 	[Alignment( Boundary = 8 )]
@@ -6082,10 +6106,14 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct sigval {
-		public int& sival_int { get { return *cast<int*>( &this ); } }
-		public void*& sival_ptr { get { return *cast<void**>( &this ); } }
-		public int& sigval_int { get { return *cast<int*>( &this ); } }
-		public void*& sigval_ptr { get { return *cast<void**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int sival_int;
+		[Overlapped( Offset = 0 )]
+		public void* sival_ptr;
+		[Overlapped( Offset = 0 )]
+		public int sigval_int;
+		[Overlapped( Offset = 0 )]
+		public void* sigval_ptr;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 8 )]
@@ -6745,87 +6773,129 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_025FB870 {
-		public uintptr& c_val { get { return *cast<uintptr*>( &this ); } }
-		public uintptr& c_ptr { get { return *cast<uintptr*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uintptr c_val;
+		[Overlapped( Offset = 0 )]
+		public uintptr c_ptr;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_025FC02C {
-		public uintptr& d_val { get { return *cast<uintptr*>( &this ); } }
-		public uintptr& d_ptr { get { return *cast<uintptr*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uintptr d_val;
+		[Overlapped( Offset = 0 )]
+		public uintptr d_ptr;
 	}
 	[ExplicitSize( Size = 32 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_1B02B1B3 {
-		public sctp_log_closing& close { get { return *cast<sctp_log_closing*>( &this ); } }
-		public sctp_blk_args& blk { get { return *cast<sctp_blk_args*>( &this ); } }
-		public sctp_cwnd_args& cwnd { get { return *cast<sctp_cwnd_args*>( &this ); } }
-		public sctp_str_log& strlog { get { return *cast<sctp_str_log*>( &this ); } }
-		public sctp_fr_log& fr { get { return *cast<sctp_fr_log*>( &this ); } }
-		public sctp_fr_map& map { get { return *cast<sctp_fr_map*>( &this ); } }
-		public sctp_rwnd_log& rwnd { get { return *cast<sctp_rwnd_log*>( &this ); } }
-		public sctp_mbcnt_log& mbcnt { get { return *cast<sctp_mbcnt_log*>( &this ); } }
-		public sctp_sack_log& sack { get { return *cast<sctp_sack_log*>( &this ); } }
-		public sctp_lock_log& lock { get { return *cast<sctp_lock_log*>( &this ); } }
-		public sctp_rto_log& rto { get { return *cast<sctp_rto_log*>( &this ); } }
-		public sctp_sb_log& sb { get { return *cast<sctp_sb_log*>( &this ); } }
-		public sctp_nagle_log& nagle { get { return *cast<sctp_nagle_log*>( &this ); } }
-		public sctp_sbwake_log& wake { get { return *cast<sctp_sbwake_log*>( &this ); } }
-		public sctp_mbuf_log& mb { get { return *cast<sctp_mbuf_log*>( &this ); } }
-		public sctp_misc_info& misc { get { return *cast<sctp_misc_info*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sctp_log_closing close;
+		[Overlapped( Offset = 0 )]
+		public sctp_blk_args blk;
+		[Overlapped( Offset = 0 )]
+		public sctp_cwnd_args cwnd;
+		[Overlapped( Offset = 0 )]
+		public sctp_str_log strlog;
+		[Overlapped( Offset = 0 )]
+		public sctp_fr_log fr;
+		[Overlapped( Offset = 0 )]
+		public sctp_fr_map map;
+		[Overlapped( Offset = 0 )]
+		public sctp_rwnd_log rwnd;
+		[Overlapped( Offset = 0 )]
+		public sctp_mbcnt_log mbcnt;
+		[Overlapped( Offset = 0 )]
+		public sctp_sack_log sack;
+		[Overlapped( Offset = 0 )]
+		public sctp_lock_log lock;
+		[Overlapped( Offset = 0 )]
+		public sctp_rto_log rto;
+		[Overlapped( Offset = 0 )]
+		public sctp_sb_log sb;
+		[Overlapped( Offset = 0 )]
+		public sctp_nagle_log nagle;
+		[Overlapped( Offset = 0 )]
+		public sctp_sbwake_log wake;
+		[Overlapped( Offset = 0 )]
+		public sctp_mbuf_log mb;
+		[Overlapped( Offset = 0 )]
+		public sctp_misc_info misc;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_60A955BA {
-		public int& a_val { get { return *cast<int*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int a_val;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_60A958D2 {
-		public intptr& a_val { get { return *cast<intptr*>( &this ); } }
-		public void*& a_ptr { get { return *cast<void**>( &this ); } }
-		public Functors.Action& a_fcn { get { return *cast<Functors.Action*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public intptr a_val;
+		[Overlapped( Offset = 0 )]
+		public void* a_ptr;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action a_fcn;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_BE4A906E {
-		public Functors.Action<int>& __sa_handler { get { return *cast<Functors.Action<int>*>( &this ); } }
-		public Functors.Action<int, siginfo_t*, void*>& __sa_sigaction { get { return *cast<Functors.Action<int, siginfo_t*, void*>*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int> __sa_handler;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int, siginfo_t*, void*> __sa_sigaction;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_BE4AC1A8 {
-		public UnnamedStruct_BE4AC18A& _fault { get { return *cast<UnnamedStruct_BE4AC18A*>( &this ); } }
-		public UnnamedStruct_BE4AC125& _timer { get { return *cast<UnnamedStruct_BE4AC125*>( &this ); } }
-		public UnnamedStruct_BE4AC0A1& _mesgq { get { return *cast<UnnamedStruct_BE4AC0A1*>( &this ); } }
-		public UnnamedStruct_BE4ABFB8& _poll { get { return *cast<UnnamedStruct_BE4ABFB8*>( &this ); } }
-		public UnnamedStruct_BE4ABB3B& __spare__ { get { return *cast<UnnamedStruct_BE4ABB3B*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4AC18A _fault;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4AC125 _timer;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4AC0A1 _mesgq;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4ABFB8 _poll;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4ABB3B __spare__;
 	}
 	[ExplicitSize( Size = 64 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_BE4AC334 {
-		public int& _threadid { get { return *cast<int*>( &this ); } }
-		public UnnamedStruct_BE4AC273& _sigev_thread { get { return *cast<UnnamedStruct_BE4AC273*>( &this ); } }
-		public ushort& _kevent_flags { get { return *cast<ushort*>( &this ); } }
-		public intptr[8]& __spare__ { get { return *cast<intptr[8]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int _threadid;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_BE4AC273 _sigev_thread;
+		[Overlapped( Offset = 0 )]
+		public ushort _kevent_flags;
+		[Overlapped( Offset = 0 )]
+		public intptr[8] __spare__;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_F4BC28E4 {
-		public uint& c_val { get { return *cast<uint*>( &this ); } }
-		public uint& c_ptr { get { return *cast<uint*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uint c_val;
+		[Overlapped( Offset = 0 )]
+		public uint c_ptr;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_F4BC41EA {
-		public uint& d_val { get { return *cast<uint*>( &this ); } }
-		public uint& d_ptr { get { return *cast<uint*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uint d_val;
+		[Overlapped( Offset = 0 )]
+		public uint d_ptr;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_F7BD935D {
-		public byte[16]& __u6_addr8 { get { return *cast<byte[16]*>( &this ); } }
-		public ushort[8]& __u6_addr16 { get { return *cast<ushort[8]*>( &this ); } }
-		public uint[4]& __u6_addr32 { get { return *cast<uint[4]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public byte[16] __u6_addr8;
+		[Overlapped( Offset = 0 )]
+		public ushort[8] __u6_addr16;
+		[Overlapped( Offset = 0 )]
+		public uint[4] __u6_addr32;
 	}
 }

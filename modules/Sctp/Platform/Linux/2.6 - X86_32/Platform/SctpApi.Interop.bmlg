@@ -321,9 +321,12 @@ namespace Platform.Sctp {
 	[ExplicitSize( Size = 32 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_cmsg_data_t {
-		public byte& raw { get { return *cast<byte*>( &this ); } }
-		public sctp_initmsg& init { get { return *cast<sctp_initmsg*>( &this ); } }
-		public sctp_sndrcvinfo& sndrcv { get { return *cast<sctp_sndrcvinfo*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public byte raw;
+		[Overlapped( Offset = 0 )]
+		public sctp_initmsg init;
+		[Overlapped( Offset = 0 )]
+		public sctp_sndrcvinfo sndrcv;
 	}
 	[ExplicitSize( Size = 10 )]
 	public partial struct sctp_event_subscribe {
@@ -390,16 +393,26 @@ namespace Platform.Sctp {
 	[ExplicitSize( Size = 148 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_notification {
-		public UnnamedStruct_AE77AEE0& sn_header { get { return *cast<UnnamedStruct_AE77AEE0*>( &this ); } }
-		public sctp_assoc_change& sn_assoc_change { get { return *cast<sctp_assoc_change*>( &this ); } }
-		public sctp_paddr_change& sn_paddr_change { get { return *cast<sctp_paddr_change*>( &this ); } }
-		public sctp_remote_error& sn_remote_error { get { return *cast<sctp_remote_error*>( &this ); } }
-		public sctp_send_failed& sn_send_failed { get { return *cast<sctp_send_failed*>( &this ); } }
-		public sctp_shutdown_event& sn_shutdown_event { get { return *cast<sctp_shutdown_event*>( &this ); } }
-		public sctp_adaptation_event& sn_adaptation_event { get { return *cast<sctp_adaptation_event*>( &this ); } }
-		public sctp_pdapi_event& sn_pdapi_event { get { return *cast<sctp_pdapi_event*>( &this ); } }
-		public sctp_authkey_event& sn_authkey_event { get { return *cast<sctp_authkey_event*>( &this ); } }
-		public sctp_sender_dry_event& sn_sender_dry_event { get { return *cast<sctp_sender_dry_event*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_AE77AEE0 sn_header;
+		[Overlapped( Offset = 0 )]
+		public sctp_assoc_change sn_assoc_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_paddr_change sn_paddr_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_remote_error sn_remote_error;
+		[Overlapped( Offset = 0 )]
+		public sctp_send_failed sn_send_failed;
+		[Overlapped( Offset = 0 )]
+		public sctp_shutdown_event sn_shutdown_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_adaptation_event sn_adaptation_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_pdapi_event sn_pdapi_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_authkey_event sn_authkey_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_sender_dry_event sn_sender_dry_event;
 	}
 	[ExplicitSize( Size = 148 )]
 	[Alignment( Boundary = 4 )]

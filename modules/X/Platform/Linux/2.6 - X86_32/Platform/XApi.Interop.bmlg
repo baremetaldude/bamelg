@@ -1449,12 +1449,18 @@ namespace Platform.X {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct XEDataObject {
-		public Display*& display { get { return *cast<Display**>( &this ); } }
-		public GC*& gc { get { return *cast<GC**>( &this ); } }
-		public Visual*& visual { get { return *cast<Visual**>( &this ); } }
-		public Screen*& screen { get { return *cast<Screen**>( &this ); } }
-		public ScreenFormat*& pixmap_format { get { return *cast<ScreenFormat**>( &this ); } }
-		public XFontStruct*& font { get { return *cast<XFontStruct**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public Display* display;
+		[Overlapped( Offset = 0 )]
+		public GC* gc;
+		[Overlapped( Offset = 0 )]
+		public Visual* visual;
+		[Overlapped( Offset = 0 )]
+		public Screen* screen;
+		[Overlapped( Offset = 0 )]
+		public ScreenFormat* pixmap_format;
+		[Overlapped( Offset = 0 )]
+		public XFontStruct* font;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -1477,41 +1483,76 @@ namespace Platform.X {
 	[ExplicitSize( Size = 96 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct XEvent {
-		public int& type { get { return *cast<int*>( &this ); } }
-		public XAnyEvent& xany { get { return *cast<XAnyEvent*>( &this ); } }
-		public XKeyEvent& xkey { get { return *cast<XKeyEvent*>( &this ); } }
-		public XButtonEvent& xbutton { get { return *cast<XButtonEvent*>( &this ); } }
-		public XMotionEvent& xmotion { get { return *cast<XMotionEvent*>( &this ); } }
-		public XCrossingEvent& xcrossing { get { return *cast<XCrossingEvent*>( &this ); } }
-		public XFocusChangeEvent& xfocus { get { return *cast<XFocusChangeEvent*>( &this ); } }
-		public XExposeEvent& xexpose { get { return *cast<XExposeEvent*>( &this ); } }
-		public XGraphicsExposeEvent& xgraphicsexpose { get { return *cast<XGraphicsExposeEvent*>( &this ); } }
-		public XNoExposeEvent& xnoexpose { get { return *cast<XNoExposeEvent*>( &this ); } }
-		public XVisibilityEvent& xvisibility { get { return *cast<XVisibilityEvent*>( &this ); } }
-		public XCreateWindowEvent& xcreatewindow { get { return *cast<XCreateWindowEvent*>( &this ); } }
-		public XDestroyWindowEvent& xdestroywindow { get { return *cast<XDestroyWindowEvent*>( &this ); } }
-		public XUnmapEvent& xunmap { get { return *cast<XUnmapEvent*>( &this ); } }
-		public XMapEvent& xmap { get { return *cast<XMapEvent*>( &this ); } }
-		public XMapRequestEvent& xmaprequest { get { return *cast<XMapRequestEvent*>( &this ); } }
-		public XReparentEvent& xreparent { get { return *cast<XReparentEvent*>( &this ); } }
-		public XConfigureEvent& xconfigure { get { return *cast<XConfigureEvent*>( &this ); } }
-		public XGravityEvent& xgravity { get { return *cast<XGravityEvent*>( &this ); } }
-		public XResizeRequestEvent& xresizerequest { get { return *cast<XResizeRequestEvent*>( &this ); } }
-		public XConfigureRequestEvent& xconfigurerequest { get { return *cast<XConfigureRequestEvent*>( &this ); } }
-		public XCirculateEvent& xcirculate { get { return *cast<XCirculateEvent*>( &this ); } }
-		public XCirculateRequestEvent& xcirculaterequest { get { return *cast<XCirculateRequestEvent*>( &this ); } }
-		public XPropertyEvent& xproperty { get { return *cast<XPropertyEvent*>( &this ); } }
-		public XSelectionClearEvent& xselectionclear { get { return *cast<XSelectionClearEvent*>( &this ); } }
-		public XSelectionRequestEvent& xselectionrequest { get { return *cast<XSelectionRequestEvent*>( &this ); } }
-		public XSelectionEvent& xselection { get { return *cast<XSelectionEvent*>( &this ); } }
-		public XColormapEvent& xcolormap { get { return *cast<XColormapEvent*>( &this ); } }
-		public XClientMessageEvent& xclient { get { return *cast<XClientMessageEvent*>( &this ); } }
-		public XMappingEvent& xmapping { get { return *cast<XMappingEvent*>( &this ); } }
-		public XErrorEvent& xerror { get { return *cast<XErrorEvent*>( &this ); } }
-		public XKeymapEvent& xkeymap { get { return *cast<XKeymapEvent*>( &this ); } }
-		public XGenericEvent& xgeneric { get { return *cast<XGenericEvent*>( &this ); } }
-		public XGenericEventCookie& xcookie { get { return *cast<XGenericEventCookie*>( &this ); } }
-		public intptr[24]& pad { get { return *cast<intptr[24]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int type;
+		[Overlapped( Offset = 0 )]
+		public XAnyEvent xany;
+		[Overlapped( Offset = 0 )]
+		public XKeyEvent xkey;
+		[Overlapped( Offset = 0 )]
+		public XButtonEvent xbutton;
+		[Overlapped( Offset = 0 )]
+		public XMotionEvent xmotion;
+		[Overlapped( Offset = 0 )]
+		public XCrossingEvent xcrossing;
+		[Overlapped( Offset = 0 )]
+		public XFocusChangeEvent xfocus;
+		[Overlapped( Offset = 0 )]
+		public XExposeEvent xexpose;
+		[Overlapped( Offset = 0 )]
+		public XGraphicsExposeEvent xgraphicsexpose;
+		[Overlapped( Offset = 0 )]
+		public XNoExposeEvent xnoexpose;
+		[Overlapped( Offset = 0 )]
+		public XVisibilityEvent xvisibility;
+		[Overlapped( Offset = 0 )]
+		public XCreateWindowEvent xcreatewindow;
+		[Overlapped( Offset = 0 )]
+		public XDestroyWindowEvent xdestroywindow;
+		[Overlapped( Offset = 0 )]
+		public XUnmapEvent xunmap;
+		[Overlapped( Offset = 0 )]
+		public XMapEvent xmap;
+		[Overlapped( Offset = 0 )]
+		public XMapRequestEvent xmaprequest;
+		[Overlapped( Offset = 0 )]
+		public XReparentEvent xreparent;
+		[Overlapped( Offset = 0 )]
+		public XConfigureEvent xconfigure;
+		[Overlapped( Offset = 0 )]
+		public XGravityEvent xgravity;
+		[Overlapped( Offset = 0 )]
+		public XResizeRequestEvent xresizerequest;
+		[Overlapped( Offset = 0 )]
+		public XConfigureRequestEvent xconfigurerequest;
+		[Overlapped( Offset = 0 )]
+		public XCirculateEvent xcirculate;
+		[Overlapped( Offset = 0 )]
+		public XCirculateRequestEvent xcirculaterequest;
+		[Overlapped( Offset = 0 )]
+		public XPropertyEvent xproperty;
+		[Overlapped( Offset = 0 )]
+		public XSelectionClearEvent xselectionclear;
+		[Overlapped( Offset = 0 )]
+		public XSelectionRequestEvent xselectionrequest;
+		[Overlapped( Offset = 0 )]
+		public XSelectionEvent xselection;
+		[Overlapped( Offset = 0 )]
+		public XColormapEvent xcolormap;
+		[Overlapped( Offset = 0 )]
+		public XClientMessageEvent xclient;
+		[Overlapped( Offset = 0 )]
+		public XMappingEvent xmapping;
+		[Overlapped( Offset = 0 )]
+		public XErrorEvent xerror;
+		[Overlapped( Offset = 0 )]
+		public XKeymapEvent xkeymap;
+		[Overlapped( Offset = 0 )]
+		public XGenericEvent xgeneric;
+		[Overlapped( Offset = 0 )]
+		public XGenericEventCookie xcookie;
+		[Overlapped( Offset = 0 )]
+		public intptr[24] pad;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 4 )]
@@ -2957,26 +2998,35 @@ namespace Platform.X {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_2C2E8328 {
-		public sbyte*& multi_byte { get { return *cast<sbyte**>( &this ); } }
-		public char*& wide_char { get { return *cast<char**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sbyte* multi_byte;
+		[Overlapped( Offset = 0 )]
+		public char* wide_char;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_2C2E980A {
-		public XIMText*& text { get { return *cast<XIMText**>( &this ); } }
-		public Pixmap& bitmap { get { return *cast<Pixmap*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public XIMText* text;
+		[Overlapped( Offset = 0 )]
+		public Pixmap bitmap;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_2C2EA04A {
-		public sbyte*& mbs { get { return *cast<sbyte**>( &this ); } }
-		public char*& wcs { get { return *cast<char**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sbyte* mbs;
+		[Overlapped( Offset = 0 )]
+		public char* wcs;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_2C2EF20B {
-		public sbyte[20]& b { get { return *cast<sbyte[20]*>( &this ); } }
-		public short[10]& s { get { return *cast<short[10]*>( &this ); } }
-		public intptr[5]& l { get { return *cast<intptr[5]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sbyte[20] b;
+		[Overlapped( Offset = 0 )]
+		public short[10] s;
+		[Overlapped( Offset = 0 )]
+		public intptr[5] l;
 	}
 }

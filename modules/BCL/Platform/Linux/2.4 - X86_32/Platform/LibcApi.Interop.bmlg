@@ -2673,8 +2673,10 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 44 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct _G_iconv_t {
-		public __gconv_info& __cd { get { return *cast<__gconv_info*>( &this ); } }
-		public UnnamedStruct_9AE8DFFC& __combined { get { return *cast<UnnamedStruct_9AE8DFFC*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public __gconv_info __cd;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_9AE8DFFC __combined;
 	}
 	public partial struct _IO_cookie_file {
 	}
@@ -3020,8 +3022,10 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct Elf32_gptab {
-		public UnnamedStruct_9456C443& gt_header { get { return *cast<UnnamedStruct_9456C443*>( &this ); } }
-		public UnnamedStruct_9456C906& gt_entry { get { return *cast<UnnamedStruct_9456C906*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_9456C443 gt_header;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_9456C906 gt_entry;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -4314,8 +4318,10 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sigval {
-		public int& sival_int { get { return *cast<int*>( &this ); } }
-		public void*& sival_ptr { get { return *cast<void**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int sival_int;
+		[Overlapped( Offset = 0 )]
+		public void* sival_ptr;
 	}
 	[ExplicitSize( Size = 12 )]
 	[Alignment( Boundary = 4 )]
@@ -4734,9 +4740,12 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct wait {
-		public int& w_status { get { return *cast<int*>( &this ); } }
-		public UnnamedStruct_58183DED& __wait_terminated { get { return *cast<UnnamedStruct_58183DED*>( &this ); } }
-		public UnnamedStruct_58183FD2& __wait_stopped { get { return *cast<UnnamedStruct_58183FD2*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int w_status;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_58183DED __wait_terminated;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_58183FD2 __wait_stopped;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 2 )]
@@ -4854,70 +4863,99 @@ namespace Platform.Libc {
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_3CFB414E {
-		public uint& __wch { get { return *cast<uint*>( &this ); } }
-		public sbyte[4]& __wchb { get { return *cast<sbyte[4]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uint __wch;
+		[Overlapped( Offset = 0 )]
+		public sbyte[4] __wchb;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_79C4B050 {
-		public byte[16]& u6_addr8 { get { return *cast<byte[16]*>( &this ); } }
-		public ushort[8]& u6_addr16 { get { return *cast<ushort[8]*>( &this ); } }
-		public uint[4]& u6_addr32 { get { return *cast<uint[4]*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public byte[16] u6_addr8;
+		[Overlapped( Offset = 0 )]
+		public ushort[8] u6_addr16;
+		[Overlapped( Offset = 0 )]
+		public uint[4] u6_addr32;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_84CED869 {
-		public Functors.Action<int>& sa_handler { get { return *cast<Functors.Action<int>*>( &this ); } }
-		public Functors.Action<int, siginfo*, void*>& sa_sigaction { get { return *cast<Functors.Action<int, siginfo*, void*>*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int> sa_handler;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int, siginfo*, void*> sa_sigaction;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_9456EC54 {
-		public intptr& a_val { get { return *cast<intptr*>( &this ); } }
-		public void*& a_ptr { get { return *cast<void**>( &this ); } }
-		public Functors.Action& a_fcn { get { return *cast<Functors.Action*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public intptr a_val;
+		[Overlapped( Offset = 0 )]
+		public void* a_ptr;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action a_fcn;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_9456EF0F {
-		public intptr& a_val { get { return *cast<intptr*>( &this ); } }
-		public void*& a_ptr { get { return *cast<void**>( &this ); } }
-		public Functors.Action& a_fcn { get { return *cast<Functors.Action*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public intptr a_val;
+		[Overlapped( Offset = 0 )]
+		public void* a_ptr;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action a_fcn;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_94572A34 {
-		public ulong& d_val { get { return *cast<ulong*>( &this ); } }
-		public ulong& d_ptr { get { return *cast<ulong*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public ulong d_val;
+		[Overlapped( Offset = 0 )]
+		public ulong d_ptr;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_94572D0E {
-		public uint& d_val { get { return *cast<uint*>( &this ); } }
-		public uint& d_ptr { get { return *cast<uint*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public uint d_val;
+		[Overlapped( Offset = 0 )]
+		public uint d_ptr;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_C30EE5C0 {
-		public sockaddr*& ifu_broadaddr { get { return *cast<sockaddr**>( &this ); } }
-		public sockaddr*& ifu_dstaddr { get { return *cast<sockaddr**>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public sockaddr* ifu_broadaddr;
+		[Overlapped( Offset = 0 )]
+		public sockaddr* ifu_dstaddr;
 	}
 	[ExplicitSize( Size = 116 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_C3255351 {
-		public int[29]& _pad { get { return *cast<int[29]*>( &this ); } }
-		public UnnamedStruct_C32552F3& _kill { get { return *cast<UnnamedStruct_C32552F3*>( &this ); } }
-		public UnnamedStruct_C325624A& _timer { get { return *cast<UnnamedStruct_C325624A*>( &this ); } }
-		public UnnamedStruct_C3256142& _rt { get { return *cast<UnnamedStruct_C3256142*>( &this ); } }
-		public UnnamedStruct_C325603A& _sigchld { get { return *cast<UnnamedStruct_C325603A*>( &this ); } }
-		public UnnamedStruct_C3255E68& _sigfault { get { return *cast<UnnamedStruct_C3255E68*>( &this ); } }
-		public UnnamedStruct_C3255E2A& _sigpoll { get { return *cast<UnnamedStruct_C3255E2A*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int[29] _pad;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C32552F3 _kill;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C325624A _timer;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C3256142 _rt;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C325603A _sigchld;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C3255E68 _sigfault;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C3255E2A _sigpoll;
 	}
 	[ExplicitSize( Size = 52 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct UnnamedUnion_C325791C {
-		public int[13]& _pad { get { return *cast<int[13]*>( &this ); } }
-		public int& _tid { get { return *cast<int*>( &this ); } }
-		public UnnamedStruct_C3257813& _sigev_thread { get { return *cast<UnnamedStruct_C3257813*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public int[13] _pad;
+		[Overlapped( Offset = 0 )]
+		public int _tid;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_C3257813 _sigev_thread;
 	}
 }

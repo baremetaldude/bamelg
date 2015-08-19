@@ -108,9 +108,13 @@ namespace Platform.Aio {
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct UnnamedUnion_DFC7713A {
-		public io_iocb_common& c { get { return *cast<io_iocb_common*>( &this ); } }
-		public io_iocb_vector& v { get { return *cast<io_iocb_vector*>( &this ); } }
-		public io_iocb_poll& poll { get { return *cast<io_iocb_poll*>( &this ); } }
-		public io_iocb_sockaddr& saddr { get { return *cast<io_iocb_sockaddr*>( &this ); } }
+		[Overlapped( Offset = 0 )]
+		public io_iocb_common c;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_vector v;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_poll poll;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_sockaddr saddr;
 	}
 }
