@@ -30,8 +30,8 @@ namespace System.Collections {
 			for( var i = 0; i < _maxElements; ++i )
 				AvailableIndices[i] = i;
 
-			var alignmentPadding = System.Runtime.Memory.ComputeAlignmentPadding( ( uint ) typeof( T ).InstanceSize, typeof( T ).InstanceAlignment );
-			Valgrind.MempoolCreate( &Elements[0], ( int ) alignmentPadding, false );
+			var tailPadding = System.Runtime.Memory.GetTailPadding( ( uint ) typeof( T ).InstanceSize, typeof( T ).InstanceAlignment );
+			Valgrind.MempoolCreate( &Elements[0], ( int ) tailPadding, false );
 		}
 
 		~FixedPool() {
@@ -46,7 +46,7 @@ namespace System.Collections {
 					VerifyFree( ( int ) index );
 					OnFinalize( *value );
 
-					// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.6.1
+					// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.10.1
 				}
 			}
 
@@ -67,10 +67,7 @@ namespace System.Collections {
 			var count = Count;
 
 			for( var j = 0; j < count; ++j ) {
-				if( version != _version ) {
-					Assert.Fail( "Collection was changed since last iteration!" );
-					yield break;
-				}
+				CommonCollectionOperations.VersionCheck( version != _version );
 
 				yield return &Elements[AvailableIndices[j]];
 			}
@@ -89,7 +86,7 @@ namespace System.Collections {
 			// Valgrind.MempoolAlloc( &Elements[0], result, typeof( T ).InstanceSize );
 
 			if( OnInitialize != null ) OnInitialize( *result );
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 			return result;
 		}
 
@@ -99,11 +96,11 @@ namespace System.Collections {
 			VerifyFree( ( int ) index );
 			if( OnFinalize != null ) OnFinalize( *value );
 
-			// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.6.1
+			// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.10.1
 
 			--FreeIndexPtr;
 			*FreeIndexPtr = ( int ) index;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]

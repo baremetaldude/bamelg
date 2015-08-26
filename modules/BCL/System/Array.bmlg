@@ -23,8 +23,8 @@ namespace System {
 		~Array() {
 			var align = ElementType.InstanceAlignment;
 			var dimensionsSize = sizeof( uint ) * ( uint ) Dimensions;
-			var elementSize = Memory.ComputeStrideByAlign( ( uint ) ElementType.InstanceSize, align );
-			var headerSize = Memory.ComputeStrideByAlign( sizeof( Array ) + dimensionsSize, align ); // align first element
+			var elementSize = Memory.GetStride( ( uint ) ElementType.InstanceSize, align );
+			var headerSize = Memory.GetStride( sizeof( Array ) + dimensionsSize, align ); // align first element
 
 			if( ElementType.IsClass | ElementType.IsDynamicArray | ElementType.IsDelegate )
 				Memory.PerformFunctorOnClassArray( bitcast<byte*>( this ) + headerSize, Length, bitcast<Functors.Action<void*>>( new Functors.Action<RuntimeObjectBase>( RuntimeObjectBase.ReleaseReference ) ) );
@@ -48,8 +48,8 @@ namespace System {
 		public void* GetData() {
 			var align = ElementType.InstanceAlignment;
 			var dimensionsSize = sizeof( uint ) * ( uint ) Dimensions;
-			var elementSize = Memory.ComputeStrideByAlign( ( uint ) ElementType.InstanceSize, align );
-			var headerSize = Memory.ComputeStrideByAlign( sizeof( Array ) + dimensionsSize, align ); // align first element
+			var elementSize = Memory.GetStride( ( uint ) ElementType.InstanceSize, align );
+			var headerSize = Memory.GetStride( sizeof( Array ) + dimensionsSize, align ); // align first element
 
 			return bitcast<byte*>( this ) + headerSize;
 		}

@@ -1,0 +1,200 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+
+namespace System.Collections {
+	// Designed for huge amounts of small structs
+	// O(1) allocation and removal
+	// Object addresses not changed after resize
+	public class PagedQueue<T> {
+		private int _version;
+
+		private PageInfo* _firstPage;
+		private PageInfo* _lastPage;
+
+		// at most 1 free page is cached
+		private PageInfo* _freePage;
+
+		private int _pageCount;
+
+		public const int BlockSize = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / typeof( T ).ContentStride );
+
+		public int Count { get; private set; }
+		public int Capacity { get { return _pageCount * BlockSize; } }
+		public int PageCount { get { return _pageCount; } }
+
+		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
+
+		public PagedQueue() {
+			Assert.IsTrue( typeof( T ).IsStruct | typeof( T ).IsFixedArray ); // PagedQueue<T> designed to be used with structs
+			Assert.IsTrue( BlockSize > 2 ); // Dont use big structures
+
+			AllocatePage();
+		}
+
+		~PagedQueue() {
+			if( OnFinalize != null )
+				foreach( var value in this )
+					OnFinalize( value );
+
+			for( var page = _firstPage; page != null; ) {
+				var next = page->Next;
+				FreePage( page );
+				page = next;
+			}
+
+			if( _freePage != null )
+				FreePage( _freePage );
+		}
+
+		private PageInfo* AllocatePage() {
+			byte* memory;
+			if( _freePage != null ) {
+				memory = ( byte* ) _freePage->Elements;
+				_freePage = null;
+			}
+			else {
+				memory = ( byte* ) Memory.AllocatePages( Memory.DefaultPageReserveCount );
+				++_pageCount;
+			}
+
+			var page = ( PageInfo* )( memory + Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride );
+
+			*( void** ) &page->Parent = bitcast<void*>( this ); // dont touch refcount
+
+			if( _firstPage == null ) _firstPage = page;
+			if( _lastPage != null ) _lastPage->Next = page;
+			_lastPage = page;
+
+			return page;
+		}
+
+		private void FreePage( PageInfo* page ) {
+			--_pageCount;
+			Memory.FreePages( page->Elements, Memory.DefaultPageReserveCount );
+		}
+
+		// unfortunately we must return ptrs to prevent possible usage errors
+		public T* TryEnqueue() {
+			CommonCollectionOperations.UpdateVersion( &_version );
+
+			if( _lastPage != null && _lastPage->FreeCount > 0 )
+				return Enqueue( _lastPage );
+
+			// Enqueue new page
+			{
+				var page = AllocatePage();
+				return Enqueue( page );
+			}
+		}
+
+		public T* Enqueue() {
+			var result = TryEnqueue();
+			if( result == null ) Assert.Fail( "Not enought room for new elements!" );
+			return result;
+		}
+
+		public void* Dequeue() {
+			CommonCollectionOperations.UpdateVersion( &_version );
+
+			var result = Dequeue( _firstPage );
+			if( result == null ) return null;
+
+			if( _firstPage->Count == 0 ) {
+				Console.WriteLine( "aha!" );
+				var next = _firstPage->Next;
+
+				if( _freePage == null )
+					_freePage = _firstPage;
+				else {
+					FreePage( _freePage ); // delete cold page
+					_freePage = _firstPage; // _freePage = hot page
+				}
+
+				_firstPage = next;
+			}
+
+			return result;
+		}
+
+		public yield<T*> GetEnumerator() {
+			var version = _version;
+
+			for( var page = _firstPage; page != null; page = page->Next ) {
+				var count = page->Count;
+				if( count <= 0 ) continue;
+
+				var elements = page->Elements;
+
+				if( page->Head < page->Tail ) {
+					for( var j = page->Head; j < page->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+				else {
+					for( var j = page->Head; j < BlockSize; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+
+					for( var j = 0; j < page->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+			}
+		}
+
+		#region page operations
+
+		private struct PageInfo {
+			public declaringtype Parent;
+			public PageInfo* Next;
+
+			public byte* Indices { get { return bitcast<byte*>( &this ) - BlockSize; } }
+
+			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( Memory.DefaultPageReserveSize - 1 ) ); } }
+
+			public int Tail, Head, Count;
+			public int FreeCount { get { return ( int )( BlockSize - Count ); } }
+		}
+
+		private T* Enqueue( PageInfo* page ) {
+			var result = page->Elements + page->Tail;
+			++page->Tail;
+			if( page->Tail >= BlockSize ) page->Tail = 0;
+
+			++page->Count;
+			CommonCollectionOperations.UpdateVersion( &_version );
+
+			Memory.Clear( result, sizeof( T ) );
+			if( OnInitialize != null ) OnInitialize( result );
+			return result;
+		}
+
+		// Remove first element from queue, returns deleted ptr
+		private void* Dequeue( PageInfo* page ) {
+			if( !Assert.IsTrue( page->Count != 0 ) ) return null;
+
+			var result = page->Elements + page->Head;
+
+			*result = default( T );
+			++page->Head;
+			if( page->Head >= BlockSize ) page->Head = 0;
+			--page->Count;
+			CommonCollectionOperations.UpdateVersion( &_version );
+
+			return result;
+		}
+
+		#endregion
+	}
+}

@@ -45,7 +45,7 @@ namespace System.Collections {
 			_freeFirst = -1;
 			_peakCount = 0;
 			_freeCount = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool Contains( TValue value ) { return FindValue( value ) >= 0; }
@@ -109,7 +109,7 @@ namespace System.Collections {
 			_items[freeIndex]._hash = keyHash;
 			_items[freeIndex]._value = value;
 			_items[index]._first = freeIndex;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			return true;
 		}
@@ -128,7 +128,7 @@ namespace System.Collections {
 
 					_freeFirst = i;
 					++_freeCount;
-					++_version;
+					CommonCollectionOperations.UpdateVersion( &_version );
 
 					return true;
 				}
@@ -229,7 +229,7 @@ namespace System.Collections {
 			_freeFirst = -1;
 			_peakCount = 0;
 			_freeCount = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool Contains( TValue value ) { return FindValue( value ) >= 0; }
@@ -292,7 +292,7 @@ namespace System.Collections {
 			_items[freeIndex]._next = _items[index]._first;
 			_items[freeIndex]._value = value;
 			_items[index]._first = freeIndex;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			return true;
 		}
@@ -311,7 +311,7 @@ namespace System.Collections {
 
 					_freeFirst = i;
 					++_freeCount;
-					++_version;
+					CommonCollectionOperations.UpdateVersion( &_version );
 
 					return true;
 				}
@@ -357,10 +357,7 @@ namespace System.Collections {
 				while( current != -1 ) {
 					yield return _items[current]._value;
 
-					if( _version != version ) {
-						Assert.Fail( "Collection was modified since last iteration." );
-						yield break;
-					}
+					CommonCollectionOperations.VersionCheck( version == _version );
 
 					current = _items[current]._next;
 				}

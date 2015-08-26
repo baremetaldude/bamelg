@@ -5,9 +5,21 @@
 //
 
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 
 namespace System.Collections {
 	public static struct CommonCollectionOperations {
+		[Conditional( ConditionString = "DEBUG" )]
+		public static void UpdateVersion( int* version ) {
+			++*version;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		public static void VersionCheck( bool expression, [In] CallerContext& callercontext = nullref ) {
+			Assert.IsTrue( expression, "Collection was changed since last iteration", callercontext );
+		}
+
 		[ForceInline]
 		public static void Swap<T>( T& left, T& right ) {
 			var temp = left;

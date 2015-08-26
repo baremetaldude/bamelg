@@ -7,7 +7,8 @@
 using System.Runtime;
 
 namespace System.Collections {
-	// Designed for small structs. O(1) insertion and removal
+	// Designed for huge amounts of small structs
+	// O(1) allocation and removal
 	// Object addresses not changed after resize
 	public class PagedPool<T> {
 		private int _version;
@@ -18,20 +19,22 @@ namespace System.Collections {
 		private const int _elementsPerPage1 = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( byte ) ) );
 		private const int _elementsPerPage2 = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( ushort ) ) );
 		private const bool _useIndices1 = _elementsPerPage1 < 256;
-		private const int _elementsPerPage = _useIndices1 ? _elementsPerPage1 : _elementsPerPage2;
+		public const int BlockSize = _useIndices1 ? _elementsPerPage1 : _elementsPerPage2;
 
 		public int Count { get; private set; }
+		public int Capacity { get { return _pageCount * BlockSize; } }
+
+		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
 
 		public PagedPool() {
 			Assert.IsTrue( typeof( T ).IsStruct | typeof( T ).IsFixedArray ); // PagedPool<T> designed to be used with structs
-			Assert.IsTrue( _elementsPerPage > 2 ); // Dont use big structures
+			Assert.IsTrue( BlockSize > 2 ); // Dont use big structures
 		}
 
 		~PagedPool() {
-			if( OnFinalize != null ) {
+			if( OnFinalize != null )
 				foreach( var value in this )
 					OnFinalize( value );
-			}
 
 			for( var page = _firstPage; page != null; ) {
 				var next = page->Next;
@@ -39,8 +42,6 @@ namespace System.Collections {
 				page = next;
 			}
 		}
-
-		public int Capacity { get { return _pageCount * _elementsPerPage; } }
 
 		private PageInfo* AllocatePage() {
 			var memory = ( byte* ) Memory.AllocatePages( Memory.DefaultPageReserveCount );
@@ -55,13 +56,13 @@ namespace System.Collections {
 			if( _useIndices1 ) {
 				var pageIndices = page->Indices1;
 				page->FreeIndexPtr = pageIndices;
-				for( var i = 0; i < _elementsPerPage; ++i )
+				for( var i = 0; i < BlockSize; ++i )
 					pageIndices[i] = ( byte ) i;
 			}
 			else {
 				var pageIndices = page->Indices2;
 				page->FreeIndexPtr = pageIndices;
-				for( var i = 0; i < _elementsPerPage; ++i )
+				for( var i = 0; i < BlockSize; ++i )
 					pageIndices[i] = ( ushort ) i;
 			}
 
@@ -70,7 +71,7 @@ namespace System.Collections {
 
 		// unfortunately we must return ptrs to prevent possible usage errors
 		public T* TryAllocate() {
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			for( var page = _firstPage; page != null; page = page->Next ) {
 				if( page->FreeCount <= 0 ) continue;
@@ -93,7 +94,7 @@ namespace System.Collections {
 		public void Free( T* value ) {
 			if( value == null ) return;
 
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			var page = GetPageInfo( value );
 			if( page != null ) {
@@ -107,7 +108,7 @@ namespace System.Collections {
 		public yield<T*> GetEnumerator() {
 			var version = _version;
 
-			var freeMap = new BitArray( _elementsPerPage );
+			var freeMap = new BitArray( BlockSize );
 
 			for( var page = _firstPage; page != null; page = page->Next ) {
 				freeMap.Clear();
@@ -119,17 +120,14 @@ namespace System.Collections {
 				var indices2 = page->Indices2;
 				var elements = page->Elements;
 
-				for( var j = count; j < _elementsPerPage; ++j ) {
+				for( var j = count; j < BlockSize; ++j ) {
 					freeMap[_useIndices1 ? indices1[j] : indices2[j]] = true;
 				}
 
-				for( var j = 0; j < _elementsPerPage; ++j ) {
+				for( var j = 0; j < BlockSize; ++j ) {
 					if( freeMap[j] ) continue;
 
-					if( version != _version ) {
-						Assert.Fail( "Collection was changed since last iteration!" );
-						yield break;
-					}
+					CommonCollectionOperations.VersionCheck( version == _version );
 
 					yield return elements + j;
 				}
@@ -146,7 +144,7 @@ namespace System.Collections {
 				var pageIndex = _pageCount - 1;
 				for( var existingPage = _firstPage; existingPage != null; existingPage = existingPage->Next, --pageIndex ) {
 					if( page == existingPage )
-						return valueIndex + pageIndex * _elementsPerPage;
+						return valueIndex + pageIndex * BlockSize;
 				}
 
 				return -1;
@@ -161,13 +159,13 @@ namespace System.Collections {
 			public void* FreeIndexPtr;
 			public PageInfo* Next;
 
-			public byte* Indices1 { get { return bitcast<byte*>( &this ) - _elementsPerPage; } }
-			public ushort* Indices2 { get { return bitcast<ushort*>( &this ) - _elementsPerPage; } }
+			public byte* Indices1 { get { return bitcast<byte*>( &this ) - BlockSize; } }
+			public ushort* Indices2 { get { return bitcast<ushort*>( &this ) - BlockSize; } }
 
 			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( Memory.DefaultPageReserveSize - 1 ) ); } }
 
 			public int Count { get { return _useIndices1 ? ( int )( ( byte* ) FreeIndexPtr - Indices1 ) : ( int )( ( ushort* ) FreeIndexPtr - Indices2 ); } }
-			public int FreeCount { get { return ( int )( _elementsPerPage - Count ); } }
+			public int FreeCount { get { return ( int )( BlockSize - Count ); } }
 		}
 
 		private PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
@@ -177,10 +175,8 @@ namespace System.Collections {
 
 			var elements = page->Elements;
 
-			return ( value >= elements && value < elements + _elementsPerPage ) ? ( int )( value - elements ) : -1;
+			return ( value >= elements && value < elements + BlockSize ) ? ( int )( value - elements ) : -1;
 		}
-
-		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
 
 		private T* Allocate( PageInfo* page ) {
 			++Count;
@@ -255,7 +251,7 @@ namespace System.Collections {
 		private bool IsOwned( PageInfo* page, T* value ) {
 			var elements = page->Elements;
 
-			return value >= elements && value < elements + _elementsPerPage;
+			return value >= elements && value < elements + BlockSize;
 		}
 		/// @}
 	}

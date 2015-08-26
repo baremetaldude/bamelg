@@ -55,7 +55,7 @@ namespace System.Collections {
 			_head = 0;
 			_tail = 0;
 			_count = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool Contains( T value ) {
@@ -80,7 +80,7 @@ namespace System.Collections {
 			_items[_head] = default( T );
 			_head = ( _head + 1 ) & ( _items.Length - 1 );
 			--_count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			return result;
 		}
@@ -92,7 +92,7 @@ namespace System.Collections {
 			_items[_tail] = item;
 			_tail = ( _tail + 1 ) & ( _items.Length - 1 );
 			++_count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public void AddRange( T* items, int count ) {
@@ -112,7 +112,7 @@ namespace System.Collections {
 
 			// _tail = ( _tail + count ) & ( _items.Length - 1 );
 			// _count += count;
-			// ++_version;
+			// CommonCollectionOperations.UpdateVersion( &_version );
 
 			for( var i = 0; i < count; ++i )
 				Enqueue( items[i] );
@@ -182,7 +182,7 @@ namespace System.Collections {
 			_items = result;
 			_head = 0;
 			_tail = ( _count == capacity ) ? 0 : _count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public T[] ToArray() {
@@ -218,10 +218,7 @@ namespace System.Collections {
 			}
 
 			public bool MoveNext() {
-				if( _version != _parent._version ) {
-					Assert.Fail( "Collection was modified since last iteration." );
-					return false;
-				}
+				CommonCollectionOperations.VersionCheck( _parent._version == _version );
 
 				if( _index == -2 )
 					return false;
@@ -277,7 +274,7 @@ namespace System.Collections {
 			_head = 0;
 			_tail = count & ( _items.Length - 1 );
 			_count = count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			if( typeof( T ).IsPlainDataType ) {
 				reader.Read( &_items[0], sizeof( T ) * _count );

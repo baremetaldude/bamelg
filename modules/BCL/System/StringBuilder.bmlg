@@ -474,7 +474,7 @@ namespace System {
 			var& arrayType = *( FixedArrayType* ) &ref.Type;
 			var elementCount = arrayType.ElementCount;
 			var elementPtr = ( byte* ) ref.Address;
-			var elementStride = ( int ) Memory.ComputeStrideByAlign( ( uint ) arrayType.ElementType.InstanceSize, arrayType.ElementType.InstanceAlignment );
+			var elementStride = ( int ) Memory.GetStride( ( uint ) arrayType.ElementType.InstanceSize, arrayType.ElementType.InstanceAlignment );
 			var isObjects = ( arrayType.ElementType.Flags & ( Type.TypeFlags.Class | Type.TypeFlags.Delegate | Type.TypeFlags.DynamicArray ) ) != 0;
 
 			Append( '{', arrayType.Dimensions );
@@ -517,7 +517,7 @@ namespace System {
 			var& array = *( Array* ) &ref.Address;
 			var elementCount = array.Length;
 			var elementPtr = ( byte* ) array.GetData();
-			var elementStride = ( int ) Memory.ComputeStrideByAlign( ( uint ) arrayType.ElementType.InstanceSize, arrayType.ElementType.InstanceAlignment );
+			var elementStride = ( int ) Memory.GetStride( ( uint ) arrayType.ElementType.InstanceSize, arrayType.ElementType.InstanceAlignment );
 			var isObjects = ( arrayType.ElementType.Flags & ( Type.TypeFlags.Class | Type.TypeFlags.Delegate | Type.TypeFlags.DynamicArray ) ) != 0;
 
 			Append( '{', arrayType.Dimensions );

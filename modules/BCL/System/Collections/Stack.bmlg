@@ -24,7 +24,7 @@ namespace System.Collections {
 			CommonCollectionOperations.Clear<T>( &_items[0], _count );
 
 			_count = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool Contains( T value ) {
@@ -47,7 +47,7 @@ namespace System.Collections {
 
 			var result = _items[--_count];
 			_items[_count] = default( T );
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 			return result;
 		}
 
@@ -59,7 +59,7 @@ namespace System.Collections {
 			}
 
 			_items[_count++] = value;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public T[] ToArray() {
@@ -107,10 +107,7 @@ namespace System.Collections {
 
 			public bool MoveNext() {
 				bool result;
-				if( _version != _parent._version ) {
-					Assert.Fail( "Collection was modified since last iteration." );
-					return false;
-				}
+				CommonCollectionOperations.VersionCheck( _parent._version == _version );
 
 				if( _index == -2 ) {
 					_index = _parent._count - 1;

@@ -316,7 +316,7 @@ namespace System.Hash {
 				//	crc = Crc32tableFor0x1EDC6F41[( byte )( crc ^ *buffer++ )] ^ ( crc >> 8 );
 				/// @}
 
-				var alignmentBytes = Math.Min( ( int ) Memory.ComputeAlignmentPadding( buffer, 4 ), length );
+				var alignmentBytes = Math.Min( ( int ) Memory.GetTailPadding( buffer, 4 ), length );
 				length -= alignmentBytes;
 
 				for( ; alignmentBytes != 0; --alignmentBytes )

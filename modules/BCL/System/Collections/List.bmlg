@@ -31,14 +31,14 @@ namespace System.Collections {
 				EnsureCapacity( _count + 1 );
 
 			_items[_count++] = item;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public void AddRange( T* items, int count ) {
 			EnsureCapacity( _count + count );
 			CommonCollectionOperations.Copy<T>( &_items[_count], items, count );
 			_count += count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public void AddRange( List<T> values ) { AddRange( values.GetBuffer(), values.Count ); }
@@ -54,14 +54,14 @@ namespace System.Collections {
 
 			_items[index] = item;
 			++_count;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public void Clear() {
 			CommonCollectionOperations.Clear<T>( &_items[0], _count );
 
 			_count = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public int Count { get { return _count; } }
@@ -180,7 +180,7 @@ namespace System.Collections {
 				CommonCollectionOperations.Copy<T>( &_items[index], &_items[index + count], _count - index );
 
 			CommonCollectionOperations.Clear<T>( &_items[_count], count );
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool Remove( T item ) {
@@ -244,7 +244,7 @@ namespace System.Collections {
 			}
 
 			public bool MoveNext() {
-				if( _version != _parent._version ) Assert.Fail( "Collection was changed since last iteration!" );
+				CommonCollectionOperations.VersionCheck( _version == _parent._version );
 
 				return ++_index < _parent.Count;
 			}

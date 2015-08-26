@@ -31,9 +31,9 @@ namespace System.Reflection {
 		public new int InstanceSize {
 			get {
 				var elementAlignment = ElementType.InstanceAlignment;
-				var alignmentPadding = Memory.ComputeAlignmentPadding( ( uint ) ElementType.InstanceSize, elementAlignment );
-				var elementStride = ( int ) Memory.ComputeStrideByAlign( ( uint ) ElementType.InstanceSize, elementAlignment );
-				return cast<int>( elementStride * ElementCount - alignmentPadding );
+				var tailPadding = Memory.GetTailPadding( ( uint ) ElementType.InstanceSize, elementAlignment );
+				var elementStride = ( int ) Memory.GetStride( ( uint ) ElementType.InstanceSize, elementAlignment );
+				return cast<int>( elementStride * ElementCount - tailPadding );
 			}
 		}
 

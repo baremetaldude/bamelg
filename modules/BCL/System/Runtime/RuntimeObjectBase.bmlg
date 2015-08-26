@@ -193,9 +193,9 @@ namespace System.Runtime {
 		public static void AllocateDynamicArray( Type* element, Type* arrayType, uint elementSize, uint dimensions, uint length, RuntimeObjectBase* ptr, void* initialValue ) {
 			var elementAlignment = element->InstanceAlignment;
 			var dimensionsSize = sizeof( uint ) * dimensions;
-			var elementStride = Memory.ComputeStrideByAlign( elementSize, elementAlignment );
+			var elementStride = Memory.GetStride( elementSize, elementAlignment );
 
-			var headerSize = Memory.ComputeStrideByAlign( sizeof( Array ) + dimensionsSize, elementAlignment ); // elementAlignment first element
+			var headerSize = Memory.GetStride( sizeof( Array ) + dimensionsSize, elementAlignment ); // elementAlignment first element
 			var contentsSize = elementStride * length;
 			var classExtraSize = headerSize + contentsSize - sizeof( Array );
 
@@ -260,39 +260,6 @@ namespace System.Runtime {
 
 			bitcast<RuntimeObjectBase>( oldptr ).ReleaseReference();
 		}
-
-		// Note: with memory reallocation fragmentation goes faster
-		// POSIX still not have aligned_realloc in 2012 ^^
-
-		// public static void ReAllocateDynamicArray( Array* ptr, uint dimensions, uint length ) {
-		// 	var element = &ptr->ElementType;
-		// 	var elementSize = (uint)element->InstanceSize;
-		// 	var elementAlignment = element->InstanceAlignment;
-		// 	var dimensionsSize = sizeof( uint ) * dimensions;
-		// 	var elementStride = Memory.ComputeStrideByAlign( elementSize, elementAlignment );
-
-		// 	var headerSize = Memory.ComputeStrideByAlign( sizeof( Array ) + dimensionsSize, elementAlignment ); // elementAlignment first element
-		// 	var contentsSize = elementStride * length;
-		// 	var classExtraSize = headerSize + contentsSize - sizeof( Array );
-
-		// 	var oldptr = bitcast<void*>( *ptr );
-		// 	var needAlignedAllocation = ptr->AlignedAllocation;
-
-		// 	void* objectMemory;
-		// 	objectMemory = ( RuntimeObjectBase* )( needAlignedAllocation ? Memory.ReAllocateAligned( bitcast<void*>( ptr ), headerSize + contentsSize, elementAlignment ) : Memory.ReAllocate( bitcast<void*>( ptr ), headerSize + contentsSize ) );
-		// 	if( bitcast<void*>( ptr ) != objectMemory ) {
-		// 		Assert.AreEqual( 1, ptr->_sharedReferenceCount );
-		// 		Assert.AreEqual( 0, ptr->_weakReferenceCount );
-		// 	}
-		// 	Console.WriteLine( objectMemory );
-		// 	*( void** ) ptr = objectMemory;
-
-		// 	// initialize System.Array readonly fields
-		// 	*cast<uint*>( cast<byte*>( objectMemory ) + memberinfo( Array.Length ).ByteOffset ) = length;
-		// 	*cast<uint*>( cast<byte*>( objectMemory ) + memberinfo( Array.Dimensions ).ByteOffset ) = dimensions;
-
-		// 	bitcast<RuntimeObjectBase>( oldptr ).ReleaseReference();
-		// }
 
 		private static void* AsExpression( void* instance, [In] UserType& type ) {
 			return bitcast<RuntimeObjectBase>( instance ).GetType().AsUserType.IsSubclassOf( type ) ? instance : null;

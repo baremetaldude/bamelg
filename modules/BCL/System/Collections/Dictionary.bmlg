@@ -40,7 +40,7 @@ namespace System.Collections {
 			_freeFirst = -1;
 			_peakCount = 0;
 			_freeCount = 0;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		public bool ContainsKey( TKey key ) { return FindKey( key ) >= 0; }
@@ -149,7 +149,7 @@ namespace System.Collections {
 			_items[freeIndex]._next = _items[index]._first;
 			_items[freeIndex]._value = value;
 			_items[index]._first = freeIndex;
-			++_version;
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			return true;
 		}
@@ -169,7 +169,7 @@ namespace System.Collections {
 
 					_freeFirst = i;
 					++_freeCount;
-					++_version;
+					CommonCollectionOperations.UpdateVersion( &_version );
 
 					return true;
 				}
