@@ -2,4 +2,5 @@
 :: Copyright © Eugeny Grishul
 ::
 
-"%windir%\Microsoft.NET\Framework\v4.0.30319\MSBuild.exe" /nologo /clp:ErrorsOnly /property:VisualStudioVersion=11.0 /maxcpucount /verbosity:q /t:BuildRelease all.proj
+call ..\..\..\vs_environment.cmd
+MSBuild.exe /nologo /clp:ErrorsOnly /maxcpucount /verbosity:q /t:BuildRelease all.proj
