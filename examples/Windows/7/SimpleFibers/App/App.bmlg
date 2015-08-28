@@ -17,7 +17,7 @@ namespace Example {
 
 		[FiberStatic]
 		[Alignment( Boundary = 32 )]
-		static System.Linear.Matrix4 OverAlignedMatrix;
+		static System.Numerics.Matrix4x4 OverAlignedMatrix;
 
 		[EntryPoint]
 		private static void Main() {
@@ -29,7 +29,7 @@ namespace Example {
 			Console.WriteLine( "Started!" );
 
 			Fiber.Start( Pages, () => {
-				System.Linear.Matrix4 mat;
+				System.Numerics.Matrix4x4 mat;
 				Assert.AreEqual( 0, ( cast<intptr>( &mat ) & 15 ) );
 				Assert.AreEqual( 0, ( cast<intptr>( &OverAlignedMatrix ) & 31 ) );
 			}, "alignment_checker" );

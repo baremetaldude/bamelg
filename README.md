@@ -21,7 +21,7 @@ Bamelg is component-oriented language similar to C# but designed for low-level p
   * Reflection, attributes
   * Events, Iterators, Extension methods
   * Lambda expressions
-  * Assembly <a href="http://bamelg.com/source/Linux/2.4/modules/BCL/System/Linear/Matrix4.bmlg">language</a> <a href="http://bamelg.com/source/Linux/2.4/modules/BCL/System/Linear/Quaternion.bmlg">support</a>
+  * Assembly <a href="http://bamelg.com/source/Linux/2.4/modules/BCL/System/Numerics/Matrix4.bmlg">language</a> <a href="http://bamelg.com/source/Linux/2.4/modules/BCL/System/Numerics/Quaternion.bmlg">support</a>
   * Overflow checking intrinsics
   * Non-cdecl calling conventions support
   * Thread-local storage, fiber-local storage
