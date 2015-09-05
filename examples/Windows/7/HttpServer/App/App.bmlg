@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Web;
 
 using Platform;
 using Platform.IO;
@@ -25,11 +26,56 @@ namespace Example {
 					case "/Default.aspx":
 						return new TestPageHandler( session );
 
-					case "/favicon.ico":
-						return new EmbeddedResourceHandler( session, "image/x-icon", new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+					case "/time.event":
+						return new TimeEventHandler( session );
+
+					case "/hello.aspx":
+						return new HelloWorldPageHandler( session );
+
+					case "/favicon.ico": return new EmbeddedResourceHandler( session, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+					case "/time.html": return new EmbeddedResourceHandler( session, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
 				}
 
 				return null;
+			}
+
+			public class HelloWorldPageHandler : PageHandler {
+				public HelloWorldPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.Append( "hello, world!" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+				}
+			}
+
+			public class TimeEventHandler : PageHandler {
+				public TimeEventHandler( SessionHandler session )
+					: base( session ) {
+					MediaType = System.Net.Mime.MediaTypeNames.Text.EventStream;
+					TextEncodingKind = System.Text.TextEncodingKind.Utf8;
+				}
+
+				public override void OnRender() {
+					var delay = TimeSpan.FromSeconds( 1 );
+					Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+
+					Response.Append( "retry: 0\n" );
+					Response.Append( "data: " ); Response.Append( Fiber.UtcNow.ToUnixMilliseconds() );
+
+					Response.Append( "\n\n" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+
+					HttpFormatter.HeaderAccessControl( Headers, "allow" );
+					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
+				}
 			}
 
 			public class TestPageHandler : PageHandler {
@@ -54,6 +100,7 @@ namespace Example {
 							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10}</p>", time, server.ValidRequestCount );
 							Response.Concat( "<p>TotalAcceptedClientCount: ", server.TotalAcceptedClientCount, "; InvalidRequestCount=", server.InvalidRequestCount, "; ActiveSessionCount=", server.ActiveSessionCount, "</p>" );
 							Response.Append( "<p>Some unicode symbols: тут немножко Юникода</p>" );
+							Response.Append( @"<p><a href=""time.html"">Current time ( server-side event )</a></p>" );
 						}
 						Response.Append( "</body>" );
 					}
