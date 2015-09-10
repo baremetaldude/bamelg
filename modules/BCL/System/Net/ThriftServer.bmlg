@@ -30,28 +30,30 @@ namespace System.Net {
 		}
 
 		public class SessionHandler : basetype.SessionHandler {
+			[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+			public new declaringtype Server;
+
 			private ProtocolCodec _codec;
 
 			public SessionHandler( declaringtype parent, IStream stream )
 				: base( parent, stream ) {
-				_codec = new BinaryProtocolCodec( _readStream, _writeStream, parent.Framed, parent.StrictRead, parent.StrictWrite );
+				_codec = new BinaryProtocolCodec( ReadStream, WriteStream, parent.Framed, parent.StrictRead, parent.StrictWrite );
 				if( parent.ExceptionHandler != null ) _codec.ExceptionHandler = parent.ExceptionHandler;
 			}
 
 			protected override void Worker() {
-				var& server = *( declaringtype* ) &_parent;
-				var requestBuffer = _readStream.BufferInfo;
+				var requestBuffer = ReadStream.BufferInfo;
 
 				while( !Fiber.IsCancelled ) {
 					if( requestBuffer->AvailableToRead == 0 ) {
-						_writeStream.Flush( FlushKind.SynchronizeWrite ); // for corking
+						WriteStream.Flush( FlushKind.SynchronizeWrite ); // for corking
 
 						using( new Fiber.CancellationRegion() )
-							if( !_readStream.EnsureReadable( 1 ) )
+							if( !ReadStream.EnsureReadable( 1 ) )
 								break;
 					}
 
-					if( !server._requestHandler.Process( _codec, _codec ) ) break;
+					if( !Server._requestHandler.Process( _codec, _codec ) ) break;
 
 					if( _codec.IsStreamBroken ) break;
 				}

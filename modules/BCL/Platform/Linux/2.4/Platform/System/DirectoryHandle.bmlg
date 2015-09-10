@@ -17,18 +17,8 @@ namespace Platform.Kernel {
 		public DirectoryHandle( CUtf8String name ) { OpenBlocking( name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ); }
 
 		internal SystemError getdents64( dirent64* buffer, intptr length, int& readen ) {
-			var result = SystemError.None;
-
-			if( Fiber.IsFiberExecuting ) {
-				Fiber.InvokeAsync( () => {
-					result = KernelApi.getdents64( readen, this, buffer, length );
-				} );
-			}
-			else {
-				result = KernelApi.getdents64( readen, this, buffer, length );
-			}
-
-			return result;
+			using( new Fiber.AsyncCompletionRegion() )
+				return KernelApi.getdents64( readen, this, buffer, length );
 		}
 	}
 }

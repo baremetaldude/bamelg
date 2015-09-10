@@ -213,6 +213,9 @@ namespace Platform.Libc {
 			tv_usec = ( int )( ( span.Ticks / 10 ) % 1000000 );
 		}
 
+		public timeval( DateTime& time )
+			: this( new TimeSpan( time.Ticks - timeval.AdjustEpochTicks ) ) { } // dont convert to Universal Time
+
 		public int TotalMilliseconds {
 			get {
 				return ( int )( tv_sec * 1000 + tv_usec / 1000 );

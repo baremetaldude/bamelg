@@ -78,7 +78,7 @@ namespace System.Net {
 				LibcApi.unlink( path );
 				if( !acceptSocket.Bind( path ) ) return false;
 
-				Platform.IO.File.SetPermissions( path, ( Permission ) 0b110110110 );
+				FileHandle.SetPermissions( path, ( Permission ) 0b110110110 );
 				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
 
 				var acceptEntry = new AcceptSocketEventSink( this, acceptSocket );

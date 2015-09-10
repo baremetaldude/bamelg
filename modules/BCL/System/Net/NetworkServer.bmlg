@@ -43,34 +43,41 @@ namespace System.Net {
 		/// @}
 
 		public abstract partial class SessionHandler {
-			public declaringtype _parent;
+			public declaringtype Server;
 
-			public IStream _stream, _readStream, _writeStream;
+			/// Unbuffered read-write stream
+			public IStream Stream;
+
+			/// Buffered read stream
+			public IStream ReadStream;
+			/// Buffered write stream
+			public IStream WriteStream;
+
 			public StreamingBufferInfo* _readStreamBuffer, _writeStreamBuffer;
 
 			public SessionHandler( declaringtype parent, IStream stream ) {
-				_parent = parent;
+				Server = parent;
 
-				_stream = stream;
-				_readStream = _stream.GetBufferedReadStream( _readStreamBuffer, parent.MaxClientRequestLength );
-				_writeStream = _stream.GetBufferedWriteStream( _writeStreamBuffer, parent.ResponseBufferLength );
+				Stream = stream;
+				ReadStream = Stream.GetBufferedReadStream( _readStreamBuffer, parent.MaxClientRequestLength );
+				WriteStream = Stream.GetBufferedWriteStream( _writeStreamBuffer, parent.ResponseBufferLength );
 			}
 
 			public void StartFiber() {
-				var worker = Fiber.Start( _parent.ClientFiberStackPages, data => {
+				var worker = Fiber.Start( Server.ClientFiberStackPages, data => {
 					var& @this = *bitcast<thistype*>( &data );
 
 					@this.Worker();
 					@this.OnExit();
 
-					--@this._parent.ActiveSessionCount;
+					--@this.Server.ActiveSessionCount;
 					@this.ReleaseReference();
 				}, bitcast<void*>( this ) );
 
 				if( worker.IsValid ) {
-					++_parent.TotalAcceptedClientCount;
-					++_parent.ActiveSessionCount;
-					if( _parent.ActiveSessionCount > _parent.PeakActiveSessionCount ) _parent.PeakActiveSessionCount = _parent.ActiveSessionCount;
+					++Server.TotalAcceptedClientCount;
+					++Server.ActiveSessionCount;
+					if( Server.ActiveSessionCount > Server.PeakActiveSessionCount ) Server.PeakActiveSessionCount = Server.ActiveSessionCount;
 					AddReference();
 				}
 				else

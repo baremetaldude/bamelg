@@ -8,8 +8,17 @@ using System.IO;
 
 namespace System {
 	public class XmlWriter {
+		private const string _declaration = @"<?xml version=""1.0"" encoding=""utf-8""?>";
+
 		protected ITextWriter _writer;
 		protected StringBuilder _formatter = new StringBuilder();
+		public string NewLine { get { return _formatter.NewLine; } set { _formatter.NewLine = value; } }
+
+		public bool PreserveNewlines = false;
+		public bool UseSpaceIndent = true;
+		public int SpaceIndentCount = 2;
+
+		private bool _tagFinished = true;
 
 		public XmlWriter( ITextWriter writer ) {
 			_writer = writer;
@@ -25,16 +34,75 @@ namespace System {
 			}
 		}
 
-		public void OpenTag( string name ) {
-			Write( '<' ); Write( name ); Write( '>' );
+		public void Declaration() {
+			if( PreserveNewlines )
+				_writer.WriteLine( _declaration );
+			else
+				_writer.Write( _declaration );
 		}
 
-		public void OpenTag( string name, string attributes ) {
-			Write( '<' ); Write( name ); Write( ' ' ); Write( attributes ); Write( '>' );
+		private void FinishTag() {
+			if( _tagFinished ) return;
+			_tagFinished = true;
+			_writer.Write( '>' );
+		}
+
+		protected int _depth;
+
+		public void OpenTag( string name ) {
+			_formatter.Clear();
+			if( !_tagFinished ) {
+				FinishTag();
+				_formatter.AppendLine();
+			}
+
+			if( PreserveNewlines ) {
+				if( UseSpaceIndent )
+					_formatter.Append( ' ', _depth * SpaceIndentCount );
+				else
+					_formatter.Append( '\t', _depth );
+			}
+
+			_formatter.Append( '<' ); _formatter.Append( name );
+			_writer.Write( _formatter );
+
+			++_depth;
+			_tagFinished = false;
+		}
+
+		public void Attribute( string name, TypedReference value ) {
+			if( !Assert.IsTrue( !_tagFinished ) ) return;
+
+			_formatter.Clear();
+			_formatter.Append( ' ' );
+			_formatter.Append( name );
+			_formatter.Append( '=' );
+			_formatter.Append( '"' );
+			_writer.Write( _formatter );
+
+			_formatter.Clear();
+			_formatter.Append( value );
+			EscapeFormatter();
+			_formatter.Append( '"' );
+			_writer.Write( _formatter );
 		}
 
 		public void CloseTag( string name ) {
-			Write( "</" ); Write( name ); Write( '>' );
+			_formatter.Clear();
+
+			if( _tagFinished ) {
+				_formatter.Append( "</" ); _formatter.Append( name ); _formatter.Append( '>' );
+			}
+			else {
+				_formatter.Append( "/>" );
+				_tagFinished = true;
+			}
+
+			if( PreserveNewlines )
+				_formatter.AppendLine();
+
+			_writer.Write( _formatter );
+			--_depth;
 		}
 
 		private static string[,] EscapeStrings = new[7, 2] string {
@@ -52,46 +120,40 @@ namespace System {
 				_formatter.Replace( EscapeStrings[i, 0], EscapeStrings[i, 1] );
 		}
 
-		public void WriteEscaped( string value ) {
+		public void Write( string value ) {
+			FinishTag();
 			_formatter.Clear();
 			_formatter.Append( value );
 
 			EscapeFormatter();
-			Write( _formatter );
+			_writer.Write( _formatter );
 		}
 
-		public void WriteEscaped( TypedReference value ) {
+		public void Write( TypedReference value ) {
+			FinishTag();
 			_formatter.Clear();
 			_formatter.Append( value, "" );
 
 			EscapeFormatter();
-			Write( _formatter );
+			_writer.Write( _formatter );
 		}
 
-		public void WriteEscaped( [VerifyFormatString] string format, vararg TypedReference parameters ) {
+		public void Write( [VerifyFormatString] string format, vararg TypedReference parameters ) {
+			FinishTag();
 			_formatter.Clear();
 			_formatter.AppendFormat( format, vararg( parameters, parameters.Length ) );
 
 			EscapeFormatter();
-			Write( _formatter );
+			_writer.Write( _formatter );
 		}
 
 		/// Usage:
-		/// using( writer.Tag( "td" ) ) writer.WriteEscaped( "Hello" );
+		/// using( writer.Tag( "td" ) ) writer.Write( "Hello" );
 		public TagRegion Tag( string name ) { return new TagRegion( this, name ); }
 
-		public TagRegion Tag( string name, string attributes ) { return new TagRegion( this, name, attributes ); }
-
-		public struct TagRegion {
+		public struct TagRegion : IDisposable {
 			public readonly string Name;
 			private readonly declaringtype _parent;
-
-			public TagRegion( declaringtype parent, string name, string attributes ) {
-				_parent = parent;
-				Name = name;
-
-				_parent.OpenTag( Name, attributes );
-			}
 
 			public TagRegion( declaringtype parent, string name ) {
 				_parent = parent;
@@ -105,78 +167,7 @@ namespace System {
 			}
 		}
 
-		#region delegate
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) { _writer.Flush( flushKind ); }
-		public void WriteLine() { _writer.WriteLine(); }
-
-		void Write( bool value ) { _writer.Write( value ); }
-		void WriteLine( bool value ) { _writer.WriteLine( value ); }
-
-		void Write( char value ) { _writer.Write( value ); }
-		void WriteLine( char value ) { _writer.WriteLine( value ); }
-
-		void Write( sbyte value ) { _writer.Write( value ); }
-		void WriteLine( sbyte value ) { _writer.WriteLine( value ); }
-
-		void Write( byte value ) { _writer.Write( value ); }
-		void WriteLine( byte value ) { _writer.WriteLine( value ); }
-
-		void Write( short value ) { _writer.Write( value ); }
-		void WriteLine( short value ) { _writer.WriteLine( value ); }
-
-		void Write( ushort value ) { _writer.Write( value ); }
-		void WriteLine( ushort value ) { _writer.WriteLine( value ); }
-
-		void Write( int value ) { _writer.Write( value ); }
-		void WriteLine( int value ) { _writer.WriteLine( value ); }
-
-		void Write( uint value ) { _writer.Write( value ); }
-		void WriteLine( uint value ) { _writer.WriteLine( value ); }
-
-		void Write( long value ) { _writer.Write( value ); }
-		void WriteLine( long value ) { _writer.WriteLine( value ); }
-
-		void Write( ulong value ) { _writer.Write( value ); }
-		void WriteLine( ulong value ) { _writer.WriteLine( value ); }
-
-		void Write( float value ) { _writer.Write( value ); }
-		void WriteLine( float value ) { _writer.WriteLine( value ); }
-
-		void Write( double value ) { _writer.Write( value ); }
-		void WriteLine( double value ) { _writer.WriteLine( value ); }
-
-		void Write( TypedReference value ) { _writer.Write( value ); }
-		void WriteLine( TypedReference value ) { _writer.WriteLine( value ); }
-
-		void Write( SbcsString value ) { _writer.Write( value ); }
-		void WriteLine( SbcsString value ) { _writer.WriteLine( value ); }
-
-		void Write( CString value ) { _writer.Write( value ); }
-		void WriteLine( CString value ) { _writer.WriteLine( value ); }
-
-		void Write( Utf8String value ) { _writer.Write( value ); }
-		void WriteLine( Utf8String value ) { _writer.WriteLine( value ); }
-
-		void Write( CUtf8String value ) { _writer.Write( value ); }
-		void WriteLine( CUtf8String value ) { _writer.WriteLine( value ); }
-
-		void Write( Utf16String value ) { _writer.Write( value ); }
-		void WriteLine( Utf16String value ) { _writer.WriteLine( value ); }
-
-		void Write( CUtf16String value ) { _writer.Write( value ); }
-		void WriteLine( CUtf16String value ) { _writer.WriteLine( value ); }
-
-		void Write( Utf32String value ) { _writer.Write( value ); }
-		void WriteLine( Utf32String value ) { _writer.WriteLine( value ); }
-
-		void Write( CUtf32String value ) { _writer.Write( value ); }
-		void WriteLine( CUtf32String value ) { _writer.WriteLine( value ); }
-
-		void Write( StringBuilder value ) { _writer.Write( value ); }
-		void WriteLine( StringBuilder value ) { _writer.WriteLine( value ); }
-
-		void Write( [VerifyFormatString] string str, vararg TypedReference parameters ) { _writer.Write( str, vararg( parameters, parameters.Length ) ); }
-		void WriteLine( [VerifyFormatString] string str, vararg TypedReference parameters ) { _writer.WriteLine( str, vararg( parameters, parameters.Length ) ); }
-		#endregion
+		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) { FinishTag(); _writer.Flush( flushKind ); }
+		public void WriteLine() { FinishTag(); _writer.WriteLine(); }
 	}
 }

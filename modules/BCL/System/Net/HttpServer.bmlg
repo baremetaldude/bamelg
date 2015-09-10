@@ -90,7 +90,8 @@ namespace System.Net {
 		}
 
 		public sealed partial class SessionHandler : basetype.SessionHandler, HttpRequestParser.StreamListener {
-			public declaringtype Server;
+			[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+			public new declaringtype Server;
 
 			internal HttpRequestParser _parser = new HttpRequestParser(); // streaming HTTP parser
 
@@ -107,7 +108,6 @@ namespace System.Net {
 
 			public SessionHandler( declaringtype parent, IStream stream )
 				: base( parent, stream ) {
-				Server = parent;
 			}
 
 			private void Reset() {
@@ -118,14 +118,14 @@ namespace System.Net {
 
 			protected override void Worker() {
 				Reset();
-				var requestBuffer = _readStream.BufferInfo;
+				var requestBuffer = ReadStream.BufferInfo;
 
 				while( !Quit ) {
 					int readen = requestBuffer->AvailableToRead;
-					if( readen == 0 ) _writeStream.Flush( FlushKind.SynchronizeWrite ); // try to flush multiple responses
+					if( readen == 0 ) WriteStream.Flush( FlushKind.SynchronizeWrite ); // try to flush multiple responses
 
 					using( new Fiber.CancellationRegion() ) {
-						_readStream.Flush( FlushKind.Read );
+						ReadStream.Flush( FlushKind.Read );
 
 						if( Fiber.IsCancelled ) return;
 					}
@@ -188,7 +188,7 @@ namespace System.Net {
 									}
 									else {
 										if( _contentLength > 0 )
-											Handler.BeginRequestParsing( new ReadSubStream( _readStream, _contentLength ) );
+											Handler.BeginRequestParsing( new ReadSubStream( ReadStream, _contentLength ) );
 
 										Handler.BeginOutput();
 									}
@@ -229,7 +229,7 @@ namespace System.Net {
 
 				var codeBuffer = formatter.Buffer;
 
-				_stream.Write( codeBuffer.GetChars(), ( int ) codeBuffer.Length );
+				Stream.Write( codeBuffer.GetChars(), ( int ) codeBuffer.Length );
 			}
 
 			#region HttpRequestParser.StreamListener implementation
@@ -484,8 +484,8 @@ namespace System.Net {
 				Headers.AppendLine(); // end of headers
 				// @}
 
-				StreamWriter.WriteEncodedBytes( Session._stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
-				StreamWriter.WriteEncodedBytes( Session._stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
 			}
 		}
 
@@ -550,8 +550,8 @@ namespace System.Net {
 				Headers.AppendLine();
 				// @}
 
-				StreamWriter.WriteEncodedBytes( Session._stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
-				Session._stream.Write( _data );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+				Session.Stream.Write( _data );
 			}
 		}
 

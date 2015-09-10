@@ -1016,6 +1016,20 @@ namespace Platform {
 		public SystemErrorCode Read( void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeSpan.Zero, this, buffer, count, total ); }
 	}
 
+	public struct FileHandle : IOHandle {		
+		public static new thistype Invalid { get { return bitcast<thistype>( uintptr.MaxValue ); } }
+		public static new thistype Null { get { return bitcast<thistype>( ( uintptr ) 0 ); } }
+
+		public static bool Exists( CUtf16String path ) {
+			var attr = Kernel32Api.GetFileAttributes( path );
+			return attr != uint.MaxValue ? !BitOperations.MaskTest( attr, FileAttribute.FILE_ATTRIBUTE_DIRECTORY ) : false;
+		}
+
+		public static bool Delete( CUtf16String path ) {
+			return Kernel32Api.DeleteFile( path );
+		}
+	}
+	
 	public struct IoCompletionPortHandle : HANDLE {
 	}
 

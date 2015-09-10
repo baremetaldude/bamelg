@@ -7,6 +7,7 @@
 using System.Runtime;
 
 using Platform.IO;
+using Platform.Kernel;
 
 namespace System.IO {
 	public static partial struct File {
@@ -20,9 +21,9 @@ namespace System.IO {
 		public static IStream _implOpenAppend( Utf8String filename ) { return FileStream.CreateAppendStream( filename ); }
 
 		public static bool _implExists( string filename ) { return _implExists( ( Utf8String ) filename ); }
-		public static bool _implExists( Utf8String filename ) { return Platform.IO.File.Exists( filename ); }
+		public static bool _implExists( Utf8String filename ) { return FileHandle.Exists( filename ); }
 
 		public static bool _implDelete( string filename ) { return _implDelete( ( Utf8String ) filename ); }
-		public static bool _implDelete( Utf8String filename ) { return Platform.IO.File.Delete( filename ); }
+		public static bool _implDelete( Utf8String filename ) { return FileHandle.Delete( filename ); }
 	}
 }

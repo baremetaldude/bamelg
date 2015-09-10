@@ -194,9 +194,17 @@ namespace Platform.Cairo {
 
 		public static cairo_surface_t* FromPng( CUtf8String filename ) { return CairoApi.cairo_image_surface_create_from_png( filename ); }
 
+		public static cairo_surface_t* FromPng( byte[] contents ) {
+			return FromPng( &contents[0], ( uint ) contents.Length );
+		}
+
 		public static cairo_surface_t* FromPng( byte* contents, uint length ) {
 			var adapter = new ReadAdapter( contents, length );
 			return CairoApi.cairo_image_surface_create_from_png_stream( ReadAdapter.Trampoline, &adapter );
+		}
+
+		public static cairo_surface_t* FromJpeg( byte[] contents ) {
+			return FromJpeg( &contents[0], ( uint ) contents.Length );
 		}
 
 		public static cairo_surface_t* FromJpeg( byte* contents, uint length ) {

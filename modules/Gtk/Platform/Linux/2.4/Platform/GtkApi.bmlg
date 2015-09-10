@@ -66,7 +66,7 @@ namespace Platform.Gtk {
 		public RgbColor ForegroundColor { set { GtkApi.gtk_widget_modify_fg( &this, GtkStateType.GTK_STATE_NORMAL, ( GdkColor ) value ); } }
 		public RgbColor TextColor { set { GtkApi.gtk_widget_modify_text( &this, GtkStateType.GTK_STATE_NORMAL, ( GdkColor ) value ); } }
 		public RgbColor BaseColor { set { GtkApi.gtk_widget_modify_base( &this, GtkStateType.GTK_STATE_NORMAL, ( GdkColor ) value ); } }
-
+	
 		public Utf8String ToolTip {
 			get { return ( Utf8String )( GtkApi.gtk_widget_get_tooltip_text( &this ) ); }
 			set { GtkApi.gtk_widget_set_tooltip_text( &this, value ); }
@@ -306,6 +306,11 @@ namespace Platform.Gtk {
 			set { RawText = value; }
 		}
 
+		public PangoWrapMode WrapMode {
+			get { return GtkApi.gtk_label_get_line_wrap_mode( &this ); }
+			set { GtkApi.gtk_label_set_line_wrap_mode( &this, value ); }
+		}
+
 		public CUtf8String RawText {
 			get { return GtkApi.gtk_label_get_label( &this ); }
 			set { GtkApi.gtk_label_set_label( &this, value != CUtf8String.Null ? value : ( CUtf8String ) "" ); }
@@ -469,6 +474,11 @@ namespace Platform.Gtk {
 		public void AddItem( Utf8String text ) { GtkApi.gtk_combo_box_append_text( &this, text ); }
 		public void AddItem( SbcsString text ) { GtkApi.gtk_combo_box_append_text( &this, new CUtf8String( text.GetChars() ) ); }
 
+		public void InsertItem( int position, Utf8String text ) { GtkApi.gtk_combo_box_insert_text( &this, position, text ); }
+		public void RemoveItem( int position) { GtkApi.gtk_combo_box_remove_text( &this, position ); }
+		
+		public void Clear() { Model = ( GtkTreeModel* ) GtkApi.gtk_list_store_newv( 1, new GType[1] { GType.G_TYPE_STRING } ); }
+
 		public int SelectedIndex {
 			get { return GtkApi.gtk_combo_box_get_active( &this ); }
 			set { GtkApi.gtk_combo_box_set_active( &this, value ); }
@@ -550,6 +560,10 @@ namespace Platform.Gtk {
 		}
 
 		public new GtkEntry* Child { get { return ( GtkEntry* ) base.Child; } }
+
+		public void SelectAll() { ( ( GtkEntry* ) Child )->SelectAll(); }
+
+		public void SelectRegion( int start, int length ) { ( ( GtkEntry* ) Child )->SelectRegion( start, length ); }
 	}
 
 	public partial struct GtkBin {
@@ -878,6 +892,11 @@ namespace Platform.Gtk {
 		public int FixedWidth {
 			get { return GtkApi.gtk_tree_view_column_get_fixed_width( &this ); }
 			set { GtkApi.gtk_tree_view_column_set_fixed_width( &this, value ); }
+		}
+
+		public int MaxWidth {
+			get { return GtkApi.gtk_tree_view_column_get_max_width( &this ); }
+			set { GtkApi.gtk_tree_view_column_set_max_width( &this, value ); }
 		}
 	}
 
@@ -1240,6 +1259,26 @@ namespace Platform.Gtk {
 	public partial struct GtkTextBuffer {
 		public new partial struct Class {
 			public static new GType TypeID { get { return GtkApi.gtk_text_buffer_get_type(); } }
+		}
+
+		public Utf8String Text {
+			get {
+				GtkTextIter startIter, endIter;
+				GtkApi.gtk_text_buffer_get_start_iter( &this, &startIter );
+				GtkApi.gtk_text_buffer_get_end_iter( &this, &endIter );
+				var text = GtkApi.gtk_text_buffer_get_text( &this, &startIter, &endIter, true );
+				var result = ( Utf8String ) new CUtf8String( text );
+				GlibApi.g_free( text );
+				return result;
+			}
+			set {
+				if( value.IsNullOrEmpty ) 
+					GtkApi.gtk_text_buffer_set_text( &this, new CUtf8String( new byte[1] { ' ' } ), 1 );
+				else {
+					var str = ( CUtf8String ) value;
+					GtkApi.gtk_text_buffer_set_text( &this, str, ( int ) str.Length );
+				}
+			}
 		}
 	}
 
