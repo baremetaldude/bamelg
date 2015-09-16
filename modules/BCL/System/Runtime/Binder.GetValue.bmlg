@@ -490,10 +490,10 @@ namespace System.Runtime {
 			}
 
 			switch( type ) {
-				case typeof( SbcsString ): value.Append( column->GetValue<SbcsString>( context.Object ) ); return;
-				case typeof( Utf8String ): value.Append( column->GetValue<Utf8String>( context.Object ) ); return;
-				case typeof( Utf16String ): value.Append( column->GetValue<Utf16String>( context.Object ) ); return;
-				case typeof( Utf32String ): value.Append( column->GetValue<Utf32String>( context.Object ) ); return;
+				case typeof( SbcsString ): { var p = column->GetValue<SbcsString>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
+				case typeof( Utf8String ): { var p = column->GetValue<Utf8String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
+				case typeof( Utf16String ): { var p = column->GetValue<Utf16String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
+				case typeof( Utf32String ): { var p = column->GetValue<Utf32String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
 
 				case typeof( bool ): value.Append( column->GetValue<bool>( context.Object ) ); return;
 				case typeof( sbyte ): value.Append( column->GetValue<sbyte>( context.Object ) ); return;
@@ -518,8 +518,8 @@ namespace System.Runtime {
 				case typeof( double_littleendian ): value.Append( column->GetValue<double_littleendian>( context.Object ) ); return;
 				case typeof( float_bigendian ): value.Append( column->GetValue<float_bigendian>( context.Object ) ); return;
 				case typeof( double_bigendian ): value.Append( column->GetValue<double_bigendian>( context.Object ) ); return;
-				
-				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], ( uint )array.Length, true ); } return;
+
+				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], ( uint ) array.Length, true ); } return;
 			}
 
 			if( TrySerializeText( context, type, column, value, isNull ) ) return;
@@ -563,7 +563,7 @@ namespace System.Runtime {
 				case typeof( double_littleendian ): writer.Write( column->GetValue<double_littleendian>( context.Object ) ); return;
 				case typeof( float_bigendian ): writer.Write( column->GetValue<float_bigendian>( context.Object ) ); return;
 				case typeof( double_bigendian ): writer.Write( column->GetValue<double_bigendian>( context.Object ) ); return;
-			
+
 				case typeof( byte[] ): writer.Write( column->GetValue<byte[]>( context.Object ) ); return;
 			}
 
