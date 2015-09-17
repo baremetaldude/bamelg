@@ -91,7 +91,7 @@ namespace Platform.IO {
 				do {
 					if( _bufferInfo->AvailableToRead == 0 ) {
 						_stream.Flush( FlushKind.Read );
-						break;
+						if( _bufferInfo->AvailableToRead == 0 ) break;
 					}
 
 					_zState.next_in = ( byte* ) _bufferInfo->ReadBufferStart;
