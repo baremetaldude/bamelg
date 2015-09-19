@@ -14,8 +14,8 @@ using System.Runtime.InteropServices;
 using Platform.Libc;
 
 namespace Platform.IO {
-	// A simple example of how main loop can be organized
-	public partial class EventLoop {
+	// Event loop is a heart of event-driven application
+	public partial class EventLoop : System.Threading.Dispatcher {
 		protected bool _quitRequest;
 
 		/// @{ Events
@@ -81,8 +81,6 @@ namespace Platform.IO {
 		private bool _fiberDispatch = false;
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
-		public DateTime NotificationStartTime, NotificationStartTimeUtc;
-
 		public EventLoop( bool enableFibers = true ) {
 			_notificationEmitter.Register();
 
@@ -92,17 +90,23 @@ namespace Platform.IO {
 				Fiber.FiberManager.Attach( this );
 			}
 
-			InitDispatcher();
+			_dispatchThread = pthread_t.CurrentThread;
+
+			FlushEvents();
 		}
 
 		public override void Dispose() {
-			CloseDispatcher();
+			ExecuteTasks();
 
 			KQueue.Close();
-			foreach( var eventSink in _eventSinks ) eventSink.Dispose();
 
-			if( _fiberDispatch )
+			foreach( var eventSink in _eventSinks ) eventSink.Dispose();
+			_eventSinks.Clear();
+
+			if( _fiberDispatch ) {
 				Fiber.RuntimeShutdown();
+				_fiberDispatch = false;
+			}
 		}
 
 		internal HashSet<EventSink> _eventSinks = new HashSet<EventSink>();
@@ -110,54 +114,7 @@ namespace Platform.IO {
 		public int EventSinkCount { get { return _eventSinks.Count; } }
 
 		/// @{ Dispatching
-		private enum DispatchingState {
-			None,
-			Async,
-			Sync,
-		}
-
-		private DispatchingState _dispatchingState;
 		private pthread_t _dispatchThread;
-
-		// Dispatch events in current thread
-		public void DispatchSync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Sync;
-
-			_dispatchThread = pthread_t.CurrentThread;
-			Dispatch();
-		}
-
-		// Dispatch events in new thread
-		public void DispatchAsync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Async;
-
-			AddReference();
-			_dispatchThread = new pthread_t( sender => {
-				var @this = bitcast<thistype>( sender );
-				@this.ReleaseReference();
-				@this.Dispatch();
-				return null;
-			}, bitcast<void*>( this ) );
-		}
-
-		// Request for terminate event loop thread
-		public void BeginQuit() {
-			RequestExit();
-		}
-
-		// Wait until event loop thread terminates
-		public void EndQuit() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.Async ) ) return;
-			_dispatchThread.Join();
-		}
-
-		// Request termination & Wait
-		public void Quit() {
-			BeginQuit();
-			EndQuit();
-		}
 
 		public void Dispatch() {
 			TraceDispatchStarted();
@@ -168,10 +125,24 @@ namespace Platform.IO {
 			var waitBufferLength = _signalledEvents.Capacity;
 			var waitBuffer = _signalledEvents.GetBuffer();
 
-			while( !_quitRequest || ( Fiber.FiberManager == null || Fiber.FiberManager.FiberCount > 0 ) ) {
+			for( ; ; ) {
+				if( _quitRequest ) {
+					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
+						Fiber.FiberManager.CancelAllFibers();
+					else
+						break;
+				}
+
 				TraceChangeList( _eventChangeList );
 
-				var polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, nullref );
+				int polledDescriptors;
+
+				var timeout = GetWaitTime();
+				if( timeout == TimeSpan.MaxValue )
+					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, nullref );
+				else
+					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, new timespec( timeout ) );
+
 				_eventChangeList.Clear();
 				_eventIds.Clear();
 				++_eventChangeVersion;
@@ -187,18 +158,17 @@ namespace Platform.IO {
 				NotificationStartTimeUtc = DateTime.UtcNow;
 				TraceEventsArrived( polledDescriptors );
 
+				OnUtcAlarm();
+				OnUnbiasedAlarm();
+
 				for( var i = 0; i < polledDescriptors; ++i ) {
 					var& @event = waitBuffer[i];
 					var& eventSink = *bitcast<EventSink*>( &@event.udata ); // dont touch refcount
 
 					TraceEventSink( @event, eventSink );
-					eventSink.EnsureEventSinkRegistered( this );
+					eventSink.EnsureEventSinkRegistered();
 
 					eventSink.OnEvent( @event );
-				}
-
-				if( _quitRequest && Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 ) {
-					Fiber.FiberManager.CancelAllFibers();
 				}
 			}
 
@@ -229,13 +199,8 @@ namespace Platform.IO {
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
 			/// @{
-			public virtual bool Register() { return Register( Parent ); }
-			public virtual bool Unregister() { return Unregister( Parent ); }
-			/// @}
-
-			// MT-unsafe
-			public bool Register( EventLoop parent ) {
-				if( parent._eventSinks.Add( this ) ) {
+			public virtual bool Register() {
+				if( Parent._eventSinks.Add( this ) ) {
 					TraceEventSinkRegistered( this );
 
 					return true;
@@ -246,10 +211,10 @@ namespace Platform.IO {
 				}
 			}
 
-			// MT-unsafe
-			protected bool Unregister( EventLoop parent ) {
+
+			public virtual bool Unregister() {
 				var retainer = this;
-				if( parent._eventSinks.Remove( this ) ) {
+				if( Parent._eventSinks.Remove( this ) ) {
 					TraceEventSinkUnregistered( this );
 
 					return true;
@@ -259,10 +224,11 @@ namespace Platform.IO {
 					return false;
 				}
 			}
+			/// @}
 
 			[Conditional( ConditionString = "DEBUG" )]
-			internal void EnsureEventSinkRegistered( EventLoop parent ) {
-				if( !parent._eventSinks.Contains( this ) )
+			internal void EnsureEventSinkRegistered() {
+				if( !Parent._eventSinks.Contains( this ) )
 					Assert.Fail( "EventSink not registered!" );
 			}
 		}
@@ -352,6 +318,8 @@ namespace Platform.IO {
 			public override void OnEvent( kevent& @event ) {
 				switch( ( NotificationCommand ) @event.data ) {
 					case NotificationCommand.NewDispatcherTasks:
+						_newDispatcherTasks = false;
+						Parent.ExecuteTasks();
 						break;
 
 					case NotificationCommand.Exit:
@@ -383,7 +351,7 @@ namespace Platform.IO {
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
-		private void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
+		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
 		public abstract class AcceptSocketEventSink : EventSink {
 			protected SocketHandle _socket;
@@ -482,6 +450,14 @@ namespace Platform.IO {
 
 			protected abstract void OnAccepted( SocketHandle socket );
 		}
+
+		#region Dispatcher
+
+		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) { }
+		protected override void StopAlarm( AlarmKind kind ) { }
+		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+
+		#endregion
 
 		/// @{ Tracing
 		private const string TraceConditionString = "TRACE_EVENT_LOOP";

@@ -90,7 +90,7 @@ namespace System.IO {
 					Suspend();
 
 					if( EndTimeout( timeout ) ) {
-						_fiberIOEventSink.UnregisterHandle( pollId );
+						CurrentEventLoop.UnregisterHandle( pollId );
 						return SystemError.ETIMEDOUT;
 					}
 
@@ -299,36 +299,30 @@ namespace System.IO {
 					_fiberReadyEventSink.Register();
 
 					_fiberIOEventSink = new FiberIOEventSink( this );
-					_fiberIOEventSink.Register();
 				}
 
 				public void Detach( EventLoop eventLoop ) {
 					if( !Assert.IsTrue( _fiberReadyEventSink != null ) ) return;
 
 					_fiberReadyEventSink.Unregister();
-					_fiberIOEventSink.Unregister();
-
 					_fiberReadyEventSink.Dispose();
+
 					_fiberIOEventSink.Dispose();
 				}
 
 				private sealed class FiberIOEventSink : EventLoop.EventSink {
-					public override IOHandle EventHandle { get { Assert.Unreachable(); return IOHandle.Invalid; } }
-
 					private Manager _manager;
 					private List<FiberInfo*> _subscribedFibers = new List<FiberInfo*>( 16 );
 
 					public override void OnEvent( pollfd& @event ) {
 						var poolID = _manager.CurrentEventLoop._dispatchingIndex;
 						var fiber = _subscribedFibers[poolID];
-						UnregisterHandle( Parent, poolID );
+						Parent.UnregisterHandle( poolID );
 						_manager.OnEvent( fiber, @event );
 					}
 
 					public FiberIOEventSink( Manager manager )
 						: base( manager.CurrentEventLoop ) {
-						_listenedEvents = PollEvents.POLLIN;
-
 						_manager = manager;
 					}
 
@@ -341,7 +335,7 @@ namespace System.IO {
 					public int RegisterHandle( FiberInfo* fiber, IOHandle handle, PollEvents events ) {
 						fiber->_waitHandle = handle;
 
-						var poolId = RegisterHandle( Parent, handle, events );
+						var poolId = RegisterHandle( handle, events );
 						_subscribedFibers.Reserve( poolId + 1 );
 
 						if( _subscribedFibers.Count > poolId ) {
@@ -349,19 +343,6 @@ namespace System.IO {
 						}
 
 						return poolId;
-					}
-
-					public void UnregisterHandle( int poolID ) {
-						UnregisterHandle( Parent, poolID );
-					}
-
-					public override void Register() {
-					}
-
-					public override void NotifyEventModification() {
-					}
-
-					public override void Unregister() {
 					}
 				}
 

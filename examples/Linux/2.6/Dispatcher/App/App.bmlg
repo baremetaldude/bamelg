@@ -11,28 +11,29 @@ namespace Example {
 	class Test {
 		[EntryPoint]
 		static void Main() {
-			var eventLoop = new EventLoop();
-			eventLoop.CatchExitSignals(); // convert signals to events
+			using( var eventLoop = new EventLoop() ) {
+				eventLoop.CatchExitSignals(); // convert signals to events
 
-			eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
-			eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
+				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
+				eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
 
-			eventLoop.BeginInvoke( () => {
-				new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.DispatchSync()' running
-					eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
-					eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
-				} ).Detach();
-			} );
+				eventLoop.BeginInvoke( () => {
+					new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
+						eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
+						eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
+					} ).Detach();
+				} );
 
-			eventLoop.BeginAlarm( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
-				Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
-			} );
+				eventLoop.BeginAlarm( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
+					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
+				} );
 
-			eventLoop.BeginUtcAlarm( TimeSpan.FromSeconds( 10 ), TimeSpan.FromSeconds( 1 ), () => {
-				Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
-			} );
+				eventLoop.BeginUtcAlarm( TimeSpan.FromSeconds( 10 ), TimeSpan.FromSeconds( 1 ), () => {
+					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
+				} );
 
-			eventLoop.DispatchSync(); // wait until RequestExit
+				eventLoop.Dispatch(); // wait until RequestExit
+			}
 		}
 	}
 }

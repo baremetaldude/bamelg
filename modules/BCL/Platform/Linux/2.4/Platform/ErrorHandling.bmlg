@@ -55,6 +55,7 @@ namespace Platform {
 
 		public PlatformErrorAction OnError( string context, SystemError errorCode ) {
 			PlatformErrorHandlerConsole.Instance.OnError( context, errorCode );
+			System.Diagnostics.StackTrace.Print();
 			Environment.Abort( ( int ) errorCode );
 
 			return PlatformErrorAction.Default;

@@ -20,7 +20,7 @@ namespace Platform.Libc {
 
 		/// @{ For debugging purposes only. You must aggreagte changes before wait in 'kevent()'
 		public void Modify( kevent* newEvents, int length ) {
-			LibcApi.Assert( LibcApi.kevent( this, newEvents, length, null, 0, nullref ) );
+			LibcApi.AssertErrno( LibcApi.kevent( this, newEvents, length, null, 0, nullref ) );
 		}
 
 		public void Modify( vararg kevent newEvents ) {

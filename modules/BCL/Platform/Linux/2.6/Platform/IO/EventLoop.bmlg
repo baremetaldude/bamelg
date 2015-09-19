@@ -14,8 +14,8 @@ using Platform.Kernel;
 using Platform.Libc;
 
 namespace Platform.IO {
-	// A simple example of how main loop can be organized
-	public partial class EventLoop {
+	// Event loop is a heart of event-driven application
+	public partial class EventLoop : System.Threading.Dispatcher {
 		protected bool _quitRequest;
 		protected bool _fiberDispatch;
 
@@ -24,10 +24,8 @@ namespace Platform.IO {
 
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
-		public DateTime NotificationStartTime, NotificationStartTimeUtc; // when first notification wake up blocking thread
-
-		internal void* EventLoopData;                                    // Used for integration with other event loops implementations
-		public int PollId;                                               // used for syncronization
+		internal void* EventLoopData; // Used for integration with other event loops implementations
+		public int PollId;            // used for syncronization
 
 		public EventLoop( bool enableFibers = true ) {
 			_notificationEmitter.Register();
@@ -38,6 +36,7 @@ namespace Platform.IO {
 				Fiber.FiberManager.Attach( this );
 			}
 
+			_dispatchThread = pthread_t.CurrentThread;
 			InitDispatcher();
 		}
 
@@ -47,8 +46,12 @@ namespace Platform.IO {
 			Epoll.Close();
 			foreach( var eventSink in _eventSinks ) eventSink.Dispose();
 
-			if( _fiberDispatch )
+			if( _fiberDispatch ) {
 				Fiber.RuntimeShutdown();
+				_fiberDispatch = false;
+			}
+
+			base.Dispose();
 		}
 
 		private HashSet<EventSink> _eventSinks = new HashSet<EventSink>();
@@ -56,59 +59,19 @@ namespace Platform.IO {
 		public int EventSinkCount { get { return _eventSinks.Count; } }
 
 		/// @{ Dispatching
-		private enum DispatchingState {
-			None,
-			Async,
-			Sync,
-		}
-
-		private DispatchingState _dispatchingState;
 		private pthread_t _dispatchThread = pthread_t.CurrentThread;
 
-		// Dispatch events in current thread
-		public void DispatchSync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Sync;
-
-			_dispatchThread = pthread_t.CurrentThread;
-			Dispatch();
-		}
-
-		// Dispatch events in new thread
-		public void DispatchAsync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Async;
-
-			AddReference();
-			_dispatchThread = new Platform.Libc.pthread_t( sender => {
-				var @this = bitcast<thistype>( sender );
-				@this.ReleaseReference();
-				@this.Dispatch();
-				return null;
-			}, bitcast<void*>( this ) );
-		}
-
-		// Request for terminate event loop thread
-		public void BeginQuit() {
-			RequestExit();
-		}
-
-		// Wait until event loop thread terminates
-		public void EndQuit() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.Async ) ) return;
-			_dispatchThread.Join();
-		}
-
-		// Request termination & Wait
-		public void Quit() {
-			BeginQuit();
-			EndQuit();
-		}
-
-		private void Dispatch() {
+		public void Dispatch() {
 			TraceDispatchStarted();
 
-			while( !_quitRequest || ( Fiber.FiberManager == null || Fiber.FiberManager.FiberCount > 0 ) ) {
+			for( ; ; ) {
+				if( _quitRequest ) {
+					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
+						Fiber.FiberManager.CancelAllFibers();
+					else
+						break;
+				}
+
 				atomic( ++PollId, Relaxed );
 				var polledDescriptors = LibcApi.epoll_wait( Epoll, &_signalledEvents[0], _signalledEvents.Length, -1 );
 
@@ -120,10 +83,6 @@ namespace Platform.IO {
 				}
 
 				NotifyEventSinks( polledDescriptors );
-
-				if( _quitRequest && Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 ) {
-					Fiber.FiberManager.CancelAllFibers();
-				}
 			}
 
 			TraceDispatchFinished();
@@ -290,7 +249,7 @@ namespace Platform.IO {
 						for( var i = 0; i < readen; ++i ) {
 							switch( ( NotificationCommand ) buffer[i] ) {
 								case NotificationCommand.Exit: atomic( _exitRequestPending = false ); Parent._quitRequest = true; break;
-								case NotificationCommand.NewDispatcherTasks: atomic( _newDispatcherTasks = false ); Parent.OnNewDispatcherTasks(); break;
+								case NotificationCommand.NewDispatcherTasks: atomic( _newDispatcherTasks = false ); Parent.ExecuteTasks(); break;
 							}
 						}
 					}
@@ -306,7 +265,7 @@ namespace Platform.IO {
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
-		private void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
+		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
 		public abstract class SignalEventSink : EventSink {
 			public override IOHandle EventHandle { get { return _signal; } }
@@ -502,6 +461,60 @@ namespace Platform.IO {
 
 			protected abstract void OnAccepted( SocketHandle socket );
 		}
+
+		#region Dispatcher
+
+		private DispatcherRealtimeEventSink _dispatcherUtcAlarmEventSink;
+		private DispatcherUnbiasedAlarmEventSink _dispatcherUnbiasedAlarmEventSink;
+
+		private sealed class DispatcherRealtimeEventSink : TimerEventSink {
+			public override void OnRaised( long expirations ) { Parent.OnUtcAlarm(); }
+
+			public DispatcherRealtimeEventSink( EventLoop parent )
+				: base( parent, ClockType.CLOCK_REALTIME ) {
+			}
+		}
+
+		private sealed class DispatcherUnbiasedAlarmEventSink : TimerEventSink {
+			public override void OnRaised( long expirations ) { Parent.OnUnbiasedAlarm(); }
+
+			public DispatcherUnbiasedAlarmEventSink( EventLoop parent )
+				: base( parent, ClockType.CLOCK_MONOTONIC ) {
+			}
+		}
+
+		private void InitDispatcher() {
+			_dispatcherUtcAlarmEventSink = new DispatcherRealtimeEventSink( this );
+			_dispatcherUtcAlarmEventSink.Register();
+
+			_dispatcherUnbiasedAlarmEventSink = new DispatcherUnbiasedAlarmEventSink( this );
+			_dispatcherUnbiasedAlarmEventSink.Register();
+		}
+
+		private void CloseDispatcher() {
+			ExecuteTasks();
+
+			if( _dispatcherUtcAlarmEventSink != null ) { _dispatcherUtcAlarmEventSink.Unregister(); _dispatcherUtcAlarmEventSink = null; }
+			if( _dispatcherUnbiasedAlarmEventSink != null ) { _dispatcherUnbiasedAlarmEventSink.Unregister(); _dispatcherUnbiasedAlarmEventSink = null; }
+		}
+
+		protected override void StopAlarm( AlarmKind kind ) {
+			switch( kind ) {
+				case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.Stop(); break;
+				case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.Stop(); break;
+			}
+		}
+
+		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) {
+			switch( kind ) {
+				case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.SetInterval( time ); break;
+				case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.SetInterval( time ); break;
+			}
+		}
+
+		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+
+		#endregion
 
 		/// @{ Tracing
 		private const string TraceConditionString = "TRACE_EVENT_LOOP";

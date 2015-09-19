@@ -16,17 +16,12 @@ namespace Example {
 		[FiberStatic]
 		static int FiberLocalData = 123;
 
-		private static void QuitSignalHandler( int signal ) {
-			eventLoop.RequestExit();
-		}
-
-		static EventLoop eventLoop = new EventLoop();
-
 		private const int FiberStackallocPages = 128;
 
 		// Press CTRL+C to exit
 		[EntryPoint]
 		private static void Main() {
+			var eventLoop = new EventLoop();
 			System.Threading.ThreadPool.Initialize();
 
 			if( FiberStackallocPages > 0 ) {
@@ -36,14 +31,7 @@ namespace Example {
 				Console.WriteLine( "Allocated workaround stack for fibers {0}", fiberStack );
 			}
 
-			// @{ catch signals
-			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
-			LibcApi.signal( SignalCode.SIGINT, QuitSignalHandler );
-			LibcApi.signal( SignalCode.SIGQUIT, QuitSignalHandler );
-			LibcApi.signal( SignalCode.SIGTERM, QuitSignalHandler );
-			LibcApi.signal( SignalCode.SIGHUP, QuitSignalHandler );
-			LibcApi.signal( SignalCode.SIGABRT, QuitSignalHandler );
-			// @}
+			eventLoop.CatchExitSignals();
 
 			Fiber.Start( Pages, () => {
 				System.Numerics.Matrix4x4 mat;
@@ -116,7 +104,7 @@ namespace Example {
 			}, "tp0" );
 			// @}
 
-			eventLoop.DispatchSync(); // wait until RequestExit
+			eventLoop.Dispatch(); // wait until RequestExit
 			// @}
 		}
 	}

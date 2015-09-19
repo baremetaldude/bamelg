@@ -3,8 +3,6 @@
 //
 // See license at http://bamelg.com/license.txt
 //
-// kqueue in FreeBSD didn't support NOTE_ABSOLUTE
-//
 
 using System;
 using System.Collections;
@@ -13,11 +11,57 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-using Platform.Kernel;
-using Platform.Libc;
+namespace System.Threading {
+	public abstract class Dispatcher {
+		public Dispatcher() {
+		}
 
-namespace Platform.IO {
-	public partial class EventLoop {
+		protected abstract void NotifyNewDispatcherTasks();
+		protected abstract void SetAlarm( AlarmKind kind, TimeSpan time );
+		protected abstract void StopAlarm( AlarmKind kind );
+		protected abstract bool IsDispatchingThread { get; }
+
+		public DateTime NotificationStartTime, NotificationStartTimeUtc; // when first notification wake up blocking thread
+
+		protected TimeSpan GetWaitTime() {
+			var utcTimeout = GetWaitTime( AlarmKind.Utc );
+			var unbiasedTimeout = GetWaitTime( AlarmKind.Unbiased );
+			return utcTimeout < unbiasedTimeout ? utcTimeout : unbiasedTimeout;
+		}
+
+		protected TimeSpan GetWaitTime( AlarmKind kind ) {
+			switch( kind ) {
+				case AlarmKind.Utc:
+					if( _utcAlarms.Count > 0 ) {
+						var now = DateTime.UtcNow;
+						var dt = _utcAlarms.Top->Expiration - now;
+						
+						if( dt > TimeSpan.Zero )
+							return dt;
+
+						// OnAlarm( AlarmKind.Utc, now, _utcAlarms );
+						return TimeSpan.Zero;
+					}
+					break;
+
+				case AlarmKind.Unbiased:
+					if( _unbiasedAlarms.Count > 0 ) {
+						var now = DateTime.UnbiasedNow;
+						var dt = _unbiasedAlarms.Top->Expiration - now;
+
+						if( dt > TimeSpan.Zero )
+							return dt;
+
+						// OnAlarm( AlarmKind.Unbiased, now, _unbiasedAlarms );
+						return TimeSpan.Zero;
+					}
+
+					break;
+			}
+
+			return TimeSpan.MaxValue;
+		}
+
 		private struct TaskEntry {
 			public TaskEntry* Next;
 			public Functors.Action<TaskEntry*> Action;
@@ -27,7 +71,7 @@ namespace Platform.IO {
 		private struct TaskEntry<T0, T1> : TaskEntry { public T0 P0; public T1 P1; }
 		private struct TaskEntry<T0, T1, T2> : TaskEntry { public T0 P0; public T1 P1; public T2 P2; }
 
-		private enum AlarmKind {
+		protected enum AlarmKind {
 			Utc,
 			Unbiased,
 		}
@@ -37,13 +81,13 @@ namespace Platform.IO {
 			public TimeSpan Period;
 
 			public Functors.Action<void*> Action;
-			public Functors.Action<void*> _dispose;
-			public void* _data;
+			public Functors.Action<void*> Dispose;
+			public void* Payload;
 
 			public bool OneShot { get; set; }
 
 			~AlarmEntry() {
-				if( _dispose != null ) _dispose( _data );
+				if( Dispose != null ) Dispose( Payload );
 			}
 		}
 
@@ -53,26 +97,10 @@ namespace Platform.IO {
 		private TaskEntry* _taskHead = null, _taskTail = null;
 
 		private PagedPool<AlarmEntry> _alarmsPool = new PagedPool<AlarmEntry>();
-		// private TrackablePriorityQueue<AlarmEntry*> _utcAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => x->Expiration < y->Expiration );
+		private TrackablePriorityQueue<AlarmEntry*> _utcAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => x->Expiration < y->Expiration );
 		private TrackablePriorityQueue<AlarmEntry*> _unbiasedAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => x->Expiration < y->Expiration );
 
-		// private DispatcherRealtimeEventSink _dispatcherUtcAlarmEventSink;
-		private DispatcherUnbiasedAlarmEventSink _dispatcherUnbiasedAlarmEventSink;
-
-		private void InitDispatcher() {
-			// _dispatcherUtcAlarmEventSink = new DispatcherRealtimeEventSink( this );
-			// _dispatcherUtcAlarmEventSink.Register();
-
-			_dispatcherUnbiasedAlarmEventSink = new DispatcherUnbiasedAlarmEventSink( this );
-			_dispatcherUnbiasedAlarmEventSink.Register();
-		}
-
-		private void CloseDispatcher() {
-			// _dispatcherUtcAlarmEventSink.Unregister(); _dispatcherUtcAlarmEventSink = null;
-			_dispatcherUnbiasedAlarmEventSink.Unregister(); _dispatcherUnbiasedAlarmEventSink = null;
-		}
-
-		private void OnNewDispatcherTasks() {
+		public void ExecuteTasks() {
 			TaskEntry* first = null;
 
 			using( _taskLock.LockRegion() ) {
@@ -87,57 +115,56 @@ namespace Platform.IO {
 			}
 		}
 
-		private void OnAlarm( DateTime time, TrackablePriorityQueue<AlarmEntry*> alarms, TimerEventSink timer ) {
+		private void OnAlarm( AlarmKind kind, DateTime time, TrackablePriorityQueue<AlarmEntry*> alarms ) {
 			while( alarms.Count > 0 ) {
 				var alarm = alarms.Peek();
 				if( alarm->Expiration >= time )
 					break;
 
 				var expirations = ( time - alarm->Expiration ).Ticks / alarm->Period.Ticks;
-				alarm->Action( alarm->_data );
+				alarm->Action( alarm->Payload );
 
 				alarms.Dequeue();
 
 				if( alarm->OneShot ) {
 					_alarmsPool.Free( alarm );
-				} else {
+				}
+				else {
 					alarm->Expiration += alarm->Period * ( expirations + 1 );
 					alarms.Enqueue( alarm );
 				}
 			}
 
-			if( alarms.Count == 0 )
-				timer.Stop();
+			if( alarms.Count == 0 ) StopAlarm( kind );
+			else SetAlarm( kind, alarms.Peek()->Expiration - time );
+		}
+
+		public void OnUtcAlarm() {
+			OnAlarm( AlarmKind.Utc, NotificationStartTimeUtc, _utcAlarms );
+		}
+
+		public void OnUnbiasedAlarm() {
+			OnAlarm( AlarmKind.Unbiased, NotificationStartTime, _unbiasedAlarms );
+		}
+
+		private void UpdateUtcAlarms() {
+			var now = DateTime.UtcNow;
+			var dt = _utcAlarms.Top->Expiration - now;
+
+			if( dt > TimeSpan.Zero )
+				SetAlarm( AlarmKind.Utc, dt );
 			else
-				timer.SetInterval( alarms.Peek()->Expiration - time );
+				OnAlarm( AlarmKind.Utc, now, _utcAlarms );
 		}
-
-		// private void OnUtcAlarm() {
-		// 	OnAlarm( NotificationStartTimeUtc, _utcAlarms, _dispatcherUtcAlarmEventSink );
-		// }
-
-		private void OnUnbiasedAlarm() {
-			OnAlarm( NotificationStartTime, _unbiasedAlarms, _dispatcherUnbiasedAlarmEventSink );
-		}
-
-		// private void UpdateUtcAlarms() {
-		// 	var now = DateTime.UtcNow;
-		// 	var dt = _utcAlarms.Top->Expiration - now;
-
-		// 	if( dt > TimeSpan.Zero )
-		// 		_dispatcherUtcAlarmEventSink.SetInterval( dt );
-		// 	else
-		// 		OnUtcAlarm();
-		// }
 
 		private void UpdateUnbiasedAlarms() {
 			var now = DateTime.UnbiasedNow;
 			var dt = _unbiasedAlarms.Top->Expiration - now;
 
 			if( dt > TimeSpan.Zero )
-				_dispatcherUnbiasedAlarmEventSink.SetInterval( dt );
+				SetAlarm( AlarmKind.Unbiased, dt );
 			else
-				OnUnbiasedAlarm();
+				OnAlarm( AlarmKind.Unbiased, now, _unbiasedAlarms );
 		}
 
 		/// @{ thread-safe
@@ -174,25 +201,25 @@ namespace Platform.IO {
 
 
 		/// @{ UTC
-		// public int BeginUtcAlarm( TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-		// 	return BeginAlarm( interval, interval, action, oneShot );
-		// }
+		public int BeginUtcAlarm( TimeSpan interval, Functors.Action action, bool oneShot = false ) {
+			return BeginAlarm( interval, interval, action, oneShot );
+		}
 
-		// public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-		// 	return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
-		// }
+		public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action, bool oneShot = false ) {
+			return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
+		}
 
-		// public int BeginUtcAlarm( TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-		// 	return BeginUtcAlarm( interval, interval, action, oneShot );
-		// }
+		public int BeginUtcAlarm( TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
+			return BeginUtcAlarm( interval, interval, action, oneShot );
+		}
 
-		// public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-		// 	return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
-		// }
+		public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
+			return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
+		}
 
-		// public void RemoveUtcAlarm( int alarmId ) {
-		// 	RemoveAlarm( AlarmKind.Utc, alarmId );
-		// }
+		public void RemoveUtcAlarm( int alarmId ) {
+			RemoveAlarm( AlarmKind.Utc, alarmId );
+		}
 		/// @}
 
 		/// @{ impl
@@ -215,7 +242,7 @@ namespace Platform.IO {
 			}, bitcast<void*>( action ), oneShot );
 		}
 
-		private int BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action<void*> action, Functors.Action<void*> dispose, void* data, bool oneShot = false ) {
+		private int BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action<void*> action, Functors.Action<void*> dispose, void* payload, bool oneShot = false ) {
 			using( _lock.LockRegion() ) { // guard _alarmsPool
 				var alarm = _alarmsPool.Allocate();
 
@@ -224,8 +251,8 @@ namespace Platform.IO {
 				alarm->OneShot = oneShot;
 
 				alarm->Action = action;
-				alarm->_dispose = dispose;
-				alarm->_data = data;
+				alarm->Dispose = dispose;
+				alarm->Payload = payload;
 
 				int trackingIndex;
 				switch( kind ) {
@@ -235,8 +262,8 @@ namespace Platform.IO {
 						break;
 
 					case AlarmKind.Utc:
-						// trackingIndex = _utcAlarms.Enqueue( alarm );
-						// if( _utcAlarms.Top == alarm ) UpdateUtcAlarms();
+						trackingIndex = _utcAlarms.Enqueue( alarm );
+						if( _utcAlarms.Top == alarm ) UpdateUtcAlarms();
 						break;
 				}
 
@@ -258,10 +285,10 @@ namespace Platform.IO {
 						break;
 
 					case AlarmKind.Utc:
-						// alarm = _utcAlarms[alarmId];
-						// var update = _utcAlarms.Top == alarm;
-						// _utcAlarms.Remove( alarmId );
-						// if( update ) UpdateUtcAlarms();
+						alarm = _utcAlarms[alarmId];
+						var update = _utcAlarms.Top == alarm;
+						_utcAlarms.Remove( alarmId );
+						if( update ) UpdateUtcAlarms();
 						break;
 				}
 
@@ -270,33 +297,6 @@ namespace Platform.IO {
 		}
 		/// @}
 		/// @}
-
-		// private sealed class DispatcherRealtimeEventSink : TimerEventSink {
-		// 	public override EventLoop Parent { get { return _parent; } }
-
-		// 	private declaringtype _parent;
-
-		// 	public override void OnRaised( long expirations ) { _parent.OnUtcAlarm(); }
-
-		// 	public DispatcherRealtimeEventSink( EventLoop parent )
-		// 		: base() {
-		// 		_parent = parent;
-		// 	}
-
-		// 	public override void Dispose() {
-		// 		_parent = null;
-
-		// 		base.Dispose();
-		// 	}
-		// }
-
-		private sealed class DispatcherUnbiasedAlarmEventSink : TimerEventSink {
-			public DispatcherUnbiasedAlarmEventSink( EventLoop parent )
-				: base( parent ) {
-			}
-
-			public override void OnRaised( long expirations ) { Parent.OnUnbiasedAlarm(); }
-		}
 
 		private void Enqueue( TaskEntry* task ) {
 			task->Next = null;
@@ -369,7 +369,7 @@ namespace Platform.IO {
 		}
 
 		public void Invoke( Functors.Action action ) {
-			if( _dispatchThread.IsCurrent ) {
+			if( IsDispatchingThread ) {
 				action();
 				return;
 			}
@@ -390,7 +390,7 @@ namespace Platform.IO {
 		}
 
 		public void Invoke<T0>( Functors.Action<T0> action, T0 p0 ) {
-			if( _dispatchThread.IsCurrent ) {
+			if( IsDispatchingThread ) {
 				action( p0 );
 				return;
 			}
@@ -412,7 +412,7 @@ namespace Platform.IO {
 		}
 
 		public void Invoke( Delegates.Action action ) {
-			if( _dispatchThread.IsCurrent ) {
+			if( IsDispatchingThread ) {
 				action();
 				return;
 			}
@@ -433,7 +433,7 @@ namespace Platform.IO {
 		}
 
 		public void Invoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
-			if( _dispatchThread.IsCurrent ) {
+			if( IsDispatchingThread ) {
 				action( p0 );
 				return;
 			}

@@ -15,26 +15,17 @@ using System.Runtime.InteropServices;
 using System.Threading;
 
 namespace Platform.IO {
-	public partial class EventLoop {
+	public partial class EventLoop : System.Threading.Dispatcher {
 		protected bool _quitRequest = false;
 		public bool QuitRequest { get { return _quitRequest; } }
 
 		private bool _fiberDispatch = false;
 
-		private enum DispatchingState {
-			None,
-			Async,
-			Sync,
-		}
-
-		private DispatchingState _dispatchingState;
 		private Thread _dispatchThread;
 
 		public int PollId;
 
 		internal static AutoResetEventHandle _eventPlaceholder = new AutoResetEventHandle();
-
-		public DateTime NotificationStartTime, NotificationStartTimeUtc; // when first notification wake up blocking thread
 
 		static ~EventLoop() {
 			_eventPlaceholder.Dispose();
@@ -56,6 +47,8 @@ namespace Platform.IO {
 		}
 
 		public override void Dispose() {
+			ExecuteTasks();
+			
 			using( _consoleQuitLock.LockRegion() )
 				if( _consoleQuitHandlerIndex != -1 ) {
 					CtrlCListeners.RemoveAt( _consoleQuitHandlerIndex );
@@ -68,23 +61,29 @@ namespace Platform.IO {
 			foreach( var eventSink in _eventSinks )
 				if( eventSink != null )
 					eventSink.Dispose();
+			_eventSinks.Clear();
 
-			if( _fiberDispatch )
+			if( _fiberDispatch ) {
 				Fiber.RuntimeShutdown();
+				_fiberDispatch = false;
+			}
 		}
 
 		[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 		private void ExitLoopAPC() {
 			_quitRequest = true;
 			_exitRequestPending = false;
-
-			if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
-				Fiber.FiberManager.CancelAllFibers();
 		}
 
 		[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 		private void UpdateEventListAPC() {
 			_updateRequestPending = false;
+		}
+
+		[CallingConvention( Value = NtApi.DefaultCallingConvention )]
+		private void NewTasksAPC() {
+			_newTasksRequestPending = false;
+			ExecuteTasks();
 		}
 
 		public void QueueAPC( void* object, void* method ) {
@@ -110,25 +109,11 @@ namespace Platform.IO {
 			QueueAPC( this, memberinfo( UpdateEventListAPC ).Address );
 		}
 
-		public void NotifyNewDispatcherTasks() {
-			RequestUpdateEventList();
-		}
+		private bool _newTasksRequestPending = false;
+		protected override void NotifyNewDispatcherTasks() {
+			if( atomic( _newTasksRequestPending = true ) ) return;
 
-		// Request for terminate event loop thread
-		public void BeginQuit() {
-			RequestExit();
-		}
-
-		// Wait until event loop thread terminates
-		public void EndQuit() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.Async ) ) return;
-			_dispatchThread.Join();
-		}
-
-		// Request termination & Wait
-		public void Quit() {
-			BeginQuit();
-			EndQuit();
+			QueueAPC( this, memberinfo( NewTasksAPC ).Address );
 		}
 
 		private List<EventSink> _eventSinks = new List<EventSink>();
@@ -145,58 +130,21 @@ namespace Platform.IO {
 			get { return _indexManager.Count < _indexManager.Capacity; }
 		}
 
-		// Dispatch events in current thread
-		public void DispatchSync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Sync;
-
-			_dispatchThread = Thread.CurrentThread;
-			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
-
-			Dispatch();
-		}
-
-		public void DispatchAsync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Async;
-
-			AddReference();
-			_dispatchThread = Thread.Start<void*>( sender => {
-				var @this = bitcast<thistype>( sender );
-				@this.ReleaseReference();
-				@this.Dispatch();
-			}, bitcast<void*>( this ) );
-		}
-
-		private void Dispatch() {
+		public void Dispatch() {
 			TraceDispatchStarted();
 
-			while( true ) {
+			for( ; ; ) {
 				if( _quitRequest ) {
-					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 ) {
-						// dont break until all fibers are done
-					}
+					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
+						Fiber.FiberManager.CancelAllFibers();
 					else break;
 				}
 
 				uint waitTimeout = Kernel32Api.INFINITE;
 
-				if( _utcAlarms.Count > 0 ) {
-					var now = DateTime.UtcNow;
-					var dt = _utcAlarms.Top->Expiration - now;
-					if( dt > TimeSpan.Zero )
-						waitTimeout = ( uint ) dt.TotalMilliseconds;
-					else waitTimeout = 0;
-				}
-
-				if( _unbiasedAlarms.Count > 0 ) {
-					var now = DateTime.UnbiasedNow;
-					var dt = _unbiasedAlarms.Top->Expiration - now;
-
-					if( dt > TimeSpan.Zero )
-						waitTimeout = ( uint ) dt.TotalMilliseconds;
-					else waitTimeout = 0;
-				}
+				var timeout = GetWaitTime();
+				if( timeout != TimeSpan.MaxValue )
+					waitTimeout = ( uint ) timeout.TotalMilliseconds;
 
 				TraceBeginWait( _waitEvents.Count, waitTimeout );
 				var useSleep = _waitEvents.Count == 0;
@@ -420,6 +368,14 @@ namespace Platform.IO {
 
 			return true;
 		}
+
+		#region Dispatcher
+
+		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) { }
+		protected override void StopAlarm( AlarmKind kind ) { }
+		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+
+		#endregion
 
 		/// @{ Tracing
 		private const string TraceConditionString = "TRACE_EVENT_LOOP";

@@ -14,8 +14,8 @@ using Platform.Kernel;
 using Platform.Libc;
 
 namespace Platform.IO {
-	// A simple example of how main loop can be organized
-	public partial class EventLoop {
+	// Event loop is a heart of event-driven application
+	public partial class EventLoop : System.Threading.Dispatcher {
 		protected bool _quitRequest = false;
 
 		private List<pollfd> _polledDescriptors = new List<pollfd>();
@@ -25,8 +25,10 @@ namespace Platform.IO {
 
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
-		public DateTime NotificationStartTime, NotificationStartTimeUtc; // when first notification wake up blocking thread
 		private bool _fiberDispatch = false;
+
+		[ThreadStatic]
+		public static EventLoop Instance;
 
 		public EventLoop( bool enableFibers = true ) {
 			_notificationEmitter.Register();
@@ -36,9 +38,14 @@ namespace Platform.IO {
 				Fiber.RuntimeInitialize();
 				Fiber.FiberManager.Attach( this );
 			}
+
+			Instance = this;
+			_dispatchThread = Platform.Libc.pthread_t.CurrentThread;
 		}
 
 		public override void Dispose() {
+			ExecuteTasks();
+
 			if( _fiberDispatch )
 				Fiber.FiberManager.Detach( this );
 
@@ -46,86 +53,64 @@ namespace Platform.IO {
 				if( eventSink != null )
 					eventSink.Dispose();
 
-			if( _fiberDispatch )
+			if( _fiberDispatch ) {
 				Fiber.RuntimeShutdown();
+				_fiberDispatch = false;
+			}
+
+			Instance = null;
+		}
+
+		private static void QuitSignalHandler( int signal ) {
+			Instance.RequestExit();
+		}
+
+		private static sigset_t _exitSignalSet = new sigset_t( SignalCode.SIGINT, SignalCode.SIGQUIT, SignalCode.SIGTERM, SignalCode.SIGHUP, SignalCode.SIGABRT );
+
+		public void CatchExitSignals() {
+			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
+			CatchExitSignals( _exitSignalSet );
+		}
+
+		public void CatchExitSignals( sigset_t& signalSet ) {
+			foreach( var signal in _exitSignalSet )
+				LibcApi.signal( signal, QuitSignalHandler );
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
 		public void RequestUpdateEventList() { if( !_dispatchThread.IsCurrent ) _notificationEmitter.RequestUpdate(); }
-		public void NotifyNewDispatcherTasks() { if( !_dispatchThread.IsCurrent ) _notificationEmitter.RequestUpdate(); }
+		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
 		/// @{ Dispatching
-		private enum DispatchingState {
-			None,
-			Async,
-			Sync,
-		}
-
-		private DispatchingState _dispatchingState;
 		private Platform.Libc.pthread_t _dispatchThread;
-
-		// Dispatch events in current thread
-		public void DispatchSync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Sync;
-
-			_dispatchThread = Platform.Libc.pthread_t.CurrentThread;
-			Dispatch();
-		}
-
-		// Dispatch events in new thread
-		public void DispatchAsync() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.None ) ) return;
-			_dispatchingState = DispatchingState.Async;
-
-			AddReference();
-			_dispatchThread = new Platform.Libc.pthread_t( sender => {
-				var @this = bitcast<thistype>( sender );
-				@this.ReleaseReference();
-				@this.Dispatch();
-				return null;
-			}, bitcast<void*>( this ) );
-		}
-
-		// Request for terminate event loop thread
-		public void BeginQuit() {
-			RequestExit();
-		}
-
-		// Wait until event loop thread terminates
-		public void EndQuit() {
-			if( !Assert.IsTrue( _dispatchingState == DispatchingState.Async ) ) return;
-			_dispatchThread.Join();
-		}
-
-		// Request termination & Wait
-		public void Quit() {
-			BeginQuit();
-			EndQuit();
-		}
 
 		internal int _dispatchingIndex;
 
-		private void Dispatch() {
-			TraceDispatchStarted();
+		public void UnregisterHandle( int poolID ) {
+			_indexManager.Deallocate( poolID );
+			_polledDescriptors[poolID] = new pollfd { Handle = IOHandle.Invalid, ListenedEvents = PollEvents.None, RaisedEvents = PollEvents.None };
+			_eventSinks[poolID] = null; // 'this' may be destroyed after that statement
+		}
 
-			while( !_quitRequest || ( Fiber.FiberManager == null || Fiber.FiberManager.FiberCount > 0 ) ) {
+		public void Dispatch() {
+			TraceDispatchStarted();
+			Instance = this;
+
+			for( ; ; ) {
+				if( _quitRequest ) {
+					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
+						Fiber.FiberManager.CancelAllFibers();
+					else
+						break;
+				}
+
 				var pollTimeout = -1;
 
-				if( _utcAlarms.Count > 0 ) {
-					var now = DateTime.UtcNow;
-					var dt = _utcAlarms.Top->Expiration - now;
-					if( dt > TimeSpan.Zero )
-						pollTimeout = ( int ) dt.TotalMilliseconds;
-				}
+				var timeout = GetWaitTime();
+				if( timeout != TimeSpan.MaxValue )
+					pollTimeout = ( int ) timeout.TotalMilliseconds;
 
-				if( _unbiasedAlarms.Count > 0 ) {
-					var now = DateTime.UnbiasedNow;
-					var dt = _unbiasedAlarms.Top->Expiration - now;
-
-					if( dt > TimeSpan.Zero )
-						pollTimeout = ( int ) dt.TotalMilliseconds;
-				}
+				TraceBeginWait( _polledDescriptors.Count, pollTimeout );
 
 				var eventBuffer = _polledDescriptors.GetBuffer();
 				var polledDescriptors = LibcApi.poll( eventBuffer, _polledDescriptors.Count.ToUnsigned(), pollTimeout );
@@ -165,10 +150,6 @@ namespace Platform.IO {
 
 					eventSink.OnEvent( @event );
 				}
-
-				if( _quitRequest && Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 ) {
-					Fiber.FiberManager.CancelAllFibers();
-				}
 			}
 
 			TraceDispatchFinished();
@@ -178,16 +159,6 @@ namespace Platform.IO {
 
 		public abstract class EventSink {
 			public EventLoop Parent; ///< Event loop holding/polling this EventSink
-			public abstract IOHandle EventHandle { get; } ///< Handle passed to 'poll'
-
-			public PollEvents _listenedEvents; ///< If you need to update '_listenedEvents' outside of 'OnEvent' call 'NotifyEventModification' method
-			public int PoolID = -1;            ///< Index of EventSink in array of 'pollfd' passed to 'poll'
-
-			/// Calls 'NotifyEventModification' on value change
-			public PollEvents ListenedEvents {
-				get { return _listenedEvents; }
-				set { if( _listenedEvents != value ) { _listenedEvents = value; NotifyEventModification(); } }
-			}
 
 			public abstract void OnEvent( pollfd& @event );
 
@@ -204,86 +175,91 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			/// @{
-			public virtual void Register() { Register( Parent, EventHandle ); }
-			public virtual void NotifyEventModification() { NotifyEventModification( Parent, EventHandle ); }
-			public virtual void Unregister() { Unregister( Parent, EventHandle ); }
-			/// @}
-
-			protected void Register( EventLoop parent, IOHandle handle ) {
-				EnsureEventSinkNotRegistered( parent );
-
-				PoolID = RegisterHandle( parent, handle, _listenedEvents );
-
-				TraceEventSinkRegistered( this );
-			}
-
-			protected int RegisterHandle( EventLoop parent, IOHandle handle, PollEvents events ) {
-				var poolID = parent._indexManager.Allocate();
-				if( poolID >= parent._eventSinks.Count ) {
-					parent._polledDescriptors.Add( new pollfd { Handle = handle, ListenedEvents = _listenedEvents, RaisedEvents = PollEvents.None } );
-					parent._eventSinks.Add( this );
+			protected int RegisterHandle( IOHandle handle, PollEvents events ) {
+				var poolID = Parent._indexManager.Allocate();
+				if( poolID >= Parent._eventSinks.Count ) {
+					Parent._polledDescriptors.Add( new pollfd { Handle = handle, ListenedEvents = events, RaisedEvents = PollEvents.None } );
+					Parent._eventSinks.Add( this );
 				}
 				else {
-					parent._eventSinks[poolID] = this;
-					parent._polledDescriptors[poolID] = new pollfd { Handle = handle, ListenedEvents = _listenedEvents, RaisedEvents = PollEvents.None };
+					Parent._eventSinks[poolID] = this;
+					Parent._polledDescriptors[poolID] = new pollfd { Handle = handle, ListenedEvents = events, RaisedEvents = PollEvents.None };
 				}
 
 				return poolID;
 			}
+		}
 
-			protected void NotifyEventModification( EventLoop parent, IOHandle handle ) {
-				EnsureEventSinkRegistered( parent );
+		public abstract class EventSinkHandle : EventSink {
+			public IOHandle EventHandle; ///< Handle passed to 'poll'
 
-				var pollBuffer = parent._polledDescriptors.GetBuffer();
-				if( pollBuffer[PoolID].ListenedEvents != _listenedEvents ) {
-					pollBuffer[PoolID].ListenedEvents = _listenedEvents;
-					parent.RequestUpdateEventList();
-				}
-
-				TraceEventSinkModified( this );
+			/// Calls 'NotifyEventModification' on value change
+			public PollEvents ListenedEvents {
+				get { return _listenedEvents; }
+				set { if( _listenedEvents != value ) { _listenedEvents = value; NotifyEventModification( EventHandle ); } }
 			}
 
-			protected void Unregister( EventLoop parent, IOHandle handle ) {
-				TraceEventSinkUnregistered( this );
-				EnsureEventSinkRegistered( parent );
+			public PollEvents _listenedEvents; ///< If you need to update '_listenedEvents' outside of 'OnEvent' call 'NotifyEventModification' method
+			public int PoolID = -1;            ///< Index of EventSink in array of 'pollfd' passed to 'poll'
 
-				var poolId = PoolID;
-				PoolID = -1;
-				UnregisterHandle( parent, poolId );
-			}
-
-			protected void UnregisterHandle( EventLoop parent, int poolID ) {
-				parent._indexManager.Deallocate( poolID );
-				parent._polledDescriptors[poolID] = new pollfd { Handle = IOHandle.Invalid, ListenedEvents = PollEvents.None, RaisedEvents = PollEvents.None };
-				parent._eventSinks[poolID] = null; // 'this' may be destroyed after that statement
+			public EventSinkHandle( EventLoop parent )
+				: base( parent ) {
 			}
 
 			[Conditional( ConditionString = "DEBUG" )]
-			protected void EnsureEventSinkRegistered( EventLoop parent ) {
+			protected void EnsureEventSinkRegistered() {
 				if( PoolID == -1 )
 					Assert.Fail( "EventSink not registered!" );
 			}
 
 			[Conditional( ConditionString = "DEBUG" )]
-			protected void EnsureEventSinkNotRegistered( EventLoop parent ) {
+			protected void EnsureEventSinkNotRegistered() {
 				if( PoolID != -1 )
 					Assert.Fail( "EventSink already registered!" );
+			}
+
+			public void Register() {
+				EnsureEventSinkNotRegistered();
+
+				PoolID = RegisterHandle( EventHandle, _listenedEvents );
+
+				TraceEventSinkRegistered( this );
+			}
+
+			public void Unregister() {
+				TraceEventSinkUnregistered( this );
+				EnsureEventSinkRegistered();
+
+				var poolId = PoolID;
+				PoolID = -1;
+				Parent.UnregisterHandle( poolId );
+			}
+
+			protected void NotifyEventModification( IOHandle handle ) {
+				EnsureEventSinkRegistered();
+
+				var pollBuffer = Parent._polledDescriptors.GetBuffer();
+				if( pollBuffer[PoolID].ListenedEvents != _listenedEvents ) {
+					pollBuffer[PoolID].ListenedEvents = _listenedEvents;
+					Parent.RequestUpdateEventList();
+				}
+
+				TraceEventSinkModified( this );
 			}
 		}
 
 		// used for internal purposes
-		private class NotificationEmitter : EventSink {
-			public override IOHandle EventHandle { get { return _notificationPipe[PipeHandle.ReadEnd]; } }
-
+		private class NotificationEmitter : EventSinkHandle {
 			private enum NotificationCommand {
-				Exit,   // exit from main loop
-				Update, // update list of handles/event types
+				NewDispatcherTasks, // new tasks arrived
+				Exit,               // exit from main loop
+				Update,             // update list of handles/event types
 			}
 
 			private PipeHandle[2] _notificationPipe;
 
 			private bool _exitRequestPending, _updateRequestPending;
+			private bool _newDispatcherTasks = false;
 
 			public NotificationEmitter( EventLoop parent )
 				: base( parent ) {
@@ -293,6 +269,8 @@ namespace Platform.IO {
 
 				_notificationPipe[PipeHandle.ReadEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.ReadEnd].IsClosedOnExec = true;
 				_notificationPipe[PipeHandle.WriteEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.WriteEnd].IsClosedOnExec = true;
+
+				EventHandle = _notificationPipe[PipeHandle.ReadEnd];
 			}
 
 			// Resource freeing (raw OS handles, malloc'ed memory) must be performed strictly in destructors since 'Dispose' may not be called before object lost last reference
@@ -314,6 +292,7 @@ namespace Platform.IO {
 							switch( ( NotificationCommand ) buffer[i] ) {
 								case NotificationCommand.Exit: atomic( _exitRequestPending = false ); Parent._quitRequest = true; break;
 								case NotificationCommand.Update: atomic( _updateRequestPending = false ); break;
+								case NotificationCommand.NewDispatcherTasks: atomic( _newDispatcherTasks = false ); Parent.ExecuteTasks(); break;
 							}
 						}
 					}
@@ -326,11 +305,10 @@ namespace Platform.IO {
 
 			public void RequestExit() { if( !atomic( _exitRequestPending = true ) ) { SendCommand( NotificationCommand.Exit ); } } // dont overwhelm pipe
 			public void RequestUpdate() { if( !atomic( _updateRequestPending = true ) ) { SendCommand( NotificationCommand.Update ); } } // dont overwhelm pipe
+			public void NotifyNewDispatcherTasks() { if( !atomic( _newDispatcherTasks = true ) ) SendCommand( NotificationCommand.NewDispatcherTasks ); } // dont overwhelm pipe
 		}
 
-		public abstract class NotificationEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _notificationPipe[PipeHandle.ReadEnd]; } }
-
+		public abstract class NotificationEventSink : EventSinkHandle {
 			private enum NotificationCommand {
 				Update,
 			}
@@ -347,6 +325,8 @@ namespace Platform.IO {
 
 				_notificationPipe[PipeHandle.ReadEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.ReadEnd].IsClosedOnExec = true;
 				_notificationPipe[PipeHandle.WriteEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.WriteEnd].IsClosedOnExec = true;
+
+				EventHandle = _notificationPipe[PipeHandle.ReadEnd];
 			}
 
 			// Resource freeing (raw OS handles, malloc'ed memory) must be performed strictly in destructors since 'Dispose' may not be called before object lost last reference
@@ -384,19 +364,18 @@ namespace Platform.IO {
 			public abstract void OnNotified();
 		}
 
-		public abstract class AcceptSocketEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _socket; } }
-
-			protected SocketHandle _socket;
+		public abstract class AcceptSocketEventSink : EventSinkHandle {
+			[Overlapped( Offset = memberinfo( EventSinkHandle.EventHandle ).ByteOffset )]
+			public new SocketHandle EventHandle;
 
 			public AcceptSocketEventSink( EventLoop parent, SocketHandle socket )
 				: base( parent ) {
-				_socket = socket;
+				EventHandle = socket;
 				_listenedEvents = PollEvents.POLLIN;
 			}
 
 			~AcceptSocketEventSink() {
-				_socket.Close();
+				EventHandle.Close();
 			}
 		}
 
@@ -409,7 +388,7 @@ namespace Platform.IO {
 				sockaddr_in clientSocketInfo;
 				SocketHandleTCP clientSocketHandle;
 
-				while( ( clientSocketHandle = bitcast<SocketHandleTCP>( LibcApi.accept( _socket, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
+				while( ( clientSocketHandle = bitcast<SocketHandleTCP>( LibcApi.accept( EventHandle, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
 					clientSocketHandle.IsNonBlocking = true;
 					OnAccepted( clientSocketHandle, clientSocketInfo );
 				}
@@ -427,7 +406,7 @@ namespace Platform.IO {
 				sockaddr_in6 clientSocketInfo;
 				SocketHandleTCP clientSocketHandle;
 
-				while( ( clientSocketHandle = bitcast<SocketHandleTCP>( LibcApi.accept( _socket, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
+				while( ( clientSocketHandle = bitcast<SocketHandleTCP>( LibcApi.accept( EventHandle, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
 					clientSocketHandle.IsNonBlocking = true;
 					OnAccepted( clientSocketHandle, clientSocketInfo );
 				}
@@ -445,7 +424,7 @@ namespace Platform.IO {
 				var clientSocketInfo = default( sockaddr_un );
 				SocketHandleLocal clientSocketHandle;
 
-				while( ( clientSocketHandle = bitcast<SocketHandleLocal>( LibcApi.accept( _socket, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
+				while( ( clientSocketHandle = bitcast<SocketHandleLocal>( LibcApi.accept( EventHandle, ( sockaddr* ) &clientSocketInfo, sizeof( clientSocketInfo ) ) ) ).IsValid ) {
 					clientSocketHandle.IsNonBlocking = true;
 					OnAccepted( clientSocketHandle, clientSocketInfo );
 				}
@@ -462,7 +441,7 @@ namespace Platform.IO {
 			public override void OnEvent( pollfd& @event ) {
 				SocketHandle clientSocketHandle;
 
-				while( ( clientSocketHandle = LibcApi.accept( _socket, null, 0 ) ).IsValid ) {
+				while( ( clientSocketHandle = LibcApi.accept( EventHandle, null, 0 ) ).IsValid ) {
 					clientSocketHandle.IsNonBlocking = true;
 					OnAccepted( clientSocketHandle );
 				}
@@ -470,6 +449,14 @@ namespace Platform.IO {
 
 			protected abstract void OnAccepted( SocketHandle socket );
 		}
+
+		#region Dispatcher
+
+		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) { }
+		protected override void StopAlarm( AlarmKind kind ) { }
+		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+
+		#endregion
 
 		/// @{ Tracing
 		private const string TraceConditionString = "TRACE_EVENT_LOOP";
@@ -497,6 +484,17 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
+		private static void TraceBeginWait( int eventCount, int milliseconds ) {
+			TypedReference timeout = milliseconds;
+			if( milliseconds == -1 ) timeout = "INFINITE";
+
+			Trace.Write( new Console.OutputAttributes() {
+				BackgroundColor = RgbColor.Blue,
+				Bold = true
+			}, "EventLoop: Begin wait {0} events for {1}{2}", eventCount, timeout, milliseconds != -1 ? "ms" : "" );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceEventSink( pollfd& @event, EventSink eventSink ) {
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
@@ -504,21 +502,21 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkRegistered( EventSink eventSink ) {
+		private static void TraceEventSinkRegistered( EventSinkHandle eventSink ) {
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventSink '{0}'({1}) registered. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkModified( EventSink eventSink ) {
+		private static void TraceEventSinkModified( EventSinkHandle eventSink ) {
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventSink '{0}'({1}) modified. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkUnregistered( EventSink eventSink ) {
+		private static void TraceEventSinkUnregistered( EventSinkHandle eventSink ) {
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
