@@ -8,6 +8,7 @@ using System.Diagnostics;
 using Platform.Gdk;
 using Platform.Glib;
 using Platform.Gtk;
+using Platform.IO;
 
 namespace Example {
 	public partial class App {
@@ -51,12 +52,27 @@ namespace Example {
 					return !isExiting;
 				}, null );
 
+				var eventLoop = new EventLoop(){ Tracing = true };
+				eventLoop.PollHandlerPrepare = GdkApi.gdk_threads_enter;
+				eventLoop.PollHandlerFinish = GdkApi.gdk_threads_leave;
+
+				Platform.IO.EventLoop.Instance = eventLoop;
+				GMainContext.Default->EventLoopSubscribe();
+
+				eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 1 ), () => {
+					window->Title = Utf8String.Format( "Test app {0}", DateTime.Now );
+				} );
+
+				window->IsVisible = true;
+
 				GtkApi.gtk_main();
+
+				eventLoop.Dispose();
 			}
 		}
 
 		public static bool ConfirmExit( GtkWindow* parent ) {
-			return GtkMessageDialog.ShowInformationYesNo( parent, "GtkGUI", "Did you really wanna kill this app?" ) == GtkResponseType.GTK_RESPONSE_YES;
+			return GtkMessageDialog.ShowInformationYesNo( parent, "GtkGUI", "Did you really want to kill this app?" ) == GtkResponseType.GTK_RESPONSE_YES;
 		}
 	}
 }

@@ -142,6 +142,7 @@ namespace Platform.IO {
 					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, nullref );
 				else
 					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, new timespec( timeout ) );
+				TraceEventsArrived( polledDescriptors );
 
 				_eventChangeList.Clear();
 				_eventIds.Clear();
@@ -154,12 +155,10 @@ namespace Platform.IO {
 					}
 				}
 
-				NotificationStartTime = DateTime.UnbiasedNow;
-				NotificationStartTimeUtc = DateTime.UtcNow;
-				TraceEventsArrived( polledDescriptors );
+				UnbiasedNow = DateTime.UnbiasedNow;
+				UtcNow = DateTime.UtcNow;
 
-				OnUtcAlarm();
-				OnUnbiasedAlarm();
+				OnAlarm();
 
 				for( var i = 0; i < polledDescriptors; ++i ) {
 					var& @event = waitBuffer[i];
@@ -201,7 +200,7 @@ namespace Platform.IO {
 			/// @{
 			public virtual bool Register() {
 				if( Parent._eventSinks.Add( this ) ) {
-					TraceEventSinkRegistered( this );
+					Parent.TraceEventSinkRegistered( this );
 
 					return true;
 				}
@@ -215,7 +214,7 @@ namespace Platform.IO {
 			public virtual bool Unregister() {
 				var retainer = this;
 				if( Parent._eventSinks.Remove( this ) ) {
-					TraceEventSinkUnregistered( this );
+					Parent.TraceEventSinkUnregistered( this );
 
 					return true;
 				}
@@ -453,24 +452,25 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) { }
-		protected override void StopAlarm( AlarmKind kind ) { }
 		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
 
 		#endregion
 
-		/// @{ Tracing
-		private const string TraceConditionString = "TRACE_EVENT_LOOP";
+		#region Tracing
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchStarted() {
+		private void TraceDispatchStarted() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventLoop dispatch started: {0}", DateTime.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchFinished() {
+		private void TraceDispatchFinished() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventLoop dispatch finished: {0}", DateTime.UtcNow );
@@ -478,20 +478,26 @@ namespace Platform.IO {
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventsArrived( int polledDescriptors ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
-			}, "EventLoop: kevent() count={0} at {1}", polledDescriptors, NotificationStartTime );
+			}, "EventLoop: kevent() count={0} at {1}", polledDescriptors, UnbiasedNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSink( kevent& @event, EventSink eventSink ) {
+		private void TraceEventSink( kevent& @event, EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, " notify '{0}'({1}) with event='{2}'", eventSink != null ? eventSink.GetType() : typeof( void ), bitcast<void*>( eventSink ), @event );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceChangeList( List<kevent> _eventChangeList ) {
+		private void TraceChangeList( List<kevent> _eventChangeList ) {
+			if( !Tracing ) return;
+
 			if( _eventChangeList.Count > 0 ) {
 				Trace.Write( new Console.OutputAttributes() {
 					BackgroundColor = RgbColor.Blue
@@ -503,18 +509,23 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkRegistered( EventSink eventSink ) {
+		private void TraceEventSinkRegistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventSink '{0}'({1}) registered", eventSink.GetType(), bitcast<void*>( eventSink ) );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkUnregistered( EventSink eventSink ) {
+		private void TraceEventSinkUnregistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, "EventSink '{0}'({1}) unregistered", eventSink.GetType(), bitcast<void*>( eventSink ) );
 		}
-		/// @}
+
+		#endregion
 	}
 }

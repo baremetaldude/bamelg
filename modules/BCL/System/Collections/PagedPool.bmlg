@@ -168,7 +168,7 @@ namespace System.Collections {
 			public int FreeCount { get { return ( int )( BlockSize - Count ); } }
 		}
 
-		private PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
+		private static PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
 
 		private int IndexOf( PageInfo* page, T* value ) {
 			if( page->Parent != this ) return -1;

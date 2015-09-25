@@ -63,8 +63,10 @@ namespace System.Runtime {
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private static void EnsureTargetAlive( InvokationItem* item ) {
-			if( item->TargetType != null && item->TargetType->IsRuntimeObject && bitcast<RuntimeObjectBase>( item->Target )._sharedReferenceCount == 0 )
+			if( item->TargetType != null && item->TargetType->IsRuntimeObject && bitcast<RuntimeObjectBase>( item->Target )._sharedReferenceCount == 0 ) {
 				Console.WriteLine( "Delegate: Object {0} with type '{1}' still remains in delegate after have been destroyed", item->Target, item->TargetType );
+				Diagnostics.StackTrace.Print();
+			}
 		}
 	}
 }

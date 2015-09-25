@@ -20,7 +20,7 @@ namespace Example {
 		static void Main() {
 			System.Threading.ThreadPool.Initialize();
 
-			_eventLoop = new EventLoop();
+			_eventLoop = new EventLoop(){ Tracing = true };
 			_eventLoop.CatchConsoleQuit();
 
 			Fiber.Start( 32, Worker );

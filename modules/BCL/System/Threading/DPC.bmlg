@@ -1,0 +1,144 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+using System.Threading;
+
+namespace System.Threading {
+	public struct DPC {
+		public DPC* Next;
+		public Functors.Action<DPC*> OnAction, OnDispose, OnActionDispose;
+
+		public static void Run( DPC* dpc ) {
+			if( dpc == null ) return;
+
+			dpc->OnAction( dpc );
+		}
+
+		public static void Dispose( DPC* dpc ) {
+			if( dpc == null ) return;
+			if( dpc->OnDispose == null ) return;
+
+			dpc->OnDispose( dpc );
+		}
+
+		public static void RunAndDispose( DPC* dpc ) {
+			if( dpc == null ) return;
+
+			dpc->OnActionDispose( dpc );
+		}
+
+		public static DPC* Create( Functors.Action action ) {
+			return heapalloc DPC<Functors.Action> {
+				P0 = action,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action>* ) data;
+					passedTask->P0();
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Functors.Action>* ) data;
+					passedTask->P0();
+					heapfree ( DPC<Functors.Action>* ) data;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Functors.Action>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create<T0>( Functors.Action<T0> action, T0 p0 ) {
+			return heapalloc DPC<Functors.Action<T0>, T0> {
+				P0 = action,
+				P1 = p0,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action<T0>, T0>* ) data;
+					passedTask->P0( passedTask->P1 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Functors.Action<T0>, T0>* ) data;
+					passedTask->P0( passedTask->P1 );
+					heapfree ( DPC<Functors.Action<T0>, T0>* ) data;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Functors.Action<T0>, T0>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create( Delegates.Action action ) {
+			return heapalloc DPC<Delegates.Action> {
+				P0 = action,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action>* ) data;
+					passedTask->P0();
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Delegates.Action>* ) data;
+					passedTask->P0();
+					heapfree ( DPC<Delegates.Action>* ) data;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Delegates.Action>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			return heapalloc DPC<Delegates.Action<T0>, T0> {
+				P0 = action,
+				P1 = p0,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action<T0>, T0>* ) data;
+					passedTask->P0( passedTask->P1 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Delegates.Action<T0>, T0>* ) data;
+					passedTask->P0( passedTask->P1 );
+					heapfree ( DPC<Delegates.Action<T0>, T0>* ) data;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Delegates.Action<T0>, T0>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Combine( DPC* left, DPC* right ) {
+			if( left == null ) return right;
+			if( right == null ) return left;
+
+			return heapalloc DPC<DPC*, DPC*> {
+				P0 = left,
+				P1 = right,
+				OnAction = data => {
+					var passedTask = ( DPC<DPC*, DPC*>* ) data;
+					Run( passedTask->P0 );
+					Run( passedTask->P1 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<DPC*, DPC*>* ) data;
+					RunAndDispose( passedTask->P0 );
+					RunAndDispose( passedTask->P1 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					var passedTask = ( DPC<DPC*, DPC*>* ) data;
+					Dispose( passedTask->P0 );
+					Dispose( passedTask->P1 );
+					heapfree passedTask;
+				}
+			};
+		}
+	}
+
+	public struct DPC<T0> : DPC { public T0 P0; }
+	public struct DPC<T0, T1> : DPC { public T0 P0; public T1 P1; }
+	public struct DPC<T0, T1, T2> : DPC { public T0 P0; public T1 P1; public T2 P2; }
+}

@@ -24,9 +24,9 @@ namespace System.Threading {
 			private Mutex _completedLock = new Mutex();
 			private List<Thread> _completedList = new List<Thread>();
 
-			private TaskEntry* _taskHead = null, _taskTail = null;
+			private DPC* _taskHead = null, _taskTail = null;
 
-			private static Functors.Action<TaskEntry*> _workerTerminateAction = data => { };
+			private static Functors.Action<DPC*> _workerTerminateAction = data => { };
 
 			public ReferenceImpl() {
 			}
@@ -38,7 +38,7 @@ namespace System.Threading {
 					for( var task = _taskHead; task != null; ) {
 						var next = task->Next;
 
-						task->Action( task );
+						DPC.RunAndDispose( task );
 
 						task = next;
 					}
@@ -63,10 +63,10 @@ namespace System.Threading {
 							// make unique stopping tasks
 							var stoppingThreadCount = -delta;
 
-							var tasks = stackalloc TaskEntry[stoppingThreadCount];
+							var tasks = stackalloc DPC[stoppingThreadCount];
 							for( var i = 0; i < stoppingThreadCount; ++i ) {
 								var task = tasks + i;
-								task->Action = _workerTerminateAction;
+								task->OnActionDispose = _workerTerminateAction;
 
 								Enqueue( task );
 							}
@@ -86,7 +86,7 @@ namespace System.Threading {
 			}
 
 			/// @{ thread-safe
-			public void Enqueue( TaskEntry* task ) {
+			public void Enqueue( DPC* task ) {
 				EnsureHasWorkerThreads();
 				task->Next = null;
 
@@ -135,7 +135,7 @@ namespace System.Threading {
 						_parent->_newTaskNotifier.Wait();
 						TraceTasksArrived();
 
-						TaskEntry* task = null;
+						DPC* task = null;
 						using( _parent->_taskLock.LockRegion() ) {
 							if( _parent->_taskHead != null ) {
 								task = _parent->_taskHead;
@@ -151,8 +151,8 @@ namespace System.Threading {
 							}
 						}
 
-						var exitAction = task->Action == _workerTerminateAction;
-						task->Action( task );
+						var exitAction = task->OnActionDispose == _workerTerminateAction;
+						DPC.RunAndDispose( task );
 
 						if( exitAction ) return;
 					}

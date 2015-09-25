@@ -8,24 +8,26 @@ namespace System.Collections {
 	public static struct PriorityQueueCommon {
 		public static int GetLeftChildIndex( int parentIndex ) { return ( parentIndex * 2 ) + 1; }
 		public static int GetParentIndex( int childIndex ) { return ( childIndex - 1 ) / 2; }
-		public static int GetRightIndexFromLeft( int leftIndex ) { return leftIndex + 1; }
+		public static int GetRightChildIndexFromLeft( int leftIndex ) { return leftIndex + 1; }
 	}
 
 	public class PriorityQueue<T> {
 		private const int DefaultCapacity = 16;
 
-		/// Returns true if left value have greater priority than right
-		/// 'new PriorityQueue<int>( ( x, y ) => x < y )' will sort in ascending order
-		private Functors.Func<T, T, bool> Comparer;
+		// Note:
+		// new PriorityQueue<int>( ( x, y ) => x.CompareTo( y ) ); - descending {30,20,10}
+		// new PriorityQueue<int>( ( x, y ) => -x.CompareTo( y ) ); - ascending {10,20,30}
+		// new PriorityQueue<int>( ( x, y ) => y.CompareTo( x ) ); - ascending {10,20,30}
+		private Functors.Func<T, T, int> Comparer;
 
 		private int _count;
 		private T[] _heap;
 
-		public PriorityQueue( Functors.Func<T, T, bool> comparer )
+		public PriorityQueue( Functors.Func<T, T, int> comparer )
 			: this( DefaultCapacity, comparer ) {
 		}
 
-		public PriorityQueue( int capacity, Functors.Func<T, T, bool> comparer ) {
+		public PriorityQueue( int capacity, Functors.Func<T, T, int> comparer ) {
 			if( !BitOperations.IsPowerOf2( capacity ) )
 				capacity = BitOperations.NextPowerOf2( capacity );
 
@@ -46,7 +48,6 @@ namespace System.Collections {
 				Enqueue( items[i] );
 		}
 
-
 		public void Enqueue( T value ) {
 			EnsureCapacity( 1 );
 
@@ -55,7 +56,7 @@ namespace System.Collections {
 			while( i > 0 ) {
 				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
 
-				if( !Comparer( value, _heap[parentIndex] ) )
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
 					break;
 
 				_heap[i] = _heap[parentIndex];
@@ -67,7 +68,7 @@ namespace System.Collections {
 		}
 
 		public T Dequeue() {
-			if( _count == 0 ) return default( T );
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 
 			var result = Top;
 
@@ -75,17 +76,59 @@ namespace System.Collections {
 				var i = 0;
 
 				for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
-					var rightChild = PriorityQueueCommon.GetRightIndexFromLeft( leftChild );
-					var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) ? rightChild : leftChild;
+					var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+					var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
 
 					_heap[i] = _heap[highestPriorityChild];
 					i = highestPriorityChild;
 				}
 
-				_heap[i] = _heap[_count - 1];
+				if( i != _count - 1 ) {
+					while( i > 0 ) {
+						var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+						if( Comparer( _heap[_count - 1], _heap[parentIndex] ) <= 0 )
+							break;
+
+						_heap[i] = _heap[parentIndex];
+						i = parentIndex;
+					}
+
+					_heap[i] = _heap[_count - 1];
+				}
 			}
 
 			--_count;
+			return result;
+		}
+
+		public T Replace( T value ) {
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
+
+			var result = Top;
+
+			var i = 0;
+
+			for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
+				var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+				var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
+
+				_heap[i] = _heap[highestPriorityChild];
+				i = highestPriorityChild;
+			}
+
+			while( i > 0 ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
+					break;
+
+				_heap[i] = _heap[parentIndex];
+				i = parentIndex;
+			}
+
+			_heap[i] = value;
+
 			return result;
 		}
 
@@ -136,9 +179,11 @@ namespace System.Collections {
 	public class TrackablePriorityQueue<T> {
 		private const int DefaultCapacity = 16;
 
-		/// Returns true if left value have greater priority than right
-		/// 'new PriorityQueue<int>( ( x, y ) => x < y )' will sort in ascending order
-		public readonly Functors.Func<T, T, bool> Comparer;
+		// Note:
+		// new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) ); - descending {30,20,10}
+		// new TrackablePriorityQueue<int>( ( x, y ) => -x.CompareTo( y ) ); - ascending {10,20,30}
+		// new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) ); - ascending {10,20,30}
+		public readonly Functors.Func<T, T, int> Comparer;
 
 		private int _count;
 		private T[] _heap;
@@ -146,11 +191,11 @@ namespace System.Collections {
 
 		private PoolIndexManager _trackingManager = new PoolIndexManager();
 
-		public TrackablePriorityQueue( Functors.Func<T, T, bool> comparer )
+		public TrackablePriorityQueue( Functors.Func<T, T, int> comparer )
 			: this( DefaultCapacity, comparer ) {
 		}
 
-		public TrackablePriorityQueue( int capacity, Functors.Func<T, T, bool> comparer ) {
+		public TrackablePriorityQueue( int capacity, Functors.Func<T, T, int> comparer ) {
 			if( !BitOperations.IsPowerOf2( capacity ) )
 				capacity = BitOperations.NextPowerOf2( capacity );
 
@@ -175,7 +220,7 @@ namespace System.Collections {
 			get {
 				if( !Assert.IsTrue( trackingIndex >= 0 && trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
 				var heapIndex = _trackingKeyToHeapMapping[trackingIndex];
-				if( !Assert.IsTrue( heapIndex >= 0 && heapIndex < _heap.Length ) ) return default( T );
+				if( !Assert.IsTrue( heapIndex >= 0 && heapIndex < _heap.Length ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
 				return _heap[heapIndex];
 			}
 		}
@@ -198,11 +243,11 @@ namespace System.Collections {
 				for( int i = _heapIndices.Count - 1; i >= 0; --i ) {
 					var newIndex = _heapIndices[i];
 
-					if( !Comparer( value, _heap[newIndex] ) ) {
+					if( Comparer( value, _heap[newIndex] ) < 0 ) {
 						_heapIndices.RemoveAt( i );
 
 						var leftIndex = PriorityQueueCommon.GetLeftChildIndex( newIndex );
-						var rightIndex = PriorityQueueCommon.GetRightIndexFromLeft( leftIndex );
+						var rightIndex = PriorityQueueCommon.GetRightChildIndexFromLeft( leftIndex );
 
 						if( leftIndex < _count ) { _heapIndices.Add( leftIndex ); ++i; }
 						if( rightIndex < _count ) { _heapIndices.Add( rightIndex ); ++i; }
@@ -225,6 +270,17 @@ namespace System.Collections {
 			return _heapToTrackingKeyMapping[resultIndex];
 		}
 
+		public bool IsValid() {
+			for( var i = 1; i < _count; ++i ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( _heap[i], _heap[parentIndex] ) > 0 )
+					return false;
+			}
+
+			return true;
+		}
+
 		public int Enqueue( T value ) {
 			EnsureCapacity( 1 );
 
@@ -234,7 +290,7 @@ namespace System.Collections {
 			while( i > 0 ) {
 				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
 
-				if( !Comparer( value, _heap[parentIndex] ) )
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
 					break;
 
 				_heap[i] = _heap[parentIndex];
@@ -251,14 +307,21 @@ namespace System.Collections {
 		}
 
 		public T Dequeue() {
-			return Remove( _heapToTrackingKeyMapping[0] );
+			return Remove( 0, _heapToTrackingKeyMapping[0] );
 		}
 
 		public T Remove( int trackingIndex ) {
-			if( _count == 0 ) return default( T );
+			return Remove( _trackingKeyToHeapMapping[trackingIndex], trackingIndex );
+		}
 
-			var heapIndex = _trackingKeyToHeapMapping[trackingIndex];
+		public void Replace( int trackingIndex, T value ) {
+			Replace( _trackingKeyToHeapMapping[trackingIndex], trackingIndex, value );
+		}
+
+		private T Remove( int heapIndex, int trackingIndex ) {
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 			if( !Assert.IsTrue( heapIndex >= 0 ) ) return default( T );
+			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
 
 			_trackingManager.Deallocate( trackingIndex );
 
@@ -269,8 +332,8 @@ namespace System.Collections {
 				var i = heapIndex;
 
 				for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
-					var rightChild = PriorityQueueCommon.GetRightIndexFromLeft( leftChild );
-					var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) ? rightChild : leftChild;
+					var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+					var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
 
 					_heap[i] = _heap[highestPriorityChild];
 					_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[highestPriorityChild]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[highestPriorityChild];
@@ -279,15 +342,59 @@ namespace System.Collections {
 				}
 
 				if( i != _count - 1 ) {
+					while( i > 0 ) {
+						var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+						if( Comparer( _heap[_count - 1], _heap[parentIndex] ) <= 0 )
+							break;
+
+						_heap[i] = _heap[parentIndex];
+						_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[parentIndex]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[parentIndex];
+
+						i = parentIndex;
+					}
+
 					_heap[i] = _heap[_count - 1];
 					_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[_count - 1]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[_count - 1];
 				}
-
-				_heapToTrackingKeyMapping[_count - 1] = -1;
 			}
 
+			_heapToTrackingKeyMapping[_count - 1] = -1;
 			--_count;
 			return result;
+		}
+
+		private void Replace( int heapIndex, int trackingIndex, T value ) {
+			if( !Assert.IsTrue( _count > 0 ) ) return;
+			if( !Assert.IsTrue( heapIndex >= 0 ) ) return;
+			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return;
+
+			var i = heapIndex;
+
+			for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
+				var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+				var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
+
+				_heap[i] = _heap[highestPriorityChild];
+				_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[highestPriorityChild]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[highestPriorityChild];
+
+				i = highestPriorityChild;
+			}
+
+			while( i > 0 ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
+					break;
+
+				_heap[i] = _heap[parentIndex];
+				_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[parentIndex]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[parentIndex];
+
+				i = parentIndex;
+			}
+
+			_heap[i] = value;
+			_trackingKeyToHeapMapping[trackingIndex] = i; _heapToTrackingKeyMapping[i] = trackingIndex;
 		}
 
 		public void EnsureCapacity( int count ) {
@@ -347,7 +454,7 @@ namespace System.Collections {
 				return ++_index < _count;
 			}
 
-			public T Current { get { return _parent[_index]; } }
+			public T Current { get { return _parent._heap[_index]; } }
 		}
 	}
 }

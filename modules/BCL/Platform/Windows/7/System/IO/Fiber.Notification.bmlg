@@ -11,6 +11,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 using Platform;
 using Platform.IO;
@@ -23,7 +24,7 @@ namespace System.IO {
 			private SystemErrorCode _asyncErrorCode;
 			private uint _asyncTransferred;
 
-			private int _alarmID;
+			private Dispatcher.AlarmUnbiased* _alarmID;
 
 			internal partial class Manager {
 				private System.Threading.Mutex _readyListAsyncLock = new System.Threading.Mutex();
@@ -44,11 +45,11 @@ namespace System.IO {
 				}
 				/// @}
 
-				private int BeginAlarm( TimeSpan interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
-					return CurrentEventLoop.BeginAlarm( interval, action, data, oneShot );
+				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+					return CurrentEventLoop.ScheduleUnbiased( interval, action, data );
 				}
 
-				private void RemoveAlarm( int alarmId ) {
+				private void EndTimeout( Dispatcher.AlarmUnbiased* alarmId ) {
 					CurrentEventLoop.RemoveAlarm( alarmId );
 				}
 

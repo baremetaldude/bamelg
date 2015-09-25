@@ -66,13 +66,15 @@ namespace Example {
 		public const int TcpConnectionPort = 8080;
 		public const Utf8String UnixConnectionPath = "/var/run/HttpServer.socket";
 
-		private const int FiberStackallocPages = 32;
+		private static int FiberStackallocPages = 32;
 
 		[EntryPoint]
 		private static void Main() {
 			// Memory.MultithreadedEnvironment = false; // do not use atomic ops
-			var eventLoop = new EventLoop();
+			var eventLoop = new EventLoop(){ Tracing = true };
 			eventLoop.CatchExitSignals();
+
+			if( System.Diagnostics.Valgrind.IsAttached ) FiberStackallocPages = 0; // VG like stack inside stack
 
 			if( FiberStackallocPages > 0 ) {
 				var fiberStack = new MemorySegment( stackalloc Memory.Page[FiberStackallocPages], ( uintptr ) FiberStackallocPages * sizeof( Memory.Page ) );

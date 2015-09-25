@@ -314,6 +314,33 @@ namespace System {
 			return -1;
 		}
 
+		public string TrimStart( char value ) {
+			var chars = GetChars();
+
+			if( chars[0] != value ) return this;
+
+			for( var i = 1; i < ( int ) Length; ++i ) {
+				if( chars[i] != value )
+					return Substring( i );
+			}
+
+			return Empty;
+		}
+
+		public string TrimEnd( char value ) {
+			if( Length == 0 ) return this;
+
+			var chars = GetChars();
+			if( chars[Length - 1] != value ) return this;
+
+			for( var i = ( int ) Length - 2; i >= 0; --i ) {
+				if( chars[i] != value )
+					return Substring( 0, i + 1 );
+			}
+
+			return Empty;
+		}
+
 		public string Substring( int startIndex ) {
 			return Substring( startIndex, ( int ) Length - startIndex );
 		}

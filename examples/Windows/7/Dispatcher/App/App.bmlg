@@ -12,25 +12,47 @@ namespace Example {
 	class Test {
 		[EntryPoint]
 		static void Main() {
-			using( var eventLoop = new EventLoop() ) {
+			using( var eventLoop = new EventLoop() { Tracing = true, TracingAlarmQueue = true } ) {
 				eventLoop.CatchConsoleQuit();
 
 				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
 				eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
 
-				// eventLoop.BeginInvoke( () => {
-				// 	Thread.Start( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
-				// 		eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
-				// 		eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
-				// 	} ).Join();
-				// } );
+				eventLoop.BeginInvoke( () => {
+					uint threadId;
 
-				eventLoop.BeginAlarm( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
+					var thread = new ThreadHandle( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
+						eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
+						eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
+					}, 0, CreateThreadFlags.None, threadId );
+
+					thread.Close();
+				} );
+
+				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
+					Console.WriteLine( "Unseen alarm" );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
+					eventLoop.RemoveAlarm( unseen );
+				} );
+
+				var alarm1 = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
 				} );
 
-				eventLoop.BeginUtcAlarm( TimeSpan.FromSeconds( 10 ), TimeSpan.FromSeconds( 1 ), () => {
+				var alarm2 = eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 3 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 6 ), () => {
+					Console.WriteLine( "Remove alarms" );
+					eventLoop.RemoveAlarm( alarm1 );
+					eventLoop.RemoveAlarm( alarm2 );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {
+					eventLoop.RequestExit();
 				} );
 
 				eventLoop.Dispatch(); // wait until RequestExit

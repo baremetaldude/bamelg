@@ -17,9 +17,9 @@ namespace Example {
 				Console.WriteLine( "Message from thread pool worker [{0}]", ThreadHandle.CurrentThreadID );
 			} );
 
-			ThreadPool.BeginInvoke<int>( x => {
+			ThreadPool.BeginInvoke( DPC.Create<int>( x => {
 				Console.WriteLine( "Message from thread pool worker [{0}] with walue {1}", ThreadHandle.CurrentThreadID, x );
-			}, 10 );
+			}, 10 ) );
 		}
 	}
 }

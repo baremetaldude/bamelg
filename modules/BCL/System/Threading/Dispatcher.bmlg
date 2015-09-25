@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -16,221 +17,350 @@ namespace System.Threading {
 		public Dispatcher() {
 		}
 
-		protected abstract void NotifyNewDispatcherTasks();
-		protected abstract void SetAlarm( AlarmKind kind, TimeSpan time );
-		protected abstract void StopAlarm( AlarmKind kind );
-		protected abstract bool IsDispatchingThread { get; }
+		#region thread-safe API
 
-		public DateTime NotificationStartTime, NotificationStartTimeUtc; // when first notification wake up blocking thread
+		#region unbiased alarms
 
-		protected TimeSpan GetWaitTime() {
-			var utcTimeout = GetWaitTime( AlarmKind.Utc );
-			var unbiasedTimeout = GetWaitTime( AlarmKind.Unbiased );
-			return utcTimeout < unbiasedTimeout ? utcTimeout : unbiasedTimeout;
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
 		}
 
-		protected TimeSpan GetWaitTime( AlarmKind kind ) {
-			switch( kind ) {
-				case AlarmKind.Utc:
-					if( _utcAlarms.Count > 0 ) {
-						var now = DateTime.UtcNow;
-						var dt = _utcAlarms.Top->Expiration - now;
-						
-						if( dt > TimeSpan.Zero )
-							return dt;
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + initialExpiration, interval, action );
+		}
 
-						// OnAlarm( AlarmKind.Utc, now, _utcAlarms );
-						return TimeSpan.Zero;
-					}
-					break;
+		public AlarmUnbiased* BeginAlarmUnbiased( DateTime initialExpirationUnbiased, TimeSpan interval, Functors.Action action ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, interval, action );
+		}
 
-				case AlarmKind.Unbiased:
-					if( _unbiasedAlarms.Count > 0 ) {
-						var now = DateTime.UnbiasedNow;
-						var dt = _unbiasedAlarms.Top->Expiration - now;
+		public AlarmUnbiased* ScheduleUnbiased( TimeSpan initialExpiration, Functors.Action action ) {
+			return ScheduleUnbiased( DateTime.UnbiasedNow + initialExpiration, action );
+		}
 
-						if( dt > TimeSpan.Zero )
-							return dt;
+		public AlarmUnbiased* ScheduleUnbiased( DateTime initialExpirationUnbiased, Functors.Action action ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, TimeSpan.Zero, action );
+		}
 
-						// OnAlarm( AlarmKind.Unbiased, now, _unbiasedAlarms );
-						return TimeSpan.Zero;
-					}
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action, data );
+		}
 
-					break;
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + initialExpiration, interval, action, data );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( DateTime initialExpirationUnbiased, TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, interval, action, null, data );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( TimeSpan initialExpiration, Functors.Action<void*> action, void* data ) {
+			return ScheduleUnbiased( DateTime.UnbiasedNow + initialExpiration, action, data );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( DateTime initialExpirationUnbiased, Functors.Action<void*> action, void* data ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, TimeSpan.Zero, action, null, data );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + initialExpiration, interval, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( DateTime initialExpirationUnbiased, TimeSpan interval, Delegates.Action action ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, interval, action );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( TimeSpan initialExpiration, Delegates.Action action ) {
+			return ScheduleUnbiased( DateTime.UnbiasedNow + initialExpiration, action );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( DateTime initialExpirationUnbiased, Delegates.Action action ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, TimeSpan.Zero, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, dpc );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + initialExpiration, interval, dpc );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiased( DateTime initialExpirationUnbiased, TimeSpan interval, DPC* dpc ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, interval, bitcast<Functors.Action<void*>>( dpc->OnAction ), bitcast<Functors.Action<void*>>( dpc->OnDispose ), dpc );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( TimeSpan initialExpiration, DPC* dpc ) {
+			return ScheduleUnbiased( DateTime.UnbiasedNow + initialExpiration, dpc );
+		}
+
+		public AlarmUnbiased* ScheduleUnbiased( DateTime initialExpirationUnbiased, DPC* dpc ) {
+			return ( AlarmUnbiased* ) BeginAlarm( AlarmKind.Unbiased, initialExpirationUnbiased, TimeSpan.Zero, bitcast<Functors.Action<void*>>( dpc->OnAction ), bitcast<Functors.Action<void*>>( dpc->OnDispose ), dpc );
+		}
+
+		public void RemoveAlarm( AlarmUnbiased*& alarm ) {
+			RemoveAlarm( AlarmKind.Unbiased, ( AlarmEntry* ) alarm );
+			alarm = null;
+		}
+
+		#endregion
+
+		#region UTC alarms
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow + initialExpiration, interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( DateTime initialExpirationUtc, TimeSpan interval, Functors.Action action ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, interval, action );
+		}
+
+		public AlarmUtc* ScheduleUtc( TimeSpan initialExpiration, Functors.Action action ) {
+			return ScheduleUtc( DateTime.UtcNow + initialExpiration, action );
+		}
+
+		public AlarmUtc* ScheduleUtc( DateTime initialExpirationUtc, Functors.Action action ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, TimeSpan.Zero, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action, data );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan initialExpiration, TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUtc( DateTime.UtcNow + initialExpiration, interval, action, data );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( DateTime initialExpirationUtc, TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, interval, action, null, data );
+		}
+
+		public AlarmUtc* ScheduleUtc( TimeSpan initialExpiration, Functors.Action<void*> action, void* data ) {
+			return ScheduleUtc( DateTime.UtcNow + initialExpiration, action, data );
+		}
+
+		public AlarmUtc* ScheduleUtc( DateTime initialExpirationUtc, Functors.Action<void*> action, void* data ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, TimeSpan.Zero, action, null, data );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow + initialExpiration, interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( DateTime initialExpirationUtc, TimeSpan interval, Delegates.Action action ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, interval, action );
+		}
+
+		public AlarmUtc* ScheduleUtc( TimeSpan initialExpiration, Delegates.Action action ) {
+			return ScheduleUtc( DateTime.UtcNow + initialExpiration, action );
+		}
+
+		public AlarmUtc* ScheduleUtc( DateTime initialExpirationUtc, Delegates.Action action ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, TimeSpan.Zero, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, dpc );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( TimeSpan initialExpiration, TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUtc( DateTime.UtcNow + initialExpiration, interval, dpc );
+		}
+
+		public AlarmUtc* BeginAlarmUtc( DateTime initialExpirationUtc, TimeSpan interval, DPC* dpc ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, interval, bitcast<Functors.Action<void*>>( dpc->OnAction ), bitcast<Functors.Action<void*>>( dpc->OnDispose ), dpc );
+		}
+
+		public AlarmUtc* ScheduleUtc( TimeSpan initialExpiration, DPC* dpc ) {
+			return ScheduleUtc( DateTime.UtcNow + initialExpiration, dpc );
+		}
+
+		public AlarmUtc* ScheduleUtc( DateTime initialExpirationUtc, DPC* dpc ) {
+			return ( AlarmUtc* ) BeginAlarm( AlarmKind.Utc, initialExpirationUtc, TimeSpan.Zero, bitcast<Functors.Action<void*>>( dpc->OnAction ), bitcast<Functors.Action<void*>>( dpc->OnDispose ), dpc );
+		}
+
+		public void RemoveAlarm( AlarmUtc*& alarm ) {
+			RemoveAlarm( AlarmKind.Utc, ( AlarmEntry* ) alarm );
+			alarm = null;
+		}
+
+		#endregion
+
+		#region tasks
+
+		public void BeginInvoke( Functors.Action action ) {
+			BeginInvoke( DPC.Create( action ) );
+		}
+
+		public void BeginInvoke<T0>( Functors.Action<T0> action, T0 p0 ) {
+			BeginInvoke( DPC.Create<T0>( action, p0 ) );
+		}
+
+		public void BeginInvoke( Delegates.Action action ) {
+			BeginInvoke( DPC.Create( action ) );
+		}
+
+		public void BeginInvoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			BeginInvoke( DPC.Create<T0>( action, p0 ) );
+		}
+
+		public void Invoke( Functors.Action action ) {
+			if( IsDispatchingThread ) {
+				action();
+				return;
 			}
 
-			return TimeSpan.MaxValue;
+			var wait = new Semaphore();
+			var task = new DPC<Functors.Action, Semaphore*> {
+				P0 = action,
+				P1 = &wait,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action, Semaphore*>* ) data;
+					passedTask->P0();
+					passedTask->P1->Post(); // task completed
+				},
+				OnDispose = null
+			};
+			task.OnActionDispose = task.OnAction;
+
+			BeginInvoke( &task );
+			wait.Wait(); // wait for task completion
 		}
 
-		private struct TaskEntry {
-			public TaskEntry* Next;
-			public Functors.Action<TaskEntry*> Action;
+		public void Invoke<T0>( Functors.Action<T0> action, T0 p0 ) {
+			if( IsDispatchingThread ) {
+				action( p0 );
+				return;
+			}
+
+			var wait = new Semaphore();
+			var task = new DPC<Functors.Action<T0>, T0, Semaphore*> {
+				P0 = action,
+				P1 = p0,
+				P2 = &wait,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action<T0>, T0, Semaphore*>* ) data;
+					passedTask->P0( passedTask->P1 );
+					passedTask->P2->Post(); // task completed
+				},
+				OnDispose = null
+			};
+			task.OnActionDispose = task.OnAction;
+
+			BeginInvoke( &task );
+			wait.Wait(); // wait for task completion
 		}
 
-		private struct TaskEntry<T0> : TaskEntry { public T0 P0; }
-		private struct TaskEntry<T0, T1> : TaskEntry { public T0 P0; public T1 P1; }
-		private struct TaskEntry<T0, T1, T2> : TaskEntry { public T0 P0; public T1 P1; public T2 P2; }
+		public void Invoke( Delegates.Action action ) {
+			if( IsDispatchingThread ) {
+				action();
+				return;
+			}
 
-		protected enum AlarmKind {
+			var wait = new Semaphore();
+			var task = new DPC<Delegates.Action, Semaphore*> {
+				P0 = action,
+				P1 = &wait,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action, Semaphore*>* ) data;
+					passedTask->P0();
+					passedTask->P1->Post(); // task completed
+				},
+				OnDispose = null
+			};
+			task.OnActionDispose = task.OnAction;
+
+			BeginInvoke( &task );
+			wait.Wait(); // wait for task completion
+		}
+
+		public void Invoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			if( IsDispatchingThread ) {
+				action( p0 );
+				return;
+			}
+
+			var wait = new Semaphore();
+			var task = new DPC<Delegates.Action<T0>, T0, Semaphore*> {
+				P0 = action,
+				P1 = p0,
+				P2 = &wait,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action<T0>, T0, Semaphore*>* ) data;
+					passedTask->P0( passedTask->P1 );
+					passedTask->P2->Post(); // task completed
+				},
+				OnDispose = null
+			};
+			task.OnActionDispose = task.OnAction;
+
+			BeginInvoke( &task );
+			wait.Wait(); // wait for task completion
+		}
+
+		#endregion
+
+		#endregion
+
+		#region impl
+
+		private Mutex _taskLock = new Mutex();
+		private DPC* _taskHead = null, _taskTail = null;
+
+		private Mutex _alarmLock = new Mutex();
+		private PagedPool<AlarmEntry> _alarmsPool = new PagedPool<AlarmEntry>();
+		private List<AlarmExecuteInfo> _freedAlarms = new List<AlarmExecuteInfo>();
+		private TrackablePriorityQueue<AlarmEntry*> _utcAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => y->Expiration.CompareTo( x->Expiration ) );
+		private TrackablePriorityQueue<AlarmEntry*> _unbiasedAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => y->Expiration.CompareTo( x->Expiration ) );
+
+		private List<AlarmExecuteInfo> _readyAlarms = new List<AlarmExecuteInfo>();
+
+		private enum AlarmKind {
 			Utc,
 			Unbiased,
 		}
 
-		private struct AlarmEntry {
-			public DateTime Expiration;
+		private struct AlarmExecuteInfo {
+			public Functors.Action<void*> Action;
+			public void* Payload;
+		}
+
+		private struct AlarmEntry : AlarmExecuteInfo, IFormattable {
+			public Functors.Action<void*> Dispose;
+
+			public long Expiration;
 			public TimeSpan Period;
 
-			public Functors.Action<void*> Action;
-			public Functors.Action<void*> Dispose;
-			public void* Payload;
+			public int TrackingIndex;
 
-			public bool OneShot { get; set; }
+			public bool IsOneShot { get { return Period == TimeSpan.Zero; } }
 
 			~AlarmEntry() {
 				if( Dispose != null ) Dispose( Payload );
 			}
-		}
 
-		private Mutex _lock = new Mutex();
-
-		private Mutex _taskLock = new Mutex();
-		private TaskEntry* _taskHead = null, _taskTail = null;
-
-		private PagedPool<AlarmEntry> _alarmsPool = new PagedPool<AlarmEntry>();
-		private TrackablePriorityQueue<AlarmEntry*> _utcAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => x->Expiration < y->Expiration );
-		private TrackablePriorityQueue<AlarmEntry*> _unbiasedAlarms = new TrackablePriorityQueue<AlarmEntry*>( ( x, y ) => x->Expiration < y->Expiration );
-
-		public void ExecuteTasks() {
-			TaskEntry* first = null;
-
-			using( _taskLock.LockRegion() ) {
-				first = _taskHead;
-				_taskHead = _taskTail = null;
-			}
-
-			for( var task = first; task != null; ) {
-				var next = task->Next;
-				task->Action( task );
-				task = next;
+			public void ToString( StringBuilder builder, string format ) {
+				builder.Append( &this );
+				builder.AppendFormat( @"( ""{0}"",""{1}"", {2} )", new DateTime( Expiration ), Period, TrackingIndex );
 			}
 		}
 
-		private void OnAlarm( AlarmKind kind, DateTime time, TrackablePriorityQueue<AlarmEntry*> alarms ) {
-			while( alarms.Count > 0 ) {
-				var alarm = alarms.Peek();
-				if( alarm->Expiration >= time )
-					break;
-
-				var expirations = ( time - alarm->Expiration ).Ticks / alarm->Period.Ticks;
-				alarm->Action( alarm->Payload );
-
-				alarms.Dequeue();
-
-				if( alarm->OneShot ) {
-					_alarmsPool.Free( alarm );
-				}
-				else {
-					alarm->Expiration += alarm->Period * ( expirations + 1 );
-					alarms.Enqueue( alarm );
-				}
-			}
-
-			if( alarms.Count == 0 ) StopAlarm( kind );
-			else SetAlarm( kind, alarms.Peek()->Expiration - time );
+		private AlarmEntry* BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action action ) {
+			return BeginAlarm( kind, initialExpiration, interval, passedData => bitcast<Functors.Action>( passedData )(), null, bitcast<void*>( action ) );
 		}
 
-		public void OnUtcAlarm() {
-			OnAlarm( AlarmKind.Utc, NotificationStartTimeUtc, _utcAlarms );
-		}
-
-		public void OnUnbiasedAlarm() {
-			OnAlarm( AlarmKind.Unbiased, NotificationStartTime, _unbiasedAlarms );
-		}
-
-		private void UpdateUtcAlarms() {
-			var now = DateTime.UtcNow;
-			var dt = _utcAlarms.Top->Expiration - now;
-
-			if( dt > TimeSpan.Zero )
-				SetAlarm( AlarmKind.Utc, dt );
-			else
-				OnAlarm( AlarmKind.Utc, now, _utcAlarms );
-		}
-
-		private void UpdateUnbiasedAlarms() {
-			var now = DateTime.UnbiasedNow;
-			var dt = _unbiasedAlarms.Top->Expiration - now;
-
-			if( dt > TimeSpan.Zero )
-				SetAlarm( AlarmKind.Unbiased, dt );
-			else
-				OnAlarm( AlarmKind.Unbiased, now, _unbiasedAlarms );
-		}
-
-		/// @{ thread-safe
-
-		/// @{ unbiased
-		public int BeginAlarm( TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-			return BeginAlarm( interval, interval, action, oneShot );
-		}
-
-		public int BeginAlarm( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-			return BeginAlarm( AlarmKind.Unbiased, DateTime.UnbiasedNow + initialExpiration, interval, action, oneShot );
-		}
-
-		public int BeginAlarm( TimeSpan interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
-			return BeginAlarm( interval, interval, action, data, oneShot );
-		}
-
-		public int BeginAlarm( TimeSpan initialExpiration, TimeSpan interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
-			return BeginAlarm( AlarmKind.Unbiased, DateTime.UnbiasedNow + initialExpiration, interval, action, null, data, oneShot );
-		}
-
-		public int BeginAlarm( TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-			return BeginAlarm( interval, interval, action, oneShot );
-		}
-
-		public int BeginAlarm( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-			return BeginAlarm( AlarmKind.Unbiased, DateTime.UnbiasedNow + initialExpiration, interval, action, oneShot );
-		}
-
-		public void RemoveAlarm( int alarmId ) {
-			RemoveAlarm( AlarmKind.Unbiased, alarmId );
-		}
-		/// @}
-
-
-		/// @{ UTC
-		public int BeginUtcAlarm( TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-			return BeginAlarm( interval, interval, action, oneShot );
-		}
-
-		public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-			return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
-		}
-
-		public int BeginUtcAlarm( TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-			return BeginUtcAlarm( interval, interval, action, oneShot );
-		}
-
-		public int BeginUtcAlarm( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
-			return BeginAlarm( AlarmKind.Utc, DateTime.UtcNow + initialExpiration, interval, action, oneShot );
-		}
-
-		public void RemoveUtcAlarm( int alarmId ) {
-			RemoveAlarm( AlarmKind.Utc, alarmId );
-		}
-		/// @}
-
-		/// @{ impl
-		private int BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action action, bool oneShot = false ) {
-			return BeginAlarm( kind, initialExpiration, interval, passedData => {
-				var passedAction = bitcast<Functors.Action>( passedData );
-				passedAction();
-			}, null, bitcast<void*>( action ), oneShot );
-		}
-
-		private int BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Delegates.Action action, bool oneShot = false ) {
+		private AlarmEntry* BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Delegates.Action action ) {
 			cast<RuntimeObjectBase>( action ).AddReference();
 
 			return BeginAlarm( kind, initialExpiration, interval, passedData => {
@@ -239,66 +369,91 @@ namespace System.Threading {
 			}, passedData => {
 				var& passedAction = *( Delegates.Action* ) &passedData; // dont touch refcount here
 				cast<RuntimeObjectBase>( passedAction ).ReleaseReference();
-			}, bitcast<void*>( action ), oneShot );
+			}, bitcast<void*>( action ) );
 		}
 
-		private int BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action<void*> action, Functors.Action<void*> dispose, void* payload, bool oneShot = false ) {
-			using( _lock.LockRegion() ) { // guard _alarmsPool
+		private AlarmEntry* BeginAlarm( AlarmKind kind, DateTime initialExpiration, TimeSpan interval, Functors.Action<void*> action, Functors.Action<void*> dispose, void* payload ) {
+			if( !Assert.IsTrue( interval >= TimeSpan.Zero ) ) return null;
+
+			using( _alarmLock.LockRegion() ) {
 				var alarm = _alarmsPool.Allocate();
 
-				alarm->Expiration = initialExpiration;
+				alarm->Expiration = initialExpiration.Ticks;
 				alarm->Period = interval;
-				alarm->OneShot = oneShot;
 
 				alarm->Action = action;
 				alarm->Dispose = dispose;
 				alarm->Payload = payload;
 
-				int trackingIndex;
 				switch( kind ) {
 					case AlarmKind.Unbiased:
-						trackingIndex = _unbiasedAlarms.Enqueue( alarm );
-						if( _unbiasedAlarms.Top == alarm ) UpdateUnbiasedAlarms();
+						alarm->TrackingIndex = _unbiasedAlarms.Enqueue( alarm );
+						if( _unbiasedAlarms.Top == alarm ) NotifyNewDispatcherTasks();
 						break;
 
 					case AlarmKind.Utc:
-						trackingIndex = _utcAlarms.Enqueue( alarm );
-						if( _utcAlarms.Top == alarm ) UpdateUtcAlarms();
+						alarm->TrackingIndex = _utcAlarms.Enqueue( alarm );
+						if( _utcAlarms.Top == alarm ) NotifyNewDispatcherTasks();
 						break;
 				}
 
-				return trackingIndex;
+				TraceAlarmAdd( alarm );
+				return alarm;
 			}
 		}
 
-		private void RemoveAlarm( AlarmKind kind, int alarmId ) {
-			using( _lock.LockRegion() ) { // guard _alarmsPool
-				AlarmEntry* alarm;
+		private void RemoveAlarm( AlarmKind kind, AlarmEntry* alarm ) {
+			if( alarm == null ) return;
 
-				int trackingIndex;
+			var update = false;
+
+			using( _alarmLock.LockRegion() ) {
+				if( alarm->TrackingIndex == -1 ) return;
+
+				AlarmEntry* removed;
+
 				switch( kind ) {
 					case AlarmKind.Unbiased:
-						alarm = _unbiasedAlarms[alarmId];
-						var update = _unbiasedAlarms.Top == alarm;
-						_unbiasedAlarms.Remove( alarmId );
-						if( update ) UpdateUnbiasedAlarms();
+						update = _unbiasedAlarms.Top == alarm;
+						removed = _unbiasedAlarms.Remove( alarm->TrackingIndex );
 						break;
 
 					case AlarmKind.Utc:
-						alarm = _utcAlarms[alarmId];
-						var update = _utcAlarms.Top == alarm;
-						_utcAlarms.Remove( alarmId );
-						if( update ) UpdateUtcAlarms();
+						update = _utcAlarms.Top == alarm;
+						removed = _utcAlarms.Remove( alarm->TrackingIndex );
 						break;
 				}
 
-				_alarmsPool.Free( alarm );
-			}
-		}
-		/// @}
-		/// @}
+				TraceAlarmRemoved( alarm );
 
-		private void Enqueue( TaskEntry* task ) {
+				alarm->TrackingIndex = -1;
+
+				if( removed == alarm ) {
+					if( alarm->Dispose != null ) {
+						_freedAlarms.Add( new AlarmExecuteInfo { Payload = alarm->Payload, Action = alarm->Dispose } );
+						alarm->Dispose = null;
+					}
+
+					_alarmsPool.Free( alarm );
+				}
+				else
+					Debug.Fail( "Bad alarm specified" );
+			}
+
+			if( update ) NotifyNewDispatcherTasks();
+		}
+
+		private void DumpAlarms() {
+			Assert.IsTrue( _unbiasedAlarms.IsValid() );
+			foreach( var alarm in _unbiasedAlarms )
+				Console.WriteLine( "Unbiased alarm: {0}", *alarm );
+
+			Assert.IsTrue( _utcAlarms.IsValid() );
+			foreach( var alarm in _utcAlarms )
+				Console.WriteLine( "UTC alarm:      {0}", *alarm );
+		}
+
+		public void BeginInvoke( DPC* task ) {
 			task->Next = null;
 
 			using( _taskLock.LockRegion() ) {
@@ -314,144 +469,203 @@ namespace System.Threading {
 			NotifyNewDispatcherTasks();
 		}
 
-		public void BeginInvoke( Functors.Action action ) {
-			var task = heapalloc TaskEntry<Functors.Action> {
-				P0 = action,
-				Action = data => {
-					var passedTask = ( TaskEntry<Functors.Action>* ) data;
-					passedTask->P0();
-					heapfree passedTask;
-				}
-			};
+		#endregion
 
-			Enqueue( task );
-		}
+		#region event loop integration
 
-		public void BeginInvoke<T0>( Functors.Action<T0> action, T0 p0 ) {
-			var task = heapalloc TaskEntry<Functors.Action<T0>, T0> {
-				P0 = action,
-				P1 = p0,
-				Action = data => {
-					var passedTask = ( TaskEntry<Functors.Action<T0>, T0>* ) data;
-					passedTask->P0( passedTask->P1 );
-					heapfree passedTask;
-				}
-			};
+		protected abstract void NotifyNewDispatcherTasks();
+		protected abstract bool IsDispatchingThread { get; }
 
-			Enqueue( task );
-		}
+		public DateTime UnbiasedNow, UtcNow; // when first notification wake up blocking thread
 
-		public void BeginInvoke( Delegates.Action action ) {
-			var task = heapalloc TaskEntry<Delegates.Action> {
-				P0 = action,
-				Action = data => {
-					var passedTask = ( TaskEntry<Delegates.Action>* ) data;
-					passedTask->P0();
-					heapfree passedTask;
-				}
-			};
+		public struct AlarmUtc { }
+		public struct AlarmUnbiased { }
 
-			Enqueue( task );
-		}
+		public void ExecuteTasks() {
+			DPC* first = null;
 
-		public void BeginInvoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
-			var task = heapalloc TaskEntry<Delegates.Action<T0>, T0> {
-				P0 = action,
-				P1 = p0,
-				Action = data => {
-					var passedTask = ( TaskEntry<Delegates.Action<T0>, T0>* ) data;
-					passedTask->P0( passedTask->P1 );
-					heapfree passedTask;
-				}
-			};
-
-			Enqueue( task );
-		}
-
-		public void Invoke( Functors.Action action ) {
-			if( IsDispatchingThread ) {
-				action();
-				return;
+			using( _taskLock.LockRegion() ) {
+				first = _taskHead;
+				_taskHead = _taskTail = null;
 			}
 
-			var wait = new Semaphore();
-			var task = new TaskEntry<Functors.Action, Semaphore*> {
-				P0 = action,
-				P1 = &wait,
-				Action = data => {
-					var passedTask = ( TaskEntry<Functors.Action, Semaphore*>* ) data;
-					passedTask->P0();
-					passedTask->P1->Post(); // task completed
-				}
-			};
-
-			Enqueue( &task );
-			wait.Wait(); // wait for task completion
+			for( var task = first; task != null; ) {
+				var next = task->Next;
+				DPC.RunAndDispose( task );
+				task = next;
+			}
 		}
 
-		public void Invoke<T0>( Functors.Action<T0> action, T0 p0 ) {
-			if( IsDispatchingThread ) {
-				action( p0 );
-				return;
+		public void CancelTasks() {
+			DPC* first = null;
+
+			using( _taskLock.LockRegion() ) {
+				first = _taskHead;
+				_taskHead = _taskTail = null;
 			}
 
-			var wait = new Semaphore();
-			var task = new TaskEntry<Functors.Action<T0>, T0, Semaphore*> {
-				P0 = action,
-				P1 = p0,
-				P2 = &wait,
-				Action = data => {
-					var passedTask = ( TaskEntry<Functors.Action<T0>, T0, Semaphore*>* ) data;
-					passedTask->P0( passedTask->P1 );
-					passedTask->P2->Post(); // task completed
-				}
-			};
-
-			Enqueue( &task );
-			wait.Wait(); // wait for task completion
+			for( var task = first; task != null; ) {
+				var next = task->Next;
+				DPC.Dispose( task );
+				task = next;
+			}
 		}
 
-		public void Invoke( Delegates.Action action ) {
-			if( IsDispatchingThread ) {
-				action();
-				return;
+		private void OnAlarm( AlarmKind kind, DateTime time, TrackablePriorityQueue<AlarmEntry*> alarms ) {
+			var ticks = time.Ticks;
+			var isQueueUpdated = alarms.Count > 0 && alarms.Peek()->Expiration <= ticks;
+
+			while( alarms.Count > 0 ) {
+				var alarm = alarms.Peek();
+				if( alarm->Expiration > ticks )
+					break;
+
+				_readyAlarms.Add( *alarm );
+
+				TraceAlarmReady( alarm );
+				// modification = true;
+
+				if( alarm->IsOneShot ) {
+					alarms.Dequeue();
+
+					if( alarm->Dispose != null ) {
+						_readyAlarms.Add( new AlarmExecuteInfo { Payload = alarm->Payload, Action = alarm->Dispose } );
+						alarm->Dispose = null;
+					}
+
+					alarm->TrackingIndex = -1;
+					_alarmsPool.Free( alarm );
+				}
+				else {
+					var expirations = ( ticks - alarm->Expiration ) / alarm->Period.Ticks;
+					alarm->Expiration += alarm->Period.Ticks * ( expirations + 1 ); // heap now invalid
+
+					alarms.Replace( alarm->TrackingIndex, alarm );
+				}
 			}
 
-			var wait = new Semaphore();
-			var task = new TaskEntry<Delegates.Action, Semaphore*> {
-				P0 = action,
-				P1 = &wait,
-				Action = data => {
-					var passedTask = ( TaskEntry<Delegates.Action, Semaphore*>* ) data;
-					passedTask->P0();
-					passedTask->P1->Post(); // task completed
-				}
-			};
-
-			Enqueue( &task );
-			wait.Wait(); // wait for task completion
+			if( isQueueUpdated ) TraceAlarmQueueUpdate();
 		}
 
-		public void Invoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
-			if( IsDispatchingThread ) {
-				action( p0 );
-				return;
+		protected void FinalizeAlarms() {
+			using( _alarmLock.LockRegion() ) {
+				foreach( var alarm in _freedAlarms )
+					alarm.Action( alarm.Payload );
+
+				_freedAlarms.Clear();
+				_utcAlarms.Clear();
+				_unbiasedAlarms.Clear();
+			}
+		}
+
+		protected bool FindReadyAlarms() {
+			_readyAlarms.Clear();
+
+			using( _alarmLock.LockRegion() ) {
+				foreach( var alarm in _freedAlarms )
+					alarm.Action( alarm.Payload );
+				_freedAlarms.Clear();
+
+				OnAlarm( AlarmKind.Utc, UtcNow, _utcAlarms );
+				OnAlarm( AlarmKind.Unbiased, UnbiasedNow, _unbiasedAlarms );
 			}
 
-			var wait = new Semaphore();
-			var task = new TaskEntry<Delegates.Action<T0>, T0, Semaphore*> {
-				P0 = action,
-				P1 = p0,
-				P2 = &wait,
-				Action = data => {
-					var passedTask = ( TaskEntry<Delegates.Action<T0>, T0, Semaphore*>* ) data;
-					passedTask->P0( passedTask->P1 );
-					passedTask->P2->Post(); // task completed
-				}
-			};
-
-			Enqueue( &task );
-			wait.Wait(); // wait for task completion
+			return _readyAlarms.Count > 0;
 		}
+
+		protected void ExecuteReadyAlarms() {
+			foreach( var alarm in _readyAlarms )
+				alarm.Action( alarm.Payload );
+
+			_readyAlarms.Clear();
+		}
+
+		protected void OnAlarm() {
+			if( FindReadyAlarms() )
+				ExecuteReadyAlarms();
+		}
+
+		protected TimeSpan GetWaitTime() {
+			using( _alarmLock.LockRegion() ) {
+				var utcTimeout = GetWaitTime( AlarmKind.Utc );
+				var unbiasedTimeout = GetWaitTime( AlarmKind.Unbiased );
+				return utcTimeout < unbiasedTimeout ? utcTimeout : unbiasedTimeout;
+			}
+		}
+
+		private TimeSpan GetWaitTime( AlarmKind kind ) {
+			switch( kind ) {
+				case AlarmKind.Utc:
+					if( _utcAlarms.Count > 0 ) {
+						var dt = new TimeSpan( _utcAlarms.Top->Expiration - DateTime.UtcNow.Ticks );
+
+						if( dt > TimeSpan.Zero )
+							return dt;
+
+						return TimeSpan.Zero;
+					}
+					break;
+
+				case AlarmKind.Unbiased:
+					if( _unbiasedAlarms.Count > 0 ) {
+						var dt = new TimeSpan( _unbiasedAlarms.Top->Expiration - DateTime.UnbiasedNow.Ticks );
+
+						if( dt > TimeSpan.Zero )
+							return dt;
+
+						return TimeSpan.Zero;
+					}
+
+					break;
+			}
+
+			return TimeSpan.MaxValue;
+		}
+
+		#endregion
+
+		#region tracing
+
+		protected const string TraceConditionString = "TRACE";
+
+		public bool Tracing { get; set; }
+		public bool TracingAlarmQueue { get; set; }
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceAlarmAdd( AlarmEntry* alarm ) {
+			if( !Tracing ) return;
+
+			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
+			}, "Dispatcher: Alarm {0} added", *alarm );
+
+			if( TracingAlarmQueue ) DumpAlarms();
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceAlarmRemoved( AlarmEntry* alarm ) {
+			if( !Tracing ) return;
+
+			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
+			}, "Dispatcher: Alarm {0} removed", *alarm );
+
+			if( TracingAlarmQueue ) DumpAlarms();
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceAlarmReady( AlarmEntry* alarm ) {
+			if( !Tracing ) return;
+
+			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
+			}, "Dispatcher: Alarm {0} ready", alarm );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceAlarmQueueUpdate() {
+			if( !TracingAlarmQueue ) return;
+
+			if( TracingAlarmQueue ) DumpAlarms();
+		}
+
+		#endregion
 	}
 }

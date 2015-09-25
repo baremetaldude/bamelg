@@ -9,6 +9,7 @@
 using System;
 using System.Collections;
 using System.Diagnostics;
+using System.Threading;
 
 using Platform.IO;
 using Platform.Kernel;
@@ -21,7 +22,7 @@ namespace System.IO {
 			private IOHandle _waitHandle;
 			private EPOLL_EVENTS _waitEvents;
 
-			private int _alarmID;
+			private Dispatcher.AlarmUnbiased* _alarmID;
 
 			internal partial class Manager {
 				private System.Threading.Mutex _readyListAsyncLock = new System.Threading.Mutex();
@@ -69,11 +70,11 @@ namespace System.IO {
 					}
 				}
 
-				private int BeginAlarm( TimeSpan interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
-					return CurrentEventLoop.BeginAlarm( interval, action, data, oneShot );
+				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeSpan interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
+					return CurrentEventLoop.ScheduleUnbiased( interval, action, data );
 				}
 
-				private void RemoveAlarm( int alarmId ) {
+				private void EndTimeout( Dispatcher.AlarmUnbiased* alarmId ) {
 					CurrentEventLoop.RemoveAlarm( alarmId );
 				}
 
@@ -338,8 +339,6 @@ namespace System.IO {
 				}
 
 				private sealed class FiberIOEventSink : EventLoop.EventSink {
-					public override IOHandle EventHandle { get { return _manager.Epoll; } }
-
 					private Manager _manager;
 
 					public override void OnEvent( epoll_event& @event ) { _manager.OnEvent(); }
@@ -349,6 +348,7 @@ namespace System.IO {
 						_listenedEvents = EPOLL_EVENTS.EPOLLIN;
 
 						_manager = manager;
+						EventHandle = _manager.Epoll;
 					}
 
 					public override void Dispose() {

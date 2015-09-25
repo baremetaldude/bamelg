@@ -4,6 +4,7 @@
 // See license at http://bamelg.com/license.txt
 //
 
+using System.Diagnostics;
 using System.Runtime;
 
 namespace System.Collections {
@@ -30,7 +31,7 @@ namespace System.Collections {
 		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
 
 		public PagedQueue() {
-			Assert.IsTrue( typeof( T ).IsStruct | typeof( T ).IsFixedArray ); // PagedQueue<T> designed to be used with structs
+			Assert.IsTrue( typeof( T ).IsStruct | typeof( T ).IsFixedArray ); // PagedQueue<T> designed to be use with structs
 			Assert.IsTrue( BlockSize > 2 ); // Dont use big structures
 
 			AllocatePage();
@@ -49,6 +50,22 @@ namespace System.Collections {
 
 			if( _freePage != null )
 				FreePage( _freePage );
+		}
+
+		public T* First {
+			get {
+				if( !Assert.IsTrue( _firstPage->Count > 0 ) ) return null;
+
+				return _firstPage->Elements + _firstPage->Head;
+			}
+		}
+
+		public T* Last {
+			get {
+				if( !Assert.IsTrue( _lastPage->Count > 0 ) ) return null;
+
+				return _lastPage->Elements + ( _lastPage->Tail > 0 ? _lastPage->Tail - 1 : BlockSize - 1 );
+			}
 		}
 
 		private PageInfo* AllocatePage() {
@@ -98,6 +115,33 @@ namespace System.Collections {
 			return result;
 		}
 
+		private static PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
+
+		public T* GetNext( T* value ) {
+			if( value == null ) return null;
+
+			var page = GetPageInfo( value );
+			Debug.Assert( page->Parent == this );
+			Debug.Assert( page->Count > 0 );
+
+			var index = value - page->Elements;
+			Debug.Assert( index >= 0 );
+			Debug.Assert( index < BlockSize );
+
+			var newIndex = index + 1;
+			if( newIndex == BlockSize ) newIndex = 0;
+
+			if( newIndex >= page->Tail ) {
+				var nextPage = page->Next;
+				if( nextPage == null ) return null;
+				if( nextPage->Count == 0 ) return null;
+
+				return nextPage->Elements + nextPage->Head;
+			}
+
+			return page->Elements + newIndex;
+		}
+
 		public void* Dequeue() {
 			CommonCollectionOperations.UpdateVersion( &_version );
 
@@ -105,7 +149,6 @@ namespace System.Collections {
 			if( result == null ) return null;
 
 			if( _firstPage->Count == 0 ) {
-				Console.WriteLine( "aha!" );
 				var next = _firstPage->Next;
 
 				if( _freePage == null )
@@ -159,8 +202,6 @@ namespace System.Collections {
 			public declaringtype Parent;
 			public PageInfo* Next;
 
-			public byte* Indices { get { return bitcast<byte*>( &this ) - BlockSize; } }
-
 			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( Memory.DefaultPageReserveSize - 1 ) ); } }
 
 			public int Tail, Head, Count;
@@ -173,6 +214,7 @@ namespace System.Collections {
 			if( page->Tail >= BlockSize ) page->Tail = 0;
 
 			++page->Count;
+			++Count;
 			CommonCollectionOperations.UpdateVersion( &_version );
 
 			Memory.Clear( result, sizeof( T ) );
@@ -182,7 +224,7 @@ namespace System.Collections {
 
 		// Remove first element from queue, returns deleted ptr
 		private void* Dequeue( PageInfo* page ) {
-			if( !Assert.IsTrue( page->Count != 0 ) ) return null;
+			if( !Assert.IsTrue( page->Count > 0 ) ) return null;
 
 			var result = page->Elements + page->Head;
 
@@ -190,6 +232,7 @@ namespace System.Collections {
 			++page->Head;
 			if( page->Head >= BlockSize ) page->Head = 0;
 			--page->Count;
+			--Count;
 			CommonCollectionOperations.UpdateVersion( &_version );
 
 			return result;

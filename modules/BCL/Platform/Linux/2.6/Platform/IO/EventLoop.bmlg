@@ -9,6 +9,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime;
+using System.Threading;
 
 using Platform.Kernel;
 using Platform.Libc;
@@ -37,11 +38,11 @@ namespace Platform.IO {
 			}
 
 			_dispatchThread = pthread_t.CurrentThread;
-			InitDispatcher();
+			// InitDispatcher();
 		}
 
 		public override void Dispose() {
-			CloseDispatcher();
+			// CloseDispatcher();
 
 			Epoll.Close();
 			foreach( var eventSink in _eventSinks ) eventSink.Dispose();
@@ -72,8 +73,16 @@ namespace Platform.IO {
 						break;
 				}
 
+				var pollTimeout = -1;
+
+				var alarmTimeout = GetWaitTime();
+				if( alarmTimeout != TimeSpan.MaxValue ) {
+					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
+					pollTimeout = newTimeout;
+				}
+
 				atomic( ++PollId, Relaxed );
-				var polledDescriptors = LibcApi.epoll_wait( Epoll, &_signalledEvents[0], _signalledEvents.Length, -1 );
+				var polledDescriptors = LibcApi.epoll_wait( Epoll, &_signalledEvents[0], _signalledEvents.Length, pollTimeout );
 
 				if( polledDescriptors < 0 ) {
 					switch( LibcApi.LastError ) {
@@ -108,8 +117,9 @@ namespace Platform.IO {
 		}
 
 		private void NotifyEventSinks( int polledDescriptors ) {
-			NotificationStartTime = DateTime.UnbiasedNow;
-			NotificationStartTimeUtc = DateTime.UtcNow;
+			UnbiasedNow = DateTime.UnbiasedNow;
+			UtcNow = DateTime.UtcNow;
+			OnAlarm();
 
 			TraceEventsArrived( polledDescriptors );
 
@@ -132,7 +142,7 @@ namespace Platform.IO {
 			public EPOLL_EVENTS _listenedEvents;
 
 			public EventLoop Parent;
-			public abstract IOHandle EventHandle { get; }
+			public IOHandle EventHandle;
 
 			/// @{
 			public void Register( bool subscribe = true ) { Register( EventHandle, subscribe ); }
@@ -152,12 +162,10 @@ namespace Platform.IO {
 			public abstract void OnEvent( epoll_event& @event );
 
 			public EventSink( EventLoop parent ) {
-				// *( void** ) &Parent = bitcast<void*>( parent );
 				Parent = parent;
 			}
 
 			public override void Dispose() {
-				// *( void** ) &Parent = null;
 				Parent = null;
 
 				base.Dispose();
@@ -178,18 +186,18 @@ namespace Platform.IO {
 				if( subscribe ) Subscribe( handle );
 				Parent._eventSinks.Add( this );
 
-				TraceEventSinkRegistered( this );
+				Parent.TraceEventSinkRegistered( this );
 			}
 
 			protected void NotifyEventModification( IOHandle handle ) {
 				EnsureEventSinkRegistered();
 				Parent.Epoll.Modify( handle, new epoll_event { Events = _listenedEvents, Data = bitcast<void*>( this ) } );
 
-				TraceEventSinkModified( this );
+				Parent.TraceEventSinkModified( this );
 			}
 
 			protected void Unregister( IOHandle handle ) {
-				TraceEventSinkUnregistered( this );
+				Parent.TraceEventSinkUnregistered( this );
 
 				EnsureEventSinkRegistered();
 				Unsubscribe( handle );
@@ -211,8 +219,6 @@ namespace Platform.IO {
 
 		// used for internal purposes
 		private class NotificationEmitter : EventSink {
-			public override IOHandle EventHandle { get { return _notificationPipe[PipeHandle.ReadEnd]; } }
-
 			private enum NotificationCommand : byte {
 				NewDispatcherTasks,
 				Exit, // exit from event loop
@@ -229,6 +235,8 @@ namespace Platform.IO {
 				LibcApi.pipe( _notificationPipe );
 				_notificationPipe[PipeHandle.ReadEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.ReadEnd].IsClosedOnExec = true;
 				_notificationPipe[PipeHandle.WriteEnd].IsNonBlocking = true; _notificationPipe[PipeHandle.WriteEnd].IsClosedOnExec = true;
+
+				EventHandle = _notificationPipe[PipeHandle.ReadEnd];
 			}
 
 			// Resource freeing (raw OS handles, malloc'ed memory) must be performed strictly in destructors since 'Dispose' may not be called before object lost last reference
@@ -268,8 +276,7 @@ namespace Platform.IO {
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
 		public abstract class SignalEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _signal; } }
-
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			private SignalHandle _signal;
 
 			public sealed override void OnEvent( epoll_event& @event ) {
@@ -291,9 +298,9 @@ namespace Platform.IO {
 		}
 
 		public abstract class NotificationEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _eventHandle; } }
-
 			private int _notificationId = -1;
+			
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			private SemaphoreHandle _eventHandle = new SemaphoreHandle();
 
 			public NotificationEventSink( EventLoop parent )
@@ -353,11 +360,10 @@ namespace Platform.IO {
 		}
 
 		public abstract class TimerEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _timer; } }
-
 			public sealed override void OnEvent( epoll_event& @event ) { var expirations = _timer.ReadExpirations(); OnRaised( expirations ); }
 			public abstract void OnRaised( long expirations );
 
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			protected TimerHandle _timer;
 
 			public TimerEventSink( EventLoop parent, ClockType clockType )
@@ -384,8 +390,7 @@ namespace Platform.IO {
 		}
 
 		public abstract class AcceptSocketEventSink : EventSink {
-			public override IOHandle EventHandle { get { return _socket; } }
-
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			protected SocketHandle _socket;
 
 			public AcceptSocketEventSink( EventLoop parent, SocketHandle socket )
@@ -462,65 +467,167 @@ namespace Platform.IO {
 			protected abstract void OnAccepted( SocketHandle socket );
 		}
 
+		#region process termination notification
+
+		public void BeginProcess( System.Diagnostics.ProcessStartInfo& info, DPC* onFinished ) {
+			LibcApi.pipe( info._pipe );
+			info.WaitExit = false;
+			System.Diagnostics.Process.Start( info );
+
+			var exitSink = new HandleBrokenEventSink( this, info._pipe[PipeHandle.ReadEnd] );
+			exitSink.OnBroken = onFinished;
+			exitSink.Register();
+		}
+
+		public class HandleBrokenEventSink : EventSink {
+			public HandleBrokenEventSink( EventLoop parent, IOHandle handle )
+				: base( parent ) {
+				EventHandle = handle;
+			}
+
+			public override void OnEvent( epoll_event& @event ) {
+				if( @event.ErrorEvent ) {
+					DPC.RunAndDispose( OnBroken ); OnBroken = null;
+					Unregister();
+				}
+			}
+
+			public DPC* OnBroken;
+
+			~HandleBrokenEventSink() {
+				DPC.Dispose( OnBroken ); OnBroken = null;
+				EventHandle.Close();
+			}
+		}
+
+		#endregion
+
+		#region forked worker completion notification
+
+		public ForkFinishEventSink BeginFork( Delegates.Action worker, DPC* onFinished ) {
+			PipeHandle[2] pipes;
+			int forkedPID;
+
+			if( !LibcApi.AssertErrno( LibcApi.pipe( pipes ) ) )
+				return null;
+
+			if( !LibcApi.AssertErrno( forkedPID = LibcApi.fork() ) ) {
+				pipes[PipeHandle.ReadEnd].Close();
+				pipes[PipeHandle.WriteEnd].Close();
+				return null;
+			}
+
+			if( forkedPID == 0 ) { // child path
+				pipes[PipeHandle.ReadEnd].Close();
+				worker();
+				LibcApi._exit( 0 );
+				return null;
+			}
+
+			pipes[PipeHandle.WriteEnd].Close();
+
+			var exitSink = new ForkFinishEventSink( this, pipes[PipeHandle.ReadEnd], forkedPID );
+			exitSink.OnFinished = onFinished;
+			exitSink.Register();
+			return exitSink;
+		}
+		
+		public class ForkFinishEventSink : EventSink {
+			public int _pid;
+			public int _exitCode;
+			public bool BlockingWait { get; set; } = false;
+
+			private bool _finished { get; set; } = false;
+
+			public ForkFinishEventSink( EventLoop parent, IOHandle handle, int pid )
+				: base( parent ) {
+				_pid = pid;
+				EventHandle = handle;
+			}
+
+			public override void OnEvent( epoll_event& @event ) {
+				if( @event.ErrorEvent ) {
+					LibcApi.waitpid( _pid, _exitCode, 0 );
+					_finished = true;
+					DPC.RunAndDispose( OnFinished ); OnFinished = null;
+					Unregister();
+				}
+			}
+
+			public DPC* OnFinished;
+
+			~ForkFinishEventSink() {
+				if( !_finished & BlockingWait ) { // wait forked
+					LibcApi.waitpid( _pid, _exitCode, 0 );
+					DPC.RunAndDispose( OnFinished ); OnFinished = null;
+				}
+
+				DPC.Dispose( OnFinished ); OnFinished = null;
+				EventHandle.Close();
+			}
+		}
+
+		#endregion
+
 		#region Dispatcher
 
-		private DispatcherRealtimeEventSink _dispatcherUtcAlarmEventSink;
-		private DispatcherUnbiasedAlarmEventSink _dispatcherUnbiasedAlarmEventSink;
+		// private DispatcherRealtimeEventSink _dispatcherUtcAlarmEventSink;
+		// private DispatcherUnbiasedAlarmEventSink _dispatcherUnbiasedAlarmEventSink;
 
-		private sealed class DispatcherRealtimeEventSink : TimerEventSink {
-			public override void OnRaised( long expirations ) { Parent.OnUtcAlarm(); }
+		// private sealed class DispatcherRealtimeEventSink : TimerEventSink {
+		// 	public override void OnRaised( long expirations ) { Parent.OnUtcAlarm(); }
 
-			public DispatcherRealtimeEventSink( EventLoop parent )
-				: base( parent, ClockType.CLOCK_REALTIME ) {
-			}
-		}
+		// 	public DispatcherRealtimeEventSink( EventLoop parent )
+		// 		: base( parent, ClockType.CLOCK_REALTIME ) {
+		// 	}
+		// }
 
-		private sealed class DispatcherUnbiasedAlarmEventSink : TimerEventSink {
-			public override void OnRaised( long expirations ) { Parent.OnUnbiasedAlarm(); }
+		// private sealed class DispatcherUnbiasedAlarmEventSink : TimerEventSink {
+		// 	public override void OnRaised( long expirations ) { Parent.OnUnbiasedAlarm(); }
 
-			public DispatcherUnbiasedAlarmEventSink( EventLoop parent )
-				: base( parent, ClockType.CLOCK_MONOTONIC ) {
-			}
-		}
+		// 	public DispatcherUnbiasedAlarmEventSink( EventLoop parent )
+		// 		: base( parent, ClockType.CLOCK_MONOTONIC ) {
+		// 	}
+		// }
 
-		private void InitDispatcher() {
-			_dispatcherUtcAlarmEventSink = new DispatcherRealtimeEventSink( this );
-			_dispatcherUtcAlarmEventSink.Register();
+		// private void InitDispatcher() {
+		// 	_dispatcherUtcAlarmEventSink = new DispatcherRealtimeEventSink( this );
+		// 	_dispatcherUtcAlarmEventSink.Register();
 
-			_dispatcherUnbiasedAlarmEventSink = new DispatcherUnbiasedAlarmEventSink( this );
-			_dispatcherUnbiasedAlarmEventSink.Register();
-		}
+		// 	_dispatcherUnbiasedAlarmEventSink = new DispatcherUnbiasedAlarmEventSink( this );
+		// 	_dispatcherUnbiasedAlarmEventSink.Register();
+		// }
 
-		private void CloseDispatcher() {
-			ExecuteTasks();
+		// private void CloseDispatcher() {
+		// 	ExecuteTasks();
 
-			if( _dispatcherUtcAlarmEventSink != null ) { _dispatcherUtcAlarmEventSink.Unregister(); _dispatcherUtcAlarmEventSink = null; }
-			if( _dispatcherUnbiasedAlarmEventSink != null ) { _dispatcherUnbiasedAlarmEventSink.Unregister(); _dispatcherUnbiasedAlarmEventSink = null; }
-		}
+		// 	if( _dispatcherUtcAlarmEventSink != null ) { _dispatcherUtcAlarmEventSink.Unregister(); _dispatcherUtcAlarmEventSink = null; }
+		// 	if( _dispatcherUnbiasedAlarmEventSink != null ) { _dispatcherUnbiasedAlarmEventSink.Unregister(); _dispatcherUnbiasedAlarmEventSink = null; }
+		// }
 
-		protected override void StopAlarm( AlarmKind kind ) {
-			switch( kind ) {
-				case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.Stop(); break;
-				case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.Stop(); break;
-			}
-		}
+		// protected override void StopAlarm( AlarmKind kind ) {
+		// 	switch( kind ) {
+		// 		case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.Stop(); break;
+		// 		case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.Stop(); break;
+		// 	}
+		// }
 
-		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) {
-			switch( kind ) {
-				case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.SetInterval( time ); break;
-				case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.SetInterval( time ); break;
-			}
-		}
+		// protected override void SetAlarm( AlarmKind kind, TimeSpan time ) {
+		// 	switch( kind ) {
+		// 		case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.SetInterval( time ); break;
+		// 		case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.SetInterval( time ); break;
+		// 	}
+		// }
 
 		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
 
 		#endregion
 
 		/// @{ Tracing
-		private const string TraceConditionString = "TRACE_EVENT_LOOP";
-
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchStarted() {
+		private void TraceDispatchStarted() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -528,7 +635,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchFinished() {
+		private void TraceDispatchFinished() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -537,21 +646,27 @@ namespace Platform.IO {
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventsArrived( int polledDescriptors ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
-			}, "EventLoop: epoll_wait() count={0} at {1}", polledDescriptors, NotificationStartTime );
+			}, "EventLoop: epoll_wait() count={0} at {1}", polledDescriptors, UnbiasedNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSink( epoll_event& @event, EventSink eventSink ) {
+		private void TraceEventSink( epoll_event& @event, EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue
 			}, " notify '{0}'({1}) with event='{2}'", eventSink != null ? eventSink.GetType() : typeof( void ), bitcast<void*>( eventSink ), @event );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkRegistered( EventSink eventSink ) {
+		private void TraceEventSinkRegistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -559,7 +674,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkModified( EventSink eventSink ) {
+		private void TraceEventSinkModified( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -567,7 +684,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkUnregistered( EventSink eventSink ) {
+		private void TraceEventSinkUnregistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true

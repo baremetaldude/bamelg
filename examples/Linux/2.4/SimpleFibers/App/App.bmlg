@@ -16,13 +16,15 @@ namespace Example {
 		[FiberStatic]
 		static int FiberLocalData = 123;
 
-		private const int FiberStackallocPages = 128;
+		private static int FiberStackallocPages = 128;
 
 		// Press CTRL+C to exit
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop();
+			var eventLoop = new EventLoop(){ Tracing = true };
 			System.Threading.ThreadPool.Initialize();
+
+			if( System.Diagnostics.Valgrind.IsAttached ) FiberStackallocPages = 0; // VG like stack inside stack
 
 			if( FiberStackallocPages > 0 ) {
 				var fiberStack = new MemorySegment( stackalloc Memory.Page[FiberStackallocPages], ( uintptr ) FiberStackallocPages * sizeof( Memory.Page ) );

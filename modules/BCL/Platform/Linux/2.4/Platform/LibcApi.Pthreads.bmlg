@@ -16,7 +16,13 @@ namespace Platform.Libc {
 	public partial struct pthread_t : IFormattable {
 		public static pthread_t Invalid = bitcast<pthread_t>( uintptr.MaxValue );
 		public bool IsValid { get { return this != Invalid; } }
-		public bool IsCurrent { get { return this == CurrentThread; } }
+
+		public bool IsCurrent {
+			get {
+				// return LibcApi.pthread_equal( this, CurrentThread ) != 0;
+				return this == CurrentThread;
+			}
+		}
 
 		public static pthread_t CurrentThread { get { return LibcApi.pthread_self(); } }
 		public static uintptr CurrentThreadId { get { return bitcast<uintptr>( CurrentThread ); } }
@@ -82,6 +88,10 @@ namespace Platform.Libc {
 			pthread_attr_t result;
 			PthreadsApi.pthread_getattr_np( this, &result );
 			return result;
+		}
+
+		public static Utf8String Name {
+			set { LibcApi.prctl( ( ProcessControlActions ) 15, ( uint ) value.GetChars(), 0, 0, 0 ); }
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {

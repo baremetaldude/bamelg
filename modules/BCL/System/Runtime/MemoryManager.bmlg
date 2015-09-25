@@ -10,7 +10,7 @@ using System.Diagnostics;
 
 namespace System.Runtime {
 	public class MemoryManager {
-		private TrackablePriorityQueue<MemorySegment> Free = new TrackablePriorityQueue<MemorySegment>( ( x, y ) => x.Count.CompareTo( y.Count ) <= 0 ) {
+		private TrackablePriorityQueue<MemorySegment> Free = new TrackablePriorityQueue<MemorySegment>( ( x, y ) => y.Count.CompareTo( x.Count ) ) {
 			FindRanker = ( x, y ) => {
 				var lengthCheck = x.Count.CompareTo( y.Count );
 				if( lengthCheck < 0 ) return -1;

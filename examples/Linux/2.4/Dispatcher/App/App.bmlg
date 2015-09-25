@@ -3,6 +3,8 @@
 //
 
 using System;
+using System.Diagnostics;
+using System.Threading;
 
 using Platform.IO;
 using Platform.Libc;
@@ -11,26 +13,69 @@ namespace Example {
 	class Test {
 		[EntryPoint]
 		static void Main() {
-			using( var eventLoop = new EventLoop() ) {
+			using( var eventLoop = new EventLoop() { Tracing = true } ) {
 				eventLoop.CatchExitSignals();
+				LibcApi.signal( SignalCode.SIGCHLD, x => { } );
+				LibcApi.signal( SignalCode.SIGCHLD, LibcApi.SIG_IGN ); // EmptySignalHandler );
+				LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN ); // we need error codes instead of signaling
 
 				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
-				eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
+				eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from same thread" ) );
 
 				eventLoop.BeginInvoke( () => {
 					new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
 						eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
-						eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
+						eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from another thread" ) );
 					} ).Detach();
 				} );
 
-				eventLoop.BeginAlarm( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
+				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
+					Console.WriteLine( "Unseen alarm" );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
+					eventLoop.RemoveAlarm( unseen );
+				} );
+
+				var alarm1 = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
 				} );
 
-				eventLoop.BeginUtcAlarm( TimeSpan.FromSeconds( 10 ), TimeSpan.FromSeconds( 1 ), () => {
+				var alarm2 = eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 3 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
 				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 6 ), () => {
+					Console.WriteLine( "Remove alarms" );
+					eventLoop.RemoveAlarm( alarm1 );
+					eventLoop.RemoveAlarm( alarm2 );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {
+					eventLoop.RequestExit();
+				} );
+
+				eventLoop.BeginProcess( new ProcessStartInfo( "/bin/bash", "-c", "-x", "sleep 6" ), DPC.Create( () => {
+					Console.WriteLine( "External program exited" );
+				} ) );
+
+				eventLoop.BeginProcess( new ProcessStartInfo( "/bin/bash", "-c", "-x", "sleep 60" ), DPC.Create( () => {
+					Console.WriteLine( "External program continue work after EventLoop.Dispatch()" );
+				} ) );
+
+				eventLoop.BeginFork( () => {
+					Console.WriteLine( "BeginFork worker sleep for 3000" );
+					System.Threading.Thread.Sleep( 3000 );
+				}, DPC.Create( () => {
+					Console.WriteLine( "Fork execution completed!" );
+				} ) );
+
+				eventLoop.BeginFork( () => {
+					Console.WriteLine( "BeginFork worker sleep for 30000" );
+					System.Threading.Thread.Sleep( 30000 );
+				}, DPC.Create( () => {
+					Console.WriteLine( "Fork continue work after EventLoop.Dispatch()" );
+				} ) );
 
 				eventLoop.Dispatch(); // wait until RequestExit
 			}

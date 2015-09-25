@@ -124,9 +124,7 @@ namespace Platform.Systemd {
 		public static void RegisterWatchdogNotifier( EventLoop eventLoop ) {
 			if( !SystemdApi.HasWatchdog ) return;
 
-			eventLoop.BeginAlarm( SystemdApi.WatchdogNotifyTimeout / 2, () => {
-				SystemdApi.ServiceNotifyWatchdog();
-			} );
+			eventLoop.BeginAlarmUnbiased( SystemdApi.WatchdogNotifyTimeout / 2, SystemdApi.ServiceNotifyWatchdog );
 		}
 
 		static ~SystemdApi() {

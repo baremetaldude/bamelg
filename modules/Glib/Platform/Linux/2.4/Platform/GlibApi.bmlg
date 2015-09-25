@@ -10,8 +10,6 @@ using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 
-using Platform.Threading;
-
 namespace Platform.Glib {
 	public functor int GSourceFunc( void* data );
 	public functor int GDestroyNotify( void* data );
@@ -75,6 +73,11 @@ namespace Platform.Glib {
 		public void ReleaseReference() { GObjectApi.g_closure_unref( &this ); }
 	}
 
+	// GValue usage:
+	// using( var tmpValue = new GValue( userName ) )
+	//		GtkApi.gtk_list_store_set_value( _model, iter, 1, tmpValue );
+	
+	// Not allowed to have destructor here since it can affect iterop structs
 	public partial struct GValue : IDisposable {
 		public GValue() {
 			Memory.Clear( &this, sizeof( this ) );
@@ -263,68 +266,73 @@ namespace Platform.Glib {
 		}
 	}
 
+	// GValueScoped usage:
+	// GtkApi.gtk_list_store_set_value( _model, iter, 1, new GValueScoped( userName ) );
+	public partial struct GValueScoped : GValue {
+		public GValueScoped() { }
+
+		=GValueScoped() {
+			Assert.Fail( "Copy not allowed" );
+			Environment.Abort( 1 );
+		}
+
+		~GValueScoped() {
+			Dispose();
+		}
+
+		public GValueScoped( bool value )
+			: base( value ) { }
+
+		public GValueScoped( sbyte value )
+			: base( value ) { }
+
+		public GValueScoped( byte value )
+			: base( value ) { }
+
+		public GValueScoped( int value )
+			: base( value ) { }
+
+		public GValueScoped( uint value )
+			: base( value ) { }
+
+		public GValueScoped( long value )
+			: base( value ) { }
+
+		public GValueScoped( ulong value )
+			: base( value ) { }
+
+		public GValueScoped( float value )
+			: base( value ) { }
+
+		public GValueScoped( double value )
+			: base( value ) { }
+
+		public GValueScoped( CUtf8String value )
+			: base( value ) { }
+
+		public GValueScoped( Utf16String value )
+			: base( value ) { }
+
+		public GValueScoped( Utf32String value )
+			: base( value ) { }
+
+		public GValueScoped( void* value )
+			: base( value ) { }
+
+		public GValueScoped( GObject* value )
+			: base( value ) { }
+	}
+
 	public partial struct GMainContext {
 		public static GMainContext* Default { get { return GlibApi.g_main_context_default(); } }
 
-		public GSource* Attach( Dispatcher dispatcher ) {
-			if( !Assert.IsTrue( dispatcher.EventLoopData == null ) ) return null;
-
-			var source = ( GDispatcherSource* ) GlibApi.g_source_new( &GDispatcherSource.Adapter, sizeof( GDispatcherSource ) );
-
-			source->Dispatcher = dispatcher;
-			source->PollEntry = new GPollFD { fd = ( int ) dispatcher.NotificationReadPipe.ID, events = ( ushort ) GIOCondition.G_IO_IN, revents = 0 };
-
-			GlibApi.g_source_attach( source, &this );
-			GlibApi.g_source_add_poll( source, &source->PollEntry );
-
-			dispatcher.EventLoopData = source;
-			return source;
+		public void EventLoopSubscribe() {
+			GlibApi.g_main_context_set_poll_func( &this, poll_handler );
 		}
 
-		public static void Detach( Dispatcher dispatcher ) {
-			if( !Assert.IsTrue( dispatcher.EventLoopData != null ) ) return;
-
-			var source = ( GDispatcherSource* ) dispatcher.EventLoopData;
-
-			GlibApi.g_source_remove_poll( source, &source->PollEntry );
-			GlibApi.g_source_destroy( source );
-			source->ReleaseReference();
-
-			dispatcher.EventLoopData = null;
-		}
-
-		private struct GDispatcherSource : GSource {
-			public static GSourceFuncs Adapter = new GSourceFuncs {
-				prepare = prepare,
-				check = check,
-				dispatch = dispatch,
-				finalize = finalize
-			};
-
-			public Dispatcher Dispatcher;
-			public GPollFD PollEntry;
-
-			private Boolean32 prepare( int* timeout ) {
-				*timeout = -1;
-				return Dispatcher.NotificationReadPipe.AvailableBytes > 0;
-			}
-
-			private Boolean32 check() {
-				var avl = Dispatcher.NotificationReadPipe.AvailableBytes;
-				if( avl > 0 ) {
-					Dispatcher.OnPipeNotify();
-				}
-
-				return avl != 0;
-			}
-
-			private Boolean32 dispatch( Functors.Func<void*, Boolean32> callback, void* data ) {
-				return true;
-			}
-
-			private void finalize() {
-				Dispatcher = null;
-			}
+		private static int poll_handler( GPollFD* passedHandles, uint count, int timeout ) {
+			if( Platform.IO.EventLoop.Instance != null ) return Platform.IO.EventLoop.Instance.Poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
+			return Platform.Libc.LibcApi.poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
 		}
 	}
 

@@ -48,7 +48,7 @@ namespace Platform.IO {
 
 		public override void Dispose() {
 			ExecuteTasks();
-			
+
 			using( _consoleQuitLock.LockRegion() )
 				if( _consoleQuitHandlerIndex != -1 ) {
 					CtrlCListeners.RemoveAt( _consoleQuitHandlerIndex );
@@ -154,8 +154,9 @@ namespace Platform.IO {
 				var waitResult = !useSleep ? Kernel32Api.WaitForMultipleObjectsEx( ( uint ) _waitEvents.Count, _waitEvents.GetBuffer(), false, waitTimeout, true ) : Kernel32Api.SleepEx( waitTimeout, true );
 				// Console.WriteLine( "waitResult={0}", waitResult );
 
-				NotificationStartTime = DateTime.UnbiasedNow;
-				NotificationStartTimeUtc = DateTime.UtcNow;
+				UnbiasedNow = DateTime.UnbiasedNow;
+				UtcNow = DateTime.UtcNow;
+				TraceEndWait( waitResult );
 
 				switch( waitResult ) {
 					case WAIT_IO_COMPLETION:
@@ -181,8 +182,7 @@ namespace Platform.IO {
 						break;
 				}
 
-				OnUtcAlarm();
-				OnUnbiasedAlarm();
+				OnAlarm();
 			}
 
 			TraceDispatchFinished();
@@ -199,12 +199,10 @@ namespace Platform.IO {
 			public abstract void OnEvent();
 
 			public EventSink( EventLoop parent ) {
-				// *( void** ) &Parent = bitcast<void*>( parent );
 				Parent = parent;
 			}
 
 			public override void Dispose() {
-				// *( void** ) &Parent = null;
 				Parent = null;
 
 				base.Dispose();
@@ -222,7 +220,7 @@ namespace Platform.IO {
 
 				PoolID = RegisterHandle( parent, handle );
 
-				TraceEventSinkRegistered( this );
+				parent.TraceEventSinkRegistered( this );
 			}
 
 			protected int RegisterHandle( EventLoop parent, HANDLE handle ) {
@@ -244,7 +242,7 @@ namespace Platform.IO {
 			}
 
 			protected virtual void Unregister( EventLoop parent, HANDLE handle ) {
-				TraceEventSinkUnregistered( this );
+				parent.TraceEventSinkUnregistered( this );
 				EnsureEventSinkRegistered( parent );
 
 				var poolId = PoolID;
@@ -371,17 +369,15 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		protected override void SetAlarm( AlarmKind kind, TimeSpan time ) { }
-		protected override void StopAlarm( AlarmKind kind ) { }
 		protected override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
 
 		#endregion
 
 		/// @{ Tracing
-		private const string TraceConditionString = "TRACE_EVENT_LOOP";
-
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchStarted() {
+		private void TraceDispatchStarted() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -389,7 +385,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceDispatchFinished() {
+		private void TraceDispatchFinished() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -397,7 +395,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceApcCompleted() {
+		private void TraceApcCompleted() {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -405,7 +405,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceBeginWait( int eventCount, uint milliseconds ) {
+		private void TraceBeginWait( int eventCount, uint milliseconds ) {
+			if( !Tracing ) return;
+
 			TypedReference timeout = milliseconds;
 			if( milliseconds == Kernel32Api.INFINITE ) timeout = "INFINITE";
 
@@ -416,7 +418,19 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkRegistered( EventSink eventSink ) {
+		private void TraceEndWait( uint code ) {
+			if( !Tracing ) return;
+
+			Trace.Write( new Console.OutputAttributes() {
+				BackgroundColor = RgbColor.Blue,
+				Bold = true
+			}, "EventLoop: End wait, code={0}, UnbiasedNow={1}, UtcNow={2}", code, UnbiasedNow, UtcNow );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceEventSinkRegistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true
@@ -424,7 +438,9 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private static void TraceEventSinkUnregistered( EventSink eventSink ) {
+		private void TraceEventSinkUnregistered( EventSink eventSink ) {
+			if( !Tracing ) return;
+
 			Trace.Write( new Console.OutputAttributes() {
 				BackgroundColor = RgbColor.Blue,
 				Bold = true

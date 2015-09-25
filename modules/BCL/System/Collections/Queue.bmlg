@@ -119,14 +119,14 @@ namespace System.Collections {
 		}
 
 		public T Peek() {
-			if( !Assert.IsTrue( _count != 0 ) ) return default( T );
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 
 			return _items[_head];
 		}
 
 		public T First {
 			get {
-				if( !Assert.IsTrue( _count != 0 ) ) return default( T );
+				if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 
 				return _items[_head];
 			}
@@ -134,7 +134,7 @@ namespace System.Collections {
 
 		public T Last {
 			get {
-				if( !Assert.IsTrue( _count != 0 ) ) return default( T );
+				if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 
 				return _items[( _tail - 1 + _items.Length ) & ( _items.Length - 1 )];
 			}

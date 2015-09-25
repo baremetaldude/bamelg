@@ -18,6 +18,7 @@ using System.IO;
 using System.Runtime;
 using System.Runtime.CompilerServices;
 using System.Text;
+using System.Threading;
 
 namespace System.IO {
 	public partial struct Fiber : IFormattable {
@@ -140,7 +141,7 @@ namespace System.IO {
 		// using( new Fiber.AsyncCompletionRegion() ) { // TP context starts here
 		//		readv( ... ); // no Fiber-related calls may appear here
 		// }
-		public struct AsyncCompletionRegion : System.Threading.ThreadPool.TaskEntry, IDisposable {
+		public struct AsyncCompletionRegion : System.Threading.DPC, IDisposable {
 			internal FiberInfo.Manager* CurrentManager;
 			internal FiberInfo* CompletionFiber;
 			internal bool IsCancellable;
@@ -228,7 +229,7 @@ namespace System.IO {
 				private PagedPool<FiberInfo> _fibers = new PagedPool<FiberInfo>();
 				private List<FiberInfo*> _readyList = new List<FiberInfo*>();
 				private List<FiberInfo*> _finishedList = new List<FiberInfo*>();
-				private List<System.Threading.ThreadPool.TaskEntry*> _pendingThreadPoolTasks = new List<System.Threading.ThreadPool.TaskEntry*>();
+				private List<DPC*> _pendingThreadPoolTasks = new List<DPC*>();
 
 				public int FiberCount { get { return _fibers.Count; } }
 
@@ -497,11 +498,11 @@ namespace System.IO {
 					if( timeout == nullref ) return;
 					if( timeout <= TimeSpan.Zero ) return;
 
-					CurrentFiber->_alarmID = BeginAlarm( timeout, passedData => {
+					CurrentFiber->_alarmID = BeginTimeout( timeout, passedData => {
 						var currentFiber = bitcast<FiberInfo*>( passedData );
-						currentFiber->_alarmID = -1;
+						currentFiber->_alarmID = null;
 						currentFiber->Ready();
-					}, CurrentFiber, true );
+					}, CurrentFiber );
 				}
 
 				// \return true if timed out
@@ -509,9 +510,9 @@ namespace System.IO {
 					if( timeout == nullref ) return false;
 					if( timeout <= TimeSpan.Zero ) return false;
 
-					if( CurrentFiber->_alarmID >= 0 ) { // alarm not fired
-						RemoveAlarm( CurrentFiber->_alarmID );
-						CurrentFiber->_alarmID = -1;
+					if( CurrentFiber->_alarmID != null ) { // alarm not fired
+						EndTimeout( CurrentFiber->_alarmID );
+						CurrentFiber->_alarmID = null;
 						return false;
 					}
 
@@ -526,17 +527,17 @@ namespace System.IO {
 
 					if( !Assert.IsTrue( time > TimeSpan.Zero ) ) return;
 
-					CurrentFiber->_alarmID = BeginAlarm( time, passedData => {
+					CurrentFiber->_alarmID = BeginTimeout( time, passedData => {
 						var currentFiber = bitcast<FiberInfo*>( passedData );
-						currentFiber->_alarmID = -1;
+						currentFiber->_alarmID = null;
 						currentFiber->Ready();
-					}, CurrentFiber, true );
+					}, CurrentFiber );
 
 					Suspend();
 
-					if( CurrentFiber->_alarmID >= 0 ) {
-						RemoveAlarm( CurrentFiber->_alarmID );
-						CurrentFiber->_alarmID = -1;
+					if( CurrentFiber->_alarmID != null ) {
+						EndTimeout( CurrentFiber->_alarmID );
+						CurrentFiber->_alarmID = null;
 					}
 				}
 
@@ -544,7 +545,9 @@ namespace System.IO {
 					//
 					// before switch
 					//
-					context->Action = AsyncCompletionRoutine;
+					context->OnAction = AsyncCompletionRoutine;
+					context->OnActionDispose = AsyncCompletionRoutine;
+					context->OnDispose = null;
 					context->CurrentManager = &FiberManager;
 
 					if( !IsFiberExecuting ) {
