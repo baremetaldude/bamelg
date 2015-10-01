@@ -337,6 +337,73 @@ namespace Platform.Libc {
 
 		public extern static void _dl_mcount_wrapper_check( void* selfpc );
 
+		public extern static void endrpcent();
+		public extern static rpcent* getrpcbyname( CUtf8String name );
+		public extern static int getrpcbyname_r( CUtf8String name, rpcent* resultBuf, sbyte* buffer, uintptr buflen, rpcent** result );
+		public extern static rpcent* getrpcbynumber( int number );
+		public extern static int getrpcbynumber_r( int number, rpcent* resultBuf, sbyte* buffer, uintptr buflen, rpcent** result );
+		public extern static rpcent* getrpcent();
+		public extern static int getrpcent_r( rpcent* resultBuf, sbyte* buffer, uintptr buflen, rpcent** result );
+		public extern static void setrpcent( int stayopen );
+
+		[BackendHintReadNone]
+		public extern static int* __h_errno_location();
+		public extern static void endhostent();
+		public extern static void endnetent();
+		public extern static void endnetgrent();
+		public extern static void endprotoent();
+		public extern static void endservent();
+		public extern static void freeaddrinfo( addrinfo* ai );
+		public extern static sbyte* gai_strerror( int ecode );
+		public extern static int getaddrinfo( CUtf8String name, sbyte* service, addrinfo* req, addrinfo** pai );
+		public extern static hostent* gethostbyaddr( void* addr, uint len, int type );
+		public extern static int gethostbyaddr_r( void* addr, uint len, int type, hostent* resultBuf, sbyte* buf, uintptr buflen, hostent** result, int* hErrnop );
+		public extern static hostent* gethostbyname( CUtf8String name );
+		public extern static int gethostbyname_r( CUtf8String name, hostent* resultBuf, sbyte* buf, uintptr buflen, hostent** result, int* hErrnop );
+		public extern static hostent* gethostbyname2( CUtf8String name, int af );
+		public extern static int gethostbyname2_r( CUtf8String name, int af, hostent* resultBuf, sbyte* buf, uintptr buflen, hostent** result, int* hErrnop );
+		public extern static hostent* gethostent();
+		public extern static int gethostent_r( hostent* resultBuf, sbyte* buf, uintptr buflen, hostent** result, int* hErrnop );
+		public extern static int getnameinfo( sockaddr* sa, uint salen, sbyte* host, uint hostlen, sbyte* serv, uint servlen, int flags );
+		public extern static netent* getnetbyaddr( uint net, int type );
+		public extern static int getnetbyaddr_r( uint net, int type, netent* resultBuf, sbyte* buf, uintptr buflen, netent** result, int* hErrnop );
+		public extern static netent* getnetbyname( CUtf8String name );
+		public extern static int getnetbyname_r( CUtf8String name, netent* resultBuf, sbyte* buf, uintptr buflen, netent** result, int* hErrnop );
+		public extern static netent* getnetent();
+		public extern static int getnetent_r( netent* resultBuf, sbyte* buf, uintptr buflen, netent** result, int* hErrnop );
+		public extern static int getnetgrent( sbyte** hostp, sbyte** userp, sbyte** domainp );
+		public extern static int getnetgrent_r( sbyte** hostp, sbyte** userp, sbyte** domainp, sbyte* buffer, uintptr buflen );
+		public extern static protoent* getprotobyname( CUtf8String name );
+		public extern static int getprotobyname_r( CUtf8String name, protoent* resultBuf, sbyte* buf, uintptr buflen, protoent** result );
+		public extern static protoent* getprotobynumber( int proto );
+		public extern static int getprotobynumber_r( int proto, protoent* resultBuf, sbyte* buf, uintptr buflen, protoent** result );
+		public extern static protoent* getprotoent();
+		public extern static int getprotoent_r( protoent* resultBuf, sbyte* buf, uintptr buflen, protoent** result );
+		public extern static servent* getservbyname( CUtf8String name, sbyte* proto );
+		public extern static int getservbyname_r( CUtf8String name, sbyte* proto, servent* resultBuf, sbyte* buf, uintptr buflen, servent** result );
+		public extern static servent* getservbyport( int port, sbyte* proto );
+		public extern static int getservbyport_r( int port, sbyte* proto, servent* resultBuf, sbyte* buf, uintptr buflen, servent** result );
+		public extern static servent* getservent();
+		public extern static int getservent_r( servent* resultBuf, sbyte* buf, uintptr buflen, servent** result );
+		public extern static void herror( sbyte* str );
+		public extern static sbyte* hstrerror( int errNum );
+		public extern static int innetgr( sbyte* netgroup, sbyte* host, sbyte* user, sbyte* domain );
+		public extern static int iruserok( uint raddr, int suser, sbyte* remuser, sbyte* locuser );
+		public extern static int iruserok_af( void* raddr, int suser, sbyte* remuser, sbyte* locuser, ushort af );
+		public extern static int rcmd( sbyte** ahost, ushort rport, sbyte* locuser, sbyte* remuser, sbyte* cmd, int* fd2p );
+		public extern static int rcmd_af( sbyte** ahost, ushort rport, sbyte* locuser, sbyte* remuser, sbyte* cmd, int* fd2p, ushort af );
+		public extern static int rexec( sbyte** ahost, int rport, CUtf8String name, sbyte* pass, sbyte* cmd, int* fd2p );
+		public extern static int rexec_af( sbyte** ahost, int rport, CUtf8String name, sbyte* pass, sbyte* cmd, int* fd2p, ushort af );
+		public extern static int rresvport( int* alport );
+		public extern static int rresvport_af( int* alport, ushort af );
+		public extern static int ruserok( sbyte* rhost, int suser, sbyte* remuser, sbyte* locuser );
+		public extern static int ruserok_af( sbyte* rhost, int suser, sbyte* remuser, sbyte* locuser, ushort af );
+		public extern static void sethostent( int stayOpen );
+		public extern static void setnetent( int stayOpen );
+		public extern static int setnetgrent( sbyte* netgroup );
+		public extern static void setprotoent( int stayOpen );
+		public extern static void setservent( int stayOpen );
+
 		public extern static int dl_iterate_phdr( Functors.Func<dl_phdr_info*, uint, void*, int> callback, void* data );
 
 		public extern static void endgrent();
@@ -1202,6 +1269,13 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 ynl( int p0, LittleEndianIEEE754_80 p1 );
 
 		public extern static int matherr( __exception* exc );
+	}
+	[ExternLibrary( Image = "/usr/lib64/libanl.so" )]
+	public static partial struct AnlApi {
+		public extern static int gai_cancel( gaicb* gaicbp );
+		public extern static int gai_error( gaicb* req );
+		public extern static int gai_suspend( gaicb** list, int ent, timespec* timeout );
+		public extern static int getaddrinfo_a( int mode, gaicb** list, int ent, sigevent* sig );
 	}
 	[ExternLibrary( Image = "/usr/lib64/libresolv.so" )]
 	public static partial struct ResolvApi {
@@ -3045,6 +3119,26 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 0 )]
 		public uint[64] ymmh_space;
 	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct addrinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int ai_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public int ai_family;
+		[ExplicitOffset( Offset = 8 )]
+		public int ai_socktype;
+		[ExplicitOffset( Offset = 12 )]
+		public int ai_protocol;
+		[ExplicitOffset( Offset = 16 )]
+		public uint ai_addrlen;
+		[ExplicitOffset( Offset = 24 )]
+		public sockaddr* ai_addr;
+		[ExplicitOffset( Offset = 32 )]
+		public CUtf8String ai_canonname;
+		[ExplicitOffset( Offset = 40 )]
+		public addrinfo* ai_next;
+	}
 	[ExplicitSize( Size = 7 )]
 	public partial struct ax25_address {
 		[ExplicitOffset( Offset = 0 )]
@@ -3995,6 +4089,22 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 20 )]
 		public ax25_address[6] srose_digis;
 	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gaicb {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String ar_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte* ar_service;
+		[ExplicitOffset( Offset = 16 )]
+		public addrinfo* ar_request;
+		[ExplicitOffset( Offset = 24 )]
+		public addrinfo* ar_result;
+		[ExplicitOffset( Offset = 32 )]
+		public int __return;
+		[ExplicitOffset( Offset = 36 )]
+		public int[5] __glibc_reserved;
+	}
 	[ExplicitSize( Size = 32 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct group {
@@ -4038,6 +4148,20 @@ namespace Platform.Libc {
 		public sockaddr_storage gsr_group;
 		[ExplicitOffset( Offset = 136 )]
 		public sockaddr_storage gsr_source;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct hostent {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String h_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte** h_aliases;
+		[ExplicitOffset( Offset = 16 )]
+		public int h_addrtype;
+		[ExplicitOffset( Offset = 20 )]
+		public int h_length;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte** h_addr_list;
 	}
 	[PrimitiveType( Size = sizeof( void* ) )]
 	public partial struct iconv_t {
@@ -4373,6 +4497,18 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 48 )]
 		public int msg_flags;
 	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct netent {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String n_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte** n_aliases;
+		[ExplicitOffset( Offset = 16 )]
+		public int n_addrtype;
+		[ExplicitOffset( Offset = 20 )]
+		public uint n_net;
+	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct nr_ctl_struct {
@@ -4466,6 +4602,16 @@ namespace Platform.Libc {
 		public short events;
 		[ExplicitOffset( Offset = 6 )]
 		public short revents;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct protoent {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String p_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte** p_aliases;
+		[ExplicitOffset( Offset = 16 )]
+		public int p_proto;
 	}
 	[ExplicitSize( Size = 56 )]
 	[Alignment( Boundary = 8 )]
@@ -4665,6 +4811,16 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 32 )]
 		public ax25_address[8] digipeaters;
 	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct rpcent {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String r_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte** r_aliases;
+		[ExplicitOffset( Offset = 16 )]
+		public int r_number;
+	}
 	public partial struct rusage {
 	}
 	[ExplicitSize( Size = 4 )]
@@ -4680,6 +4836,18 @@ namespace Platform.Libc {
 		public sbyte[32] __size;
 		[Overlapped( Offset = 0 )]
 		public intptr __align;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct servent {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String s_name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte** s_aliases;
+		[ExplicitOffset( Offset = 16 )]
+		public int s_port;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte* s_proto;
 	}
 	[ExplicitSize( Size = 152 )]
 	[Alignment( Boundary = 8 )]
