@@ -52,20 +52,16 @@ namespace System.Collections {
 				FreePage( _freePage );
 		}
 
-		public T* First {
-			get {
-				if( !Assert.IsTrue( _firstPage->Count > 0 ) ) return null;
+		public T* First() {
+			if( !Assert.IsTrue( _firstPage->Count > 0 ) ) return null;
 
-				return _firstPage->Elements + _firstPage->Head;
-			}
+			return _firstPage->Elements + _firstPage->Head;
 		}
 
-		public T* Last {
-			get {
-				if( !Assert.IsTrue( _lastPage->Count > 0 ) ) return null;
+		public T* Last() {
+			if( !Assert.IsTrue( _lastPage->Count > 0 ) ) return null;
 
-				return _lastPage->Elements + ( _lastPage->Tail > 0 ? _lastPage->Tail - 1 : BlockSize - 1 );
-			}
+			return _lastPage->Elements + ( _lastPage->Tail > 0 ? _lastPage->Tail - 1 : BlockSize - 1 );
 		}
 
 		private PageInfo* AllocatePage() {
@@ -117,31 +113,6 @@ namespace System.Collections {
 
 		private static PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
 
-		public T* GetNext( T* value ) {
-			if( value == null ) return null;
-
-			var page = GetPageInfo( value );
-			Debug.Assert( page->Parent == this );
-			Debug.Assert( page->Count > 0 );
-
-			var index = value - page->Elements;
-			Debug.Assert( index >= 0 );
-			Debug.Assert( index < BlockSize );
-
-			var newIndex = index + 1;
-			if( newIndex == BlockSize ) newIndex = 0;
-
-			if( newIndex >= page->Tail ) {
-				var nextPage = page->Next;
-				if( nextPage == null ) return null;
-				if( nextPage->Count == 0 ) return null;
-
-				return nextPage->Elements + nextPage->Head;
-			}
-
-			return page->Elements + newIndex;
-		}
-
 		public void* Dequeue() {
 			CommonCollectionOperations.UpdateVersion( &_version );
 
@@ -162,6 +133,74 @@ namespace System.Collections {
 			}
 
 			return result;
+		}
+
+		public yield<T*> GetEnumerator( T* startingValue ) {
+			var version = _version;
+
+			var startingPage = GetPageInfo( startingValue );
+			Debug.Assert( startingPage->Parent == this );
+			Debug.Assert( startingPage->Count > 0 );
+
+			var startingIndex = startingValue - startingPage->Elements;
+			Debug.Assert( startingIndex >= 0 );
+			Debug.Assert( startingIndex < BlockSize );
+
+			// iterate startingPage
+			{
+				Debug.Assert( startingPage->Count > 0 );
+
+				var elements = startingPage->Elements;
+
+				if( startingIndex < startingPage->Tail ) {
+					for( var j = startingIndex; j < startingPage->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+				else {
+					for( var j = startingIndex; j < BlockSize; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+
+					for( var j = 0; j < startingPage->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+			}
+
+			// iterate following pages
+			for( var page = startingPage->Next; page != null; page = page->Next ) {
+				Debug.Assert( page->Count > 0 );
+
+				var elements = page->Elements;
+
+				if( page->Head < page->Tail ) {
+					for( var j = page->Head; j < page->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+				else {
+					for( var j = page->Head; j < BlockSize; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+
+					for( var j = 0; j < page->Tail; ++j ) {
+						CommonCollectionOperations.VersionCheck( version == _version );
+
+						yield return elements + j;
+					}
+				}
+			}
 		}
 
 		public yield<T*> GetEnumerator() {

@@ -38,19 +38,48 @@ namespace Platform.IO {
 			return stat.IsDirectory;
 		}
 
-		public static void Create( Utf8String path ) {
-			Create( path, ( Permission ) 0b111111101 );
+		public static SystemError Create( Utf8String path, Permission permission = ( Permission ) 0b111111101, uint owner = uint.MaxValue, uint group = uint.MaxValue ) {
+			var result = SystemError.None;
+
+			if( LibcApi.mkdir( path, permission ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && LibcApi.chmod( path, permission ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && ( owner != uint.MaxValue || group != uint.MaxValue ) && LibcApi.chown( path, owner, group ) < 0 )
+				result = LibcApi.LastError;
+
+			return result;
 		}
 
-		public static void Create( Utf8String path, Permission permission ) {
-			LibcApi.mkdir( path, permission );
-			LibcApi.chmod( path, permission ); // override umask
-		}
+		// Deep ceration os subdirectories
+		public static SystemError Create( Permission permission, uint owner, uint group, vararg Utf8String paths ) {
+			if( paths.Length == 0 ) return SystemError.None;
 
-		public static void Create( Utf8String path, Permission permission, uint owner, uint group ) {
-			LibcApi.mkdir( path, permission );
-			LibcApi.chmod( path, permission ); // override umask
-			LibcApi.chown( path, owner, group );
+			var result = Create( paths[0], permission, owner, group );
+			if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+
+			{
+				var handle = new DirectoryHandle();
+				result = handle.Open( paths[0] ); handle.Close();
+				if( result != SystemError.None ) return result;
+			}
+
+			using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
+				nameBuilder.Value.Append( paths[0] );
+
+				for( var i = 1; i < paths.Length; ++i ) {
+					nameBuilder.Value.Append( '/' );
+					nameBuilder.Value.Append( paths[i] );
+					var directoryName = nameBuilder.Value.ToUtf8String();
+
+					result = Create( directoryName, permission, owner, group );
+					if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+				}
+			}
+
+			return result;
 		}
 
 		// 'createFullPath' not always necessary since we have 'openat', 'linkat' etc.

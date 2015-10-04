@@ -45,15 +45,20 @@ namespace Platform.IO {
 			var result = Create( paths[0], permission, owner, group );
 			if( result != SystemError.None && result != SystemError.EEXIST ) return result;
 
-			using( var handle = new DirectoryHandle( paths[0] ) )
-				for( var i = 1; i < paths.Length; ++i ) {
-					result = Create( handle, paths[i], permission, owner, group );
-					if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+			var handle = new DirectoryHandle();
+			result = handle.Open( paths[0] ); finally { handle.Close(); }
+			if( result != SystemError.None ) return result;
 
-					var newHandle = new DirectoryHandle( handle, paths[i] );
-					handle.Close();
-					handle = newHandle;
-				}
+			for( var i = 1; i < paths.Length; ++i ) {
+				result = Create( handle, paths[i], permission, owner, group );
+				if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+
+				var newHandle = new DirectoryHandle();
+				result = newHandle.Open( handle, paths[i] );
+				if( result != SystemError.None ) return result;
+				handle.Close();
+				handle = newHandle;
+			}
 
 			return result;
 		}

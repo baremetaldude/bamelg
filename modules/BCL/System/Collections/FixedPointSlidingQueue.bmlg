@@ -22,15 +22,18 @@ namespace System.Collections {
 			public int Value;
 		}
 
-		private int ToFixed( double value ) { return Math.RoundToInt32( value * _scale ); }
-		private double ToFloating( int value ) { return value * _invScale; }
+		public int ToFixed( double value ) { return Math.RoundToInt32( value * _scale ); }
+		public double ToFloating( int value ) { return value * _invScale; }
 
-		private PagedQueue<ValueInfo> _values = new PagedQueue<ValueInfo>();
+		public PagedQueue<ValueInfo> _values = new PagedQueue<ValueInfo>();
 		public readonly TimeSpan Timeframe;
 
-		public TimeSpan BufferedTimeframe { get { return _values.Count > 1 ? _values.Last->Date - _values.First->Date : new TimeSpan( 0 ); } }
+		public TimeSpan BufferedTimeframe { get { return _values.Count > 1 ? _values.Last()->Date - _values.First()->Date : new TimeSpan( 0 ); } }
 
 		public int Count { get { return _values.Count; } }
+
+		public double First() { return ToFloating( _values.First()->Value ); }
+		public double Last() { return ToFloating( _values.Last()->Value ); }
 
 		public int Capacity {
 			get { return _values.Capacity; }
@@ -40,24 +43,25 @@ namespace System.Collections {
 			int dropped = 0;
 			if( _values.Count > 0 )
 				foreach( var view in Views ) {
-					if( view.FrameStart == null ) continue;
+					if( view.FrameStart == null )
+						continue;
 
-					for( var start = view.FrameStart; ; ) {
-						var next = _values.GetNext( start );
-
-						if( ( time - start->Date ) <= view.Timeframe )
+					ValueInfo* newStart = null;
+					foreach( var element in _values.GetEnumerator( view.FrameStart ) ) {
+						if( ( time - element->Date ) <= view.Timeframe ) {
+							newStart = element;
 							break;
+						}
 
-						view.OnValueRemoved( this, start );
-						view.FrameStart = next;
-						start = next;
-						if( next == null ) break;
+						view.OnValueRemoved( this, element );
 					}
+
+					view.FrameStart = newStart;
 				}
 
 		start_remove:
 			if( Count > 0 ) {
-				var top = _values.First->Date;
+				var top = _values.First()->Date;
 
 				if( ( time - top ) >= Timeframe ) {
 					_values.Dequeue();

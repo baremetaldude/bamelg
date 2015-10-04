@@ -123,21 +123,15 @@ namespace System.Collections {
 
 			return _items[_head];
 		}
-
-		public T First {
-			get {
-				if( !Assert.IsTrue( _count > 0 ) ) return default( T );
-
-				return _items[_head];
-			}
+		
+		public T First() {
+			return Peek();
 		}
 
-		public T Last {
-			get {
-				if( !Assert.IsTrue( _count > 0 ) ) return default( T );
+		public T Last() {
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
 
-				return _items[( _tail - 1 + _items.Length ) & ( _items.Length - 1 )];
-			}
+			return _items[( _tail - 1 + _items.Length ) & ( _items.Length - 1 )];
 		}
 
 		public int Count {
