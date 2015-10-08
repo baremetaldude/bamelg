@@ -19,9 +19,9 @@ namespace System.Net {
 		protected EventLoop _eventLoop;
 
 		protected NetworkServer() {
-			Assert.IsTrue( Fiber.Enabled );
+			Assert.IsTrue( EventLoop.Instance.EnableFibers );
 
-			_eventLoop = Fiber.FiberManager.CurrentEventLoop;
+			_eventLoop = EventLoop.Instance;
 		}
 
 		private bool _implListen( ushort port ) {

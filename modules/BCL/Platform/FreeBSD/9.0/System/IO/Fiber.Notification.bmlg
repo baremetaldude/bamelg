@@ -378,6 +378,7 @@ namespace System.IO {
 					private declaringtype _manager;
 					private bool _isFiberReady = false;
 					private bool _isFiberReadyAsync;
+					private uint _id;
 
 					public FiberReadyEventSink( declaringtype manager )
 						: base( manager.CurrentEventLoop ) {
@@ -405,13 +406,13 @@ namespace System.IO {
 						if( _isFiberReady ) return;
 						_isFiberReady = true;
 
-						var @event = new kevent( 0, KEventFilter.EVFILT_USER, ( KEventAction ) 0, KEventUserFilterFlags.NOTE_TRIGGER, 0, bitcast<void*>( this ) );
+						var @event = new kevent( _id, KEventFilter.EVFILT_USER, ( KEventAction ) 0, KEventUserFilterFlags.NOTE_TRIGGER, 0, bitcast<void*>( this ) );
 						_manager.CurrentEventLoop.AddEvent( @event );
 					}
 
 					public void NotifyAsync() {
 						if( !atomic( _isFiberReadyAsync = true ) ) {
-							var @event = new kevent( 0, KEventFilter.EVFILT_USER, ( KEventAction ) 0, KEventUserFilterFlags.NOTE_TRIGGER, 0, bitcast<void*>( this ) );
+							var @event = new kevent( _id, KEventFilter.EVFILT_USER, ( KEventAction ) 0, KEventUserFilterFlags.NOTE_TRIGGER, 0, bitcast<void*>( this ) );
 							_manager.CurrentEventLoop.KQueue.Modify( @event );
 						}
 					}
@@ -419,12 +420,13 @@ namespace System.IO {
 					public override bool Register() {
 						if( !base.Register() ) return false;
 
-						_manager.CurrentEventLoop.AddEvent( new kevent( 0, KEventFilter.EVFILT_USER, KEventAction.EV_ADD | KEventAction.EV_CLEAR, 0, 0, bitcast<void*>( this ) ) );
+						_id = Parent.UserFilterId++;
+						_manager.CurrentEventLoop.AddEvent( new kevent( _id, KEventFilter.EVFILT_USER, KEventAction.EV_ADD | KEventAction.EV_CLEAR, 0, 0, bitcast<void*>( this ) ) );
 						return true;
 					}
 
 					public override bool Unregister() {
-						_manager.CurrentEventLoop.AddEvent( new kevent( 0, KEventFilter.EVFILT_USER, KEventAction.EV_DELETE, 0, 0, bitcast<void*>( this ) ) );
+						_manager.CurrentEventLoop.AddEvent( new kevent( _id, KEventFilter.EVFILT_USER, KEventAction.EV_DELETE, 0, 0, bitcast<void*>( this ) ) );
 
 						return base.Unregister();
 					}

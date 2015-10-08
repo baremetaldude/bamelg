@@ -10,14 +10,18 @@ using System.Diagnostics;
 namespace System.IO {
 	public partial struct Fiber {
 		// Usage:
-		// using( new Fiber.CancellationRegion() ) {
+		// using( Fiber.CancellationRegion() ) {
 		//       semaphore.Decrement();
 		//       if( Fiber.IsCancelled ) return;
 		// }
-		public struct CancellationRegion : IDisposable {
+		public static CancellationRegionInfo CancellationRegion() {
+			return new CancellationRegionInfo();
+		}
+
+		public struct CancellationRegionInfo : IDisposable {
 			private bool _value;
 
-			public CancellationRegion() {
+			public CancellationRegionInfo() {
 				var currentFiber = FiberManager.CurrentFiber;
 
 				_value = currentFiber->IsCancellable;

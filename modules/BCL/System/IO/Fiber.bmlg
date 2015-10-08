@@ -137,16 +137,20 @@ namespace System.IO {
 			}, bitcast<void*>( start ), name );
 		}
 
+		public static AsyncCompletionRegionInfo AsyncCompletionRegion() {
+			return new AsyncCompletionRegionInfo();
+		}
+
 		// Perform enclosing block in thread pool
-		// using( new Fiber.AsyncCompletionRegion() ) { // TP context starts here
+		// using( Fiber.AsyncCompletionRegion() ) { // TP context starts here
 		//		readv( ... ); // no Fiber-related calls may appear here
 		// }
-		public struct AsyncCompletionRegion : System.Threading.DPC, IDisposable {
+		public struct AsyncCompletionRegionInfo : System.Threading.DPC, IDisposable {
 			internal FiberInfo.Manager* CurrentManager;
 			internal FiberInfo* CompletionFiber;
 			internal bool IsCancellable;
 
-			public AsyncCompletionRegion() {
+			public AsyncCompletionRegionInfo() {
 				FiberInfo.Manager.BeginAsyncCompletion( &this );
 			}
 
@@ -541,7 +545,7 @@ namespace System.IO {
 					}
 				}
 
-				public static void BeginAsyncCompletion( AsyncCompletionRegion* context ) { // called from original fiber
+				public static void BeginAsyncCompletion( AsyncCompletionRegionInfo* context ) { // called from original fiber
 					//
 					// before switch
 					//
@@ -572,7 +576,7 @@ namespace System.IO {
 
 				// Called from thread pool
 				// internal static void _AsyncCompletionRoutine( TaskEntry* task ) { AsyncCompletionRoutine( ( AsyncCompletionRegion* ) task ); }
-				internal static void AsyncCompletionRoutine( AsyncCompletionRegion* context ) { // called from TP
+				internal static void AsyncCompletionRoutine( AsyncCompletionRegionInfo* context ) { // called from TP
 					//
 					// after BeginAsyncCompletion()
 					//
@@ -603,7 +607,7 @@ namespace System.IO {
 					completionFiber->IsCancellable = context->IsCancellable;
 				}
 
-				public static void EndAsyncCompletion( AsyncCompletionRegion* context ) { // called from TP
+				public static void EndAsyncCompletion( AsyncCompletionRegionInfo* context ) { // called from TP
 					var currentFiber = context->CompletionFiber;
 					if( currentFiber == null ) return;
 
@@ -618,7 +622,7 @@ namespace System.IO {
 				private DateTime _lastSwitch = DateTime.UnbiasedNow;
 
 				#region Tracing
-			
+
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceSwitch( FiberInfo* current, FiberInfo* next ) {
 					var now = DateTime.UnbiasedNow;
@@ -627,58 +631,59 @@ namespace System.IO {
 
 					++TracedContextSwitches;
 
-					Trace.Write( new Console.OutputAttributes() {
+					using( Console.AttributedRegion( new Console.OutputAttributes() {
 						ForegroundColor = RgbColor.Green,
 						Bold = true
-					}, "Fiber: Switch [{0}] --> [{1}] at {2:HH:mm:ss.ffffff} elapsed={3}", *current, *next, now.ToUniversalTime(), elapsed );
+					} ) )
+						Console.WriteLine( "Fiber: Switch [{0}] --> [{1}] at {2:HH:mm:ss.ffffff} elapsed={3}", *current, *next, now.ToUniversalTime(), elapsed );
 
 					_lastSwitch = now;
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReady( FiberInfo* current ) {
-					Trace.Write( "Fiber: Ready [{0}]", *current );
+					Console.WriteLine( "Fiber: Ready [{0}]", *current );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsyncStart() {
-					Trace.Write( "Fiber: Ready fibers async batch begin" );
+					Console.WriteLine( "Fiber: Ready fibers async batch begin" );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsyncEnd() {
-					Trace.Write( "Fiber: Ready fibers async batch end" );
+					Console.WriteLine( "Fiber: Ready fibers async batch end" );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsync( FiberInfo* current ) {
-					Trace.Write( "Fiber: Ready async [{0}]", *current );
+					Console.WriteLine( "Fiber: Ready async [{0}]", *current );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyFibers( int readyCount ) {
-					Trace.Write( "Fiber: Ready to dispatch: {0}", readyCount );
+					Console.WriteLine( "Fiber: Ready to dispatch: {0}", readyCount );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIOEvents( int polledHandles ) {
-					Trace.Write( "Fiber: IO events count = {0}", polledHandles );
+					Console.WriteLine( "Fiber: IO events count = {0}", polledHandles );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceWait( FiberInfo* fiber, System.Reflection.UserType.Method& method, TimeSpan& timeout ) {
-					Trace.Write( "Fiber: Suspend [{0}] in '{1}' timeout={2}", *fiber, method, timeout );
+					Console.WriteLine( "Fiber: Suspend [{0}] in '{1}' timeout={2}", *fiber, method, timeout );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceTPTaskCompleted( FiberInfo* fiber ) {
-					Trace.Write( "Fiber: TP task for [{0}] completed", *fiber );
+					Console.WriteLine( "Fiber: TP task for [{0}] completed", *fiber );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceCreateFiber( FiberInfo* fiber ) {
 					fiber->CreatedTime = DateTime.UnbiasedNow;
-					Trace.Write( "Fiber: Created [{0}] ( total: {1} ) Stack={2}-{3}({4}) ValgrindStackID: {5} at {6:HH:mm:ss.ffffff}", *fiber, FiberManager.FiberCount, fiber->_stack, ( byte* ) fiber->_stack + fiber->_stackSize, fiber->_stackSize, fiber->ValgrindStackID, DateTime.UnbiasedNow );
+					Console.WriteLine( "Fiber: Created [{0}] ( total: {1} ) Stack={2}-{3}({4}) ValgrindStackID: {5} at {6:HH:mm:ss.ffffff}", *fiber, FiberManager.FiberCount, fiber->_stack, ( byte* ) fiber->_stack + fiber->_stackSize, fiber->_stackSize, fiber->ValgrindStackID, DateTime.UnbiasedNow );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
@@ -687,23 +692,25 @@ namespace System.IO {
 					var elapsed = now - FiberManager._lastSwitch;
 					fiber->RunTime += elapsed;
 
-					Trace.Write( new Console.OutputAttributes() {
+					using( Console.AttributedRegion( new Console.OutputAttributes() {
 						ForegroundColor = RgbColor.Red,
 						Bold = true
-					}, "Fiber: Finalized [{0}] ( total: {1} ) at {2:HH:mm:ss.ffffff} duration={3} work={4}", *fiber, FiberManager.FiberCount, now, now - fiber->CreatedTime, fiber->RunTime );
+					} ) )
+						Console.WriteLine( "Fiber: Finalized [{0}] ( total: {1} ) at {2:HH:mm:ss.ffffff} duration={3} work={4}", *fiber, FiberManager.FiberCount, now, now - fiber->CreatedTime, fiber->RunTime );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceCancelAllFibers() {
-					Trace.Write( new Console.OutputAttributes() {
+					using( Console.AttributedRegion( new Console.OutputAttributes() {
 						BackgroundColor = RgbColor.Red,
 						Bold = true
-					}, "Cancel all ({0}) fibers", FiberManager.FiberCount );
+					} ) )
+						Console.WriteLine( "Cancel all ({0}) fibers", FiberManager.FiberCount );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceUsageStats() {
-					Trace.Write( "Fiber: ContextSwitches = {0}", TracedContextSwitches );
+					Console.WriteLine( "Fiber: ContextSwitches = {0}", TracedContextSwitches );
 				}
 
 				public int TracedContextSwitches = 0;
@@ -728,7 +735,7 @@ namespace System.IO {
 		private static void TraceInformation() {
 			Trace.Write( "Fiber: sizeof( FiberInfo ) == {0}; alignof( FiberInfo ) == {1}", sizeof( FiberInfo ), typeof( FiberInfo ).InstanceAlignment );
 			Trace.Write( "Fiber: sizeof( FLS ) == {0}; alignof( FLS ) = {1}", Loader._flsSnapshotSize, Loader._flsSnapshotAlignment );
-		} 
+		}
 		/// @}
 	}
 }

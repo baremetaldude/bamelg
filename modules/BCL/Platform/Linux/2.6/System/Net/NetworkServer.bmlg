@@ -17,9 +17,9 @@ namespace System.Net {
 		protected EventLoop _eventLoop;
 
 		protected NetworkServer() {
-			Assert.IsTrue( Fiber.Enabled );
+			Assert.IsTrue( EventLoop.Instance.EnableFibers );
 
-			_eventLoop = Fiber.FiberManager.CurrentEventLoop;
+			_eventLoop = EventLoop.Instance;
 		}
 
 		public void Listen( SocketHandle acceptSocket ) {
@@ -115,10 +115,8 @@ namespace System.Net {
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( sockaddr_in& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
-				Trace.Write( new Console.OutputAttributes() {
-					BackgroundColor = ConsoleColor.Green,
-					Bold = true
-				}, "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
 			}
 			/// @}
 		}
@@ -147,10 +145,8 @@ namespace System.Net {
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( sockaddr_in6& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
-				Trace.Write( new Console.OutputAttributes() {
-					BackgroundColor = ConsoleColor.Green,
-					Bold = true
-				}, "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
 			}
 			/// @}
 		}
@@ -177,10 +173,8 @@ namespace System.Net {
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( SocketHandle clientSocketHandle ) {
-				Trace.Write( new Console.OutputAttributes() {
-					BackgroundColor = ConsoleColor.Green,
-					Bold = true
-				}, "NS: Client accepted to {0}", clientSocketHandle );
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client accepted to {0}", clientSocketHandle );
 			}
 			/// @}
 		}
@@ -217,7 +211,8 @@ namespace System.Net {
 		/// @{ Tracing
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceAcceptStarted( SocketHandle acceptSocket ) {
-			Trace.Write( "NS: Accepting started on socket:{0}", acceptSocket );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Trace.Write( "NS: Accepting started on socket:{0}", acceptSocket );
 		}
 		/// @}
 	}

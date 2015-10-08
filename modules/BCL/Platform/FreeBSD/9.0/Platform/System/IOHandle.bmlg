@@ -27,7 +27,7 @@ namespace Platform.Libc {
 		}
 
 		public SystemError Seek( long value, SeekOrigin seekOrigin, long& newPosition ) {
-			using( new Fiber.AsyncCompletionRegion() ) {
+			using( Fiber.AsyncCompletionRegion() ) {
 				var result = LibcApi.lseek( this, value, AdaptationLayer.MapSeekOrigin( seekOrigin ) );
 				if( newPosition != nullref ) newPosition = result;
 				if( result == -1 ) return LibcApi.LastError;
@@ -172,7 +172,7 @@ namespace Platform.Libc {
 		protected SystemError OpenBlocking( CUtf8String name, FctlValue flags, int permissions ) {
 			var result = SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() ) {
+			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.open( name, flags, permissions ) );
 				if( !IsValid ) result = LibcApi.LastError;
 			}
@@ -204,7 +204,7 @@ namespace Platform.Libc {
 
 			EnsureBlocking();
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawWrite( vararg( vectors, vectors.Length ) );
 		}
@@ -233,7 +233,7 @@ namespace Platform.Libc {
 			if( vectors.Length == 0 ) return SystemError.None;
 
 			EnsureBlocking();
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawRead( transmitted, vararg( vectors, vectors.Length ) );
 		}
@@ -258,7 +258,7 @@ namespace Platform.Libc {
 		protected SystemError WriteBlocking( TimeSpan timeout, void* buffer, int bufferLength ) {
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawWrite( buffer, bufferLength );
 		}
@@ -286,13 +286,13 @@ namespace Platform.Libc {
 			transmitted = 0;
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawRead( buffer, bufferLength, transmitted, fullBlock );
 		}
 
 		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlValue flags, SymlinkFollowOption symlinkFollowOption ) {
-			using( new Fiber.AsyncCompletionRegion() ) {
+			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.openat( parent, name, flags, symlinkFollowOption ) );
 				if( !IsValid ) return LibcApi.LastError;
 				return SystemError.None;

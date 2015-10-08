@@ -17,15 +17,23 @@ namespace Platform.Kernel {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
 		// nonblocking for fibers
-		public SocketHandleTCP( ProtocolFamily protocolFamily = ProtocolFamily.PF_INET )
-			: this( protocolFamily, Fiber.IsFiberExecuting ) {
+		public SocketHandleTCP( ProtocolFamily protocolFamily = ProtocolFamily.PF_INET ) {
+			LibcApi.Assert( Create( protocolFamily, Fiber.IsFiberExecuting ) );
 		}
 
 		public SocketHandleTCP( ProtocolFamily protocolFamily, bool nonBlocking ) {
-			LibcApi.Assert( this = bitcast<SocketHandleTCP>( LibcApi.socket( protocolFamily, __socket_type.SOCK_STREAM, IPProtocol.IPPROTO_TCP ) ) );
-			if( nonBlocking ) IsNonBlocking = true;
+			LibcApi.Assert( Create( protocolFamily, nonBlocking ) );
 		}
 
+		// dont dispose previuos value
+		public SystemError Create( ProtocolFamily protocolFamily, bool nonBlocking ) {
+			this = bitcast<SocketHandleTCP>( LibcApi.socket( protocolFamily, __socket_type.SOCK_STREAM, IPProtocol.IPPROTO_TCP ) );
+			if( !IsValid ) return LibcApi.LastError;
+
+			if( nonBlocking ) IsNonBlocking = true;
+			return SystemError.None;
+		}
+		
 		public SystemError Connect( IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
 			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );

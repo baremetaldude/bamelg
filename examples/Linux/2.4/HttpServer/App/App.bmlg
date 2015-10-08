@@ -13,10 +13,17 @@ using Platform.Libc;
 namespace Example {
 	public partial class App {
 		public class CustomHttpServer : HttpServer {
+			public string Title = "Bamelg server";
+
 			public CustomHttpServer() {
 			}
 
-			protected override RequestHandler CreateHandler( SessionHandler session ) {
+			public class SessionHandler : basetype.SessionHandler {
+				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+				public new declaringtype Server; // override field type
+			}
+
+			protected override RequestHandler CreateHandler( HttpServer.SessionHandler session ) {
 				switch( session.Resource ) {
 					case "/stat.json": return new HttpStatisticPageHandler( session );
 					case "/stat.txt": return new HttpStatisticTextPageHandler( session );
@@ -34,26 +41,28 @@ namespace Example {
 			}
 
 			public class TestPageHandler : PageHandler {
-				public TestPageHandler( SessionHandler session )
+				[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+				public new SessionHandler Session; // override field type
+
+				public TestPageHandler( HttpServer.SessionHandler session )
 					: base( session ) {
 				}
 
 				public override void OnRender() {
-					var server = ( CustomHttpServer ) Session.Server;
 					var time = Fiber.Now;
 
 					Response.Append( "<html>" );
 					{
 						Response.Append( "<head>" );
 						{
-							Response.Append( @"<title>Bamelg server</title>" );
+							Response.AppendFormat( @"<title>{0}</title>", Session.Server.Title );
 						}
 						Response.Append( "</head>" );
 
 						Response.Append( "<body>" );
 						{
-							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10}</p>", time, server.ValidRequestCount );
-							Response.Concat( "<p>TotalAcceptedClientCount: ", server.TotalAcceptedClientCount, "; InvalidRequestCount=", server.InvalidRequestCount, "; ActiveSessionCount=", server.ActiveSessionCount, "</p>" );
+							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10} MaxSessions={2}</p>", time, Session.Server.ValidRequestCount, Session.Server.MaxSessions );
+							Response.Concat( "<p>TotalAcceptedClientCount: ", Session.Server.TotalAcceptedClientCount, "; InvalidRequestCount=", Session.Server.InvalidRequestCount, "; ActiveSessionCount=", Session.Server.ActiveSessionCount, "</p>" );
 							Response.Append( "<p>Some unicode symbols: тут немножко Юникода</p>" );
 						}
 						Response.Append( "</body>" );
@@ -66,22 +75,11 @@ namespace Example {
 		public const int TcpConnectionPort = 8080;
 		public const Utf8String UnixConnectionPath = "/var/run/HttpServer.socket";
 
-		private static int FiberStackallocPages = 32;
-
 		[EntryPoint]
 		private static void Main() {
 			// Memory.MultithreadedEnvironment = false; // do not use atomic ops
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 32 };
 			eventLoop.CatchExitSignals();
-
-			if( System.Diagnostics.Valgrind.IsAttached ) FiberStackallocPages = 0; // VG like stack inside stack
-
-			if( FiberStackallocPages > 0 ) {
-				var fiberStack = new MemorySegment( stackalloc Memory.Page[FiberStackallocPages], ( uintptr ) FiberStackallocPages * sizeof( Memory.Page ) );
-
-				Fiber.FiberManager.PageManager = new MemoryPageManager( fiberStack );
-				Console.WriteLine( "Allocated workaround stack for fibers {0}", fiberStack );
-			}
 
 			utsname value;
 			LibcApi.uname( value );
@@ -94,7 +92,16 @@ namespace Example {
 			Console.WriteLine( "@}" );
 			Console.WriteLine();
 
-			var server = new CustomHttpServer();
+			eventLoop.BeginInvoke( Worker ); // create fibers only inside eventLoop.Dispatch()
+
+			eventLoop.Dispatch();
+		}
+
+		static CustomHttpServer _server;
+
+		static void Worker() {
+			_server = new CustomHttpServer();
+			_server.MaxSessions = EventLoop.Instance.FiberStackallocPages / ( _server.ClientFiberStackPages + 1 );
 
 			Fiber.Start( 2, () => {
 				var tcpListen = false;
@@ -105,7 +112,7 @@ namespace Example {
 
 				while( true ) {
 					if( !tcpListen ) {
-						tcpListen = server.Listen( TcpConnectionPort );
+						tcpListen = _server.Listen( TcpConnectionPort );
 
 						if( tcpListen )
 							Console.WriteLine( "Listen port {0}", TcpConnectionPort );
@@ -116,7 +123,7 @@ namespace Example {
 					}
 
 					if( !unixListen ) {
-						unixListen = server.Listen( UnixConnectionPath );
+						unixListen = _server.Listen( UnixConnectionPath );
 
 						if( unixListen )
 							Console.WriteLine( "Listen socket '{0}'", UnixConnectionPath );
@@ -132,7 +139,7 @@ namespace Example {
 					all &= unixListen;
 
 					if( !all ) {
-						using( new Fiber.CancellationRegion() ) {
+						using( Fiber.CancellationRegion() ) {
 							Fiber.Sleep( 1000 );
 							if( Fiber.IsCancelled ) return;
 						}
@@ -145,8 +152,6 @@ namespace Example {
 
 				PrintConnectionOptions();
 			}, "resource allocator" );
-
-			eventLoop.Dispatch();
 		}
 
 		static void PrintConnectionOptions() {

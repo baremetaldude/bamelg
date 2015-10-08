@@ -106,7 +106,7 @@ namespace Platform.IO {
 
 			switch( flushKind ) {
 				case FlushKind.SynchronizeWrite:
-					using( new Fiber.AsyncCompletionRegion() )
+					using( Fiber.AsyncCompletionRegion() )
 						LibcApi.fdatasync( _handle );
 					break;
 			}

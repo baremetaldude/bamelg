@@ -3,6 +3,7 @@
 //
 
 using System;
+using System.Collections;
 using System.IO;
 using System.Net;
 
@@ -15,6 +16,8 @@ namespace Example {
 	public partial class App {
 		[EntryPoint]
 		private static void Main() {
+			System.Threading.ThreadPool.Initialize();
+
 			utsname value;
 			LibcApi.uname( value );
 
@@ -26,53 +29,75 @@ namespace Example {
 			Console.WriteLine( "@}" );
 			Console.WriteLine();
 
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true };
 			eventLoop.CatchExitSignals(); // convert signals to events
 
-			for( var i = 0; i < RepeatCount / 2; ++i )
-				Fiber.Start( 8, LoadPage );
-
-			FetchStart = DateTime.UnbiasedNow;
+			eventLoop.BeginInvoke( Worker );
 
 			eventLoop.Dispatch();
 		}
 
-		private static int RepeatCount = 6;
+		private static void Worker() {
+			Fiber.Start( 8, LoadPage );
+
+			FetchStart = DateTime.UnbiasedNow;
+		}
+
 		private static DateTime FetchStart;
 
 		private static void LoadPage() {
-			// if( --RepeatCount < 0 ) return; // atomics not necessary since LoadPage() and Main() exectuted in same thread
+			var host = "www.gnu.org";
+			var path = "/software/libc/manual/html_node/Host-Names.html";
+
+			hostent* hostent;
+
+			using( Fiber.AsyncCompletionRegion() )
+				hostent = LibcApi.gethostbyname( ( Utf8String ) host );
+
+			if( hostent == null ) {
+				Console.WriteLine( "Unable to resolve name" );
+				return;
+			}
+
+			if( hostent->h_addrtype != ProtocolFamily.PF_INET ) {
+				Console.WriteLine( "Unsupported protocol family" );
+				return;
+			}
+
+			var addresses = new List<IPv4Address>( 6 );
+			for( var i = 0; hostent->h_addr_list[i] != null; ++i ) {
+				addresses.Add( new IPv4Address( cast<in_addr*>( hostent->h_addr_list[i] )->Address ) );
+			}
+
+			if( addresses.Count == 0 ) return;
 
 			var socket = new SocketHandleTCP();
-			if( socket.Connect( IPv4Endpoint.Parse( "198.252.206.16:80" ) ) != SystemError.None )
+			if( socket.Connect( new IPv4Endpoint( addresses[0], 80 ) ) != SystemError.None ) {
+				Console.WriteLine( "Unable to connect" );
 				return;
+			}
 
 			socket.ImmediateDelivery = true;
 
 			var client = new HttpClient( new NetworkStream( socket ) );
-			var str = client.DownloadStream( "stackoverflow.com", "/questions/13631462" );
-			// var str = client.DownloadStream( "stackoverflow.com", "/questions/13631462/how-to-run-the-javascript-script-on-all-the-pages-of-domain" );
-			// var str = client.DownloadStream( "yo.com", "/" );
+			var str = client.DownloadStream( host, path );
 
-			using( var fs = System.IO.File.OpenWrite( Utf8String.Format( "/tmp/{0:X16}.{1}.htm", DateTime.UnbiasedNow.Ticks, Fiber.Current ) ) ) {
-				// Trace.Write( new ConsoleAttributes() {
-				// 	ForegroundColor = ConsoleAttributes.Color.Cyan,
-				// 	Bold = true
-				// }, "Fiber: Start read {0}", DateTime.UnbiasedNow );
-
-				// str.ReadToEnd();
-				fs.Write( str );
-
-				// Trace.Write( new ConsoleAttributes() {
-				// 	ForegroundColor = ConsoleAttributes.Color.Cyan,
-				// 	Bold = true
-				// }, "Fiber: End read {0}", DateTime.UnbiasedNow );
+			if( str == null ) {
+				Console.WriteLine( "Unable to get download stream" );
+				return;
 			}
 
-			// if( RepeatCount >= 1 ) Fiber.Start( 8, LoadPage );
+			var filename = Utf8String.Format( "/tmp/{0:X16}.{1}.htm", DateTime.UnbiasedNow.Ticks, Fiber.Current );
 
-			if( RepeatCount <= 0 )
-				Fiber.FiberManager.CurrentEventLoop.RequestExit();
+			using( Console.AttributedRegion( ConsoleColor.Yellow ) )
+				Console.WriteLine( "Begin write download stream written to '{0}'", filename );
+
+			using( Fiber.CancellationRegion() )
+			using( var fs = System.IO.File.OpenWrite( filename ) ) {
+				fs.Write( str );
+			}
+
+			Fiber.FiberManager.CurrentEventLoop.RequestExit();
 		}
 	}
 }

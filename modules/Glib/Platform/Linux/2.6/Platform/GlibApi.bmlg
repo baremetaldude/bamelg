@@ -273,65 +273,13 @@ namespace Platform.Glib {
 	public partial struct GMainContext {
 		public static GMainContext* Default { get { return GlibApi.g_main_context_default(); } }
 
-		public GSource* Attach( EventLoop eventLoop ) {
-			if( !Assert.IsTrue( eventLoop.EventLoopData == null ) ) return null;
-
-			var source = ( GDispatcherSource* ) GlibApi.g_source_new( &GDispatcherSource.Adapter, sizeof( GDispatcherSource ) );
-
-			source->Dispatcher = eventLoop;
-			source->PollEntry = new GPollFD { Handle = eventLoop.Epoll, Events = GIOCondition.G_IO_IN, RaisedEvents = GIOCondition.None };
-
-			GlibApi.g_source_attach( source, &this );
-			GlibApi.g_source_add_poll( source, &source->PollEntry );
-
-			eventLoop.EventLoopData = source;
-			return source;
+		public void EventLoopSubscribe() {
+			GlibApi.g_main_context_set_poll_func( &this, poll_handler );
 		}
 
-		public static void Detach( EventLoop eventLoop ) {
-			if( !Assert.IsTrue( eventLoop.EventLoopData != null ) ) return;
-
-			var source = ( GDispatcherSource* ) eventLoop.EventLoopData;
-
-			GlibApi.g_source_remove_poll( source, &source->PollEntry );
-			GlibApi.g_source_destroy( source );
-			source->ReleaseReference();
-
-			eventLoop.EventLoopData = null;
-		}
-
-		private struct GDispatcherSource : GSource {
-			public static GSourceFuncs Adapter = new GSourceFuncs {
-				prepare = prepare,
-				check = check,
-				dispatch = dispatch,
-				finalize = finalize
-			};
-
-			public EventLoop Dispatcher;
-			public GPollFD PollEntry;
-
-			private Boolean32 prepare( int* timeout ) {
-				*timeout = -1;
-				return Dispatcher.Epoll.IsReady;
-			}
-
-			private Boolean32 check() {
-				var avl = Dispatcher.Epoll.IsReady;
-				if( avl ) {
-					Dispatcher.OnEvent();
-				}
-
-				return avl;
-			}
-
-			private Boolean32 dispatch( Functors.Func<void*, Boolean32> callback, void* data ) {
-				return true;
-			}
-
-			private void finalize() {
-				Dispatcher = null;
-			}
+		private static int poll_handler( GPollFD* passedHandles, uint count, int timeout ) {
+			// if( Platform.IO.EventLoop.Instance != null ) return Platform.IO.EventLoop.Instance.Poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
+			return Platform.Libc.LibcApi.poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
 		}
 	}
 

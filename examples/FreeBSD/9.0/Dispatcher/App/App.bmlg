@@ -17,12 +17,12 @@ namespace Example {
 				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
 				eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
 
-				// eventLoop.BeginInvoke( () => {
-				// 	new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
-				// 		eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
-				// 		eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
-				// 	} ).Detach();
-				// } );
+				eventLoop.BeginInvoke( () => {
+					new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
+						eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
+						eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
+					} ).Detach();
+				} );
 
 				eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );

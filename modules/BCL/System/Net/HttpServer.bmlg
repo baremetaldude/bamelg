@@ -124,7 +124,7 @@ namespace System.Net {
 					int readen = requestBuffer->AvailableToRead;
 					if( readen == 0 ) WriteStream.Flush( FlushKind.SynchronizeWrite ); // try to flush multiple responses
 
-					using( new Fiber.CancellationRegion() ) {
+					using( Fiber.CancellationRegion() ) {
 						ReadStream.Flush( FlushKind.Read );
 
 						if( Fiber.IsCancelled ) return;
@@ -304,7 +304,7 @@ namespace System.Net {
 					for( var total = RequestLength; total > 0; ) {
 						int readen = requestBuffer->AvailableToRead;
 						if( readen == 0 )
-							using( new Fiber.CancellationRegion() ) {
+							using( Fiber.CancellationRegion() ) {
 								requestStream.Flush( FlushKind.Read );
 								readen = requestBuffer->AvailableToRead;
 								if( Fiber.IsCancelled ) return;
@@ -641,56 +641,51 @@ namespace System.Net {
 		}
 
 		/// @{ Tracing
-		private const string TraceConditionString = "TRACE_HTTP_SERVER";
+		protected const string TraceConditionString = "TRACE_HTTP_SERVER";
+		protected static Console.OutputAttributes TraceStyleNormal = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Green };
+		protected static Console.OutputAttributes TraceStyleHigh = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Red };
+		protected static Console.OutputAttributes TraceStyleHeader = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.DarkYellow };
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientWaitNewRequest( SessionHandler session ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.Green,
-				Bold = true
-			}, "HTTP: Client {0} wait for new request", bitcast<void*>( session ) );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "HTTP: Client {0} wait for new request", bitcast<void*>( session ) );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientEvent( SessionHandler session ) {
-			Trace.Write( "HTTP: Event handler='{0}'", session.Handler != null ? session.Handler.GetType().ToString() : "" );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "HTTP: Event handler='{0}'", session.Handler != null ? session.Handler.GetType().ToString() : "" );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientTerminateSession( SessionHandler session ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.Red
-			}, "HTTP: Client {0} closed connection", bitcast<void*>( session ) );
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "HTTP: Client {0} closed connection", bitcast<void*>( session ) );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientBrokenConnection( SessionHandler session ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.Red
-			}, "HTTP: Client {0} has broken connection", bitcast<void*>( session ) );
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "HTTP: Client {0} has broken connection", bitcast<void*>( session ) );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientRequest( SessionHandler session ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.Green,
-				Bold = true
-			}, "HTTP: Client {0} requested: '{1}'. HTTP {2}.{3}", bitcast<void*>( session ), session._parser.Uri, session._parser.VersionMajor, session._parser.VersionMinor );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "HTTP: Client {0} requested: '{1}'. HTTP {2}.{3}", bitcast<void*>( session ), session._parser.Uri, session._parser.VersionMajor, session._parser.VersionMinor );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceResponseStatus( SessionHandler session, HttpStatusCode code ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.Green,
-				Bold = true
-			}, "HTTP: Send status {1}({2}) to client {0}", bitcast<void*>( session ), code, code.Value() );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "HTTP: Send status {1}({2}) to client {0}", bitcast<void*>( session ), code, code.Value() );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceRequestHeader( SessionHandler session, CStringSpan& header, CStringSpan& value ) {
-			Trace.Write( new Console.OutputAttributes() {
-				ForegroundColor = ConsoleColor.DarkYellow
-			}, "HTTP: Client {0} got header: '{1}':'{2}'", bitcast<void*>( session ), header, value );
+			using( Console.AttributedRegion( TraceStyleHeader ) )
+				Console.WriteLine( "HTTP: Client {0} got header: '{1}':'{2}'", bitcast<void*>( session ), header, value );
 		}
 
 		/// @}

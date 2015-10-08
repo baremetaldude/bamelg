@@ -23,7 +23,7 @@ namespace Example {
 
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true };
 			eventLoop.CatchConsoleQuit(); // convert signals to events
 
 			// @{ setup server
@@ -40,84 +40,86 @@ namespace Example {
 			serverFramed.Framed = true;
 			serverFramed.ExceptionHandler = serverImpl;
 
-			Fiber.Start( 16, () => {
-				var tcpListen = false;
-				var tcpListenReported = false;
+			eventLoop.BeginInvoke( () => {
+				Fiber.Start( 16, () => {
+					var tcpListen = false;
+					var tcpListenReported = false;
 
-				var pipeListen = false;
-				var pipeListenReported = false;
+					var pipeListen = false;
+					var pipeListenReported = false;
 
-				var tcpListenFramed = false;
-				var tcpListenReportedFramed = false;
+					var tcpListenFramed = false;
+					var tcpListenReportedFramed = false;
 
-				var pipeListenFramed = false;
-				var pipeListenReportedFramed = false;
+					var pipeListenFramed = false;
+					var pipeListenReportedFramed = false;
 
-				while( true ) {
-					if( !tcpListen ) {
-						tcpListen = server.Listen( TcpConnectionPort );
+					while( true ) {
+						if( !tcpListen ) {
+							tcpListen = server.Listen( TcpConnectionPort );
 
-						if( tcpListen )
-							Console.WriteLine( "Listen TCP port {0}. Framed=false", TcpConnectionPort );
-						else if( !tcpListenReported ) {
-							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
-							tcpListenReported = true;
-						}
-					}
-
-					if( !pipeListen ) {
-						pipeListen = server.Listen( NamedPipeConnectionPath );
-
-						if( pipeListen )
-							Console.WriteLine( "Listen named pipe '{0}'. Framed=false", NamedPipeConnectionPath );
-						else if( !pipeListenReported ) {
-							Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
-							pipeListenReported = true;
-						}
-					}
-
-					if( !tcpListenFramed ) {
-						tcpListenFramed = serverFramed.Listen( TcpConnectionPortFramed );
-
-						if( tcpListenFramed )
-							Console.WriteLine( "Listen TCP port {0}. Framed=true", TcpConnectionPortFramed );
-						else if( !tcpListenReportedFramed ) {
-							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPortFramed );
-							tcpListenReportedFramed = true;
-						}
-					}
-
-					if( !pipeListenFramed ) {
-						pipeListenFramed = serverFramed.Listen( NamedPipeConnectionPathFramed );
-
-						if( pipeListenFramed )
-							Console.WriteLine( "Listen named pipe '{0}'. Framed=true", NamedPipeConnectionPathFramed );
-						else if( !pipeListenReportedFramed ) {
-							Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPathFramed );
-							pipeListenReportedFramed = true;
-						}
-					}
-					var all = true;
-
-					all &= tcpListen;
-					all &= pipeListen;
-					all &= tcpListenFramed;
-					all &= pipeListenFramed;
-
-					if( !all ) {
-						using( new Fiber.CancellationRegion() ) {
-							Fiber.Sleep( 1000 );
-							if( Fiber.IsCancelled ) return;
+							if( tcpListen )
+								Console.WriteLine( "Listen TCP port {0}. Framed=false", TcpConnectionPort );
+							else if( !tcpListenReported ) {
+								Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
+								tcpListenReported = true;
+							}
 						}
 
-						continue;
+						if( !pipeListen ) {
+							pipeListen = server.Listen( NamedPipeConnectionPath );
+
+							if( pipeListen )
+								Console.WriteLine( "Listen named pipe '{0}'. Framed=false", NamedPipeConnectionPath );
+							else if( !pipeListenReported ) {
+								Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
+								pipeListenReported = true;
+							}
+						}
+
+						if( !tcpListenFramed ) {
+							tcpListenFramed = serverFramed.Listen( TcpConnectionPortFramed );
+
+							if( tcpListenFramed )
+								Console.WriteLine( "Listen TCP port {0}. Framed=true", TcpConnectionPortFramed );
+							else if( !tcpListenReportedFramed ) {
+								Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPortFramed );
+								tcpListenReportedFramed = true;
+							}
+						}
+
+						if( !pipeListenFramed ) {
+							pipeListenFramed = serverFramed.Listen( NamedPipeConnectionPathFramed );
+
+							if( pipeListenFramed )
+								Console.WriteLine( "Listen named pipe '{0}'. Framed=true", NamedPipeConnectionPathFramed );
+							else if( !pipeListenReportedFramed ) {
+								Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPathFramed );
+								pipeListenReportedFramed = true;
+							}
+						}
+						var all = true;
+
+						all &= tcpListen;
+						all &= pipeListen;
+						all &= tcpListenFramed;
+						all &= pipeListenFramed;
+
+						if( !all ) {
+							using( Fiber.CancellationRegion() ) {
+								Fiber.Sleep( 1000 );
+								if( Fiber.IsCancelled ) return;
+							}
+
+							continue;
+						}
+
+						break;
 					}
 
-					break;
-				}
-
-				PrintConnectionOptions();
-			}, "resource allocator" );
+					PrintConnectionOptions();
+				}, "resource allocator" );
+			} );
 
 			// @}
 

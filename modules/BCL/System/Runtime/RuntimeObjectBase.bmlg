@@ -324,9 +324,10 @@ namespace System.Runtime {
 	/// Base class for all user types (classes with omitted base)
 	public abstract partial class RuntimeUserObjectBase : RuntimeObjectBase {
 		// Main purpose of 'Dispose' method is to break cyclic references which can prevent destructor being calling and freeng memory.
+		// Disposed object can be used again (bad pattern for C#, good in bamelg), objects in bamelg should be designed with reusability in mind since memory already allocated which is costly operation
 		// Resource freeing (raw OS handles, malloc'ed memory) must be performed strictly in destructors since 'Dispose()' may not be called before object lost last reference
 		// Avoid calling 'Dispose()' (or other virtual members) in constructors/destructors - it can lead to access fields in derived type after destructor of derived type get called ( read/writes to freed memory )
-		public new virtual void Dispose() { _instanceState |= StateFlags.Disposed; }
+		public new virtual void Dispose() { }
 
 		// Hash value based on object location by default
 		public new virtual uint GetHashCode() { return ( uint ) bitcast<uintptr>( this ); }

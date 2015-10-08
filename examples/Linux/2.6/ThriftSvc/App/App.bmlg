@@ -16,7 +16,7 @@ namespace Example {
 
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true };
 			eventLoop.CatchExitSignals(); // convert signals to events
 
 			// @{ setup server
@@ -24,55 +24,57 @@ namespace Example {
 			var serverHandler = new ThriftServerImpl();
 			var server = new ThriftServer( new Svc2.RequestHandler( serverHandler ) );
 
-			Fiber.Start( 16, () => {
-				var tcpListen = false;
-				var tcpListenReported = false;
+			eventLoop.BeginInvoke( () => {
+				Fiber.Start( 16, () => {
+					var tcpListen = false;
+					var tcpListenReported = false;
 
-				var socketListen = false;
-				var socketListenReported = false;
+					var socketListen = false;
+					var socketListenReported = false;
 
-				while( true ) {
-					if( !tcpListen ) {
-						tcpListen = server.Listen( TcpConnectionPort );
+					while( true ) {
+						if( !tcpListen ) {
+							tcpListen = server.Listen( TcpConnectionPort );
 
-						if( tcpListen )
-							Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
-						else if( !tcpListenReported ) {
-							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
-							tcpListenReported = true;
-						}
-					}
-
-					if( !socketListen ) {
-						socketListen = server.Listen( SocketConnectionPath );
-
-						if( socketListen )
-							Console.WriteLine( "Listen socket '{0}'", SocketConnectionPath );
-						else if( !socketListenReported ) {
-							Console.WriteLine( "Unable to bind socket '{0}'", SocketConnectionPath );
-							socketListenReported = true;
-						}
-					}
-
-					var all = true;
-
-					all &= tcpListen;
-					all &= socketListen;
-
-					if( !all ) {
-						using( new Fiber.CancellationRegion() ) {
-							Fiber.Sleep( 1000 );
-							if( Fiber.IsCancelled ) return;
+							if( tcpListen )
+								Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
+							else if( !tcpListenReported ) {
+								Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
+								tcpListenReported = true;
+							}
 						}
 
-						continue;
+						if( !socketListen ) {
+							socketListen = server.Listen( SocketConnectionPath );
+
+							if( socketListen )
+								Console.WriteLine( "Listen socket '{0}'", SocketConnectionPath );
+							else if( !socketListenReported ) {
+								Console.WriteLine( "Unable to bind socket '{0}'", SocketConnectionPath );
+								socketListenReported = true;
+							}
+						}
+
+						var all = true;
+
+						all &= tcpListen;
+						all &= socketListen;
+
+						if( !all ) {
+							using( Fiber.CancellationRegion() ) {
+								Fiber.Sleep( 1000 );
+								if( Fiber.IsCancelled ) return;
+							}
+
+							continue;
+						}
+
+						break;
 					}
 
-					break;
-				}
-
-				PrintConnectionOptions();
-			}, "resource allocator" );
+					PrintConnectionOptions();
+				}, "resource allocator" );
+			} );
 
 			// @}
 

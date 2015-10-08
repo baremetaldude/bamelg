@@ -20,7 +20,7 @@ namespace Platform.Kernel {
 		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ); }
 
 		internal SystemError getdents64( dirent64* buffer, intptr length, int& readen ) {
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 				return KernelApi.getdents64( readen, this, buffer, length );
 		}
 	}

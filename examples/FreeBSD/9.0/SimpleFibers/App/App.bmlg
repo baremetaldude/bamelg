@@ -23,11 +23,20 @@ namespace Example {
 		private static void Main() {
 			System.Threading.ThreadPool.Initialize();
 
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true };
 			eventLoop.CatchExitSignals(); // convert signals to events
 
 			Console.WriteLine( "Started!" );
 
+			eventLoop.BeginInvoke( Worker );
+
+			eventLoop.Dispatch(); // wait until RequestExit
+			Console.WriteLine( "Finished" );
+		}
+
+		static Fiber.Barrier _barrier = new Fiber.Barrier( 2 );
+
+		private static void Worker() {
 			Fiber.Start( Pages, () => {
 				System.Numerics.Matrix4x4 mat;
 				Assert.AreEqual( 0, ( cast<intptr>( &mat ) & 15 ) );
@@ -48,16 +57,15 @@ namespace Example {
 			// @}
 
 			// @{ use barrier to syncronize fibers
-			var fb = new Fiber.Barrier( 2 ); // NOTE: 'fb' captured by lambda valid/alive only inside Main()
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
-				fb.Wait();
+				_barrier.Wait();
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "bar0" );
 
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
-				fb.Wait();
+				_barrier.Wait();
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "bar1" );
 			// @}
@@ -70,7 +78,7 @@ namespace Example {
 				Fiber.Sleep( 2000 );
 				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, pthread_t.CurrentThread, DateTime.UtcNow );
 
-				eventLoop.RequestExit();
+				EventLoop.Instance.RequestExit();
 			}, "slp0" );
 
 			Fiber.Start( Pages, () => {
@@ -84,19 +92,15 @@ namespace Example {
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
 
-				Fiber.InvokeAsync( () => {
+				using( Fiber.AsyncCompletionRegion() ) { // following region executed in thread pool
 					Console.WriteLine( "\tWorker thread [{0}] started", pthread_t.CurrentThread );
 					pthread_t.Sleep( 1000 );
 
 					Console.WriteLine( "\tWorker thread [{0}] finished", pthread_t.CurrentThread );
-				} );
+				}
 
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "tp0" );
-			// @}
-
-			eventLoop.Dispatch(); // wait until RequestExit
-			Console.WriteLine( "Finished" );
 			// @}
 		}
 	}

@@ -232,14 +232,15 @@ namespace BamelgForwarder {
 			AddReference();
 			AddReference();
 
-			var pages = 4;
-			Fiber.Start( pages, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
-			Fiber.Start( pages, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
+			EventLoop.Instance.BeginInvoke( () => {
+				Fiber.Start( 4, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
+				Fiber.Start( 4, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
+			} );
 		}
 
 		private void Transfer( Endpoint source, Endpoint destination ) {
 			while( !Fiber.IsCancelled ) {
-				using( new Fiber.CancellationRegion() ) {
+				using( Fiber.CancellationRegion() ) {
 					var isConnected = source.Connect();
 
 					if( !isConnected ) {

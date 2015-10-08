@@ -60,21 +60,5 @@ namespace System.Diagnostics {
 		public static void Write( string format ) {
 			Console.WriteLine( format );
 		}
-
-		[Conditional( ConditionString = "TRACE" )]
-		public static void Write( Console.OutputAttributes& attrs, [VerifyFormatString] string format, vararg TypedReference parameters ) {
-			attrs.Apply();
-			Console.Write( format, vararg( parameters, parameters.Length ) );
-			attrs.Reset();
-			Console.WriteLine();
-		}
-
-		[Conditional( ConditionString = "TRACE" )]
-		public static void Write( Console.OutputAttributes& attrs, string format ) {
-			attrs.Apply();
-			Console.Write( format );
-			attrs.Reset();
-			Console.WriteLine();
-		}
 	}
 }

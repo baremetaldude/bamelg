@@ -11,19 +11,22 @@ using Platform.IO;
 
 namespace Example {
 	class Test {
-		static EventLoop _eventLoop = new EventLoop(){ Tracing = true };
-
 		[EntryPoint]
 		static void Main() {
-			_eventLoop.CatchExitSignals(); // convert signals to events
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchExitSignals(); // convert signals to events
 
-			Fiber.Start( 32, Worker );
+			eventLoop.BeginInvoke( CreateFibers );
 
-			_eventLoop.Dispatch(); // wait until RequestExit
+			eventLoop.Dispatch(); // wait until RequestExit
 		}
 
-		static void Worker() {
-			finally { _eventLoop.RequestExit(); }
+		static void CreateFibers() {
+			Fiber.Start( 32, FiberWorker );
+		}
+
+		static void FiberWorker() {
+			finally { Fiber.FiberManager.CurrentEventLoop.RequestExit(); }
 
 			var connection = new MySQLConnection() {
 				Trace = true,

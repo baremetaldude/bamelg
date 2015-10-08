@@ -36,7 +36,7 @@ namespace Platform.Kernel {
 		}
 
 		public SystemError Seek( long value, SeekOrigin seekOrigin, long& newPosition ) {
-			using( new Fiber.AsyncCompletionRegion() ) {
+			using( Fiber.AsyncCompletionRegion() ) {
 				var result = LibcApi.lseek64( this, value, AdaptationLayer.MapSeekOrigin( seekOrigin ) );
 				if( newPosition != nullref ) newPosition = result;
 				if( result == -1 ) return LibcApi.LastError;
@@ -181,7 +181,7 @@ namespace Platform.Kernel {
 		protected SystemError OpenBlocking( CUtf8String name, FctlValue flags, int permissions ) {
 			var result = SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() ) {
+			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.open( name, flags, permissions ) );
 				if( !IsValid ) result = LibcApi.LastError;
 			}
@@ -213,7 +213,7 @@ namespace Platform.Kernel {
 
 			EnsureBlocking();
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawWrite( vararg( vectors, vectors.Length ) );
 		}
@@ -242,7 +242,7 @@ namespace Platform.Kernel {
 			if( vectors.Length == 0 ) return SystemError.None;
 
 			EnsureBlocking();
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawRead( transmitted, vararg( vectors, vectors.Length ) );
 		}
@@ -267,7 +267,7 @@ namespace Platform.Kernel {
 		protected SystemError WriteBlocking( TimeSpan timeout, void* buffer, int bufferLength ) {
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawWrite( buffer, bufferLength );
 		}
@@ -295,7 +295,7 @@ namespace Platform.Kernel {
 			transmitted = 0;
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
-			using( new Fiber.AsyncCompletionRegion() )
+			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
 				return RawRead( buffer, bufferLength, transmitted, fullBlock );
 		}

@@ -18,7 +18,6 @@ namespace System.Net {
 
 		public int ListenBacklog = 128;
 		public bool DefferedAccept = true;
-		public const string TraceConditionString = "TRACE_NETWORK_SERVER";
 
 		public bool ReusePort = false;     // for multithreaded accept
 		// @}
@@ -41,6 +40,9 @@ namespace System.Net {
 		public bool Listen( Utf8String path ) { return _implListen( path ); }
 		public bool Listen( string path ) { return _implListen( path ); }
 		/// @}
+
+		public const string TraceConditionString = "TRACE_NETWORK_SERVER";
+		private static Console.OutputAttributes TraceStyleNormal = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Green };
 
 		public abstract partial class SessionHandler {
 			public declaringtype Server;

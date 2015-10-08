@@ -48,7 +48,7 @@ namespace System.Net {
 					if( requestBuffer->AvailableToRead == 0 ) {
 						WriteStream.Flush( FlushKind.SynchronizeWrite ); // for corking
 
-						using( new Fiber.CancellationRegion() )
+						using( Fiber.CancellationRegion() )
 							if( !ReadStream.EnsureReadable( 1 ) )
 								break;
 					}

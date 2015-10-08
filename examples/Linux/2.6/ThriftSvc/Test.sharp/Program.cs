@@ -18,8 +18,8 @@ namespace TestThrift {
 			using( var transport = new TSocket( "fedorax86", 7070 ) ) {
 				transport.Open();
 
-				// var client = new Svc2.Client( new TBinaryProtocol( new TFramedTransport( transport ) ) );
-				var client = new Svc2.Client( new TBinaryProtocol( transport ) );
+				var client = new Svc2.Client( new TBinaryProtocol( new TFramedTransport( transport ) ) );
+				// var client = new Svc2.Client( new TBinaryProtocol( transport ) );
 
 				var r1 = client.echo( new Dictionary<string, string> { { "microsoft", "http://www.bing.com/maps/" } } );
 				var r2 = client.add( 10, 30 );

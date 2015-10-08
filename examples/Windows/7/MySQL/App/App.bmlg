@@ -12,7 +12,6 @@ using Platform.IO;
 
 namespace Example {
 	class Test {
-		static EventLoop _eventLoop;
 
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
 
@@ -20,16 +19,18 @@ namespace Example {
 		static void Main() {
 			System.Threading.ThreadPool.Initialize();
 
-			_eventLoop = new EventLoop(){ Tracing = true };
+			var _eventLoop = new EventLoop() { Tracing = true };
 			_eventLoop.CatchConsoleQuit();
 
-			Fiber.Start( 32, Worker );
+			_eventLoop.BeginInvoke( () => {
+				Fiber.Start( 32, Worker );
+			} );
 
 			_eventLoop.Dispatch(); // wait until RequestExit
 		}
 
 		static void Worker() {
-			finally { _eventLoop.RequestExit(); }
+			finally { EventLoop.Instance.RequestExit(); }
 
 			var connection = new MySQLConnection() {
 				Trace = true,

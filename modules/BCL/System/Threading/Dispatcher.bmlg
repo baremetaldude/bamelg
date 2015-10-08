@@ -630,12 +630,16 @@ namespace System.Threading {
 		public bool Tracing { get; set; }
 		public bool TracingAlarmQueue { get; set; }
 
+		protected static Console.OutputAttributes TraceStyleNormal = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Blue };
+		protected static Console.OutputAttributes TraceStyleHigh = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Blue, Bold = true };
+		protected static Console.OutputAttributes TraceStyleError = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Red, Bold = true };
+
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceAlarmAdd( AlarmEntry* alarm ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
-			}, "Dispatcher: Alarm {0} added", *alarm );
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "Dispatcher: Alarm {0} added", *alarm );
 
 			if( TracingAlarmQueue ) DumpAlarms();
 		}
@@ -644,8 +648,8 @@ namespace System.Threading {
 		private void TraceAlarmRemoved( AlarmEntry* alarm ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
-			}, "Dispatcher: Alarm {0} removed", *alarm );
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "Dispatcher: Alarm {0} removed", *alarm );
 
 			if( TracingAlarmQueue ) DumpAlarms();
 		}
@@ -654,8 +658,8 @@ namespace System.Threading {
 		private void TraceAlarmReady( AlarmEntry* alarm ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "Dispatcher: Alarm {0} ready", alarm );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "Dispatcher: Alarm {0} ready", alarm );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]

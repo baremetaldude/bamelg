@@ -121,55 +121,57 @@ namespace Example {
 
 			var server = new CustomHttpServer();
 
-			Fiber.Start( 16, () => {
-				var tcpListen = false;
-				var tcpListenReported = false;
+			eventLoop.BeginInvoke( () => {
+				Fiber.Start( 16, () => {
+					var tcpListen = false;
+					var tcpListenReported = false;
 
-				var pipeListen = false;
-				var pipeListenReported = false;
+					var pipeListen = false;
+					var pipeListenReported = false;
 
-				while( true ) {
-					if( !tcpListen ) {
-						tcpListen = server.Listen( TcpConnectionPort );
+					while( true ) {
+						if( !tcpListen ) {
+							tcpListen = server.Listen( TcpConnectionPort );
 
-						if( tcpListen )
-							Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
-						else if( !tcpListenReported ) {
-							Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
-							tcpListenReported = true;
-						}
-					}
-
-					if( !pipeListen ) {
-						pipeListen = server.Listen( NamedPipeConnectionPath );
-
-						if( pipeListen )
-							Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
-						else if( !pipeListenReported ) {
-							Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
-							pipeListenReported = true;
-						}
-					}
-
-					var all = true;
-
-					all &= tcpListen;
-					all &= pipeListen;
-
-					if( !all ) {
-						using( new Fiber.CancellationRegion() ) {
-							Fiber.Sleep( 1000 );
-							if( Fiber.IsCancelled ) return;
+							if( tcpListen )
+								Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
+							else if( !tcpListenReported ) {
+								Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
+								tcpListenReported = true;
+							}
 						}
 
-						continue;
+						if( !pipeListen ) {
+							pipeListen = server.Listen( NamedPipeConnectionPath );
+
+							if( pipeListen )
+								Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
+							else if( !pipeListenReported ) {
+								Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
+								pipeListenReported = true;
+							}
+						}
+
+						var all = true;
+
+						all &= tcpListen;
+						all &= pipeListen;
+
+						if( !all ) {
+							using( Fiber.CancellationRegion() ) {
+								Fiber.Sleep( 1000 );
+								if( Fiber.IsCancelled ) return;
+							}
+
+							continue;
+						}
+
+						break;
 					}
 
-					break;
-				}
-
-				PrintConnectionOptions();
-			}, "resource allocator" );
+					PrintConnectionOptions();
+				}, "resource allocator" );
+			} );
 
 			eventLoop.Dispatch();
 		}

@@ -20,6 +20,14 @@ namespace Platform.IO {
 	// - it not guarded with mutexes, MT access to event sinks is not common code path
 	// - all modifications to them from other threads must be performed via Invoke/BeginInvoke (e.g. in context of event loop)
 	public partial class EventLoop : System.Threading.Dispatcher {
+		#region settings
+		public bool EnableFibers = true;
+		public int FiberStackallocPages = 0;
+		#endregion
+
+		[ThreadStatic]
+		public static EventLoop Instance;
+
 		protected bool _quitRequest = false;
 
 		private List<pollfd> _polledDescriptors = new List<pollfd>();
@@ -31,20 +39,10 @@ namespace Platform.IO {
 
 		private bool _fiberDispatch = false;
 
-		[ThreadStatic]
-		public static EventLoop Instance;
-
-		public EventLoop( bool enableFibers = true ) {
+		public EventLoop() {
 			_notificationEmitter.Register();
 
-			if( enableFibers && !Fiber.Enabled ) {
-				_fiberDispatch = true;
-				Fiber.RuntimeInitialize();
-				Fiber.FiberManager.Attach( this );
-			}
-
 			if( Instance == null ) Instance = this;
-			DispatchThread = Platform.Libc.pthread_t.CurrentThread;
 		}
 
 		public override void Dispose() {
@@ -52,19 +50,20 @@ namespace Platform.IO {
 			CancelTasks();
 			FinalizeAlarms();
 
-			if( _fiberDispatch )
-				Fiber.FiberManager.Detach( this );
-
-			foreach( var eventSink in _eventSinks )
-				if( eventSink != null )
-					eventSink.Dispose();
-
 			if( _fiberDispatch ) {
+				Fiber.FiberManager.Detach( this );
 				Fiber.RuntimeShutdown();
 				_fiberDispatch = false;
 			}
 
-			Instance = null;
+			foreach( var eventSink in _eventSinks )
+				if( eventSink != null )
+					eventSink.Dispose();
+			_eventSinks.Clear();
+
+			_quitRequest = false;
+
+			base.Dispose();
 		}
 
 		private static void QuitSignalHandler( int signal ) {
@@ -88,7 +87,8 @@ namespace Platform.IO {
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
 		/// @{ Dispatching
-		public Platform.Libc.pthread_t DispatchThread;
+		public Utf8String ThreadName;
+		public Platform.Libc.pthread_t DispatchThread = Platform.Libc.pthread_t.CurrentThread;
 
 		internal int _dispatchingIndex;
 
@@ -98,10 +98,54 @@ namespace Platform.IO {
 			_eventSinks[poolID] = null; // 'this' may be destroyed after that statement
 		}
 
+		public void BeginDispatch() {
+			var started = new Semaphore();
+
+			var dispatchInfo = new Tuple<EventLoop, Semaphore*> {
+				Item1 = this,
+				Item2 = &started
+			};
+
+			new pthread_t( sender => {
+				var info = ( Tuple<EventLoop, Semaphore*>* ) sender;
+
+				var @this = info->Item1;
+
+				pthread_t.Name = @this.ThreadName;
+				@this.DispatchThread = pthread_t.CurrentThread;
+				info->Item2->Post(); // info dies now
+
+				@this.Dispatch();
+
+				return null;
+			}, &dispatchInfo );
+
+			started.Wait();
+		}
+
+		public void EndDispatch() {
+			if( DispatchThread == Platform.Libc.pthread_t.CurrentThread ) return;
+
+			DispatchThread.Join();
+			DispatchThread = Platform.Libc.pthread_t.CurrentThread;
+		}
+
 		public void Dispatch() {
 			TraceDispatchStarted();
-			Instance = this;
 			Debug.Assert( DispatchThread.IsCurrent );
+			Instance = this;
+
+			if( EnableFibers ) {
+				_fiberDispatch = true;
+				Fiber.RuntimeInitialize();
+				Fiber.FiberManager.Attach( this );
+			}
+
+			if( _fiberDispatch && !System.Diagnostics.Valgrind.IsAttached && FiberStackallocPages > 0 && Fiber.FiberManager.PageManager == null ) { // VG like stack inside stack
+				var stackSegment = new MemorySegment( stackalloc Memory.Page[FiberStackallocPages], ( uintptr ) FiberStackallocPages * sizeof( Memory.Page ) );
+				Fiber.FiberManager.PageManager = new MemoryPageManager( stackSegment );
+				TraceWorkaroundStackAllocated();
+			}
 
 			for( ; ; ) {
 				if( _quitRequest ) {
@@ -162,7 +206,9 @@ namespace Platform.IO {
 			}
 
 			TraceDispatchFinished();
+
 			Dispose();
+			Instance = null;
 		}
 
 		public Functors.Action PollHandlerPrepare = null;
@@ -670,16 +716,16 @@ namespace Platform.IO {
 		private void TraceDispatchStarted() {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "EventLoop dispatch started: {0}", DateTime.UtcNow );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "EventLoop dispatch started: {0}", DateTime.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchFinished() {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "EventLoop dispatch finished: {0}", DateTime.UtcNow );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTime.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -689,14 +735,14 @@ namespace Platform.IO {
 			if( polledDescriptors < 0 ) {
 				var lastError = LibcApi.LastError;
 
-				Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Red, Bold = true
-				}, "EventLoop: poll() errno={0} at {1}", lastError, UtcNow );
+				using( Console.AttributedRegion( TraceStyleError ) )
+					Console.WriteLine( "EventLoop: poll() errno={0} at {1}", lastError, UtcNow );
 
 				LibcApi.LastError = lastError;
 			}
 			else {
-				Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
-				}, "EventLoop: poll() count={0} at {1}", polledDescriptors, UtcNow );
+				using( Console.AttributedRegion( TraceStyleHigh ) )
+					Console.WriteLine( "EventLoop: poll() count={0} at {1}", polledDescriptors, UtcNow );
 			}
 		}
 
@@ -704,40 +750,48 @@ namespace Platform.IO {
 		private void TraceBeginWait( int eventCount, int milliseconds ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue, Bold = true
-			}, "EventLoop: Begin wait {0} events for {1} ms", eventCount, milliseconds );
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "EventLoop: Begin wait {0} events for {1} ms", eventCount, milliseconds );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventSink( pollfd& @event, EventSink eventSink ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, " notify '{0}'({1}) with event='{2}'", eventSink != null ? eventSink.GetType() : typeof( void ), bitcast<void*>( eventSink ), @event );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( " notify '{0}'({1}) with event='{2}'", eventSink != null ? eventSink.GetType() : typeof( void ), bitcast<void*>( eventSink ), @event );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventSinkRegistered( EventSinkHandle eventSink ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "EventSink '{0}'({1}) registered. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "EventSink '{0}'({1}) registered. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventSinkModified( EventSinkHandle eventSink ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "EventSink '{0}'({1}) modified. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "EventSink '{0}'({1}) modified. Handle={2}, Events={3}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID, eventSink._listenedEvents );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceEventSinkUnregistered( EventSinkHandle eventSink ) {
 			if( !Tracing ) return;
 
-			Trace.Write( new Console.OutputAttributes() { BackgroundColor = RgbColor.Blue
-			}, "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceWorkaroundStackAllocated() {
+			if( !Tracing ) return;
+
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "Allocated {0} fiber stack pages inside thread's stack", FiberStackallocPages );
 		}
 
 		#endregion

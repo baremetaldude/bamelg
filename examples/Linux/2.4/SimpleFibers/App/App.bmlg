@@ -16,25 +16,22 @@ namespace Example {
 		[FiberStatic]
 		static int FiberLocalData = 123;
 
-		private static int FiberStackallocPages = 128;
-
 		// Press CTRL+C to exit
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop(){ Tracing = true };
+			var eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 128 };
 			System.Threading.ThreadPool.Initialize();
-
-			if( System.Diagnostics.Valgrind.IsAttached ) FiberStackallocPages = 0; // VG like stack inside stack
-
-			if( FiberStackallocPages > 0 ) {
-				var fiberStack = new MemorySegment( stackalloc Memory.Page[FiberStackallocPages], ( uintptr ) FiberStackallocPages * sizeof( Memory.Page ) );
-
-				Fiber.FiberManager.PageManager = new MemoryPageManager( fiberStack );
-				Console.WriteLine( "Allocated workaround stack for fibers {0}", fiberStack );
-			}
 
 			eventLoop.CatchExitSignals();
 
+			eventLoop.BeginInvoke( Worker ); // dont create fibers until event loop started
+
+			eventLoop.Dispatch(); // wait until RequestExit
+		}
+
+		static Fiber.Barrier _barrier = new Fiber.Barrier( 2 ); // NOTE: '_barrier' would be destroyed if declared in 'Worker()'
+
+		private static void Worker() {
 			Fiber.Start( Pages, () => {
 				System.Numerics.Matrix4x4 mat;
 				Assert.AreEqual( 0, ( cast<intptr>( &mat ) & 15 ) );
@@ -54,16 +51,15 @@ namespace Example {
 			// @}
 
 			// @{ use barrier to syncronize fibers
-			var fb = new Fiber.Barrier( 2 ); // NOTE: 'fb' captured by lambda valid/alive only inside Main()
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
-				fb.Wait();
+				_barrier.Wait();
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "bar0" );
 
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
-				fb.Wait();
+				_barrier.Wait();
 				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "bar1" );
 			// @}
@@ -81,7 +77,7 @@ namespace Example {
 				Fiber.Sleep( 1000 );
 				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, pthread_t.CurrentThread, DateTime.UtcNow );
 
-				eventLoop.RequestExit();
+				EventLoop.Instance.RequestExit();
 			}, "slp0" );
 
 			Fiber.Start( Pages, () => {
@@ -95,7 +91,7 @@ namespace Example {
 			Fiber.Start( Pages, () => {
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
 
-				using( new Fiber.AsyncCompletionRegion() ) { // following region executed in thread pool
+				using( Fiber.AsyncCompletionRegion() ) { // following region executed in thread pool
 					Console.WriteLine( "\tWorker thread [{0}] started", pthread_t.CurrentThread );
 					pthread_t.Sleep( 1000 );
 
@@ -104,9 +100,6 @@ namespace Example {
 
 				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
 			}, "tp0" );
-			// @}
-
-			eventLoop.Dispatch(); // wait until RequestExit
 			// @}
 		}
 	}
