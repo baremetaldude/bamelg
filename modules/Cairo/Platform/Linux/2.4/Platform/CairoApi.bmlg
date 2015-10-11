@@ -217,11 +217,11 @@ namespace Platform.Cairo {
 					err = JpegLibApi.jpeg_std_error( &errorManager )
 				};
 
-				JpegLibApi.jpeg_create_decompress( state );
+				JpegLibApi.jpeg_create_decompress( &state );
 				{
-					JpegLibApi.jpeg_stdio_src( state, file );
-					JpegLibApi.jpeg_read_header( state, true );
-					JpegLibApi.jpeg_start_decompress( state );
+					JpegLibApi.jpeg_stdio_src( &state, file );
+					JpegLibApi.jpeg_read_header( &state, true );
+					JpegLibApi.jpeg_start_decompress( &state );
 
 					var width = state.output_width;
 					var height = state.output_height;
@@ -251,7 +251,7 @@ namespace Platform.Cairo {
 					uint rowsRead = 0;
 					while( state.output_scanline < state.output_height ) {
 						var rows = &jpegLine[0];
-						var readen = JpegLibApi.jpeg_read_scanlines( state, &rows, 1 );
+						var readen = JpegLibApi.jpeg_read_scanlines( &state, &rows, 1 );
 						// var readen = JpeglibApi.jpeg_read_scanlines( state, &rows[rowsRead], state.output_height - rowsRead );
 						// Console.WriteLine( "rr: {0}", readen );
 
@@ -272,7 +272,7 @@ namespace Platform.Cairo {
 					CairoApi.cairo_surface_set_user_data( result, key, bitcast<void*>( cairoBuffer ), x => ( *( RuntimeObjectBase* ) &x ).ReleaseReference() );
 				}
 			done:
-				JpegLibApi.jpeg_destroy_decompress( state );
+				JpegLibApi.jpeg_destroy_decompress( &state );
 			}
 
 			LibcApi.fclose( file );

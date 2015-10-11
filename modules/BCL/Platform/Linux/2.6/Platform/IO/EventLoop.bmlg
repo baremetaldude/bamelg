@@ -101,6 +101,83 @@ namespace Platform.IO {
 			DispatchThread = Platform.Libc.pthread_t.CurrentThread;
 		}
 
+		public Functors.Action PollHandlerPrepare = null;
+		public Functors.Action PollHandlerFinish = null;
+		private List<pollfd> _polledDescriptors;
+
+		public int Poll( pollfd* externalEvents, uint externalEventCount, int externalPollTimeout ) {
+			Debug.Assert( DispatchThread.IsCurrent );
+
+			int polledDescriptors = 0;
+
+			if( _polledDescriptors == null ) {
+				_polledDescriptors = new List<pollfd>();
+			}
+
+			_polledDescriptors.Clear();
+			_polledDescriptors.Add( new pollfd { Handle = Epoll, ListenedEvents = PollEvents.POLLIN } );
+
+			var oldEventCount = _polledDescriptors.Count;
+			if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.AddRange( externalEvents, ( int ) externalEventCount );
+			finally {
+				if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.RemoveAt( oldEventCount, ( int ) externalEventCount );
+			}
+
+			for( ; ; ) {
+				if( _quitRequest ) {
+					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
+						Fiber.FiberManager.CancelAllFibers();
+				}
+
+				var pollTimeout = externalPollTimeout;
+
+				var alarmTimeout = GetWaitTime();
+				if( alarmTimeout != TimeSpan.MaxValue ) {
+					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
+					if( pollTimeout < 0 ) pollTimeout = newTimeout;
+					else pollTimeout = Math.Max( 0, Math.Min( pollTimeout, newTimeout ) );
+				}
+
+				// TraceBeginWait( _polledDescriptors.Count, pollTimeout );
+
+				var eventBuffer = _polledDescriptors.GetBuffer();
+				polledDescriptors = LibcApi.poll( eventBuffer, _polledDescriptors.Count.ToUnsigned(), pollTimeout );
+				// TraceEventsArrived( polledDescriptors );
+
+				UnbiasedNow = DateTime.UnbiasedNow;
+				UtcNow = DateTime.UtcNow;
+				var readyAlarms = FindReadyAlarms();
+
+				if( polledDescriptors <= 0 ) { // notify signals, timeout
+					if( readyAlarms ) {
+						if( PollHandlerPrepare != null ) PollHandlerPrepare();
+						ExecuteReadyAlarms();
+						if( PollHandlerFinish != null ) PollHandlerFinish();
+					}
+
+					break;
+				}
+
+				if( PollHandlerPrepare != null ) PollHandlerPrepare();
+
+				if( readyAlarms )
+					ExecuteReadyAlarms();
+
+				OnEvent();
+
+				if( PollHandlerFinish != null ) PollHandlerFinish();
+
+				if( externalPollTimeout == -1 && polledDescriptors == 0 ) continue; // timeout==inf, wait again for external handles
+
+				if( externalEvents != null && externalEventCount > 0 )
+					Memory.Copy( externalEvents, eventBuffer + oldEventCount, externalEventCount * sizeof( *externalEvents ) );
+
+				break; // have ready external handles
+			}
+
+			return polledDescriptors;
+		}
+
 		public void Dispatch() {
 			TraceDispatchStarted();
 			Debug.Assert( DispatchThread.IsCurrent );
@@ -187,7 +264,7 @@ namespace Platform.IO {
 		// One 'EventSink' for one 'IOHandle'. Can be attached to one 'EventLoop'.
 		// Ensure '_listenedEvents' and 'EventHandle' are valid before call 'Register()'
 		public abstract class EventSink {
-			public EPOLL_EVENTS _listenedEvents;
+			public EPOLL_EVENTS _listenedEvents = EPOLL_EVENTS.EPOLLIN;
 
 			public EventLoop Parent;
 			public IOHandle EventHandle;

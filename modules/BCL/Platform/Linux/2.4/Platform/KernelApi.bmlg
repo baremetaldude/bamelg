@@ -149,11 +149,44 @@ namespace Platform.Kernel {
 
 		public static uint CapsCombine( vararg ThreadCapabilities caps ) {
 			var result = 0U;
-			foreach( var cap in caps ) {
+
+			foreach( var cap in caps )
 				result |= 1U << cap;
-			}
 
 			return result;
+		}
+
+		public static string CapsParse( uint caps ) {
+			using( var result = System.StringBuilder.CachedBuilders.PopScoped() ) {
+				for( var i = 0; i < typeof( ThreadCapabilities ).ElementCount; ++i ) {
+					var element = enumvalue<ThreadCapabilities>( i );
+
+					if( ( caps & ( 1U << element ) ) != 0 ) {
+						if( result.Value.Length > 0 ) result.Value.Append( " | " );
+						result.Value.Append( element );
+					}
+				}
+
+				return result.Value.ToString();
+			}
+		}
+
+		public static SystemError setresuid( uintptr e, uintptr r, uintptr s ) {
+			var code = raw_syscall( SystemCall.setresuid, cast<intptr>( e ), cast<intptr>( r ), cast<intptr>( s ) );
+			if( bitcast<uint>( code ) > uint.MaxValue - RawErrorsMax ) {
+				return ( SystemError ) - code;
+			}
+
+			return SystemError.None;
+		}
+
+		public static SystemError setresgid( uintptr e, uintptr r, uintptr s ) {
+			var code = raw_syscall( SystemCall.setresgid, cast<intptr>( e ), cast<intptr>( r ), cast<intptr>( s ) );
+			if( bitcast<uint>( code ) > uint.MaxValue - RawErrorsMax ) {
+				return ( SystemError ) - code;
+			}
+
+			return SystemError.None;
 		}
 
 		// [Obsolete]

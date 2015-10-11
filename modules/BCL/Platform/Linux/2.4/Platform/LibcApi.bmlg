@@ -122,7 +122,8 @@ namespace Platform.Libc {
 			Address = address.UIntData;
 		}
 
-		public uint_bigendian& Address { get { return *( uint_bigendian* ) &s_addr; } set { *( uint_bigendian* ) &s_addr = value; } }
+		[Overlapped( Offset = memberinfo( s_addr ).ByteOffset )]
+		public uint_bigendian Address;
 	}
 
 	public partial struct sockaddr_in : IFormattable {
