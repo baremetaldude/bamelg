@@ -14,11 +14,12 @@ namespace System {
 		protected StringBuilder _formatter = new StringBuilder();
 		public string NewLine { get { return _formatter.NewLine; } set { _formatter.NewLine = value; } }
 
-		public bool PreserveNewlines = false;
-		public bool UseSpaceIndent = true;
+		public bool PreserveNewlines { get; set; } = false;
+		public bool UseSpaceIndent { get; set; } = true;
 		public int SpaceIndentCount = 2;
 
-		private bool _tagFinished = true;
+		private bool _tagFinished { get; set; } = true;
+		private bool _closeTagOnNewLine { get; set; } = false;
 
 		public XmlWriter( ITextWriter writer ) {
 			_writer = writer;
@@ -35,10 +36,7 @@ namespace System {
 		}
 
 		public void Declaration() {
-			if( PreserveNewlines )
-				_writer.WriteLine( _declaration );
-			else
-				_writer.Write( _declaration );
+			_writer.Write( _declaration );
 		}
 
 		private void FinishTag() {
@@ -53,8 +51,10 @@ namespace System {
 			_formatter.Clear();
 			if( !_tagFinished ) {
 				FinishTag();
-				_formatter.AppendLine();
 			}
+
+			if( PreserveNewlines )
+				_formatter.AppendLine();
 
 			if( PreserveNewlines ) {
 				if( UseSpaceIndent )
@@ -68,6 +68,7 @@ namespace System {
 
 			++_depth;
 			_tagFinished = false;
+			_closeTagOnNewLine = false;
 		}
 
 		public void Attribute( string name, TypedReference value ) {
@@ -89,8 +90,18 @@ namespace System {
 
 		public void CloseTag( string name ) {
 			_formatter.Clear();
+			--_depth;
 
 			if( _tagFinished ) {
+				if( _closeTagOnNewLine & PreserveNewlines ) {
+					_formatter.AppendLine();
+
+					if( UseSpaceIndent )
+						_formatter.Append( ' ', _depth * SpaceIndentCount );
+					else
+						_formatter.Append( '\t', _depth );
+				}
+
 				_formatter.Append( "</" ); _formatter.Append( name ); _formatter.Append( '>' );
 			}
 			else {
@@ -98,11 +109,8 @@ namespace System {
 				_tagFinished = true;
 			}
 
-			if( PreserveNewlines )
-				_formatter.AppendLine();
-
 			_writer.Write( _formatter );
-			--_depth;
+			_closeTagOnNewLine = true;
 		}
 
 		private static string[,] EscapeStrings = new[7, 2] string {

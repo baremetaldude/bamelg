@@ -1,0 +1,41 @@
+﻿//
+// Created by Eugeny Grishul
+//
+
+using System;
+using System.Diagnostics;
+using System.Xml;
+
+using Platform;
+
+namespace BamelgBench {
+	public partial class App {
+		[EntryPoint]
+		private static void Main() {
+			Print( "No newlines", false );
+			Print( "Newlines preserved", true );
+		}
+
+		private static void Print( string name, bool preserveNewlines ) {
+			var builder = new StringBuilder();
+			using( var writer = new XmlWriter( builder ) { PreserveNewlines = preserveNewlines } ) {
+				writer.Declaration();
+
+				using( writer.Tag( "result" ) ) {
+					using( writer.Tag( "subresult" ) ) {
+						writer.Attribute( "attr1", "value1" );
+						writer.Attribute( "attr2", "value2" );
+
+						using( writer.Tag( "tag1" ) ) { }
+						using( writer.Tag( "tag2" ) ) writer.Attribute( "attr3", "value3" );
+					}
+
+					using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( DateTime.UtcNow );
+					using( writer.Tag( "tag4" ) ) { }
+				}
+			}
+
+			Console.WriteLine( "{0}: '{1}'", name, builder );
+		}
+	}
+}
