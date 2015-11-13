@@ -163,6 +163,9 @@ namespace Platform.IO {
 
 		protected TimeSpan _timeout = TimeSpan.Zero;
 		public TimeSpan Timeout { get { return _timeout; } set { _timeout = value; } }
+
+		long IStream.Position { get { return 0; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 	}
 
 	public class UdpStream : NetworkStream, IStream {
@@ -217,5 +220,8 @@ namespace Platform.IO {
 
 		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
 		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+
+		long IStream.Position { get { return 0; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 	}
 }

@@ -61,5 +61,14 @@ namespace System.IO {
 		}
 
 		TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+
+		long IStream.Position { get { return _stream.Position; } }
+
+		long IStream.Seek( long offset, SeekOrigin origin ) {
+			Trace.Write( "Stream: {0} seek offset={1} orign={2}", _name, offset, origin );
+			var result = _stream.Seek( offset, origin );
+			Trace.Write( "Stream: {0} seek completed", _name );
+			return result;
+		}
 	}
 }

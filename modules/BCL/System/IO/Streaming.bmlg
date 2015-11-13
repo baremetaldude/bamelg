@@ -22,7 +22,10 @@ namespace System.IO {
 		StreamingBufferInfo* BufferInfo { get; }
 		StreamCapabilities Capabilities { get; }
 
-		TimeSpan Timeout { get; set; }
+		TimeSpan Timeout { get; set; } // available if capability 'Timeout' is set
+
+		long Position { get; }
+		long Seek( long offset, SeekOrigin origin );
 	}
 
 	public enum FlushKind {
@@ -42,11 +45,6 @@ namespace System.IO {
 
 		Seek,       // able to set position
 		Timeout,    // able to set timeout
-	}
-
-	public interface ISeekableStream : IStream {
-		long Position { get; }
-		long Seek( long offset, SeekOrigin origin );
 	}
 
 	// For write streams: buffer region [Start; Start+Capacity), buffered bytes [Start; Start+Position), 'Available' not used

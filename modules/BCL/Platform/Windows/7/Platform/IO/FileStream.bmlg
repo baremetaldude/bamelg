@@ -17,7 +17,7 @@ namespace Platform.IO {
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerAbort.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
-		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write; } }
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.Seek; } }
 		public StreamingBufferInfo* BufferInfo { get { return null; } }
 
 		private IOHandle _handle = IOHandle.Invalid;
@@ -133,6 +133,24 @@ namespace Platform.IO {
 
 				return result;
 			}
+		}
+
+		public long Seek( long offset, SeekOrigin origin ) {
+			var fileSeekOrigin = FileSeekOrigin.FILE_CURRENT;
+
+			switch( origin ) {
+				case SeekOrigin.Begin: fileSeekOrigin = FileSeekOrigin.FILE_BEGIN; break;
+				case SeekOrigin.End: fileSeekOrigin = FileSeekOrigin.FILE_END; break;
+			}
+
+		restart_SetFilePointerEx:
+			long result;
+			if( !Kernel32Api.SetFilePointerEx( _handle, 0, result, fileSeekOrigin ) ) {
+				if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
+				return -1;
+			}
+
+			return result;
 		}
 
 		private PlatformErrorAction OnLastError( string operation, IFormattable context, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }

@@ -9,8 +9,8 @@ using System.Reflection;
 using System.Runtime;
 
 namespace System.IO {
-	public class MemoryStream : ISeekableStream {
-		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write; } }
+	public class MemoryStream : IStream {
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.Seek; } }
 
 		protected StreamingBufferInfo _bufferInfo;
 		public StreamingBufferInfo* BufferInfo { get { return &_bufferInfo; } }
@@ -47,7 +47,7 @@ namespace System.IO {
 			set { Seek( value, SeekOrigin.Begin ); }
 		}
 
-		long ISeekableStream.Position { get { return Position; } }
+		long IStream.Position { get { return Position; } }
 
 		public int Length {
 			get { return _bufferInfo.Position + _bufferInfo.AvailableToRead; }

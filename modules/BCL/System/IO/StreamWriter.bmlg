@@ -30,8 +30,7 @@ namespace System.IO {
 			var writeByteOrderMark = false;
 			switch( headerStyle ) {
 				case ByteOrderMarkHeader.Auto: {
-						var seekable = stream as ISeekableStream;
-						writeByteOrderMark = seekable == null || seekable.Seek( 0, SeekOrigin.Current ) == 0;
+						writeByteOrderMark = ( stream.Capabilities & StreamCapabilities.Seek ) == 0 || stream.Seek( 0, SeekOrigin.Current ) == 0;
 					} break;
 
 				case ByteOrderMarkHeader.Force: writeByteOrderMark = true; break;

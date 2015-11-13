@@ -147,6 +147,9 @@ namespace System.IO {
 			}
 
 			TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+
+			long IStream.Position { get { return 0; } }
+			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 		}
 
 		public class WriteStream : BufferedStream, IStream {
@@ -227,6 +230,9 @@ namespace System.IO {
 			}
 
 			TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+		
+			long IStream.Position { get { return 0; } }
+			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 		}
 	}
 }
