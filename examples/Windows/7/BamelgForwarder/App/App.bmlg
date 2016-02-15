@@ -3,10 +3,12 @@
 //
 
 using System;
+using System.Collections;
 using System.IO;
 using System.Net;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using System.Web;
 
 using Platform;
 using Platform.IO;
@@ -15,14 +17,18 @@ namespace BamelgForwarder {
 	public partial class App {
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields )]
 		internal struct AppSettings : IFormattable {
+			public AppSettings() {
+			}
+
 			public bool Trace, TraceTransfer;
+			public bool HttpApi;
 
 			public void ToString( StringBuilder builder, string format ) { // use 'sbf' snippet
-				builder.Concat( "Trace='", Trace, "' TraceTransfer='", TraceTransfer, '\'' );
+				builder.Concat( "Trace='", Trace, "' TraceTransfer='", TraceTransfer, "' HttpApi='", HttpApi, '\'' );
 			}
 		}
 
-		internal static AppSettings Options;
+		internal static AppSettings Options = new AppSettings();
 
 		public static SERVICE_TABLE_ENTRYW[2] ServiceTable = new SERVICE_TABLE_ENTRYW[2] {
 			new SERVICE_TABLE_ENTRYW { lpServiceName = "BamelgForwarder", lpServiceProc = ServiceMain },
@@ -97,6 +103,8 @@ namespace BamelgForwarder {
 
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
 
+		internal static List<Connector> _connectors = new List<Connector>();
+
 		[EntryPoint]
 		private static void Main() {
 			var runService = false;
@@ -111,9 +119,22 @@ namespace BamelgForwarder {
 			}
 			else {
 				var eventLoop = new EventLoop();
+				// eventLoop.Tracing = true;
 				eventLoop.CatchConsoleQuit();
 
+				var setupServer = new HttpApiServer();
+				var setupEndpoint = new IPv4Endpoint( IPv4Address.Loopback, 4015 );
+
 				ApplySettings();
+
+				if( Options.HttpApi ) {
+					if( !setupServer.Listen( setupEndpoint ) ) {
+						if( Options.Trace ) Console.WriteLine( @"Unable to bind {0}", setupEndpoint );
+					}
+					else {
+						if( Options.Trace ) Console.WriteLine( @"Listen status: http://{0}", setupEndpoint );
+					}
+				}
 
 				eventLoop.Dispatch();
 			}
@@ -199,6 +220,7 @@ namespace BamelgForwarder {
 							if( connector.Endpoint1.IsReadable | connector.Endpoint2.IsReadable ) {
 								if( Options.Trace ) Console.WriteLine( "{0}: Begin dispatch", connector );
 								connector.Run();
+								_connectors.Add( connector );
 							}
 							else {
 								Console.WriteLine( "{0}: At least one endpoint must be readable", connector );

@@ -1,0 +1,132 @@
+//
+// Created by Eugeny Grishul
+//
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Net;
+using System.Runtime;
+using System.Runtime.InteropServices;
+using System.Web;
+
+using Platform;
+using Platform.IO;
+
+namespace BamelgForwarder {
+	public class HttpApiServer : HttpServer {
+		public HttpApiServer() {
+		}
+
+		protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+			return new SessionHandler( this, stream );
+		}
+
+		public class SessionHandler : basetype.SessionHandler {
+			[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+			public new declaringtype Server; // override field type
+
+			public SessionHandler( declaringtype parent, IStream stream )
+				: base( parent, stream ) {
+			}
+
+			protected override RequestHandler CreateHandler() {
+				switch( Resource ) {
+					case "/": return new DefaultPageHandler( this );
+					case "/settings.json": return new AppSettingsHandler( this );
+				}
+
+				return null;
+			}
+		}
+
+		public class DefaultPageHandler : PageHandler {
+			public DefaultPageHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			public override void OnRender() {
+				if( Method != HttpMethod.Get ) { StatusCode = HttpStatusCode.MethodNotAllowed; return; }
+
+				Response.AppendLine( "<html>" );
+				{
+					Response.AppendLine( "<head>" );
+					{
+						Response.AppendLine( @"<title>BamelgForwarder</title>" );
+					}
+					Response.AppendLine( "</head>" );
+
+					Response.AppendLine( "<body>" );
+					{
+						Response.AppendLine( @"<p><a href=""appsettings.json"">Application settings</a></p>" );
+						Response.AppendLine( @"<p><a href=""trace.aspx"">Tracing mode</a></p>" );
+					}
+					Response.AppendLine( "</body>" );
+				}
+				Response.AppendLine( "</html>" );
+			}
+		}
+
+		public class AppSettingsHandler : JsonHandler {
+			public AppSettingsHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			private bool _parseError = false;
+
+			public override void OnRender() {
+				switch( Method ) {
+					case HttpMethod.Get:
+						System.Serialization.JsonSerializer<App.AppSettings>.Serialize( App.Options, Response );
+						return;
+
+					case HttpMethod.Post:
+						return;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						return;
+				}
+
+				// var writer = new JsonWriter( Response );
+				// using( _writer.Array() ) {
+				// 	foreach( var connector in App._connectors ) {
+				// 		_writer.Value( connector.Name );
+				// 	}
+				// }
+			}
+
+			public override void OnPostParameterParsed( CUtf16StringSpan name, CUtf16StringSpan value ) {
+				Console.WriteLine( "name={0}", name );
+				Console.WriteLine( "value={0}", value );
+
+				// switch( name ) {
+				// 	case "ConnectionType": {
+				// 			int connectionType;
+				// 			_parseError |= !int.TryParse( value, connectionType );
+				// 			_settings.ConnectionType = ( SensorConnectionType ) connectionType;
+				// 			_parseError |= !_settings.ConnectionType.IsValid;
+				// 		} break;
+
+				// 	case "SerialPortPath": {
+				// 			_settings.SerialPortPath = Utf8String.FromUtf16( value );
+				// 			_parseError |= _settings.SerialPortPath.Contains( ".." );
+				// 		} break;
+
+				// 	case "UnixDomainSocketPath": {
+				// 			_settings.UnixDomainSocketPath = Utf8String.FromUtf16( value );
+				// 			_parseError |= _settings.UnixDomainSocketPath.Contains( ".." );
+				// 		} break;
+
+				// 	case "Tcpv4Endpoint": _parseError |= !IPv4Endpoint.TryParse( value, _settings.Tcpv4Endpoint ); break;
+				// 	// case "Tcpv6Endpoint": _parseError |= !IPv6Endpoint.TryParse( value, _settings.Tcpv6Endpoint ); break;
+
+				// 	case "Udpv4MulticastGroup": _parseError |= !IPv4Address.TryParse( value, _settings.Udpv4MulticastGroup ); break;
+				// 	case "Udpv4MulticastInterface": _parseError |= !IPv4Endpoint.TryParse( value, _settings.Udpv4MulticastInterface ); break;
+
+				// 	default: _parseError = true; break;
+				// }
+			}
+		}
+	}
+}

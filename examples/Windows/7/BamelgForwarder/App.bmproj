@@ -5,6 +5,7 @@
     <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
     <RootNamespace>BamelgForwarder</RootNamespace>
     <CStringCodepage>866</CStringCodepage>
+    <MainFile>App\HttpPostSerializer.bmlg</MainFile>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -23,7 +24,7 @@
     <DebugSymbols>false</DebugSymbols>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">false</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <StartProgram>
     </StartProgram>
@@ -47,9 +48,9 @@
     <BuildType>Release</BuildType>
     <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>1</OptimizationLevel>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>false</DebugSymbols>
     <CmdArgs>
     </CmdArgs>
   </PropertyGroup>
@@ -75,7 +76,13 @@
   <ItemGroup>
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
-    <Compile Include="App\**\*.bmlg" />
+    <Compile Include="App\App.bmlg">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="App\HttpApiServer.bmlg">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="App\HttpPostSerializer.bmlg" />
     <EmbeddedResource Include="Resources\**\*" />
     <LinkSource Include="App.res" />
   </ItemGroup>
@@ -89,6 +96,11 @@
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\" />
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\IO\" />
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\Runtime\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_64\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_64\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_64\System\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_64\System\IO\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_64\System\Runtime\" />
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\" />
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\Platform\" />
     <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\Platform\IO\" />
