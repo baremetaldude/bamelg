@@ -34,6 +34,7 @@ namespace System.Net {
 		// @}
 
 		public bool SendServerTokens { get; set; } = true;
+		public bool SendDetailedErrors { get; set; } = true;
 
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields )]
 		public struct ServerStats {
@@ -104,7 +105,7 @@ namespace System.Net {
 			public long _contentLength;
 			public bool _needToParseFormData;
 
-			public CStringSpan Resource { get { return _parser._resource; } }
+			public CStringSpan Resource { get { return _parser.Resource; } }
 
 			public SessionHandler( declaringtype parent, IStream stream )
 				: base( parent, stream ) {
@@ -114,6 +115,17 @@ namespace System.Net {
 				_contentLength = -1;
 				_if_modified_since = DateTime.MinValue;
 				_needToParseFormData = false;
+			}
+
+			/// At this point URL, HTTP Method is known
+			/// Headers, payload not readen
+			protected virtual RequestHandler CreateHandler() {
+				switch( Resource ) {
+					case "/": return new WelcomePageHandler( this );
+					case "/stat.json": return new HttpStatisticPageHandler( this );
+				}
+
+				return null;
 			}
 
 			protected override void Worker() {
@@ -146,13 +158,13 @@ namespace System.Net {
 					[CheckAllEnumValues]
 					switch( parseResult ) {
 						case HttpRequestParser.ParsingResult.Error:
-							Handler = null; // close connection
+							Handler?.Dispose(); Handler = null; // close connection
 							++Server.InvalidRequestCount;
 							return;
 
 						case HttpRequestParser.ParsingResult.NeedMoreData:
 							if( bufferLimitReached ) {
-								Handler = null; // close connection
+								Handler?.Dispose(); Handler = null; // close connection
 								return;
 							}
 
@@ -166,11 +178,15 @@ namespace System.Net {
 								if( _parser._fragmentEnd != null ) *_parser._fragmentEnd = 0;
 								TraceClientRequest( this );
 
-								Handler = Server.CreateHandler( this );
+								Handler = CreateHandler();
 								if( Handler == null ) {
 									SendStatus( HttpStatusCode.NotFound );
 									goto parseNext;
 								}
+
+								if( Handler.GetType().IsOverriden( memberinfo( RequestHandler.OnParameterParsed ) ) )
+									if( _parser._queryEnd != null )
+										Handler.ParseParameters( null, _parser._queryEnd - _parser._queryStart, _parser._queryStart );
 
 								++Server.ActiveHandlerCount;
 								if( Server.ActiveHandlerCount > Server.PeakHandlerCount ) Server.PeakHandlerCount = Server.ActiveHandlerCount;
@@ -193,7 +209,8 @@ namespace System.Net {
 										Handler.BeginOutput();
 									}
 
-									Handler = null;
+									Handler.Dispose();
+									Handler = null; // close connection
 								}
 
 								if( IsKeepAliveRequest ) { // wait for new request
@@ -210,7 +227,6 @@ namespace System.Net {
 									continue;
 								}
 
-								Handler = null; // close connection
 								return;
 							}
 					}
@@ -274,25 +290,23 @@ namespace System.Net {
 				Session = session;
 			}
 
-			~RequestHandler() {
-				--Session.Server.ActiveHandlerCount;
-			}
-
 			public virtual void OnHeaderParsed( CStringSpan& header, CStringSpan& value ) {
 			}
 
 			public abstract void BeginOutput();
 
 			public virtual void BeginRequestParsing( IStream requestStream ) {
-				if( Session._needToParseFormData ) ParsePostParameters( requestStream );
+				if( Session._needToParseFormData )
+					if( GetType().IsOverriden( memberinfo( OnParameterParsed ) ) )
+						ParseParameters( requestStream, RequestLength, null );
 			}
 
-			public virtual void OnPostParameterParsed( CUtf16StringSpan name, CUtf16StringSpan value ) { }
+			protected virtual void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) { }
 
-			protected void ParsePostParameters( IStream requestStream ) {
+			internal void ParseParameters( IStream requestStream, long parameterBlockLength, byte* preloadedBuffer ) {
 				using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() )
 				using( var valueBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
-					var requestBuffer = requestStream.BufferInfo;
+					var requestBuffer = requestStream?.BufferInfo;
 
 					var name = nameBuilder.Value;
 					var value = valueBuilder.Value;
@@ -301,8 +315,8 @@ namespace System.Net {
 					var escapedState = -1;
 					byte[2] escaped;
 
-					for( var total = RequestLength; total > 0; ) {
-						int readen = requestBuffer->AvailableToRead;
+					for( var total = parameterBlockLength; total > 0; ) {
+						int readen = requestBuffer != null ? requestBuffer->AvailableToRead : ( int ) parameterBlockLength;
 						if( readen == 0 )
 							using( Fiber.CancellationRegion() ) {
 								requestStream.Flush( FlushKind.Read );
@@ -312,11 +326,17 @@ namespace System.Net {
 
 						if( readen == 0 ) return;
 
-						var buffer = requestBuffer->ReadBufferStart;
+						var buffer = preloadedBuffer ?? requestBuffer->ReadBufferStart;
+						TraceParameters( new CStringSpan( buffer, ( uint ) readen ) );
+
 						total -= readen;
 
 						for( var i = 0; i < readen; ++i ) {
 							switch( buffer[i] ) {
+								case '+':
+									buffer[i] = ' ';
+									goto default;
+
 								case '%':
 									if( escapedState != -1 ) return; // bad input
 									escapedState = 0;
@@ -331,7 +351,8 @@ namespace System.Net {
 								case '&':
 									if( escapedState != -1 ) return; // bad input
 
-									OnPostParameterParsed( name.GetTextSpan(), value.GetTextSpan() );
+									TraceParameter( this, name.GetTextSpan(), value );
+									OnParameterParsed( name.GetTextSpan(), value, preloadedBuffer != null );
 									name.Clear();
 									value.Clear();
 									current = name;
@@ -362,23 +383,27 @@ namespace System.Net {
 							}
 						}
 
-						requestBuffer->OnReadPerformed( readen );
+						requestBuffer?->OnReadPerformed( readen );
 					}
 
-					if( name.Length > 0 ) OnPostParameterParsed( name.GetTextSpan(), value.GetTextSpan() );
+					if( name.Length > 0 ) {
+						TraceParameter( this, name.GetTextSpan(), value );
+						OnParameterParsed( name.GetTextSpan(), value, preloadedBuffer != null );
+					}
 				}
 			}
 
 			public virtual bool CheckModifiedSince( DateTime date ) { return true; }
 
 			public override void Dispose() {
+				--Session.Server.ActiveHandlerCount;
 				Session = null;
 				base.Dispose();
 			}
 		}
 
 		// Designed for ease of use, not for streaming
-		public abstract class PageHandler : RequestHandler {
+		public abstract class PageHandler : RequestHandler, Binder.IEvent {
 			public PageHandler( SessionHandler session, string mediaType = "text/html" )
 				: base( session ) {
 				Headers = Session.Server._headerBuilders.Pop();
@@ -387,9 +412,10 @@ namespace System.Net {
 				MediaType = mediaType;
 			}
 
-			~PageHandler() {
+			public override void Dispose() {
 				Session.Server._headerBuilders.Push( Headers );
 				Session.Server._responseBuilders.Push( Response );
+				base.Dispose();
 			}
 
 			public StringBuilder Headers, Response; // Do not capture these fields; them cached and shared between requests
@@ -487,6 +513,26 @@ namespace System.Net {
 				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
 				StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
 			}
+
+			void Binder.IEvent.BadMapping( int mapping ) {
+				StatusCode = HttpStatusCode.BadRequest;
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': bad mapping", mapping );
+			}
+
+			void Binder.IEvent.NotFound( IFormattable name ) {
+				StatusCode = HttpStatusCode.BadRequest;
+				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': mapping not found", name );
+			}
+
+			void Binder.IEvent.IncompatibleMapping( Binder.Mapping* mapping, System.Reflection.Type& type ) {
+				StatusCode = HttpStatusCode.BadRequest;
+				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': incompatible type {1}", *mapping, type );
+			}
+
+			void Binder.IEvent.ParseError( Binder.Mapping* mapping ) {
+				StatusCode = HttpStatusCode.BadRequest;
+				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': parsing error", *mapping );
+			}
 		}
 
 		// Example of how to send embedded data
@@ -505,8 +551,9 @@ namespace System.Net {
 				_data = data;
 			}
 
-			~EmbeddedResourceHandler() {
+			public override void Dispose() {
 				Session.Server._headerBuilders.Push( Headers );
+				base.Dispose();
 			}
 
 			public StringBuilder Headers;
@@ -571,7 +618,7 @@ namespace System.Net {
 
 					Response.AppendLine( "<body>" );
 					{
-						Response.AppendLine( "<p>Welcome to Bamelg server!</p>" );
+						Response.AppendLine( "<p>Welcome to Bamelg embedded HTTP server!</p>" );
 					}
 					Response.AppendLine( "</body>" );
 				}
@@ -630,21 +677,12 @@ namespace System.Net {
 			}
 		}
 
-		// First candidate to override
-		protected virtual RequestHandler CreateHandler( SessionHandler session ) {
-			switch( session.Resource ) {
-				case "/": return new WelcomePageHandler( session );
-				case "/stat.json": return new HttpStatisticPageHandler( session );
-			}
-
-			return null;
-		}
-
 		/// @{ Tracing
 		protected const string TraceConditionString = "TRACE_HTTP_SERVER";
 		protected static Console.OutputAttributes TraceStyleNormal = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Green };
 		protected static Console.OutputAttributes TraceStyleHigh = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.Red };
 		protected static Console.OutputAttributes TraceStyleHeader = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.DarkYellow };
+		protected static Console.OutputAttributes TraceStyleParameter = new Console.OutputAttributes() { BackgroundColor = ConsoleColor.DarkYellow };
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientWaitNewRequest( SessionHandler session ) {
@@ -673,7 +711,7 @@ namespace System.Net {
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceClientRequest( SessionHandler session ) {
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "HTTP: Client {0} requested: '{1}'. HTTP {2}.{3}", bitcast<void*>( session ), session._parser.Uri, session._parser.VersionMajor, session._parser.VersionMinor );
+				Console.WriteLine( "HTTP: Client {0} requested: '{1}'. HTTP {2} {3}.{4}", bitcast<void*>( session ), session._parser.Uri, session._parser._method, session._parser.VersionMajor, session._parser.VersionMinor );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -686,6 +724,18 @@ namespace System.Net {
 		private static void TraceRequestHeader( SessionHandler session, CStringSpan& header, CStringSpan& value ) {
 			using( Console.AttributedRegion( TraceStyleHeader ) )
 				Console.WriteLine( "HTTP: Client {0} got header: '{1}':'{2}'", bitcast<void*>( session ), header, value );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private static void TraceParameters( CStringSpan parameters ) {
+			using( Console.AttributedRegion( TraceStyleParameter ) )
+				Console.WriteLine( "HTTP: All parameters '{0}'", parameters );
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
+		private static void TraceParameter( RequestHandler request, CUtf16StringSpan name, StringBuilder value ) {
+			using( Console.AttributedRegion( TraceStyleParameter ) )
+				Console.WriteLine( "HTTP: Parameter '{0}':'{1}'", name, value );
 		}
 
 		/// @}

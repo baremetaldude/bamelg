@@ -7,21 +7,7 @@
 namespace System.Runtime.CompilerServices {
 	public partial struct CallerContext : IFormattable {
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			builder.Append( "{" );
-
-			builder.Append( " Expression=\"" );
-			builder.Append( Expression );
-
-			builder.Append( "\" Row=" );
-			builder.Append( Row );
-
-			builder.Append( " Caller=" );
-			builder.Append( Caller );
-
-			builder.Append( " Path=\"" );
-			builder.Append( Path );
-
-			builder.Append( "\" }" );
+			builder.Concat( Path, ':', Row, '(', Caller, " -> ", Expression, ')' );
 		}
 	}
 }

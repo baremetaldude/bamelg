@@ -199,6 +199,9 @@ namespace System.Collections {
 			return new Enumerator( this );
 		}
 
+		public KeyEnumerator Keys { get { return new KeyEnumerator( this ); } }
+		public ValueEnumerator Values { get { return new ValueEnumerator( this ); } }
+
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private readonly declaringtype _parent;
@@ -236,6 +239,82 @@ namespace System.Collections {
 			}
 
 			public KeyValuePair<TKey, TValue> Current { get { return _current; } }
+		}
+
+		[EnumeratorAttribute]
+		public struct KeyEnumerator {
+			private readonly declaringtype _parent;
+			private readonly int _version;
+			private int _index;
+			private TKey _current;
+
+			internal KeyEnumerator( declaringtype parent ) {
+				_current = default( TKey );
+				_version = parent._version;
+				_parent = parent;
+				_index = 0;
+			}
+
+			public bool MoveNext() {
+				if( _version != _parent._version ) {
+					Assert.Fail( "Collection was modified since last iteration." );
+					return false;
+				}
+
+				while( _index < _parent._peakCount ) {
+					if( _parent._items[_index]._hash >= 0 ) {
+						_current = _parent._items[_index]._key;
+						++_index;
+						return true;
+					}
+
+					++_index;
+				}
+
+				_index = _parent._peakCount + 1;
+				_current = default( TKey );
+				return false;
+			}
+
+			public TKey Current { get { return _current; } }
+		}
+
+		[EnumeratorAttribute]
+		public struct ValueEnumerator {
+			private readonly declaringtype _parent;
+			private readonly int _version;
+			private int _index;
+			private TValue _current;
+
+			internal ValueEnumerator( declaringtype parent ) {
+				_current = default( TValue );
+				_version = parent._version;
+				_parent = parent;
+				_index = 0;
+			}
+
+			public bool MoveNext() {
+				if( _version != _parent._version ) {
+					Assert.Fail( "Collection was modified since last iteration." );
+					return false;
+				}
+
+				while( _index < _parent._peakCount ) {
+					if( _parent._items[_index]._hash >= 0 ) {
+						_current = _parent._items[_index]._value;
+						++_index;
+						return true;
+					}
+
+					++_index;
+				}
+
+				_index = _parent._peakCount + 1;
+				_current = default( TValue );
+				return false;
+			}
+
+			public TValue Current { get { return _current; } }
 		}
 	}
 }

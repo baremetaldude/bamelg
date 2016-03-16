@@ -1,0 +1,26 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+using System.Diagnostics;
+using System.IO;
+using System.Reflection;
+using System.Runtime;
+
+namespace System.Serialization {
+	/// Stream serializer for *.ini files
+	public static struct HttpPostSerializer {
+		public static void Deserialize( Binder.MapperCUtf16Span mapper, Binder.Context& context, CUtf16StringSpan name, StringBuilder value ) {
+			var mapping = mapper[name];
+			if( mapping == -1 ) {
+				context.BinderEvent.NotFound( name );
+				return;
+			}
+
+			context.Binder.SetValue( context, mapping, value );
+		}
+	}
+}

@@ -6,8 +6,11 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Net;
+using System.Reflection;
 using System.Runtime;
 using System.Runtime.InteropServices;
+using System.Serialization;
+using System.Text;
 using System.Web;
 
 using Platform;
@@ -33,13 +36,171 @@ namespace BamelgForwarder {
 			protected override RequestHandler CreateHandler() {
 				switch( Resource ) {
 					case "/": return new DefaultPageHandler( this );
-					case "/settings.json": return new AppSettingsHandler( this );
+					case "/app/settings": return new AppSettingsHandler( this );
+					case "/app/connectors": return new ConnectorsHandler( this );
+					case "/app/serial_ports": return new ComPortsHandler( this );
+
+					case "/app/exit": return new AppExitHandler( this );
+					case "/app/save": return new AppSaveHandler( this );
+					case "/app/reload": return new AppReloadHandler( this );
+
+					case "/connector/add": return new AddConnectorHandler( this );
+					case "/connector/remove": return new RemoveConnectorHandler( this );
+					case "/connector/rename": return new RenameConnectorHandler( this );
+
+					case "/endpoint/0/properties": return new EndpointPropertyHandler( this, 0 );
+					case "/endpoint/1/properties": return new EndpointPropertyHandler( this, 1 );
 				}
 
 				return null;
 			}
 		}
 
+		// http://localhost:4015/app/settings
+		public class AppSettingsHandler : PageHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			private static Binder.MapperCUtf16Span _mapper = new Binder.MapperCUtf16Span( typeof( App.AppSettings ) );
+
+			private App.AppSettings _appOptionsSnapshot;
+			private Binder.Context _appOptionsContext;
+
+			public AppSettingsHandler( SessionHandler session )
+				: base( session ) {
+				TextEncodingKind = TextEncodingKind.Utf8;
+
+				_appOptionsSnapshot = App.Options;
+				_appOptionsContext = _mapper.Binder.CreateContext( &_appOptionsSnapshot, this );
+			}
+
+			public override void Dispose() {
+				if( Method == HttpMethod.Post && StatusCode == HttpStatusCode.OK ) {
+					App.Options = _appOptionsSnapshot;
+				}
+
+				_appOptionsContext = default( Binder.Context ); // break cyclic refs
+
+				base.Dispose();
+			}
+
+			public override void OnRender() {
+				switch( Method ) {
+					case HttpMethod.Get:
+						System.Serialization.JsonSerializer<App.AppSettings>.Serialize( _appOptionsSnapshot, Response );
+						return;
+
+					case HttpMethod.Post:
+						return;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						return;
+				}
+			}
+
+			protected override void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) {
+				switch( Method ) {
+					case HttpMethod.Post:
+						HttpPostSerializer.Deserialize( _mapper, _appOptionsContext, name, value );
+						return;
+				}
+
+				StatusCode = HttpStatusCode.BadRequest;
+			}
+		}
+
+		// http://localhost:4015/endpoint/0/properties
+		// http://localhost:4015/endpoint/1/properties
+		public class EndpointPropertyHandler : JsonHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			private static Binder.MapperCUtf16Span _mapper = new Binder.MapperCUtf16Span( typeof( Endpoint ) );
+
+			private int _endpointId;
+			private Endpoint _endpoint;
+			private string _newName;
+			private Connector _connector;
+
+			private Endpoint _tmpEndpoint = new Endpoint();
+			private Binder.Context _tmpEndpointContext;
+
+			public EndpointPropertyHandler( SessionHandler session, int endpoint )
+				: base( session ) {
+				_endpointId = endpoint;
+
+				if( Method == HttpMethod.Post ) {
+					_tmpEndpointContext = _mapper.Binder.CreateContext( &_tmpEndpoint, this );
+				}
+			}
+
+			public override void Dispose() {
+				if( Method == HttpMethod.Post && StatusCode == HttpStatusCode.OK ) {
+					_connector.Stop();
+					_endpoint.Merge( _tmpEndpoint );
+					_connector.Run();
+				}
+
+				_tmpEndpointContext = default( Binder.Context ); // break cyclic refs
+
+				base.Dispose();
+			}
+
+			public override void OnRender() {
+				if( _connector == null ) {
+					StatusCode = HttpStatusCode.BadRequest;
+					return;
+				}
+
+				switch( Method ) {
+					case HttpMethod.Options:
+						var writer = new JsonWriter( Response );
+						using( writer.Array() )
+							foreach( var item in _mapper.IdMapping )
+								using( writer.Array() ) {
+									writer.Value( _mapper.Binder.Mappings[item.Value].GetType() );
+									writer.Value( item.Key );
+								}
+						return;
+
+					case HttpMethod.Get:
+						System.Serialization.JsonSerializer<Endpoint>.Serialize( _endpoint, Response );
+						return;
+
+					case HttpMethod.Post:
+						return;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						return;
+				}
+			}
+
+			protected override void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) {
+				switch( name ) {
+					case "connector":
+						if( App._connectorsByName.TryGetValue( value.GetTextSpan(), _connector ) ) {
+							_endpoint = _endpointId == 0 ? _connector.Endpoint1 : _connector.Endpoint2;
+						}
+						else
+							StatusCode = HttpStatusCode.BadRequest;
+						break;
+
+					default:
+						switch( Method ) {
+							case HttpMethod.Post:
+								HttpPostSerializer.Deserialize( _mapper, _tmpEndpointContext, name, value );
+								return;
+						}
+
+						StatusCode = HttpStatusCode.BadRequest;
+						return;
+				}
+			}
+		}
+
+		// http://localhost:4015/
 		public class DefaultPageHandler : PageHandler {
 			public DefaultPageHandler( SessionHandler session )
 				: base( session ) {
@@ -59,7 +220,8 @@ namespace BamelgForwarder {
 					Response.AppendLine( "<body>" );
 					{
 						Response.AppendLine( @"<p><a href=""appsettings.json"">Application settings</a></p>" );
-						Response.AppendLine( @"<p><a href=""trace.aspx"">Tracing mode</a></p>" );
+						Response.AppendLine( @"<p><a href=""connectors.json"">List of connectors</a></p>" );
+						Response.AppendLine( @"<p><a href=""com.json"">List of registered COM ports</a></p>" );
 					}
 					Response.AppendLine( "</body>" );
 				}
@@ -67,18 +229,68 @@ namespace BamelgForwarder {
 			}
 		}
 
-		public class AppSettingsHandler : JsonHandler {
-			public AppSettingsHandler( SessionHandler session )
+		// http://localhost:4015/app/exit
+		public class AppExitHandler : PageHandler {
+			public AppExitHandler( SessionHandler session )
 				: base( session ) {
 			}
 
-			private bool _parseError = false;
+			public override void OnRender() {
+				if( Method != HttpMethod.Post ) { StatusCode = HttpStatusCode.MethodNotAllowed; return; }
+
+				EventLoop.Instance.RequestExit();
+
+				Response.AppendLine( "OK" );
+			}
+		}
+
+		// http://localhost:4015/app/save
+		public class AppSaveHandler : PageHandler {
+			public AppSaveHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			public override void OnRender() {
+				if( Method != HttpMethod.Post ) { StatusCode = HttpStatusCode.MethodNotAllowed; return; }
+
+				App.SaveSettings();
+
+				Response.AppendLine( "OK" );
+			}
+		}
+
+		// http://localhost:4015/app/reload
+		public class AppReloadHandler : PageHandler {
+			public AppReloadHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			public override void OnRender() {
+				if( Method != HttpMethod.Post ) { StatusCode = HttpStatusCode.MethodNotAllowed; return; }
+
+				App.ReloadSettings();
+
+				Response.AppendLine( "OK" );
+			}
+		}
+
+		// http://localhost:4015/app/connectors
+		public class ConnectorsHandler : JsonHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public ConnectorsHandler( SessionHandler session )
+				: base( session ) {
+			}
 
 			public override void OnRender() {
 				switch( Method ) {
 					case HttpMethod.Get:
-						System.Serialization.JsonSerializer<App.AppSettings>.Serialize( App.Options, Response );
-						return;
+						var writer = new JsonWriter( Response );
+						using( writer.Array() )
+							foreach( var connector in App._connectorsByName.Values )
+								writer.Value( connector.Name );
+						break;
 
 					case HttpMethod.Post:
 						return;
@@ -87,45 +299,214 @@ namespace BamelgForwarder {
 						StatusCode = HttpStatusCode.MethodNotAllowed;
 						return;
 				}
+			}
+		}
 
-				// var writer = new JsonWriter( Response );
-				// using( _writer.Array() ) {
-				// 	foreach( var connector in App._connectors ) {
-				// 		_writer.Value( connector.Name );
-				// 	}
-				// }
+		// http://localhost:4015/app/serial_ports
+		public class ComPortsHandler : JsonHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public ComPortsHandler( SessionHandler session )
+				: base( session ) {
 			}
 
-			public override void OnPostParameterParsed( CUtf16StringSpan name, CUtf16StringSpan value ) {
-				Console.WriteLine( "name={0}", name );
-				Console.WriteLine( "value={0}", value );
+			public override void OnRender() {
+				switch( Method ) {
+					case HttpMethod.Get:
+						var writer = new JsonWriter( Response );
+						using( writer.Array() )
+							foreach( var com in App.EnumerateComPorts() )
+								using( writer.Array() ) {
+									writer.Value( com.Item1 );
+									writer.Value( com.Item2 );
+								}
+						break;
 
-				// switch( name ) {
-				// 	case "ConnectionType": {
-				// 			int connectionType;
-				// 			_parseError |= !int.TryParse( value, connectionType );
-				// 			_settings.ConnectionType = ( SensorConnectionType ) connectionType;
-				// 			_parseError |= !_settings.ConnectionType.IsValid;
-				// 		} break;
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
+			}
+		}
 
-				// 	case "SerialPortPath": {
-				// 			_settings.SerialPortPath = Utf8String.FromUtf16( value );
-				// 			_parseError |= _settings.SerialPortPath.Contains( ".." );
-				// 		} break;
+		// http://localhost:4015/connector/add
+		public class AddConnectorHandler : PageHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
 
-				// 	case "UnixDomainSocketPath": {
-				// 			_settings.UnixDomainSocketPath = Utf8String.FromUtf16( value );
-				// 			_parseError |= _settings.UnixDomainSocketPath.Contains( ".." );
-				// 		} break;
+			public AddConnectorHandler( SessionHandler session )
+				: base( session ) {
+			}
 
-				// 	case "Tcpv4Endpoint": _parseError |= !IPv4Endpoint.TryParse( value, _settings.Tcpv4Endpoint ); break;
-				// 	// case "Tcpv6Endpoint": _parseError |= !IPv6Endpoint.TryParse( value, _settings.Tcpv6Endpoint ); break;
+			private string _name;
 
-				// 	case "Udpv4MulticastGroup": _parseError |= !IPv4Address.TryParse( value, _settings.Udpv4MulticastGroup ); break;
-				// 	case "Udpv4MulticastInterface": _parseError |= !IPv4Endpoint.TryParse( value, _settings.Udpv4MulticastInterface ); break;
+			protected override void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) {
+				switch( name ) {
+					case "name":
+						Connector connector;
+						if( App._connectorsByName.TryGetValue( value.GetTextSpan(), connector ) ) {
+							StatusCode = HttpStatusCode.BadRequest;
+							if( App.Options.Trace ) Response.AppendLine( "Connector '{0}' already exists", value );
+						}
+						else {
+							_name = value.ToString();
+						}
 
-				// 	default: _parseError = true; break;
-				// }
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.BadRequest;
+						if( App.Options.Trace ) Response.AppendLine( "Unsupported parameter '{0}'", name );
+						return;
+				}
+			}
+
+			public override void OnRender() {
+				if( StatusCode == HttpStatusCode.BadRequest ) return;
+
+				switch( Method ) {
+					case HttpMethod.Post:
+						var connector = new Connector();
+						connector.Name = _name;
+
+						connector.Endpoint1 = new Endpoint() { Name = "endpoint 1" };
+						connector.Endpoint2 = new Endpoint() { Name = "endpoint 2" };
+
+						App._connectorsByName.Add( connector.Name, connector );
+
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
+			}
+		}
+
+		// http://localhost:4015/connector/remove
+		public class RemoveConnectorHandler : PageHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public RemoveConnectorHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			private Connector _connector;
+
+			protected override void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) {
+				switch( name ) {
+					case "name":
+						if( App._connectorsByName.TryGetValue( value.GetTextSpan(), _connector ) ) {
+						}
+						else {
+							StatusCode = HttpStatusCode.BadRequest;
+							if( App.Options.Trace ) Response.AppendLine( "Connector '{0}' not found", value );
+						}
+
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.BadRequest;
+						if( App.Options.Trace ) Response.AppendLine( "Unsupported parameter '{0}'", name );
+						return;
+				}
+			}
+
+			public override void OnRender() {
+				if( StatusCode == HttpStatusCode.BadRequest ) return;
+
+				switch( Method ) {
+					case HttpMethod.Post:
+						if( _connector == null ) {
+							StatusCode = HttpStatusCode.BadRequest;
+							break;
+						}
+
+						App._connectorsByName.Remove( _connector.Name );
+						_connector.Stop();
+
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
+			}
+		}
+
+		// http://localhost:4015/connector/rename
+		public class RenameConnectorHandler : PageHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public RenameConnectorHandler( SessionHandler session )
+				: base( session ) {
+			}
+
+			private string _newName;
+			private Connector _connector;
+
+			protected override void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) {
+				switch( name ) {
+					case "name":
+						if( App._connectorsByName.TryGetValue( value.GetTextSpan(), _connector ) ) {
+						}
+						else {
+							if( App.Options.Trace ) Response.AppendLine( "Connector '{0}' not found", value );
+							StatusCode = HttpStatusCode.BadRequest;
+						}
+
+						break;
+
+					case "value":
+						if( App._connectorsByName.ContainsKey( value.GetTextSpan() ) ) {
+							if( App.Options.Trace ) Response.AppendLine( "Connector '{0}' already exists", value );
+							StatusCode = HttpStatusCode.BadRequest;
+							return;
+						}
+
+						if( value.Length == 0 ) {
+							if( App.Options.Trace ) Response.AppendLine( "Bad connector name: {0}", value );
+							StatusCode = HttpStatusCode.BadRequest;
+							return;
+						}
+
+						_newName = value.ToString();
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.BadRequest;
+						if( App.Options.Trace ) Response.AppendLine( "Connector '{0}' already exists", value );
+						return;
+				}
+			}
+
+			public override void OnRender() {
+				if( StatusCode == HttpStatusCode.BadRequest ) return;
+
+				switch( Method ) {
+					case HttpMethod.Post:
+						if( _connector == null || _newName == null ) {
+							StatusCode = HttpStatusCode.BadRequest;
+							break;
+						}
+
+						App._connectorsByName.Remove( _connector.Name );
+						App._connectorsByName.Add( _newName, _connector );
+
+						_connector.Name = _newName;
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
 			}
 		}
 	}

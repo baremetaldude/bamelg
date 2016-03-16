@@ -20,8 +20,9 @@ namespace BamelgForwarder {
 			public AppSettings() {
 			}
 
-			public bool Trace, TraceTransfer;
-			public bool HttpApi;
+			public bool Trace = true, TraceTransfer = true;
+			public bool HttpApi = true;
+			public TimeSpan RestoreTimeout = TimeSpan.FromSeconds( 1 );
 
 			public void ToString( StringBuilder builder, string format ) { // use 'sbf' snippet
 				builder.Concat( "Trace='", Trace, "' TraceTransfer='", TraceTransfer, "' HttpApi='", HttpApi, '\'' );
@@ -103,10 +104,16 @@ namespace BamelgForwarder {
 
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
 
-		internal static List<Connector> _connectors = new List<Connector>();
+		internal static Dictionary<CUtf16StringSpan, Connector> _connectorsByName = new Dictionary<CUtf16StringSpan, Connector>();
 
 		[EntryPoint]
 		private static void Main() {
+			HKEY.OnError = ( errorCode, context ) => {
+				if( App.Options.Trace )
+					using( Console.AttributedRegion( RgbColor.Red ) )
+						Console.WriteLine( "{0} == {1}", context, errorCode );
+			};
+
 			var runService = false;
 			for( var i = 0; i < Environment.CommandLine.Length; ++i ) {
 				switch( Environment.CommandLine[i] ) {
@@ -122,7 +129,10 @@ namespace BamelgForwarder {
 				// eventLoop.Tracing = true;
 				eventLoop.CatchConsoleQuit();
 
-				var setupServer = new HttpApiServer();
+				var setupServer = new HttpApiServer() {
+					ClientFiberStackPages = 16
+				};
+
 				var setupEndpoint = new IPv4Endpoint( IPv4Address.Loopback, 4015 );
 
 				ApplySettings();
@@ -140,36 +150,46 @@ namespace BamelgForwarder {
 			}
 		}
 
+		internal static yield<Tuple<string, string>> EnumerateComPorts() {
+			using( var commKey = HKEY.HKEY_LOCAL_MACHINE.OpenRead( @"HARDWARE\DEVICEMAP\SERIALCOMM" ) )
+				foreach( var serialName in commKey.GetValues() )
+					yield return new Tuple<string, string>( @"\\.\" + commKey.ValueString[serialName.Name], serialName.Name );
+		}
+
+		static Binder.MapperUtf16 _endpointMapper = new Binder.MapperUtf16( 10 );
+
+		static App() {
+			_endpointMapper.Add( "", memberinfo( Endpoint.Type ) );
+			_endpointMapper.Add( memberinfo( Endpoint.PacketsReaden ) );
+			_endpointMapper.Add( memberinfo( Endpoint.BytesReaden ) );
+			_endpointMapper.Add( memberinfo( Endpoint.Enabled ) );
+			_endpointMapper.Add( memberinfo( Endpoint.KeepAlive ) );
+			_endpointMapper.Add( memberinfo( Endpoint.IsReadable ) );
+			_endpointMapper.Add( memberinfo( Endpoint.IsWritable ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.SerialPortReadIntervalTimeout ) );
+			_endpointMapper.Add( memberinfo( Endpoint.SerialPortPath ) );
+			_endpointMapper.Add( memberinfo( Endpoint.SerialPortParity ) );
+			_endpointMapper.Add( memberinfo( Endpoint.SerialPortBaudRate ) );
+			_endpointMapper.Add( memberinfo( Endpoint.SerialPortStopBits ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv4Endpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv4ServerEndpoint ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv6Endpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv6ServerEndpoint ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4Endpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4RemoteEndpoint ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.NamedPipePath ) );
+			_endpointMapper.Add( memberinfo( Endpoint.NamedPipeServerPath ) );
+
+			_endpointMapper.Apply();
+		}
+
 		private static void ApplySettings() {
 			var appMapper = new Binder.MapperUtf16( typeof( AppSettings ) );
-
-			var endpointMapper = new Binder.MapperUtf16( 10 );
-
-			endpointMapper.Add( "", memberinfo( Endpoint.Type ) );
-			endpointMapper.Add( memberinfo( Endpoint.Enabled ) );
-			endpointMapper.Add( memberinfo( Endpoint.KeepAlive ) );
-			endpointMapper.Add( memberinfo( Endpoint.IsReadable ) );
-			endpointMapper.Add( memberinfo( Endpoint.IsWritable ) );
-
-			endpointMapper.Add( memberinfo( Endpoint.SerialPortReadIntervalTimeout ) );
-			endpointMapper.Add( memberinfo( Endpoint.SerialPortPath ) );
-			endpointMapper.Add( memberinfo( Endpoint.SerialPortParity ) );
-			endpointMapper.Add( memberinfo( Endpoint.SerialPortBaudRate ) );
-			endpointMapper.Add( memberinfo( Endpoint.SerialPortStopBits ) );
-
-			endpointMapper.Add( memberinfo( Endpoint.TCPv4Endpoint ) );
-			endpointMapper.Add( memberinfo( Endpoint.TCPv4ServerEndpoint ) );
-
-			endpointMapper.Add( memberinfo( Endpoint.TCPv6Endpoint ) );
-			endpointMapper.Add( memberinfo( Endpoint.TCPv6ServerEndpoint ) );
-
-			endpointMapper.Add( memberinfo( Endpoint.UDPv4Endpoint ) );
-			endpointMapper.Add( memberinfo( Endpoint.UDPv4RemoteEndpoint ) );
-
-			endpointMapper.Add( memberinfo( Endpoint.NamedPipePath ) );
-			endpointMapper.Add( memberinfo( Endpoint.NamedPipeServerPath ) );
-
-			endpointMapper.Apply();
 
 			using( var root = HKEY.HKEY_LOCAL_MACHINE.OpenRead( RegistrySettingsPath ) ) {
 				if( !root.IsValid ) { Console.WriteLine( "Unable to read settings from '{0}'", RegistrySettingsPath ); return; }
@@ -179,9 +199,8 @@ namespace BamelgForwarder {
 				if( Options.Trace ) Console.WriteConcatLine( "Options: ", Options );
 
 				if( Options.Trace ) {
-					using( var commKey = HKEY.HKEY_LOCAL_MACHINE.OpenRead( @"HARDWARE\DEVICEMAP\SERIALCOMM" ) )
-						foreach( var serialName in commKey.GetValues() )
-							Console.WriteLine( @"Found serial port: \\.\{0} <- {1}", commKey.ValueString[serialName.Name], serialName.Name );
+					foreach( var info in EnumerateComPorts() )
+						Console.WriteLine( @"Found serial port: {0} <- {1}", info.Item1, info.Item2 );
 				}
 
 				foreach( var connectorName in root.GetKeys() ) {
@@ -200,7 +219,7 @@ namespace BamelgForwarder {
 
 							using( var endpointKey = connectorKey.OpenRead( endpointName ) ) {
 								var ep = new Endpoint() { Name = endpointName };
-								endpointKey.GetValues( endpointMapper.Binder.CreateContext( &ep ), endpointMapper );
+								endpointKey.GetValues( _endpointMapper.Binder.CreateContext( &ep ), _endpointMapper );
 
 								if( !ep.Enabled ) {
 									if( Options.Trace ) Console.WriteLine( "{0}: Endpoint '{1}' is disabled", connector, endpointName );
@@ -217,10 +236,11 @@ namespace BamelgForwarder {
 						}
 
 						if( connector.Endpoint1 != null && connector.Endpoint2 != null ) {
+							_connectorsByName.Add( connector.Name, connector );
+
 							if( connector.Endpoint1.IsReadable | connector.Endpoint2.IsReadable ) {
 								if( Options.Trace ) Console.WriteLine( "{0}: Begin dispatch", connector );
 								connector.Run();
-								_connectors.Add( connector );
 							}
 							else {
 								Console.WriteLine( "{0}: At least one endpoint must be readable", connector );
@@ -233,12 +253,52 @@ namespace BamelgForwarder {
 			}
 		}
 
+		public static void ReloadSettings() {
+			foreach( var connector in _connectorsByName.Values )
+				connector.Stop();
+
+			_connectorsByName.Clear();
+
+			ApplySettings();
+		}
+
+		public static void SaveSettings() {
+			var appMapper = new Binder.MapperUtf16( typeof( AppSettings ) );
+
+			using( var root = HKEY.HKEY_LOCAL_MACHINE.OpenOrCreate( RegistrySettingsPath ) ) {
+				if( !root.IsValid ) { Console.WriteLine( "Unable to save settings to '{0}'", RegistrySettingsPath ); return; }
+
+				root.SetValues( appMapper.Binder.CreateContext( &Options ), appMapper );
+
+				foreach( var connectorName in root.GetKeysReversed() )
+					if( !_connectorsByName.ContainsKey( connectorName ) )
+						root.DeleteTree( connectorName );
+
+				foreach( var connector in _connectorsByName.Values ) {
+					using( var connectorKey = root.OpenOrCreate( connector.Name ) ) {
+						foreach( var endpointName in connectorKey.GetKeysReversed() ) {
+							if( endpointName != connector.Endpoint1.Name && endpointName != connector.Endpoint2.Name ) {
+								connectorKey.DeleteTree( endpointName );
+								continue;
+							}
+						}
+
+						using( var endpointKey = connectorKey.OpenOrCreate( connector.Endpoint1.Name ) )
+							endpointKey.SetValues( _endpointMapper.Binder.CreateContext( &connector.Endpoint1 ), _endpointMapper );
+						using( var endpointKey = connectorKey.OpenOrCreate( connector.Endpoint2.Name ) )
+							endpointKey.SetValues( _endpointMapper.Binder.CreateContext( &connector.Endpoint2 ), _endpointMapper );
+					}
+				}
+			}
+		}
+
 		public const string RegistrySettingsPath = @"SOFTWARE\Eugeny Grishul\BamelgForwarder";
 	}
 
 	public class Connector : IFormattable {
 		public string Name;
 		public Endpoint Endpoint1, Endpoint2;
+		public Fiber Fiber1 = Fiber.Null, Fiber2 = Fiber.Null;
 
 		public Connector() {
 		}
@@ -255,9 +315,14 @@ namespace BamelgForwarder {
 			AddReference();
 
 			EventLoop.Instance.BeginInvoke( () => {
-				Fiber.Start( 4, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
-				Fiber.Start( 4, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
+				Fiber1 = Fiber.Start( 4, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
+				Fiber2 = Fiber.Start( 4, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
 			} );
+		}
+
+		public void Stop() {
+			Fiber1.Cancel(); Fiber1 = Fiber.Null;
+			Fiber2.Cancel(); Fiber1 = Fiber.Null;
 		}
 
 		private void Transfer( Endpoint source, Endpoint destination ) {
@@ -268,7 +333,7 @@ namespace BamelgForwarder {
 					if( !isConnected ) {
 						if( App.Options.Trace ) Console.WriteLine( "{0}: Connect failed", source );
 
-						Fiber.Sleep( 1000 );
+						Fiber.Sleep( App.Options.RestoreTimeout );
 						destination.ResetNonKeepAlive();
 						continue;
 					}
@@ -299,7 +364,9 @@ namespace BamelgForwarder {
 
 	public class Endpoint : NetworkClient, IPlatformErrorHandler, IFormattable {
 		public string Name;
-		public Connector Connector;
+		internal Connector Connector;
+
+		public int ReconnectCount;
 
 		public EndpointType Type;
 
@@ -335,6 +402,11 @@ namespace BamelgForwarder {
 		public DCB.StopBitsValue SerialPortStopBits { get { return _serialPortStopBits; } set { _serialPortStopBits = value; IsSerialPortStopBitsOverriden = true; } }
 		// @}
 
+		// @{ TCP settings
+		public TimeSpan TCPKeepAliveTimeout;
+		public TimeSpan TCPKeepAliveInterval;
+		// @}
+
 		// @{ TCPv4 settings
 		public IPv4Endpoint TCPv4Endpoint;
 		// @}
@@ -366,7 +438,45 @@ namespace BamelgForwarder {
 
 		public bool IsAlive { get; private set; }
 
-		public Fiber Transmitter = Fiber.Null;
+		public int PacketsReaden; // well-tuned serial port feed application with OS-buffered packets, bad serial port will awake app after each byte
+		public ulong BytesReaden;
+
+		public void Merge( Endpoint other ) {
+			Name = other.Name;
+
+			Type = other.Type;
+			Enabled = other.Enabled;
+			KeepAlive = other.KeepAlive;
+			IsReadable = other.IsReadable;
+			IsWritable = other.IsWritable;
+
+			SerialPortPath = other.SerialPortPath;
+			SerialPortReadIntervalTimeout = other.SerialPortReadIntervalTimeout;
+
+			IsSerialPortBaudRateOverriden = other.IsSerialPortBaudRateOverriden;
+			SerialPortBaudRate = other.SerialPortBaudRate;
+
+			IsSerialPortParityOverriden = other.IsSerialPortParityOverriden;
+			SerialPortParity = other.SerialPortParity;
+
+			IsSerialPortStopBitsOverriden = other.IsSerialPortStopBitsOverriden;
+			SerialPortStopBits = other.SerialPortStopBits;
+
+			TCPKeepAliveTimeout = other.TCPKeepAliveTimeout;
+			TCPKeepAliveInterval = other.TCPKeepAliveInterval;
+			TCPv4Endpoint = other.TCPv4Endpoint;
+			TCPv4ServerEndpoint = other.TCPv4ServerEndpoint;
+			TCPv6Endpoint = other.TCPv6Endpoint;
+			TCPv6ServerEndpoint = other.TCPv6ServerEndpoint;
+			UDPv4Endpoint = other.UDPv4Endpoint;
+			UDPv4RemoteEndpoint = other.UDPv4RemoteEndpoint;
+			NamedPipePath = other.NamedPipePath;
+			NamedPipeServerPath = other.NamedPipeServerPath;
+
+			ReconnectCount = 0;
+			PacketsReaden = 0;
+			BytesReaden = 0;
+		}
 
 		public Endpoint() {
 		}
@@ -424,6 +534,9 @@ namespace BamelgForwarder {
 						return;
 					}
 
+					++PacketsReaden;
+					BytesReaden += bufferInfo->AvailableToRead;
+
 					if( App.Options.TraceTransfer ) Console.WriteLine( "{0}: Transfer {1} bytes to {2}", this, bufferInfo->AvailableToRead, destination );
 
 					if( destination.IsAlive ) {
@@ -445,6 +558,7 @@ namespace BamelgForwarder {
 
 		public bool Connect() {
 			Close();
+			++ReconnectCount;
 
 			switch( Type ) {
 				case EndpointType.SerialPort: {
@@ -532,7 +646,7 @@ namespace BamelgForwarder {
 				case EndpointType.TCPv4: return IsAlive = Connect( TCPv4Endpoint );
 				case EndpointType.TCPv4Server: return IsAlive = Accept( TCPv4ServerEndpoint );
 				case EndpointType.TCPv6: return IsAlive = Connect( TCPv6Endpoint );
-				case EndpointType.TCPv6Server: KeepAlive = false; return IsAlive = Accept( TCPv6ServerEndpoint );
+				case EndpointType.TCPv6Server: return IsAlive = Accept( TCPv6ServerEndpoint );
 
 				case EndpointType.NamedPipe: return IsAlive = ConnectLocal( NamedPipePath );
 				case EndpointType.NamedPipeServer: return IsAlive = AcceptLocal( NamedPipeServerPath );

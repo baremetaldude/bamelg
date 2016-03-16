@@ -46,11 +46,11 @@ namespace System.Web {
 
 		public byte* _resourceStart { get { return _uriStart; } }
 		public byte* _resourceEnd { get { return _queryStart != null ? _queryStart - 1 : _fragmentStart != null ? _fragmentStart - 1 : _uriEnd; } }
-		public CStringSpan _resource { get { return new CStringSpan( _resourceStart, ( uint )( _resourceEnd - _resourceStart ) ); } }
 
 		public byte* _queryEnd { get { return _queryStart != null ? _fragmentStart != null ? _fragmentStart - 1 : _uriEnd : null; } }
 		public byte* _fragmentEnd { get { return _fragmentStart != null ? _uriEnd : null; } }
 
+		public CStringSpan Resource { get { return new CStringSpan( _resourceStart, ( uint )( _resourceEnd - _resourceStart ) ); } }
 		public CStringSpan Uri { get { return new CStringSpan( _uriStart, ( uint )( _uriEnd - _uriStart ) ); } }
 
 		public HttpRequestParser() {

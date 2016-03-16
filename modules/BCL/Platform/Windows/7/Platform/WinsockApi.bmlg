@@ -276,10 +276,6 @@ namespace Platform {
 			return WinsockApi.setsockopt( this, SocketOptionLevel.SOL_SOCKET, SocketOption.SO_UPDATE_ACCEPT_CONTEXT, &listenHandle, sizeof( listenHandle ) ) == 0;
 		}
 
-		protected static SocketCreateFlags FiberSpecificFlags {
-			get { return Fiber.IsFiberExecuting ? SocketCreateFlags.WSA_FLAG_OVERLAPPED : SocketCreateFlags.None; }
-		}
-
 		public SystemErrorCode Listen( int backlog ) {
 			if( WinsockApi.listen( this, backlog ) != 0 ) return Kernel32Api.LastError;
 			return SystemErrorCode.NO_ERROR;
@@ -302,7 +298,7 @@ namespace Platform {
 
 		public SocketHandleTCP( ADDRESS_FAMILY family = ADDRESS_FAMILY.AF_INET ) {
 			WSAPROTOCOL_INFOW& protocolInfo = nullref;
-			this = bitcast<SocketHandleTCP>( WinsockApi.WSASocket( family, SocketType.SOCK_STREAM, IPPROTO.IPPROTO_TCP, protocolInfo, SocketGroup.None, FiberSpecificFlags ) );
+			this = bitcast<SocketHandleTCP>( WinsockApi.WSASocket( family, SocketType.SOCK_STREAM, IPPROTO.IPPROTO_TCP, protocolInfo, SocketGroup.None, SocketCreateFlags.WSA_FLAG_OVERLAPPED ) );
 		}
 
 		public SystemErrorCode Connect( System.Net.IPv4Endpoint endpoint ) {
@@ -333,7 +329,7 @@ namespace Platform {
 
 		public SocketHandleUDP( ADDRESS_FAMILY family = ADDRESS_FAMILY.AF_INET ) {
 			WSAPROTOCOL_INFOW& protocolInfo = nullref;
-			this = bitcast<SocketHandleUDP>( WinsockApi.WSASocket( family, SocketType.SOCK_DGRAM, IPPROTO.IPPROTO_UDP, protocolInfo, SocketGroup.None, FiberSpecificFlags ) );
+			this = bitcast<SocketHandleUDP>( WinsockApi.WSASocket( family, SocketType.SOCK_DGRAM, IPPROTO.IPPROTO_UDP, protocolInfo, SocketGroup.None, SocketCreateFlags.WSA_FLAG_OVERLAPPED ) );
 		}
 	}
 

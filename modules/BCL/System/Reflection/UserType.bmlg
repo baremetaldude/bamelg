@@ -69,10 +69,9 @@ namespace System.Reflection {
 
 		public bool IsOverriden( Method& method ) {
 			var& declaringUserType = method.DeclaringUserType;
-			if( declaringUserType == nullref || !declaringUserType.IsSubclassOf( this ) ) return false;
+			if( declaringUserType == nullref || !IsSubclassOf( declaringUserType ) ) return false;
 			return VirtualMethods[method.VirtualSlot] != method.Address;
 		}
-
 
 		private const int InterfaceHashCapacityThreshold = 32; /// Do not create hashtables with capacity smaller than 'InterfaceHashCapacityThreshold'
 
@@ -311,6 +310,8 @@ namespace System.Reflection {
 
 			public Method& GetMethod;
 			public Method& SetMethod;
+			
+			public AccessKind AccessKind { get { return GetMethod != nullref ? GetMethod.AccessKind : SetMethod != nullref ? SetMethod.AccessKind : AccessKind.Private; } }
 
 			public Type& PropertyType {
 				get {

@@ -24,6 +24,7 @@ namespace Platform.IO {
 		public bool QuitRequest { get { return _quitRequest; } }
 
 		private bool _fiberDispatch = false;
+		private bool _dispatching = false;
 
 		private Thread _dispatchThread;
 
@@ -114,6 +115,7 @@ namespace Platform.IO {
 
 		private bool _newTasksRequestPending = false;
 		protected override void NotifyNewDispatcherTasks() {
+			if( _dispatchThread.IsCurrent & !_dispatching ) return;
 			if( atomic( _newTasksRequestPending = true ) ) return;
 
 			QueueAPC( this, memberinfo( NewTasksAPC ).Address );
@@ -136,12 +138,15 @@ namespace Platform.IO {
 		public void Dispatch() {
 			TraceDispatchStarted();
 			Instance = this;
+			_dispatching = true;
 
 			if( EnableFibers ) {
 				_fiberDispatch = true;
 				Fiber.RuntimeInitialize();
 				Fiber.FiberManager.Attach( this );
 			}
+
+			NewTasksAPC();
 
 			for( ; ; ) {
 				if( _quitRequest ) {
@@ -194,6 +199,8 @@ namespace Platform.IO {
 
 				OnAlarm();
 			}
+
+			_dispatching = false;
 
 			TraceDispatchFinished();
 			Dispose();

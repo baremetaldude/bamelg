@@ -112,6 +112,7 @@ namespace System.Runtime {
 
 		public interface IEvent {
 			void BadMapping( int mapping );
+			void NotFound( IFormattable name );
 			void IncompatibleMapping( Mapping* mapping, Type& type );
 			void ParseError( Mapping* mapping );
 		}
@@ -119,29 +120,29 @@ namespace System.Runtime {
 		public struct BinderListenerSilent : IEvent {
 			public static readonly BinderListenerSilent Instance;
 
-			public void BadMapping( int mapping ) {
-			}
-
-			public void IncompatibleMapping( Mapping* mapping, Type& type ) {
-			}
-
-			public void ParseError( Mapping* mapping ) {
-			}
+			public void BadMapping( int mapping ) { }
+			public void NotFound( IFormattable name ) { }
+			public void IncompatibleMapping( Mapping* mapping, Type& type ) { }
+			public void ParseError( Mapping* mapping ) { }
 		}
 
 		public struct BinderListenerConsole : IEvent {
 			public static readonly BinderListenerConsole Instance;
 
 			public void BadMapping( int mapping ) {
-				System.Console.WriteLine( "Bad mapping {0}", mapping );
+				Console.WriteLine( "Bad mapping {0}", mapping );
+			}
+
+			public void NotFound( IFormattable name ) {
+				Console.WriteLine( "Mapping for '{0}' not found", name );
 			}
 
 			public void IncompatibleMapping( Mapping* mapping, Type& type ) {
-				System.Console.WriteLine( "Incompatible mapping '{0}' for type '{1}'", *mapping, type );
+				Console.WriteLine( "Incompatible mapping '{0}' for type '{1}'", *mapping, type );
 			}
 
 			public void ParseError( Mapping* mapping ) {
-				System.Console.WriteLine( "Parse error for mapping '{0}'", *mapping );
+				Console.WriteLine( "Parse error for mapping '{0}'", *mapping );
 			}
 		}
 
@@ -269,10 +270,13 @@ namespace System.Runtime {
 
 		private static yield<Mapping> EnumerateMappings( UserType& type ) {
 			for( var @base = &type; @base != null; @base = &@base->BaseType ) {
+				if( *@base == typeof( RuntimeObjectBase ) ) break;
+
 				for( var i = 0; i < @base->FieldCount; ++i ) {
 					var& field = @base->FieldsStart[i];
 
 					if( field.IsStatic ) continue;
+					if( field.AccessKind != AccessKind.Public ) continue;
 					if( field.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 
 					yield return new Mapping( field );
@@ -282,6 +286,7 @@ namespace System.Runtime {
 					var& property = @base->PropertiesStart[i];
 
 					if( property.IsStatic ) continue;
+					if( property.AccessKind != AccessKind.Public ) continue;
 					if( property.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 					if( property.GetMethod == nullref | property.SetMethod == nullref ) continue;
 
@@ -507,6 +512,79 @@ namespace System.Runtime {
 			}
 
 			public void Add( string name, UserType.Property& property ) {
+				if( IdMapping.Add( name, _mapping.Count ) )
+					_mapping.Add( new Binder.Mapping( property ) );
+			}
+
+			public void Apply() {
+				Binder.Mappings = _mapping.ToArray();
+			}
+		}
+
+		public struct MapperCUtf16Span {
+			private List<Binder.Mapping> _mapping;
+			public readonly Dictionary<CUtf16StringSpan, int> IdMapping;
+			public readonly Binder Binder = new Binder();
+			public HashSet<string> RetainSet = null;
+
+			public MapperCUtf16Span() {
+				_mapping = new List<Binder.Mapping>();
+				IdMapping = new Dictionary<CUtf16StringSpan, int>();
+			}
+
+			public MapperCUtf16Span( UserType& type )
+				: this( 8 ) {
+				Add( type );
+				Apply();
+			}
+
+			public MapperCUtf16Span( int capacity ) {
+				_mapping = new List<Binder.Mapping>( capacity );
+				IdMapping = new Dictionary<CUtf16StringSpan, int>( capacity );
+			}
+
+			public int this[CUtf16StringSpan name] {
+				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			}
+
+			public void Add( UserType& type ) {
+				foreach( var mapping in EnumerateMappings( type ) ) {
+					if( mapping.Field != null ) Add( *mapping.Field );
+					else if( mapping.Property != null ) Add( *mapping.Property );
+				}
+			}
+
+			public void Clear() {
+				_mapping.Clear();
+				IdMapping.Clear();
+			}
+
+			public void Add( UserType.Field& field ) {
+				if( RetainSet == null ) RetainSet = new HashSet<string>();
+
+				var name = ( string ) field.Name;
+				RetainSet.Add( name );
+
+				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) )
+					_mapping.Add( new Binder.Mapping( field ) );
+			}
+
+			public void Add( CUtf16StringSpan name, UserType.Field& field ) {
+				if( IdMapping.Add( name, _mapping.Count ) )
+					_mapping.Add( new Binder.Mapping( field ) );
+			}
+
+			public void Add( UserType.Property& property ) {
+				if( RetainSet == null ) RetainSet = new HashSet<string>();
+
+				var name = ( string ) property.Name;
+				RetainSet.Add( name );
+
+				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) )
+					_mapping.Add( new Binder.Mapping( property ) );
+			}
+
+			public void Add( CUtf16StringSpan name, UserType.Property& property ) {
 				if( IdMapping.Add( name, _mapping.Count ) )
 					_mapping.Add( new Binder.Mapping( property ) );
 			}
