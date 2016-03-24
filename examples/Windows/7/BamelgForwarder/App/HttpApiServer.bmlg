@@ -39,6 +39,7 @@ namespace BamelgForwarder {
 					case "/app/settings": return new AppSettingsHandler( this );
 					case "/app/connectors": return new ConnectorsHandler( this );
 					case "/app/serial_ports": return new ComPortsHandler( this );
+					case "/app/stat": return new HttpStatisticPageHandler( this );
 
 					case "/app/exit": return new AppExitHandler( this );
 					case "/app/save": return new AppSaveHandler( this );
@@ -118,6 +119,7 @@ namespace BamelgForwarder {
 
 			private static Binder.MapperCUtf16Span _mapper = new Binder.MapperCUtf16Span( typeof( Endpoint ) );
 
+			private bool _defer;
 			private int _endpointId;
 			private Endpoint _endpoint;
 			private string _newName;
@@ -137,9 +139,8 @@ namespace BamelgForwarder {
 
 			public override void Dispose() {
 				if( Method == HttpMethod.Post && StatusCode == HttpStatusCode.OK ) {
-					_connector.Stop();
 					_endpoint.Merge( _tmpEndpoint );
-					_connector.Run();
+					if( !_defer ) _connector.Restart();
 				}
 
 				_tmpEndpointContext = default( Binder.Context ); // break cyclic refs
@@ -185,6 +186,12 @@ namespace BamelgForwarder {
 						}
 						else
 							StatusCode = HttpStatusCode.BadRequest;
+						break;
+
+					case "defer":
+						if( value.Length == 0 ) _defer = true;
+						else if( bool.TryParse( value.GetTextSpan(), _defer ) ) { }
+						else StatusCode = HttpStatusCode.BadRequest;
 						break;
 
 					default:

@@ -301,10 +301,11 @@ namespace BamelgForwarderSetup {
 			return null;
 		}
 
-		public async Task SetEndpointProperties( string name, int id, EndpointInfo props0 ) {
+		public async Task SetEndpointProperties( string name, int id, EndpointInfo props0, bool defer ) {
 			var post = props0.ToNameValueCollection();
 			try {
 				post.Add( "connector", name );
+				if( defer ) post.Add( "defer", "" );
 
 				var result = await NewClient.UploadValuesTaskAsync( $"endpoint/{id}/properties", post );
 			}

@@ -15,6 +15,9 @@ using Platform.IO;
 
 namespace BamelgForwarder {
 	public partial class App {
+		public const int PagesPerTransferFiber = 4;
+		public const int PagesPerRestarterFiber = 4;
+
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields )]
 		internal struct AppSettings : IFormattable {
 			public AppSettings() {
@@ -162,7 +165,6 @@ namespace BamelgForwarder {
 			_endpointMapper.Add( "", memberinfo( Endpoint.Type ) );
 			_endpointMapper.Add( memberinfo( Endpoint.PacketsReaden ) );
 			_endpointMapper.Add( memberinfo( Endpoint.BytesReaden ) );
-			_endpointMapper.Add( memberinfo( Endpoint.Enabled ) );
 			_endpointMapper.Add( memberinfo( Endpoint.KeepAlive ) );
 			_endpointMapper.Add( memberinfo( Endpoint.IsReadable ) );
 			_endpointMapper.Add( memberinfo( Endpoint.IsWritable ) );
@@ -220,11 +222,6 @@ namespace BamelgForwarder {
 							using( var endpointKey = connectorKey.OpenRead( endpointName ) ) {
 								var ep = new Endpoint() { Name = endpointName };
 								endpointKey.GetValues( _endpointMapper.Binder.CreateContext( &ep ), _endpointMapper );
-
-								if( !ep.Enabled ) {
-									if( Options.Trace ) Console.WriteLine( "{0}: Endpoint '{1}' is disabled", connector, endpointName );
-									continue;
-								}
 
 								if( !( ep.IsReadable | ep.IsWritable ) ) {
 									Console.WriteLine( "{0}: Endpoint '{1}' must be readable or writable, or both", connector, endpointName );
@@ -298,7 +295,7 @@ namespace BamelgForwarder {
 	public class Connector : IFormattable {
 		public string Name;
 		public Endpoint Endpoint1, Endpoint2;
-		public Fiber Fiber1 = Fiber.Null, Fiber2 = Fiber.Null;
+		public Fiber Fiber1 = Fiber.Null, Fiber2 = Fiber.Null, RestarterFiber = Fiber.Null;
 
 		public Connector() {
 		}
@@ -308,21 +305,57 @@ namespace BamelgForwarder {
 		}
 
 		public void Run() {
+			PrepareEndpoints();
+			EventLoop.Instance.BeginInvoke( StartFibers );
+		}
+
+		public void Stop() {
+			Fiber1.Cancel(); Fiber1 = Fiber.Null;
+			Fiber2.Cancel(); Fiber2 = Fiber.Null;
+		}
+
+		public void Restart() {
+			if( RestarterFiber == Fiber.Null ) {
+				AddReference();
+
+				RestarterFiber = Fiber.Start( App.PagesPerRestarterFiber, Restarter, App.Options.Trace ? Name + " restarter" : null );
+			}
+			else
+				_restart.Increment();
+		}
+
+		private Fiber.Semaphore _exit = new Fiber.Semaphore();
+		private Fiber.Semaphore _restart = new Fiber.Semaphore();
+
+		private void StartFibers() {
+			Fiber1 = Fiber.Start( App.PagesPerTransferFiber, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
+			Fiber2 = Fiber.Start( App.PagesPerTransferFiber, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
+		}
+
+		private void Restarter() {
+			while( !Fiber.IsCancelled ) {
+				if( App.Options.Trace ) Console.WriteLine( "{0}: stopping endpoints", Name );
+				Stop();
+
+				_exit.Decrement(); _exit.Decrement();
+
+				if( App.Options.Trace ) Console.WriteLine( "{0}: restarting endpoints", Name );
+				PrepareEndpoints();
+				StartFibers();
+
+				using( Fiber.CancellationRegion() )
+					_restart.Wait();
+			}
+
+			ReleaseReference();
+		}
+
+		private void PrepareEndpoints() {
 			Endpoint1.Connector = this;
 			Endpoint2.Connector = this;
 
 			AddReference();
 			AddReference();
-
-			EventLoop.Instance.BeginInvoke( () => {
-				Fiber1 = Fiber.Start( 4, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
-				Fiber2 = Fiber.Start( 4, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
-			} );
-		}
-
-		public void Stop() {
-			Fiber1.Cancel(); Fiber1 = Fiber.Null;
-			Fiber2.Cancel(); Fiber1 = Fiber.Null;
 		}
 
 		private void Transfer( Endpoint source, Endpoint destination ) {
@@ -344,6 +377,8 @@ namespace BamelgForwarder {
 
 				destination.ResetNonKeepAlive();
 			}
+
+			_exit.Increment();
 
 			source.Close();
 			source.Connector = null;
@@ -369,8 +404,6 @@ namespace BamelgForwarder {
 		public int ReconnectCount;
 
 		public EndpointType Type;
-
-		public bool Enabled { get; set; } = true;
 
 		/// Don't drop active connection when other end down
 		public bool KeepAlive { get; set; } = true;
@@ -445,7 +478,6 @@ namespace BamelgForwarder {
 			Name = other.Name;
 
 			Type = other.Type;
-			Enabled = other.Enabled;
 			KeepAlive = other.KeepAlive;
 			IsReadable = other.IsReadable;
 			IsWritable = other.IsWritable;

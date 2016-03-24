@@ -182,6 +182,35 @@ namespace System.IO {
 					OnCancelled();
 			}
 
+			public void Wait() {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				if( Value > 0 ) {
+					Value = 0;
+					return;
+				}
+
+				currentFiber->WaitNext = null;
+				if( _lastWaiter == null ) {
+					_lastWaiter = _firstWaiter = currentFiber;
+				}
+				else {
+					_lastWaiter->WaitNext = currentFiber;
+					_lastWaiter = currentFiber;
+				}
+
+				TraceBlocked( currentFiber );
+
+				currentFiber->IsCancelled = false;
+				FiberManager.Suspend();
+
+				if( currentFiber->IsCancelled ) // leave semaphore in correct state
+					OnCancelled();
+			}
+
 			public void Increment() {
 				// Debug.Assert( Fiber.IsFiberExecuting ); increment can occur in main fiber too
 

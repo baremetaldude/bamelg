@@ -25,21 +25,28 @@ namespace System.IO {
 			private uint _asyncTransferred;
 
 			private Dispatcher.AlarmUnbiased* _alarmID;
-
+			
 			internal partial class Manager {
 				private System.Threading.Mutex _readyListAsyncLock = new System.Threading.Mutex();
 				private List<FiberInfo*> _readyListAsync = new List<FiberInfo*>();
 
 				public EventLoop CurrentEventLoop;
+				private FiberReadyEventSink _readySink;
 
 				/// @{ EventLoop support
 				public void Attach( EventLoop eventLoop ) {
 					if( !Assert.IsTrue( CurrentEventLoop == null ) ) return;
 					CurrentEventLoop = eventLoop;
+
+					_readySink = new FiberReadyEventSink( eventLoop );
+					_readySink.Register();
 				}
 
 				public void Detach( EventLoop eventLoop ) {
 					if( !Assert.IsTrue( CurrentEventLoop != null ) ) return;
+
+					_readySink.Unregister();
+					_readySink = null;
 
 					CurrentEventLoop = null;
 				}
@@ -53,13 +60,29 @@ namespace System.IO {
 					CurrentEventLoop.RemoveAlarm( alarmId );
 				}
 
-				private int _checkReadyFibersId = -1;
+				private class FiberReadyEventSink : EventLoop.EventSink {
+					private AutoResetEventHandle _readyFibers = new AutoResetEventHandle();
 
-				[CallingConvention( Value = NtApi.DefaultCallingConvention )]
-				private void CheckReadyFibersAPC() {
-					var id = atomic( CurrentEventLoop.PollId, Unordered ) ^ ( int ) 0x80000000;
+					public override HANDLE EventHandle { get { return _readyFibers; } }
 
-					atomic( _checkReadyFibersId = id, Relaxed );
+					public FiberReadyEventSink( EventLoop parent )
+						: base( parent ) {
+					}
+
+					public void Signal() {
+						_readyFibers.Set();
+					}
+
+					~FiberReadyEventSink() {
+						_readyFibers.Close();
+					}
+
+					public override void OnEvent() {
+						Fiber.FiberManager.EventLoopDispatch();
+					}
+				}
+
+				private void EventLoopDispatch() {
 					Dispatch();
 
 					if( CurrentEventLoop.QuitRequest & FiberCount > 0 )
@@ -81,9 +104,7 @@ namespace System.IO {
 
 					TraceReady( fiber );
 
-					var id = atomic( CurrentEventLoop.PollId, Unordered );
-					if( atomic( _checkReadyFibersId = id, Relaxed ) != id )
-						CurrentEventLoop.QueueAPC( this, memberinfo( CheckReadyFibersAPC ).Address );
+					_readySink.Signal();
 
 					_readyList.Add( fiber );
 					fiber->_isReady = true;
@@ -94,9 +115,7 @@ namespace System.IO {
 					using( _readyListAsyncLock.LockRegion() )
 						_readyListAsync.Add( fiber );
 
-					var id = atomic( CurrentEventLoop.PollId, Unordered );
-					if( atomic( _checkReadyFibersId = id, Relaxed ) != id )
-						CurrentEventLoop.QueueAPC( this, memberinfo( CheckReadyFibersAPC ).Address );
+					_readySink.Signal();
 				}
 
 				private void OnBeforeDispatch() { }

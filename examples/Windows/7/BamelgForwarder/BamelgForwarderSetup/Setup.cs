@@ -130,8 +130,8 @@ namespace BamelgForwarderSetup {
 
 			var connector = GetActiveConnector();
 
-			await _client.SetEndpointProperties( connector, 0, props0 );
-			await _client.SetEndpointProperties( connector, 1, props1 );
+			await _client.SetEndpointProperties( connector, 0, props0, true );
+			await _client.SetEndpointProperties( connector, 1, props1, false );
 		}
 
 		private async void _statisticsTimer_Tick( object sender, EventArgs e ) {
