@@ -53,9 +53,9 @@ namespace BamelgForwarderSetup {
 		public bool? IsReadable;
 		public bool? IsWritable;
 		public bool? IsAlive;
+		public bool? IsHold;
 		public int? PacketsReaden;
 		public ulong? BytesReaden;
-
 
 		public string TCPv4Endpoint;
 		public TimeSpan TCPKeepAliveInterval;
@@ -103,6 +103,7 @@ namespace BamelgForwarderSetup {
 			// result.Add( nameof( ReconnectCount ), ReconnectCount.ToString() );
 			result.Add( nameof( IsReadable ), IsReadable?.ToString() );
 			result.Add( nameof( IsWritable ), IsWritable?.ToString() );
+			result.Add( nameof( IsHold ), IsHold?.ToString() );
 			// result.Add( nameof( IsAlive ), IsAlive?.ToString() );
 			// result.Add( nameof( PacketsReaden ), PacketsReaden?.ToString() );
 			// result.Add( nameof( BytesReaden ), BytesReaden?.ToString() );

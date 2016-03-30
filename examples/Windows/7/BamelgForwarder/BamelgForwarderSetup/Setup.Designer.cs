@@ -30,14 +30,14 @@
 			this._connections = new System.Windows.Forms.ListView();
 			this._connectorName = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
 			this._tableEndpoints = new System.Windows.Forms.TableLayoutPanel();
-			this._endpoint1 = new BamelgForwarderSetup.EndpointProperties();
-			this._endpoint2 = new BamelgForwarderSetup.EndpointProperties();
 			this._menu = new System.Windows.Forms.MenuStrip();
 			this._traceMenu = new System.Windows.Forms.ToolStripMenuItem();
 			this._trace = new System.Windows.Forms.ToolStripMenuItem();
 			this._traceTransfer = new System.Windows.Forms.ToolStripMenuItem();
 			this._save = new System.Windows.Forms.ToolStripMenuItem();
 			this._reload = new System.Windows.Forms.ToolStripMenuItem();
+			this._updateStatistics = new System.Windows.Forms.ToolStripMenuItem();
+			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
 			this._stop = new System.Windows.Forms.ToolStripMenuItem();
 			this._status = new System.Windows.Forms.StatusStrip();
 			this._statusText = new System.Windows.Forms.ToolStripStatusLabel();
@@ -48,8 +48,9 @@
 			this._apply = new System.Windows.Forms.Button();
 			this._revert = new System.Windows.Forms.Button();
 			this._statisticsTimer = new System.Windows.Forms.Timer(this.components);
-			this._updateStatistics = new System.Windows.Forms.ToolStripMenuItem();
-			this.toolStripSeparator3 = new System.Windows.Forms.ToolStripSeparator();
+			this._toolTip = new System.Windows.Forms.ToolTip(this.components);
+			this._endpoint1 = new BamelgForwarderSetup.EndpointProperties();
+			this._endpoint2 = new BamelgForwarderSetup.EndpointProperties();
 			toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
 			toolStripSeparator2 = new System.Windows.Forms.ToolStripSeparator();
 			this._tableEndpoints.SuspendLayout();
@@ -110,22 +111,6 @@
 			this._tableEndpoints.Size = new System.Drawing.Size(264, 320);
 			this._tableEndpoints.TabIndex = 3;
 			// 
-			// _endpoint1
-			// 
-			this._endpoint1.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._endpoint1.Location = new System.Drawing.Point(3, 3);
-			this._endpoint1.Name = "_endpoint1";
-			this._endpoint1.Size = new System.Drawing.Size(258, 154);
-			this._endpoint1.TabIndex = 1;
-			// 
-			// _endpoint2
-			// 
-			this._endpoint2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._endpoint2.Location = new System.Drawing.Point(3, 163);
-			this._endpoint2.Name = "_endpoint2";
-			this._endpoint2.Size = new System.Drawing.Size(258, 154);
-			this._endpoint2.TabIndex = 2;
-			// 
 			// _menu
 			// 
 			this._menu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -179,6 +164,18 @@
 			this._reload.Size = new System.Drawing.Size(160, 22);
 			this._reload.Text = "Reload";
 			this._reload.Click += new System.EventHandler(this._reload_Click);
+			// 
+			// _updateStatistics
+			// 
+			this._updateStatistics.Name = "_updateStatistics";
+			this._updateStatistics.Size = new System.Drawing.Size(160, 22);
+			this._updateStatistics.Text = "Update statistics";
+			this._updateStatistics.Click += new System.EventHandler(this._updateStatistics_Click);
+			// 
+			// toolStripSeparator3
+			// 
+			this.toolStripSeparator3.Name = "toolStripSeparator3";
+			this.toolStripSeparator3.Size = new System.Drawing.Size(157, 6);
 			// 
 			// _stop
 			// 
@@ -265,17 +262,21 @@
 			this._statisticsTimer.Interval = 1000;
 			this._statisticsTimer.Tick += new System.EventHandler(this._statisticsTimer_Tick);
 			// 
-			// _updateStatistics
+			// _endpoint1
 			// 
-			this._updateStatistics.Name = "_updateStatistics";
-			this._updateStatistics.Size = new System.Drawing.Size(160, 22);
-			this._updateStatistics.Text = "Update statistics";
-			this._updateStatistics.Click += new System.EventHandler(this._updateStatistics_Click);
+			this._endpoint1.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._endpoint1.Location = new System.Drawing.Point(3, 3);
+			this._endpoint1.Name = "_endpoint1";
+			this._endpoint1.Size = new System.Drawing.Size(258, 154);
+			this._endpoint1.TabIndex = 1;
 			// 
-			// toolStripSeparator3
+			// _endpoint2
 			// 
-			this.toolStripSeparator3.Name = "toolStripSeparator3";
-			this.toolStripSeparator3.Size = new System.Drawing.Size(157, 6);
+			this._endpoint2.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._endpoint2.Location = new System.Drawing.Point(3, 163);
+			this._endpoint2.Name = "_endpoint2";
+			this._endpoint2.Size = new System.Drawing.Size(258, 154);
+			this._endpoint2.TabIndex = 2;
 			// 
 			// Setup
 			// 
@@ -331,6 +332,7 @@
 		private System.Windows.Forms.Timer _statisticsTimer;
 		private System.Windows.Forms.ToolStripMenuItem _updateStatistics;
 		private System.Windows.Forms.ToolStripSeparator toolStripSeparator3;
+		private System.Windows.Forms.ToolTip _toolTip;
 	}
 }
 

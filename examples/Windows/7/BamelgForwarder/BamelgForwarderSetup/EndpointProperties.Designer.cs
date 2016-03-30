@@ -28,17 +28,9 @@
         /// </summary>
         private void InitializeComponent()
         {
-			this.components = new System.ComponentModel.Container();
-			System.Windows.Forms.TableLayoutPanel _serialTable;
+			System.Windows.Forms.TableLayoutPanel _tableSerial;
 			System.Windows.Forms.TableLayoutPanel _settingsTable;
-			System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
-			System.Windows.Forms.Label ReconnectCount;
-			System.Windows.Forms.Label PacketsReaden;
-			System.Windows.Forms.Label Readen;
-			System.Windows.Forms.Label Timeout;
-			System.Windows.Forms.Label Interval;
-			System.Windows.Forms.Label _labelTcpv4Endpoint;
-			System.Windows.Forms.Label _labelTcpv4ServerEndpoint;
+			System.Windows.Forms.TableLayoutPanel _tableStatistics;
 			this._baudRate = new System.Windows.Forms.TextBox();
 			this._lableStopBits = new System.Windows.Forms.Label();
 			this._readIntervalTimeout = new System.Windows.Forms.TextBox();
@@ -53,112 +45,111 @@
 			this._writableLabel = new System.Windows.Forms.Label();
 			this._readable = new System.Windows.Forms.CheckBox();
 			this._readableLabel = new System.Windows.Forms.Label();
-			this._propagate = new System.Windows.Forms.CheckBox();
-			this._propagateLabel = new System.Windows.Forms.Label();
+			this._hold = new System.Windows.Forms.CheckBox();
+			this._holdLabel = new System.Windows.Forms.Label();
 			this._nameLabel = new System.Windows.Forms.Label();
 			this._typeLabel = new System.Windows.Forms.Label();
 			this._name = new System.Windows.Forms.TextBox();
 			this._endpointType = new System.Windows.Forms.ComboBox();
+			this._labelReconnectCount = new System.Windows.Forms.Label();
 			this._reconnectCount = new System.Windows.Forms.TextBox();
 			this._readenBytes = new System.Windows.Forms.TextBox();
 			this._readenPackets = new System.Windows.Forms.TextBox();
+			this._labelPacketsReaden = new System.Windows.Forms.Label();
+			this._labelReaden = new System.Windows.Forms.Label();
+			this._labelTcpKeepAliveTimeout = new System.Windows.Forms.Label();
+			this._labelTcpKeepAliveInterval = new System.Windows.Forms.Label();
+			this._labelTcpv4Endpoint = new System.Windows.Forms.Label();
+			this._labelTcpv4ServerEndpoint = new System.Windows.Forms.Label();
 			this._type = new System.Windows.Forms.TabControl();
 			this._tabSettings = new System.Windows.Forms.TabPage();
 			this._tabStatistics = new System.Windows.Forms.TabPage();
 			this._tabTcp = new System.Windows.Forms.TabPage();
-			this.tableLayoutPanel2 = new System.Windows.Forms.TableLayoutPanel();
+			this._tableTcp = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpKeepAliveInterval = new System.Windows.Forms.TextBox();
 			this._tcpKeepAliveTimeout = new System.Windows.Forms.TextBox();
 			this._tabSerial = new System.Windows.Forms.TabPage();
 			this._tabTcpv4Client = new System.Windows.Forms.TabPage();
-			this._tcpv4ClientTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableTcpv4Client = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv4Endpoint = new System.Windows.Forms.TextBox();
 			this._tabTcpv4Server = new System.Windows.Forms.TabPage();
-			this._tabTcpv4ServerTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableTcpv4Server = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv4ServerEndpoint = new System.Windows.Forms.TextBox();
 			this._tabTcpv6Client = new System.Windows.Forms.TabPage();
-			this._tabTcpv6ClientTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableTcpv6Client = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv6Endpoint = new System.Windows.Forms.TextBox();
-			this.label2 = new System.Windows.Forms.Label();
+			this._labelTcpv6Endpoint = new System.Windows.Forms.Label();
 			this._tabTcpv6Server = new System.Windows.Forms.TabPage();
-			this._tabTcpv6ServerTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableTcpv6Server = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv6ServerEndpoint = new System.Windows.Forms.TextBox();
-			this.label3 = new System.Windows.Forms.Label();
+			this._labelTcpv6ServerEndpoint = new System.Windows.Forms.Label();
 			this._tabNamedPipeClient = new System.Windows.Forms.TabPage();
-			this._tabNamedPipeClientTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableNamedPipeClient = new System.Windows.Forms.TableLayoutPanel();
 			this._namedPipeClientPath = new System.Windows.Forms.TextBox();
-			this.label4 = new System.Windows.Forms.Label();
+			this._labelNamedPipeClientPath = new System.Windows.Forms.Label();
 			this._tabNamedPipeServer = new System.Windows.Forms.TabPage();
-			this._tabNamedPipeServerTable = new System.Windows.Forms.TableLayoutPanel();
+			this._tableNamedPipeServer = new System.Windows.Forms.TableLayoutPanel();
 			this._namedPiperServerPath = new System.Windows.Forms.TextBox();
-			this.label5 = new System.Windows.Forms.Label();
+			this._labelNamedPiperServerPath = new System.Windows.Forms.Label();
 			this._tabUdpv4 = new System.Windows.Forms.TabPage();
-			this._tabUdpv4Table = new System.Windows.Forms.TableLayoutPanel();
+			this._tableUdpv4 = new System.Windows.Forms.TableLayoutPanel();
 			this._udpv4Endpoint = new System.Windows.Forms.TextBox();
-			this.label6 = new System.Windows.Forms.Label();
-			this._toolTip = new System.Windows.Forms.ToolTip(this.components);
-			_serialTable = new System.Windows.Forms.TableLayoutPanel();
+			this._labelUdpv4Endpoint = new System.Windows.Forms.Label();
+			_tableSerial = new System.Windows.Forms.TableLayoutPanel();
 			_settingsTable = new System.Windows.Forms.TableLayoutPanel();
-			tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
-			ReconnectCount = new System.Windows.Forms.Label();
-			PacketsReaden = new System.Windows.Forms.Label();
-			Readen = new System.Windows.Forms.Label();
-			Timeout = new System.Windows.Forms.Label();
-			Interval = new System.Windows.Forms.Label();
-			_labelTcpv4Endpoint = new System.Windows.Forms.Label();
-			_labelTcpv4ServerEndpoint = new System.Windows.Forms.Label();
-			_serialTable.SuspendLayout();
+			_tableStatistics = new System.Windows.Forms.TableLayoutPanel();
+			_tableSerial.SuspendLayout();
 			_settingsTable.SuspendLayout();
-			tableLayoutPanel1.SuspendLayout();
+			_tableStatistics.SuspendLayout();
 			this._type.SuspendLayout();
 			this._tabSettings.SuspendLayout();
 			this._tabStatistics.SuspendLayout();
 			this._tabTcp.SuspendLayout();
-			this.tableLayoutPanel2.SuspendLayout();
+			this._tableTcp.SuspendLayout();
 			this._tabSerial.SuspendLayout();
 			this._tabTcpv4Client.SuspendLayout();
-			this._tcpv4ClientTable.SuspendLayout();
+			this._tableTcpv4Client.SuspendLayout();
 			this._tabTcpv4Server.SuspendLayout();
-			this._tabTcpv4ServerTable.SuspendLayout();
+			this._tableTcpv4Server.SuspendLayout();
 			this._tabTcpv6Client.SuspendLayout();
-			this._tabTcpv6ClientTable.SuspendLayout();
+			this._tableTcpv6Client.SuspendLayout();
 			this._tabTcpv6Server.SuspendLayout();
-			this._tabTcpv6ServerTable.SuspendLayout();
+			this._tableTcpv6Server.SuspendLayout();
 			this._tabNamedPipeClient.SuspendLayout();
-			this._tabNamedPipeClientTable.SuspendLayout();
+			this._tableNamedPipeClient.SuspendLayout();
 			this._tabNamedPipeServer.SuspendLayout();
-			this._tabNamedPipeServerTable.SuspendLayout();
+			this._tableNamedPipeServer.SuspendLayout();
 			this._tabUdpv4.SuspendLayout();
-			this._tabUdpv4Table.SuspendLayout();
+			this._tableUdpv4.SuspendLayout();
 			this.SuspendLayout();
 			// 
-			// _serialTable
+			// _tableSerial
 			// 
-			_serialTable.ColumnCount = 2;
-			_serialTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			_serialTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			_serialTable.Controls.Add(this._baudRate, 1, 2);
-			_serialTable.Controls.Add(this._lableStopBits, 0, 4);
-			_serialTable.Controls.Add(this._readIntervalTimeout, 1, 1);
-			_serialTable.Controls.Add(this._labelReadIntervalTimeout, 0, 1);
-			_serialTable.Controls.Add(this._labelBaudRate, 0, 2);
-			_serialTable.Controls.Add(this._labelParity, 0, 3);
-			_serialTable.Controls.Add(this._parity, 1, 3);
-			_serialTable.Controls.Add(this._labelPath, 0, 0);
-			_serialTable.Controls.Add(this._stopBits, 1, 4);
-			_serialTable.Controls.Add(this._path, 1, 0);
-			_serialTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			_serialTable.Location = new System.Drawing.Point(3, 3);
-			_serialTable.Name = "_serialTable";
-			_serialTable.RowCount = 6;
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			_serialTable.Size = new System.Drawing.Size(245, 281);
-			_serialTable.TabIndex = 0;
+			_tableSerial.ColumnCount = 2;
+			_tableSerial.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			_tableSerial.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			_tableSerial.Controls.Add(this._baudRate, 1, 2);
+			_tableSerial.Controls.Add(this._lableStopBits, 0, 4);
+			_tableSerial.Controls.Add(this._readIntervalTimeout, 1, 1);
+			_tableSerial.Controls.Add(this._labelReadIntervalTimeout, 0, 1);
+			_tableSerial.Controls.Add(this._labelBaudRate, 0, 2);
+			_tableSerial.Controls.Add(this._labelParity, 0, 3);
+			_tableSerial.Controls.Add(this._parity, 1, 3);
+			_tableSerial.Controls.Add(this._labelPath, 0, 0);
+			_tableSerial.Controls.Add(this._stopBits, 1, 4);
+			_tableSerial.Controls.Add(this._path, 1, 0);
+			_tableSerial.Dock = System.Windows.Forms.DockStyle.Fill;
+			_tableSerial.Location = new System.Drawing.Point(3, 3);
+			_tableSerial.Name = "_tableSerial";
+			_tableSerial.RowCount = 6;
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableSerial.Size = new System.Drawing.Size(245, 281);
+			_tableSerial.TabIndex = 0;
 			// 
 			// _baudRate
 			// 
@@ -177,7 +168,6 @@
 			this._lableStopBits.Size = new System.Drawing.Size(109, 13);
 			this._lableStopBits.TabIndex = 6;
 			this._lableStopBits.Text = "StopBits:";
-			this._toolTip.SetToolTip(this._lableStopBits, "Default value comes from Device Manager");
 			// 
 			// _readIntervalTimeout
 			// 
@@ -196,7 +186,6 @@
 			this._labelReadIntervalTimeout.Size = new System.Drawing.Size(109, 13);
 			this._labelReadIntervalTimeout.TabIndex = 2;
 			this._labelReadIntervalTimeout.Text = "ReadIntervalTimeout:";
-			this._toolTip.SetToolTip(this._labelReadIntervalTimeout, "Path to serial device \\\\.\\COM6");
 			// 
 			// _labelBaudRate
 			// 
@@ -207,7 +196,6 @@
 			this._labelBaudRate.Size = new System.Drawing.Size(109, 13);
 			this._labelBaudRate.TabIndex = 3;
 			this._labelBaudRate.Text = "BaudRate:";
-			this._toolTip.SetToolTip(this._labelBaudRate, "Default value comes from Device Manager");
 			// 
 			// _labelParity
 			// 
@@ -218,7 +206,6 @@
 			this._labelParity.Size = new System.Drawing.Size(109, 13);
 			this._labelParity.TabIndex = 5;
 			this._labelParity.Text = "Parity:";
-			this._toolTip.SetToolTip(this._labelParity, "Default value comes from Device Manager");
 			// 
 			// _parity
 			// 
@@ -245,7 +232,6 @@
 			this._labelPath.Size = new System.Drawing.Size(109, 13);
 			this._labelPath.TabIndex = 0;
 			this._labelPath.Text = "Path:";
-			this._toolTip.SetToolTip(this._labelPath, "Path to serial device, e.g. \\\\.\\COM6");
 			// 
 			// _stopBits
 			// 
@@ -286,8 +272,8 @@
 			_settingsTable.Controls.Add(this._writableLabel, 0, 3);
 			_settingsTable.Controls.Add(this._readable, 1, 2);
 			_settingsTable.Controls.Add(this._readableLabel, 0, 2);
-			_settingsTable.Controls.Add(this._propagate, 1, 6);
-			_settingsTable.Controls.Add(this._propagateLabel, 0, 6);
+			_settingsTable.Controls.Add(this._hold, 1, 6);
+			_settingsTable.Controls.Add(this._holdLabel, 0, 6);
 			_settingsTable.Controls.Add(this._nameLabel, 0, 1);
 			_settingsTable.Controls.Add(this._typeLabel, 0, 0);
 			_settingsTable.Controls.Add(this._name, 1, 1);
@@ -311,7 +297,7 @@
 			// 
 			this._writable.Anchor = System.Windows.Forms.AnchorStyles.None;
 			this._writable.AutoSize = true;
-			this._writable.Location = new System.Drawing.Point(148, 76);
+			this._writable.Location = new System.Drawing.Point(146, 76);
 			this._writable.Name = "_writable";
 			this._writable.Size = new System.Drawing.Size(15, 14);
 			this._writable.TabIndex = 7;
@@ -323,16 +309,15 @@
 			this._writableLabel.AutoSize = true;
 			this._writableLabel.Location = new System.Drawing.Point(3, 76);
 			this._writableLabel.Name = "_writableLabel";
-			this._writableLabel.Size = new System.Drawing.Size(60, 13);
+			this._writableLabel.Size = new System.Drawing.Size(56, 13);
 			this._writableLabel.TabIndex = 6;
 			this._writableLabel.Text = "Writable:";
-			this._toolTip.SetToolTip(this._writableLabel, "Is endpoint readable");
 			// 
 			// _readable
 			// 
 			this._readable.Anchor = System.Windows.Forms.AnchorStyles.None;
 			this._readable.AutoSize = true;
-			this._readable.Location = new System.Drawing.Point(148, 56);
+			this._readable.Location = new System.Drawing.Point(146, 56);
 			this._readable.Name = "_readable";
 			this._readable.Size = new System.Drawing.Size(15, 14);
 			this._readable.TabIndex = 5;
@@ -344,31 +329,29 @@
 			this._readableLabel.AutoSize = true;
 			this._readableLabel.Location = new System.Drawing.Point(3, 56);
 			this._readableLabel.Name = "_readableLabel";
-			this._readableLabel.Size = new System.Drawing.Size(60, 13);
+			this._readableLabel.Size = new System.Drawing.Size(56, 13);
 			this._readableLabel.TabIndex = 3;
 			this._readableLabel.Text = "Readable:";
-			this._toolTip.SetToolTip(this._readableLabel, "Is endpoint writable");
 			// 
-			// _propagate
+			// _hold
 			// 
-			this._propagate.Anchor = System.Windows.Forms.AnchorStyles.None;
-			this._propagate.AutoSize = true;
-			this._propagate.Location = new System.Drawing.Point(148, 96);
-			this._propagate.Name = "_propagate";
-			this._propagate.Size = new System.Drawing.Size(15, 14);
-			this._propagate.TabIndex = 4;
-			this._propagate.UseVisualStyleBackColor = true;
+			this._hold.Anchor = System.Windows.Forms.AnchorStyles.None;
+			this._hold.AutoSize = true;
+			this._hold.Location = new System.Drawing.Point(146, 96);
+			this._hold.Name = "_hold";
+			this._hold.Size = new System.Drawing.Size(15, 14);
+			this._hold.TabIndex = 4;
+			this._hold.UseVisualStyleBackColor = true;
 			// 
-			// _propagateLabel
+			// _holdLabel
 			// 
-			this._propagateLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._propagateLabel.AutoSize = true;
-			this._propagateLabel.Location = new System.Drawing.Point(3, 96);
-			this._propagateLabel.Name = "_propagateLabel";
-			this._propagateLabel.Size = new System.Drawing.Size(60, 13);
-			this._propagateLabel.TabIndex = 2;
-			this._propagateLabel.Text = "Keep alive:";
-			this._toolTip.SetToolTip(this._propagateLabel, "Keep alive while other end disconnected");
+			this._holdLabel.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._holdLabel.AutoSize = true;
+			this._holdLabel.Location = new System.Drawing.Point(3, 96);
+			this._holdLabel.Name = "_holdLabel";
+			this._holdLabel.Size = new System.Drawing.Size(56, 13);
+			this._holdLabel.TabIndex = 2;
+			this._holdLabel.Text = "Hold:";
 			// 
 			// _nameLabel
 			// 
@@ -376,10 +359,9 @@
 			this._nameLabel.AutoSize = true;
 			this._nameLabel.Location = new System.Drawing.Point(3, 33);
 			this._nameLabel.Name = "_nameLabel";
-			this._nameLabel.Size = new System.Drawing.Size(60, 13);
+			this._nameLabel.Size = new System.Drawing.Size(56, 13);
 			this._nameLabel.TabIndex = 0;
 			this._nameLabel.Text = "Name:";
-			this._toolTip.SetToolTip(this._nameLabel, "Endpoint name");
 			// 
 			// _typeLabel
 			// 
@@ -390,14 +372,13 @@
 			this._typeLabel.Size = new System.Drawing.Size(34, 13);
 			this._typeLabel.TabIndex = 8;
 			this._typeLabel.Text = "Type:";
-			this._toolTip.SetToolTip(this._typeLabel, "Endpoint type");
 			// 
 			// _name
 			// 
 			this._name.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._name.Location = new System.Drawing.Point(69, 30);
+			this._name.Location = new System.Drawing.Point(65, 30);
 			this._name.Name = "_name";
-			this._name.Size = new System.Drawing.Size(173, 20);
+			this._name.Size = new System.Drawing.Size(177, 20);
 			this._name.TabIndex = 0;
 			// 
 			// _endpointType
@@ -405,49 +386,47 @@
 			this._endpointType.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
 			this._endpointType.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
 			this._endpointType.FormattingEnabled = true;
-			this._endpointType.Location = new System.Drawing.Point(69, 3);
+			this._endpointType.Location = new System.Drawing.Point(65, 3);
 			this._endpointType.Name = "_endpointType";
-			this._endpointType.Size = new System.Drawing.Size(173, 21);
+			this._endpointType.Size = new System.Drawing.Size(177, 21);
 			this._endpointType.TabIndex = 9;
-			this._endpointType.SelectedIndexChanged += new System.EventHandler(this._endpointType_SelectedIndexChanged);
 			// 
-			// tableLayoutPanel1
+			// _tableStatistics
 			// 
-			tableLayoutPanel1.ColumnCount = 2;
-			tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			tableLayoutPanel1.Controls.Add(ReconnectCount, 0, 0);
-			tableLayoutPanel1.Controls.Add(this._reconnectCount, 1, 0);
-			tableLayoutPanel1.Controls.Add(this._readenBytes, 1, 1);
-			tableLayoutPanel1.Controls.Add(this._readenPackets, 1, 7);
-			tableLayoutPanel1.Controls.Add(PacketsReaden, 0, 7);
-			tableLayoutPanel1.Controls.Add(Readen, 0, 1);
-			tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
-			tableLayoutPanel1.Location = new System.Drawing.Point(3, 3);
-			tableLayoutPanel1.Name = "tableLayoutPanel1";
-			tableLayoutPanel1.RowCount = 9;
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			tableLayoutPanel1.Size = new System.Drawing.Size(245, 281);
-			tableLayoutPanel1.TabIndex = 3;
+			_tableStatistics.ColumnCount = 2;
+			_tableStatistics.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			_tableStatistics.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			_tableStatistics.Controls.Add(this._labelReconnectCount, 0, 0);
+			_tableStatistics.Controls.Add(this._reconnectCount, 1, 0);
+			_tableStatistics.Controls.Add(this._readenBytes, 1, 1);
+			_tableStatistics.Controls.Add(this._readenPackets, 1, 7);
+			_tableStatistics.Controls.Add(this._labelPacketsReaden, 0, 7);
+			_tableStatistics.Controls.Add(this._labelReaden, 0, 1);
+			_tableStatistics.Dock = System.Windows.Forms.DockStyle.Fill;
+			_tableStatistics.Location = new System.Drawing.Point(3, 3);
+			_tableStatistics.Name = "_tableStatistics";
+			_tableStatistics.RowCount = 9;
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			_tableStatistics.Size = new System.Drawing.Size(245, 281);
+			_tableStatistics.TabIndex = 3;
 			// 
-			// ReconnectCount
+			// _labelReconnectCount
 			// 
-			ReconnectCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			ReconnectCount.AutoSize = true;
-			ReconnectCount.Location = new System.Drawing.Point(3, 6);
-			ReconnectCount.Name = "ReconnectCount";
-			ReconnectCount.Size = new System.Drawing.Size(85, 13);
-			ReconnectCount.TabIndex = 0;
-			ReconnectCount.Text = "Reconnects:";
-			this._toolTip.SetToolTip(ReconnectCount, "Reconnect count");
+			this._labelReconnectCount.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelReconnectCount.AutoSize = true;
+			this._labelReconnectCount.Location = new System.Drawing.Point(3, 6);
+			this._labelReconnectCount.Name = "_labelReconnectCount";
+			this._labelReconnectCount.Size = new System.Drawing.Size(85, 13);
+			this._labelReconnectCount.TabIndex = 0;
+			this._labelReconnectCount.Text = "Reconnects:";
 			// 
 			// _reconnectCount
 			// 
@@ -476,71 +455,65 @@
 			this._readenPackets.Size = new System.Drawing.Size(148, 20);
 			this._readenPackets.TabIndex = 11;
 			// 
-			// PacketsReaden
+			// _labelPacketsReaden
 			// 
-			PacketsReaden.Anchor = System.Windows.Forms.AnchorStyles.Left;
-			PacketsReaden.AutoSize = true;
-			PacketsReaden.Location = new System.Drawing.Point(3, 58);
-			PacketsReaden.Name = "PacketsReaden";
-			PacketsReaden.Size = new System.Drawing.Size(85, 13);
-			PacketsReaden.TabIndex = 10;
-			PacketsReaden.Text = "Packets readen:";
+			this._labelPacketsReaden.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this._labelPacketsReaden.AutoSize = true;
+			this._labelPacketsReaden.Location = new System.Drawing.Point(3, 58);
+			this._labelPacketsReaden.Name = "_labelPacketsReaden";
+			this._labelPacketsReaden.Size = new System.Drawing.Size(85, 13);
+			this._labelPacketsReaden.TabIndex = 10;
+			this._labelPacketsReaden.Text = "Packets readen:";
 			// 
-			// Readen
+			// _labelReaden
 			// 
-			Readen.Anchor = System.Windows.Forms.AnchorStyles.Left;
-			Readen.AutoSize = true;
-			Readen.Location = new System.Drawing.Point(3, 32);
-			Readen.Name = "Readen";
-			Readen.Size = new System.Drawing.Size(72, 13);
-			Readen.TabIndex = 8;
-			Readen.Text = "Bytes readen:";
+			this._labelReaden.Anchor = System.Windows.Forms.AnchorStyles.Left;
+			this._labelReaden.AutoSize = true;
+			this._labelReaden.Location = new System.Drawing.Point(3, 32);
+			this._labelReaden.Name = "_labelReaden";
+			this._labelReaden.Size = new System.Drawing.Size(72, 13);
+			this._labelReaden.TabIndex = 8;
+			this._labelReaden.Text = "Bytes readen:";
 			// 
-			// Timeout
+			// _labelTcpKeepAliveTimeout
 			// 
-			Timeout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			Timeout.AutoSize = true;
-			Timeout.Location = new System.Drawing.Point(3, 6);
-			Timeout.Name = "Timeout";
-			Timeout.Size = new System.Drawing.Size(98, 13);
-			Timeout.TabIndex = 2;
-			Timeout.Text = "Keep-Alive timeout:";
-			this._toolTip.SetToolTip(Timeout, "Specifies the timeout with no activity until the first keep-alive packet is sent." +
-        " Default is 2:00:00");
+			this._labelTcpKeepAliveTimeout.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpKeepAliveTimeout.AutoSize = true;
+			this._labelTcpKeepAliveTimeout.Location = new System.Drawing.Point(3, 6);
+			this._labelTcpKeepAliveTimeout.Name = "_labelTcpKeepAliveTimeout";
+			this._labelTcpKeepAliveTimeout.Size = new System.Drawing.Size(98, 13);
+			this._labelTcpKeepAliveTimeout.TabIndex = 2;
+			this._labelTcpKeepAliveTimeout.Text = "Keep-Alive timeout:";
 			// 
-			// Interval
+			// _labelTcpKeepAliveInterval
 			// 
-			Interval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			Interval.AutoSize = true;
-			Interval.Location = new System.Drawing.Point(3, 32);
-			Interval.Name = "Interval";
-			Interval.Size = new System.Drawing.Size(98, 13);
-			Interval.TabIndex = 3;
-			Interval.Text = "Keep-Alive interval:";
-			this._toolTip.SetToolTip(Interval, "Specifies the interval between when successive keep-alive packets are sent if no " +
-        "acknowledgement is received. After 10 failed probes connection will be dropped");
+			this._labelTcpKeepAliveInterval.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpKeepAliveInterval.AutoSize = true;
+			this._labelTcpKeepAliveInterval.Location = new System.Drawing.Point(3, 32);
+			this._labelTcpKeepAliveInterval.Name = "_labelTcpKeepAliveInterval";
+			this._labelTcpKeepAliveInterval.Size = new System.Drawing.Size(98, 13);
+			this._labelTcpKeepAliveInterval.TabIndex = 3;
+			this._labelTcpKeepAliveInterval.Text = "Keep-Alive interval:";
 			// 
 			// _labelTcpv4Endpoint
 			// 
-			_labelTcpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			_labelTcpv4Endpoint.AutoSize = true;
-			_labelTcpv4Endpoint.Location = new System.Drawing.Point(3, 6);
-			_labelTcpv4Endpoint.Name = "_labelTcpv4Endpoint";
-			_labelTcpv4Endpoint.Size = new System.Drawing.Size(52, 13);
-			_labelTcpv4Endpoint.TabIndex = 0;
-			_labelTcpv4Endpoint.Text = "Endpoint:";
-			this._toolTip.SetToolTip(_labelTcpv4Endpoint, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelTcpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv4Endpoint.AutoSize = true;
+			this._labelTcpv4Endpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelTcpv4Endpoint.Name = "_labelTcpv4Endpoint";
+			this._labelTcpv4Endpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv4Endpoint.TabIndex = 0;
+			this._labelTcpv4Endpoint.Text = "Endpoint:";
 			// 
 			// _labelTcpv4ServerEndpoint
 			// 
-			_labelTcpv4ServerEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			_labelTcpv4ServerEndpoint.AutoSize = true;
-			_labelTcpv4ServerEndpoint.Location = new System.Drawing.Point(3, 6);
-			_labelTcpv4ServerEndpoint.Name = "_labelTcpv4ServerEndpoint";
-			_labelTcpv4ServerEndpoint.Size = new System.Drawing.Size(52, 13);
-			_labelTcpv4ServerEndpoint.TabIndex = 0;
-			_labelTcpv4ServerEndpoint.Text = "Endpoint:";
-			this._toolTip.SetToolTip(_labelTcpv4ServerEndpoint, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelTcpv4ServerEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv4ServerEndpoint.AutoSize = true;
+			this._labelTcpv4ServerEndpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelTcpv4ServerEndpoint.Name = "_labelTcpv4ServerEndpoint";
+			this._labelTcpv4ServerEndpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv4ServerEndpoint.TabIndex = 0;
+			this._labelTcpv4ServerEndpoint.Text = "Endpoint:";
 			// 
 			// _type
 			// 
@@ -575,7 +548,7 @@
 			// 
 			// _tabStatistics
 			// 
-			this._tabStatistics.Controls.Add(tableLayoutPanel1);
+			this._tabStatistics.Controls.Add(_tableStatistics);
 			this._tabStatistics.Location = new System.Drawing.Point(4, 22);
 			this._tabStatistics.Name = "_tabStatistics";
 			this._tabStatistics.Padding = new System.Windows.Forms.Padding(3);
@@ -586,7 +559,7 @@
 			// 
 			// _tabTcp
 			// 
-			this._tabTcp.Controls.Add(this.tableLayoutPanel2);
+			this._tabTcp.Controls.Add(this._tableTcp);
 			this._tabTcp.Location = new System.Drawing.Point(4, 22);
 			this._tabTcp.Name = "_tabTcp";
 			this._tabTcp.Size = new System.Drawing.Size(251, 287);
@@ -594,27 +567,27 @@
 			this._tabTcp.Text = "TCP";
 			this._tabTcp.UseVisualStyleBackColor = true;
 			// 
-			// tableLayoutPanel2
+			// _tableTcp
 			// 
-			this.tableLayoutPanel2.ColumnCount = 2;
-			this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this.tableLayoutPanel2.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this.tableLayoutPanel2.Controls.Add(this._tcpKeepAliveInterval, 1, 1);
-			this.tableLayoutPanel2.Controls.Add(this._tcpKeepAliveTimeout, 1, 0);
-			this.tableLayoutPanel2.Controls.Add(Timeout, 0, 0);
-			this.tableLayoutPanel2.Controls.Add(Interval, 0, 1);
-			this.tableLayoutPanel2.Dock = System.Windows.Forms.DockStyle.Fill;
-			this.tableLayoutPanel2.Location = new System.Drawing.Point(0, 0);
-			this.tableLayoutPanel2.Name = "tableLayoutPanel2";
-			this.tableLayoutPanel2.RowCount = 5;
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this.tableLayoutPanel2.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
-			this.tableLayoutPanel2.Size = new System.Drawing.Size(251, 287);
-			this.tableLayoutPanel2.TabIndex = 2;
+			this._tableTcp.ColumnCount = 2;
+			this._tableTcp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableTcp.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcp.Controls.Add(this._tcpKeepAliveInterval, 1, 1);
+			this._tableTcp.Controls.Add(this._tcpKeepAliveTimeout, 1, 0);
+			this._tableTcp.Controls.Add(this._labelTcpKeepAliveTimeout, 0, 0);
+			this._tableTcp.Controls.Add(this._labelTcpKeepAliveInterval, 0, 1);
+			this._tableTcp.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableTcp.Location = new System.Drawing.Point(0, 0);
+			this._tableTcp.Name = "_tableTcp";
+			this._tableTcp.RowCount = 5;
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcp.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
+			this._tableTcp.Size = new System.Drawing.Size(251, 287);
+			this._tableTcp.TabIndex = 2;
 			// 
 			// _tcpKeepAliveInterval
 			// 
@@ -634,7 +607,7 @@
 			// 
 			// _tabSerial
 			// 
-			this._tabSerial.Controls.Add(_serialTable);
+			this._tabSerial.Controls.Add(_tableSerial);
 			this._tabSerial.Location = new System.Drawing.Point(4, 22);
 			this._tabSerial.Name = "_tabSerial";
 			this._tabSerial.Padding = new System.Windows.Forms.Padding(3);
@@ -645,7 +618,7 @@
 			// 
 			// _tabTcpv4Client
 			// 
-			this._tabTcpv4Client.Controls.Add(this._tcpv4ClientTable);
+			this._tabTcpv4Client.Controls.Add(this._tableTcpv4Client);
 			this._tabTcpv4Client.Location = new System.Drawing.Point(4, 22);
 			this._tabTcpv4Client.Name = "_tabTcpv4Client";
 			this._tabTcpv4Client.Padding = new System.Windows.Forms.Padding(3);
@@ -654,25 +627,25 @@
 			this._tabTcpv4Client.Text = "TCPv4 client";
 			this._tabTcpv4Client.UseVisualStyleBackColor = true;
 			// 
-			// _tcpv4ClientTable
+			// _tableTcpv4Client
 			// 
-			this._tcpv4ClientTable.ColumnCount = 2;
-			this._tcpv4ClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tcpv4ClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tcpv4ClientTable.Controls.Add(this._tcpv4Endpoint, 1, 0);
-			this._tcpv4ClientTable.Controls.Add(_labelTcpv4Endpoint, 0, 0);
-			this._tcpv4ClientTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tcpv4ClientTable.Location = new System.Drawing.Point(3, 3);
-			this._tcpv4ClientTable.Name = "_tcpv4ClientTable";
-			this._tcpv4ClientTable.RowCount = 6;
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tcpv4ClientTable.Size = new System.Drawing.Size(245, 281);
-			this._tcpv4ClientTable.TabIndex = 1;
+			this._tableTcpv4Client.ColumnCount = 2;
+			this._tableTcpv4Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableTcpv4Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv4Client.Controls.Add(this._tcpv4Endpoint, 1, 0);
+			this._tableTcpv4Client.Controls.Add(this._labelTcpv4Endpoint, 0, 0);
+			this._tableTcpv4Client.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableTcpv4Client.Location = new System.Drawing.Point(3, 3);
+			this._tableTcpv4Client.Name = "_tableTcpv4Client";
+			this._tableTcpv4Client.RowCount = 6;
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.Size = new System.Drawing.Size(245, 281);
+			this._tableTcpv4Client.TabIndex = 1;
 			// 
 			// _tcpv4Endpoint
 			// 
@@ -684,7 +657,7 @@
 			// 
 			// _tabTcpv4Server
 			// 
-			this._tabTcpv4Server.Controls.Add(this._tabTcpv4ServerTable);
+			this._tabTcpv4Server.Controls.Add(this._tableTcpv4Server);
 			this._tabTcpv4Server.Location = new System.Drawing.Point(4, 22);
 			this._tabTcpv4Server.Name = "_tabTcpv4Server";
 			this._tabTcpv4Server.Padding = new System.Windows.Forms.Padding(3);
@@ -693,25 +666,25 @@
 			this._tabTcpv4Server.Text = "TCPv4 server";
 			this._tabTcpv4Server.UseVisualStyleBackColor = true;
 			// 
-			// _tabTcpv4ServerTable
+			// _tableTcpv4Server
 			// 
-			this._tabTcpv4ServerTable.ColumnCount = 2;
-			this._tabTcpv4ServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabTcpv4ServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabTcpv4ServerTable.Controls.Add(this._tcpv4ServerEndpoint, 1, 0);
-			this._tabTcpv4ServerTable.Controls.Add(_labelTcpv4ServerEndpoint, 0, 0);
-			this._tabTcpv4ServerTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabTcpv4ServerTable.Location = new System.Drawing.Point(3, 3);
-			this._tabTcpv4ServerTable.Name = "_tabTcpv4ServerTable";
-			this._tabTcpv4ServerTable.RowCount = 6;
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv4ServerTable.Size = new System.Drawing.Size(245, 281);
-			this._tabTcpv4ServerTable.TabIndex = 2;
+			this._tableTcpv4Server.ColumnCount = 2;
+			this._tableTcpv4Server.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableTcpv4Server.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv4Server.Controls.Add(this._tcpv4ServerEndpoint, 1, 0);
+			this._tableTcpv4Server.Controls.Add(this._labelTcpv4ServerEndpoint, 0, 0);
+			this._tableTcpv4Server.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableTcpv4Server.Location = new System.Drawing.Point(3, 3);
+			this._tableTcpv4Server.Name = "_tableTcpv4Server";
+			this._tableTcpv4Server.RowCount = 6;
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Server.Size = new System.Drawing.Size(245, 281);
+			this._tableTcpv4Server.TabIndex = 2;
 			// 
 			// _tcpv4ServerEndpoint
 			// 
@@ -723,7 +696,7 @@
 			// 
 			// _tabTcpv6Client
 			// 
-			this._tabTcpv6Client.Controls.Add(this._tabTcpv6ClientTable);
+			this._tabTcpv6Client.Controls.Add(this._tableTcpv6Client);
 			this._tabTcpv6Client.Location = new System.Drawing.Point(4, 22);
 			this._tabTcpv6Client.Name = "_tabTcpv6Client";
 			this._tabTcpv6Client.Padding = new System.Windows.Forms.Padding(3);
@@ -732,25 +705,25 @@
 			this._tabTcpv6Client.Text = "TCPv6 client";
 			this._tabTcpv6Client.UseVisualStyleBackColor = true;
 			// 
-			// _tabTcpv6ClientTable
+			// _tableTcpv6Client
 			// 
-			this._tabTcpv6ClientTable.ColumnCount = 2;
-			this._tabTcpv6ClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabTcpv6ClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabTcpv6ClientTable.Controls.Add(this._tcpv6Endpoint, 1, 0);
-			this._tabTcpv6ClientTable.Controls.Add(this.label2, 0, 0);
-			this._tabTcpv6ClientTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabTcpv6ClientTable.Location = new System.Drawing.Point(3, 3);
-			this._tabTcpv6ClientTable.Name = "_tabTcpv6ClientTable";
-			this._tabTcpv6ClientTable.RowCount = 6;
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ClientTable.Size = new System.Drawing.Size(245, 281);
-			this._tabTcpv6ClientTable.TabIndex = 3;
+			this._tableTcpv6Client.ColumnCount = 2;
+			this._tableTcpv6Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableTcpv6Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv6Client.Controls.Add(this._tcpv6Endpoint, 1, 0);
+			this._tableTcpv6Client.Controls.Add(this._labelTcpv6Endpoint, 0, 0);
+			this._tableTcpv6Client.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableTcpv6Client.Location = new System.Drawing.Point(3, 3);
+			this._tableTcpv6Client.Name = "_tableTcpv6Client";
+			this._tableTcpv6Client.RowCount = 6;
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.Size = new System.Drawing.Size(245, 281);
+			this._tableTcpv6Client.TabIndex = 3;
 			// 
 			// _tcpv6Endpoint
 			// 
@@ -760,20 +733,19 @@
 			this._tcpv6Endpoint.Size = new System.Drawing.Size(181, 20);
 			this._tcpv6Endpoint.TabIndex = 0;
 			// 
-			// label2
+			// _labelTcpv6Endpoint
 			// 
-			this.label2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.label2.AutoSize = true;
-			this.label2.Location = new System.Drawing.Point(3, 6);
-			this.label2.Name = "label2";
-			this.label2.Size = new System.Drawing.Size(52, 13);
-			this.label2.TabIndex = 0;
-			this.label2.Text = "Endpoint:";
-			this._toolTip.SetToolTip(this.label2, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelTcpv6Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv6Endpoint.AutoSize = true;
+			this._labelTcpv6Endpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelTcpv6Endpoint.Name = "_labelTcpv6Endpoint";
+			this._labelTcpv6Endpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv6Endpoint.TabIndex = 0;
+			this._labelTcpv6Endpoint.Text = "Endpoint:";
 			// 
 			// _tabTcpv6Server
 			// 
-			this._tabTcpv6Server.Controls.Add(this._tabTcpv6ServerTable);
+			this._tabTcpv6Server.Controls.Add(this._tableTcpv6Server);
 			this._tabTcpv6Server.Location = new System.Drawing.Point(4, 22);
 			this._tabTcpv6Server.Name = "_tabTcpv6Server";
 			this._tabTcpv6Server.Padding = new System.Windows.Forms.Padding(3);
@@ -782,25 +754,25 @@
 			this._tabTcpv6Server.Text = "TCPv6 server";
 			this._tabTcpv6Server.UseVisualStyleBackColor = true;
 			// 
-			// _tabTcpv6ServerTable
+			// _tableTcpv6Server
 			// 
-			this._tabTcpv6ServerTable.ColumnCount = 2;
-			this._tabTcpv6ServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabTcpv6ServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabTcpv6ServerTable.Controls.Add(this._tcpv6ServerEndpoint, 1, 0);
-			this._tabTcpv6ServerTable.Controls.Add(this.label3, 0, 0);
-			this._tabTcpv6ServerTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabTcpv6ServerTable.Location = new System.Drawing.Point(3, 3);
-			this._tabTcpv6ServerTable.Name = "_tabTcpv6ServerTable";
-			this._tabTcpv6ServerTable.RowCount = 6;
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabTcpv6ServerTable.Size = new System.Drawing.Size(245, 281);
-			this._tabTcpv6ServerTable.TabIndex = 3;
+			this._tableTcpv6Server.ColumnCount = 2;
+			this._tableTcpv6Server.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableTcpv6Server.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv6Server.Controls.Add(this._tcpv6ServerEndpoint, 1, 0);
+			this._tableTcpv6Server.Controls.Add(this._labelTcpv6ServerEndpoint, 0, 0);
+			this._tableTcpv6Server.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableTcpv6Server.Location = new System.Drawing.Point(3, 3);
+			this._tableTcpv6Server.Name = "_tableTcpv6Server";
+			this._tableTcpv6Server.RowCount = 6;
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Server.Size = new System.Drawing.Size(245, 281);
+			this._tableTcpv6Server.TabIndex = 3;
 			// 
 			// _tcpv6ServerEndpoint
 			// 
@@ -810,20 +782,19 @@
 			this._tcpv6ServerEndpoint.Size = new System.Drawing.Size(181, 20);
 			this._tcpv6ServerEndpoint.TabIndex = 0;
 			// 
-			// label3
+			// _labelTcpv6ServerEndpoint
 			// 
-			this.label3.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.label3.AutoSize = true;
-			this.label3.Location = new System.Drawing.Point(3, 6);
-			this.label3.Name = "label3";
-			this.label3.Size = new System.Drawing.Size(52, 13);
-			this.label3.TabIndex = 0;
-			this.label3.Text = "Endpoint:";
-			this._toolTip.SetToolTip(this.label3, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelTcpv6ServerEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv6ServerEndpoint.AutoSize = true;
+			this._labelTcpv6ServerEndpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelTcpv6ServerEndpoint.Name = "_labelTcpv6ServerEndpoint";
+			this._labelTcpv6ServerEndpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv6ServerEndpoint.TabIndex = 0;
+			this._labelTcpv6ServerEndpoint.Text = "Endpoint:";
 			// 
 			// _tabNamedPipeClient
 			// 
-			this._tabNamedPipeClient.Controls.Add(this._tabNamedPipeClientTable);
+			this._tabNamedPipeClient.Controls.Add(this._tableNamedPipeClient);
 			this._tabNamedPipeClient.Location = new System.Drawing.Point(4, 22);
 			this._tabNamedPipeClient.Name = "_tabNamedPipeClient";
 			this._tabNamedPipeClient.Padding = new System.Windows.Forms.Padding(3);
@@ -832,25 +803,25 @@
 			this._tabNamedPipeClient.Text = "NamedPipe client";
 			this._tabNamedPipeClient.UseVisualStyleBackColor = true;
 			// 
-			// _tabNamedPipeClientTable
+			// _tableNamedPipeClient
 			// 
-			this._tabNamedPipeClientTable.ColumnCount = 2;
-			this._tabNamedPipeClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabNamedPipeClientTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabNamedPipeClientTable.Controls.Add(this._namedPipeClientPath, 1, 0);
-			this._tabNamedPipeClientTable.Controls.Add(this.label4, 0, 0);
-			this._tabNamedPipeClientTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabNamedPipeClientTable.Location = new System.Drawing.Point(3, 3);
-			this._tabNamedPipeClientTable.Name = "_tabNamedPipeClientTable";
-			this._tabNamedPipeClientTable.RowCount = 6;
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeClientTable.Size = new System.Drawing.Size(245, 281);
-			this._tabNamedPipeClientTable.TabIndex = 3;
+			this._tableNamedPipeClient.ColumnCount = 2;
+			this._tableNamedPipeClient.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableNamedPipeClient.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableNamedPipeClient.Controls.Add(this._namedPipeClientPath, 1, 0);
+			this._tableNamedPipeClient.Controls.Add(this._labelNamedPipeClientPath, 0, 0);
+			this._tableNamedPipeClient.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableNamedPipeClient.Location = new System.Drawing.Point(3, 3);
+			this._tableNamedPipeClient.Name = "_tableNamedPipeClient";
+			this._tableNamedPipeClient.RowCount = 6;
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeClient.Size = new System.Drawing.Size(245, 281);
+			this._tableNamedPipeClient.TabIndex = 3;
 			// 
 			// _namedPipeClientPath
 			// 
@@ -860,20 +831,19 @@
 			this._namedPipeClientPath.Size = new System.Drawing.Size(201, 20);
 			this._namedPipeClientPath.TabIndex = 0;
 			// 
-			// label4
+			// _labelNamedPipeClientPath
 			// 
-			this.label4.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.label4.AutoSize = true;
-			this.label4.Location = new System.Drawing.Point(3, 6);
-			this.label4.Name = "label4";
-			this.label4.Size = new System.Drawing.Size(32, 13);
-			this.label4.TabIndex = 0;
-			this.label4.Text = "Path:";
-			this._toolTip.SetToolTip(this.label4, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelNamedPipeClientPath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelNamedPipeClientPath.AutoSize = true;
+			this._labelNamedPipeClientPath.Location = new System.Drawing.Point(3, 6);
+			this._labelNamedPipeClientPath.Name = "_labelNamedPipeClientPath";
+			this._labelNamedPipeClientPath.Size = new System.Drawing.Size(32, 13);
+			this._labelNamedPipeClientPath.TabIndex = 0;
+			this._labelNamedPipeClientPath.Text = "Path:";
 			// 
 			// _tabNamedPipeServer
 			// 
-			this._tabNamedPipeServer.Controls.Add(this._tabNamedPipeServerTable);
+			this._tabNamedPipeServer.Controls.Add(this._tableNamedPipeServer);
 			this._tabNamedPipeServer.Location = new System.Drawing.Point(4, 22);
 			this._tabNamedPipeServer.Name = "_tabNamedPipeServer";
 			this._tabNamedPipeServer.Padding = new System.Windows.Forms.Padding(3);
@@ -882,25 +852,25 @@
 			this._tabNamedPipeServer.Text = "NamedPipe server";
 			this._tabNamedPipeServer.UseVisualStyleBackColor = true;
 			// 
-			// _tabNamedPipeServerTable
+			// _tableNamedPipeServer
 			// 
-			this._tabNamedPipeServerTable.ColumnCount = 2;
-			this._tabNamedPipeServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabNamedPipeServerTable.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabNamedPipeServerTable.Controls.Add(this._namedPiperServerPath, 1, 0);
-			this._tabNamedPipeServerTable.Controls.Add(this.label5, 0, 0);
-			this._tabNamedPipeServerTable.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabNamedPipeServerTable.Location = new System.Drawing.Point(3, 3);
-			this._tabNamedPipeServerTable.Name = "_tabNamedPipeServerTable";
-			this._tabNamedPipeServerTable.RowCount = 6;
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabNamedPipeServerTable.Size = new System.Drawing.Size(245, 281);
-			this._tabNamedPipeServerTable.TabIndex = 3;
+			this._tableNamedPipeServer.ColumnCount = 2;
+			this._tableNamedPipeServer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableNamedPipeServer.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableNamedPipeServer.Controls.Add(this._namedPiperServerPath, 1, 0);
+			this._tableNamedPipeServer.Controls.Add(this._labelNamedPiperServerPath, 0, 0);
+			this._tableNamedPipeServer.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableNamedPipeServer.Location = new System.Drawing.Point(3, 3);
+			this._tableNamedPipeServer.Name = "_tableNamedPipeServer";
+			this._tableNamedPipeServer.RowCount = 6;
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableNamedPipeServer.Size = new System.Drawing.Size(245, 281);
+			this._tableNamedPipeServer.TabIndex = 3;
 			// 
 			// _namedPiperServerPath
 			// 
@@ -910,20 +880,19 @@
 			this._namedPiperServerPath.Size = new System.Drawing.Size(201, 20);
 			this._namedPiperServerPath.TabIndex = 0;
 			// 
-			// label5
+			// _labelNamedPiperServerPath
 			// 
-			this.label5.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.label5.AutoSize = true;
-			this.label5.Location = new System.Drawing.Point(3, 6);
-			this.label5.Name = "label5";
-			this.label5.Size = new System.Drawing.Size(32, 13);
-			this.label5.TabIndex = 0;
-			this.label5.Text = "Path:";
-			this._toolTip.SetToolTip(this.label5, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelNamedPiperServerPath.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelNamedPiperServerPath.AutoSize = true;
+			this._labelNamedPiperServerPath.Location = new System.Drawing.Point(3, 6);
+			this._labelNamedPiperServerPath.Name = "_labelNamedPiperServerPath";
+			this._labelNamedPiperServerPath.Size = new System.Drawing.Size(32, 13);
+			this._labelNamedPiperServerPath.TabIndex = 0;
+			this._labelNamedPiperServerPath.Text = "Path:";
 			// 
 			// _tabUdpv4
 			// 
-			this._tabUdpv4.Controls.Add(this._tabUdpv4Table);
+			this._tabUdpv4.Controls.Add(this._tableUdpv4);
 			this._tabUdpv4.Location = new System.Drawing.Point(4, 22);
 			this._tabUdpv4.Name = "_tabUdpv4";
 			this._tabUdpv4.Padding = new System.Windows.Forms.Padding(3);
@@ -932,25 +901,25 @@
 			this._tabUdpv4.Text = "UDPv4";
 			this._tabUdpv4.UseVisualStyleBackColor = true;
 			// 
-			// _tabUdpv4Table
+			// _tableUdpv4
 			// 
-			this._tabUdpv4Table.ColumnCount = 2;
-			this._tabUdpv4Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
-			this._tabUdpv4Table.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tabUdpv4Table.Controls.Add(this._udpv4Endpoint, 1, 0);
-			this._tabUdpv4Table.Controls.Add(this.label6, 0, 0);
-			this._tabUdpv4Table.Dock = System.Windows.Forms.DockStyle.Fill;
-			this._tabUdpv4Table.Location = new System.Drawing.Point(3, 3);
-			this._tabUdpv4Table.Name = "_tabUdpv4Table";
-			this._tabUdpv4Table.RowCount = 6;
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tabUdpv4Table.Size = new System.Drawing.Size(245, 281);
-			this._tabUdpv4Table.TabIndex = 4;
+			this._tableUdpv4.ColumnCount = 2;
+			this._tableUdpv4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
+			this._tableUdpv4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableUdpv4.Controls.Add(this._udpv4Endpoint, 1, 0);
+			this._tableUdpv4.Controls.Add(this._labelUdpv4Endpoint, 0, 0);
+			this._tableUdpv4.Dock = System.Windows.Forms.DockStyle.Fill;
+			this._tableUdpv4.Location = new System.Drawing.Point(3, 3);
+			this._tableUdpv4.Name = "_tableUdpv4";
+			this._tableUdpv4.RowCount = 6;
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.Size = new System.Drawing.Size(245, 281);
+			this._tableUdpv4.TabIndex = 4;
 			// 
 			// _udpv4Endpoint
 			// 
@@ -960,16 +929,15 @@
 			this._udpv4Endpoint.Size = new System.Drawing.Size(181, 20);
 			this._udpv4Endpoint.TabIndex = 0;
 			// 
-			// label6
+			// _labelUdpv4Endpoint
 			// 
-			this.label6.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this.label6.AutoSize = true;
-			this.label6.Location = new System.Drawing.Point(3, 6);
-			this.label6.Name = "label6";
-			this.label6.Size = new System.Drawing.Size(52, 13);
-			this.label6.TabIndex = 0;
-			this.label6.Text = "Endpoint:";
-			this._toolTip.SetToolTip(this.label6, "Endpoint to connect , e.g. 127.0.0.1:4010");
+			this._labelUdpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelUdpv4Endpoint.AutoSize = true;
+			this._labelUdpv4Endpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelUdpv4Endpoint.Name = "_labelUdpv4Endpoint";
+			this._labelUdpv4Endpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelUdpv4Endpoint.TabIndex = 0;
+			this._labelUdpv4Endpoint.Text = "Endpoint:";
 			// 
 			// EndpointProperties
 			// 
@@ -978,40 +946,40 @@
 			this.Controls.Add(this._type);
 			this.Name = "EndpointProperties";
 			this.Size = new System.Drawing.Size(259, 313);
-			_serialTable.ResumeLayout(false);
-			_serialTable.PerformLayout();
+			_tableSerial.ResumeLayout(false);
+			_tableSerial.PerformLayout();
 			_settingsTable.ResumeLayout(false);
 			_settingsTable.PerformLayout();
-			tableLayoutPanel1.ResumeLayout(false);
-			tableLayoutPanel1.PerformLayout();
+			_tableStatistics.ResumeLayout(false);
+			_tableStatistics.PerformLayout();
 			this._type.ResumeLayout(false);
 			this._tabSettings.ResumeLayout(false);
 			this._tabStatistics.ResumeLayout(false);
 			this._tabTcp.ResumeLayout(false);
-			this.tableLayoutPanel2.ResumeLayout(false);
-			this.tableLayoutPanel2.PerformLayout();
+			this._tableTcp.ResumeLayout(false);
+			this._tableTcp.PerformLayout();
 			this._tabSerial.ResumeLayout(false);
 			this._tabTcpv4Client.ResumeLayout(false);
-			this._tcpv4ClientTable.ResumeLayout(false);
-			this._tcpv4ClientTable.PerformLayout();
+			this._tableTcpv4Client.ResumeLayout(false);
+			this._tableTcpv4Client.PerformLayout();
 			this._tabTcpv4Server.ResumeLayout(false);
-			this._tabTcpv4ServerTable.ResumeLayout(false);
-			this._tabTcpv4ServerTable.PerformLayout();
+			this._tableTcpv4Server.ResumeLayout(false);
+			this._tableTcpv4Server.PerformLayout();
 			this._tabTcpv6Client.ResumeLayout(false);
-			this._tabTcpv6ClientTable.ResumeLayout(false);
-			this._tabTcpv6ClientTable.PerformLayout();
+			this._tableTcpv6Client.ResumeLayout(false);
+			this._tableTcpv6Client.PerformLayout();
 			this._tabTcpv6Server.ResumeLayout(false);
-			this._tabTcpv6ServerTable.ResumeLayout(false);
-			this._tabTcpv6ServerTable.PerformLayout();
+			this._tableTcpv6Server.ResumeLayout(false);
+			this._tableTcpv6Server.PerformLayout();
 			this._tabNamedPipeClient.ResumeLayout(false);
-			this._tabNamedPipeClientTable.ResumeLayout(false);
-			this._tabNamedPipeClientTable.PerformLayout();
+			this._tableNamedPipeClient.ResumeLayout(false);
+			this._tableNamedPipeClient.PerformLayout();
 			this._tabNamedPipeServer.ResumeLayout(false);
-			this._tabNamedPipeServerTable.ResumeLayout(false);
-			this._tabNamedPipeServerTable.PerformLayout();
+			this._tableNamedPipeServer.ResumeLayout(false);
+			this._tableNamedPipeServer.PerformLayout();
 			this._tabUdpv4.ResumeLayout(false);
-			this._tabUdpv4Table.ResumeLayout(false);
-			this._tabUdpv4Table.PerformLayout();
+			this._tableUdpv4.ResumeLayout(false);
+			this._tableUdpv4.PerformLayout();
 			this.ResumeLayout(false);
 
         }
@@ -1023,7 +991,6 @@
         private System.Windows.Forms.TabPage _tabTcpv4Client;
         private System.Windows.Forms.TabPage _tabTcpv4Server;
         private System.Windows.Forms.Label _labelPath;
-        private System.Windows.Forms.ToolTip _toolTip;
         private System.Windows.Forms.ComboBox _stopBits;
         private System.Windows.Forms.TextBox _baudRate;
         private System.Windows.Forms.Label _lableStopBits;
@@ -1032,49 +999,56 @@
         private System.Windows.Forms.Label _labelBaudRate;
         private System.Windows.Forms.Label _labelParity;
         private System.Windows.Forms.ComboBox _parity;
-		private System.Windows.Forms.TableLayoutPanel _tcpv4ClientTable;
+		private System.Windows.Forms.TableLayoutPanel _tableTcpv4Client;
 		private System.Windows.Forms.TextBox _tcpv4Endpoint;
 		private System.Windows.Forms.ComboBox _path;
 		private System.Windows.Forms.TabPage _tabSettings;
 		private System.Windows.Forms.CheckBox _writable;
 		private System.Windows.Forms.Label _writableLabel;
 		private System.Windows.Forms.CheckBox _readable;
-		private System.Windows.Forms.Label _propagateLabel;
+		private System.Windows.Forms.Label _holdLabel;
 		private System.Windows.Forms.TextBox _name;
 		private System.Windows.Forms.Label _readableLabel;
 		private System.Windows.Forms.Label _nameLabel;
-		private System.Windows.Forms.CheckBox _propagate;
+		private System.Windows.Forms.CheckBox _hold;
 		private System.Windows.Forms.Label _typeLabel;
 		private System.Windows.Forms.ComboBox _endpointType;
 		private System.Windows.Forms.TabPage _tabStatistics;
 		private System.Windows.Forms.TextBox _reconnectCount;
 		private System.Windows.Forms.TextBox _readenBytes;
 		private System.Windows.Forms.TabPage _tabTcp;
-		private System.Windows.Forms.TableLayoutPanel tableLayoutPanel2;
+		private System.Windows.Forms.TableLayoutPanel _tableTcp;
 		private System.Windows.Forms.TextBox _tcpKeepAliveInterval;
 		private System.Windows.Forms.TextBox _tcpKeepAliveTimeout;
-		private System.Windows.Forms.TableLayoutPanel _tabTcpv4ServerTable;
+		private System.Windows.Forms.TableLayoutPanel _tableTcpv4Server;
 		private System.Windows.Forms.TextBox _tcpv4ServerEndpoint;
 		private System.Windows.Forms.TabPage _tabTcpv6Client;
-		private System.Windows.Forms.TableLayoutPanel _tabTcpv6ClientTable;
+		private System.Windows.Forms.TableLayoutPanel _tableTcpv6Client;
 		private System.Windows.Forms.TextBox _tcpv6Endpoint;
-		private System.Windows.Forms.Label label2;
+		private System.Windows.Forms.Label _labelTcpv6Endpoint;
 		private System.Windows.Forms.TabPage _tabTcpv6Server;
-		private System.Windows.Forms.TableLayoutPanel _tabTcpv6ServerTable;
+		private System.Windows.Forms.TableLayoutPanel _tableTcpv6Server;
 		private System.Windows.Forms.TextBox _tcpv6ServerEndpoint;
-		private System.Windows.Forms.Label label3;
+		private System.Windows.Forms.Label _labelTcpv6ServerEndpoint;
 		private System.Windows.Forms.TabPage _tabNamedPipeClient;
-		private System.Windows.Forms.TableLayoutPanel _tabNamedPipeClientTable;
+		private System.Windows.Forms.TableLayoutPanel _tableNamedPipeClient;
 		private System.Windows.Forms.TextBox _namedPipeClientPath;
-		private System.Windows.Forms.Label label4;
+		private System.Windows.Forms.Label _labelNamedPipeClientPath;
 		private System.Windows.Forms.TabPage _tabNamedPipeServer;
-		private System.Windows.Forms.TableLayoutPanel _tabNamedPipeServerTable;
+		private System.Windows.Forms.TableLayoutPanel _tableNamedPipeServer;
 		private System.Windows.Forms.TextBox _namedPiperServerPath;
-		private System.Windows.Forms.Label label5;
+		private System.Windows.Forms.Label _labelNamedPiperServerPath;
 		private System.Windows.Forms.TextBox _readenPackets;
 		private System.Windows.Forms.TabPage _tabUdpv4;
-		private System.Windows.Forms.TableLayoutPanel _tabUdpv4Table;
+		private System.Windows.Forms.TableLayoutPanel _tableUdpv4;
 		private System.Windows.Forms.TextBox _udpv4Endpoint;
-		private System.Windows.Forms.Label label6;
+		private System.Windows.Forms.Label _labelUdpv4Endpoint;
+		private System.Windows.Forms.Label _labelReconnectCount;
+		private System.Windows.Forms.Label _labelPacketsReaden;
+		private System.Windows.Forms.Label _labelReaden;
+		private System.Windows.Forms.Label _labelTcpv4Endpoint;
+		private System.Windows.Forms.Label _labelTcpv4ServerEndpoint;
+		private System.Windows.Forms.Label _labelTcpKeepAliveTimeout;
+		private System.Windows.Forms.Label _labelTcpKeepAliveInterval;
 	}
 }

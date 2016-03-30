@@ -1,6 +1,8 @@
 ﻿//
 // Created by Eugeny Grishul
 //
+// No API for non-blocking 'CreateFile' defined so additional threads created to prevent blocking eventloop
+//
 
 using System;
 using System.Collections;
@@ -15,9 +17,6 @@ using Platform.IO;
 
 namespace BamelgForwarder {
 	public partial class App {
-		public const int PagesPerTransferFiber = 4;
-		public const int PagesPerRestarterFiber = 4;
-
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields )]
 		internal struct AppSettings : IFormattable {
 			public AppSettings() {
@@ -26,6 +25,11 @@ namespace BamelgForwarder {
 			public bool Trace = true, TraceTransfer = true;
 			public bool HttpApi = true;
 			public TimeSpan RestoreTimeout = TimeSpan.FromSeconds( 1 );
+			
+
+			public int PagesPerControlFiber = 4;
+			public int PagesPerTransferFiber = 4;
+			public int PagesPerRestarterFiber = 4;
 
 			public void ToString( StringBuilder builder, string format ) { // use 'sbf' snippet
 				builder.Concat( "Trace='", Trace, "' TraceTransfer='", TraceTransfer, "' HttpApi='", HttpApi, '\'' );
@@ -165,9 +169,12 @@ namespace BamelgForwarder {
 			_endpointMapper.Add( "", memberinfo( Endpoint.Type ) );
 			_endpointMapper.Add( memberinfo( Endpoint.PacketsReaden ) );
 			_endpointMapper.Add( memberinfo( Endpoint.BytesReaden ) );
-			_endpointMapper.Add( memberinfo( Endpoint.KeepAlive ) );
+			_endpointMapper.Add( memberinfo( Endpoint.IsHold ) );
 			_endpointMapper.Add( memberinfo( Endpoint.IsReadable ) );
 			_endpointMapper.Add( memberinfo( Endpoint.IsWritable ) );
+
+			_endpointMapper.Add( memberinfo( Endpoint.TCPKeepAliveTimeout ) );
+			_endpointMapper.Add( memberinfo( Endpoint.TCPKeepAliveInterval ) );
 
 			_endpointMapper.Add( memberinfo( Endpoint.SerialPortReadIntervalTimeout ) );
 			_endpointMapper.Add( memberinfo( Endpoint.SerialPortPath ) );
@@ -295,7 +302,7 @@ namespace BamelgForwarder {
 	public class Connector : IFormattable {
 		public string Name;
 		public Endpoint Endpoint1, Endpoint2;
-		public Fiber Fiber1 = Fiber.Null, Fiber2 = Fiber.Null, RestarterFiber = Fiber.Null;
+		public Fiber RestarterFiber = Fiber.Null;
 
 		public Connector() {
 		}
@@ -310,15 +317,15 @@ namespace BamelgForwarder {
 		}
 
 		public void Stop() {
-			Fiber1.Cancel(); Fiber1 = Fiber.Null;
-			Fiber2.Cancel(); Fiber2 = Fiber.Null;
+			Endpoint1.TransmitterFiber.Cancel(); Endpoint1.TransmitterFiber = Fiber.Null;
+			Endpoint2.TransmitterFiber.Cancel(); Endpoint2.TransmitterFiber = Fiber.Null;
 		}
 
 		public void Restart() {
 			if( RestarterFiber == Fiber.Null ) {
 				AddReference();
 
-				RestarterFiber = Fiber.Start( App.PagesPerRestarterFiber, Restarter, App.Options.Trace ? Name + " restarter" : null );
+				RestarterFiber = Fiber.Start( App.Options.PagesPerRestarterFiber, Restarter, App.Options.Trace ? Name + " restarter" : null );
 			}
 			else
 				_restart.Increment();
@@ -328,8 +335,8 @@ namespace BamelgForwarder {
 		private Fiber.Semaphore _restart = new Fiber.Semaphore();
 
 		private void StartFibers() {
-			Fiber1 = Fiber.Start( App.PagesPerTransferFiber, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
-			Fiber2 = Fiber.Start( App.PagesPerTransferFiber, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
+			Endpoint1.TransmitterFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
+			Endpoint2.TransmitterFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
 		}
 
 		private void Restarter() {
@@ -356,23 +363,45 @@ namespace BamelgForwarder {
 
 			AddReference();
 			AddReference();
+
+			if( !Endpoint1.IsHold & !Endpoint2.IsHold ) // at least one endpoint must be listening
+				Endpoint1.IsHold = Endpoint2.IsHold = true;
+
+			if( !Endpoint1.IsReadable & !Endpoint1.IsWritable ) Endpoint1.IsReadable = Endpoint1.IsWritable = true;
+			if( !Endpoint2.IsReadable & !Endpoint2.IsWritable ) Endpoint2.IsReadable = Endpoint2.IsWritable = true;
 		}
 
 		private void Transfer( Endpoint source, Endpoint destination ) {
 			while( !Fiber.IsCancelled ) {
 				using( Fiber.CancellationRegion() ) {
-					var isConnected = source.Connect();
+					if( source.IsHold || destination.IsAlive ) {
+						var isConnected = source.Connect();
 
-					if( !isConnected ) {
-						if( App.Options.Trace ) Console.WriteLine( "{0}: Connect failed", source );
+						if( !isConnected ) {
+							if( App.Options.Trace ) Console.WriteLine( "{0}: Connect failed", source );
 
-						Fiber.Sleep( App.Options.RestoreTimeout );
-						destination.ResetNonKeepAlive();
+							Fiber.Sleep( App.Options.RestoreTimeout );
+							destination.ResetNonKeepAlive();
+							continue;
+						}
+
+						if( App.Options.Trace ) Console.WriteLine( "{0}: Connected", source );
+					}
+					else {
+						source.Close();
+						destination.StatusChanged.Wait();
+						if( Fiber.IsCancelled ) break;
 						continue;
 					}
 
-					if( App.Options.Trace ) Console.WriteLine( "{0}: Connected", source );
-					source.WriteTo( destination );
+					var sem = new Fiber.Semaphore();
+					source.WriteFiber = Fiber.Start( App.Options.PagesPerTransferFiber, () => {
+						using( Fiber.CancellationRegion() )
+							source.WriteTo( destination );
+						sem.Increment();
+					}, App.Options.Trace ? source.Name + " r/w" : null );
+
+					sem.Decrement();
 				}
 
 				destination.ResetNonKeepAlive();
@@ -398,6 +427,8 @@ namespace BamelgForwarder {
 	}
 
 	public class Endpoint : NetworkClient, IPlatformErrorHandler, IFormattable {
+		internal Fiber TransmitterFiber = Fiber.Null, WriteFiber = Fiber.Null;
+
 		public string Name;
 		internal Connector Connector;
 
@@ -406,7 +437,7 @@ namespace BamelgForwarder {
 		public EndpointType Type;
 
 		/// Don't drop active connection when other end down
-		public bool KeepAlive { get; set; } = true;
+		public bool IsHold { get; set; } = true;
 
 		/// Is endpoint readable
 		public bool IsReadable { get; set; } = true;
@@ -469,7 +500,18 @@ namespace BamelgForwarder {
 		public string NamedPipeServerPath;
 		// @}
 
-		public bool IsAlive { get; private set; }
+		internal Fiber.Semaphore StatusChanged = new Fiber.Semaphore();
+		private bool _isAlive;
+		public bool IsAlive {
+			get {
+				return _isAlive;
+			}
+			private set {
+				if( _isAlive == value ) return;
+				_isAlive = value;
+				StatusChanged.Increment();
+			}
+		}
 
 		public int PacketsReaden; // well-tuned serial port feed application with OS-buffered packets, bad serial port will awake app after each byte
 		public ulong BytesReaden;
@@ -478,7 +520,7 @@ namespace BamelgForwarder {
 			Name = other.Name;
 
 			Type = other.Type;
-			KeepAlive = other.KeepAlive;
+			IsHold = other.IsHold;
 			IsReadable = other.IsReadable;
 			IsWritable = other.IsWritable;
 
@@ -549,37 +591,39 @@ namespace BamelgForwarder {
 		}
 
 		public void ResetNonKeepAlive() {
-			// if( destination.IsReadable & destination.IsAlive & !destination.KeepAlive ) destination.Transmitter.Cancel();
+			if( IsHold ) return;
+
+			var cancel = IsReadable & IsAlive;
+			if( App.Options.Trace ) Console.WriteLine( "Reset non-hold endpoint '{0}': {1}", this, cancel );
+			if( cancel ) WriteFiber.Cancel();
 		}
 
 		public void WriteTo( Endpoint destination ) {
-			while( !Fiber.IsCancelled & IsAlive ) {
-				StreamingBufferInfo* bufferInfo;
-				var bufferedStream = _stream.GetBufferedReadStream( bufferInfo );
+			StreamingBufferInfo* bufferInfo;
+			var bufferedStream = _stream.GetBufferedReadStream( bufferInfo );
 
-				for( ; !Fiber.IsCancelled & IsAlive; ) {
-					if( bufferInfo->AvailableToRead < bufferInfo->Capacity / 2 ) bufferedStream.Flush( FlushKind.Read );
-					if( bufferInfo->AvailableToRead == 0 ) {
-						if( App.Options.TraceTransfer ) Console.WriteLine( "{0}: read stream end", this );
-						if( Type == EndpointType.SerialPort ) continue;
-						IsAlive = Fiber.IsCancelled;
-						return;
-					}
-
-					++PacketsReaden;
-					BytesReaden += bufferInfo->AvailableToRead;
-
-					if( App.Options.TraceTransfer ) Console.WriteLine( "{0}: Transfer {1} bytes to {2}", this, bufferInfo->AvailableToRead, destination );
-
-					if( destination.IsAlive ) {
-						if( destination.IsWritable ) destination._stream.Write( bufferInfo->ReadBufferStart, bufferInfo->AvailableToRead );
-					}
-					else {
-						if( !KeepAlive ) break;
-					}
-
-					bufferInfo->OnReadPerformed( bufferInfo->AvailableToRead );
+			for( ; !Fiber.IsCancelled & IsAlive; ) {
+				if( bufferInfo->AvailableToRead < bufferInfo->Capacity / 2 ) bufferedStream.Flush( FlushKind.Read );
+				if( bufferInfo->AvailableToRead == 0 ) {
+					if( App.Options.TraceTransfer ) Console.WriteLine( "{0}: read stream end", this );
+					if( Type == EndpointType.SerialPort ) continue;
+					IsAlive = Fiber.IsCancelled;
+					return;
 				}
+
+				++PacketsReaden;
+				BytesReaden += bufferInfo->AvailableToRead;
+
+				if( App.Options.TraceTransfer ) Console.WriteLine( "{0}: Transfer {1} bytes to {2}", this, bufferInfo->AvailableToRead, destination );
+
+				if( destination.IsAlive ) {
+					if( destination.IsWritable ) destination._stream.Write( bufferInfo->ReadBufferStart, bufferInfo->AvailableToRead );
+				}
+				else {
+					if( !IsHold ) break;
+				}
+
+				bufferInfo->OnReadPerformed( bufferInfo->AvailableToRead );
 			}
 		}
 
@@ -675,16 +719,33 @@ namespace BamelgForwarder {
 						return IsAlive = true;
 					} break;
 
-				case EndpointType.TCPv4: return IsAlive = Connect( TCPv4Endpoint );
-				case EndpointType.TCPv4Server: return IsAlive = Accept( TCPv4ServerEndpoint );
-				case EndpointType.TCPv6: return IsAlive = Connect( TCPv6Endpoint );
-				case EndpointType.TCPv6Server: return IsAlive = Accept( TCPv6ServerEndpoint );
+				case EndpointType.TCPv4: IsAlive = Connect( TCPv4Endpoint ); ApplyTcpSettings(); break;
+				case EndpointType.TCPv4Server: IsAlive = Accept( TCPv4ServerEndpoint ); ApplyTcpSettings(); break;
+				case EndpointType.TCPv6: IsAlive = Connect( TCPv6Endpoint ); ApplyTcpSettings(); break;
+				case EndpointType.TCPv6Server: IsAlive = Accept( TCPv6ServerEndpoint ); ApplyTcpSettings(); break;
 
 				case EndpointType.NamedPipe: return IsAlive = ConnectLocal( NamedPipePath );
 				case EndpointType.NamedPipeServer: return IsAlive = AcceptLocal( NamedPipeServerPath );
 			}
 
-			return false;
+			return IsAlive;
+		}
+
+		protected void ApplyTcpSettings() {
+			if( !IsAlive ) return;
+
+			var stream = _stream as NetworkStream;
+			if( stream == null ) return;
+
+			var settings = new tcp_keepalive {
+				onoff = 1,
+				keepalivetime = ( uint ) TCPKeepAliveTimeout.TotalMilliseconds,
+				keepaliveinterval = ( uint ) TCPKeepAliveInterval.TotalMilliseconds
+			};
+
+			if( settings.keepalivetime == 0 || settings.keepaliveinterval == 0 ) return;
+
+			WinsockApi.SetTcpKeepAlive( stream.Handle, settings );
 		}
 
 		protected override IPlatformErrorHandler ErrorHandler { get { return this; } }

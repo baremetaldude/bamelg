@@ -25,22 +25,26 @@ namespace System {
 
 		public extern static short ByteSwap( short number );
 		public extern static ushort ByteSwap( ushort number );
-
 		public extern static int ByteSwap( int number );
 		public extern static uint ByteSwap( uint number );
-
 		public extern static long ByteSwap( long number );
 		public extern static ulong ByteSwap( ulong number );
+	
+		public extern static sbyte ReverseBits( sbyte number );
+		public extern static byte ReverseBits( byte number );
+		public extern static short ReverseBits( short number );
+		public extern static ushort ReverseBits( ushort number );
+		public extern static int ReverseBits( int number );
+		public extern static uint ReverseBits( uint number );
+		public extern static long ReverseBits( long number );
+		public extern static ulong ReverseBits( ulong number );
 
 		public extern static sbyte PopulationCount( sbyte number );
 		public extern static sbyte PopulationCount( byte number );
-
 		public extern static short PopulationCount( short number );
 		public extern static short PopulationCount( ushort number );
-
 		public extern static int PopulationCount( int number );
 		public extern static int PopulationCount( uint number );
-
 		public extern static long PopulationCount( long number );
 		public extern static long PopulationCount( ulong number );
 
@@ -170,54 +174,6 @@ namespace System {
 		public static ulong NextPermutation( ulong x ) {
 			var t = x | ( x - 1 );
 			return ( t + 1 ) | ( ( ( ~t & ( t + 1 ) ) - 1 ) >> ( CountTrailingZeros( x ) + 1 ) );
-		}
-
-		[ForceInline]
-		public static sbyte ReverseBits( sbyte x ) { return bitcast<sbyte>( ReverseBits( bitcast<byte>( x ) ) ); }
-
-		[ForceInline]
-		public static byte ReverseBits( byte x ) {
-			x = ( ( x >> 1 ) & 0x55 ) | ( ( x & 0x55 ) << 1 );
-			x = ( ( x >> 2 ) & 0x33 ) | ( ( x & 0x33 ) << 2 );
-			x = ( ( x >> 4 ) & 0x0F ) | ( ( x & 0x0F ) << 4 );
-
-			return x;
-		}
-
-		[ForceInline]
-		public static short ReverseBits( short x ) { return bitcast<short>( ReverseBits( bitcast<ushort>( x ) ) ); }
-
-		[ForceInline]
-		public static ushort ReverseBits( ushort x ) {
-			x = ( ( x >> 1 ) & 0x5555 ) | ( ( x & 0x5555 ) << 1 );
-			x = ( ( x >> 2 ) & 0x3333 ) | ( ( x & 0x3333 ) << 2 );
-			x = ( ( x >> 4 ) & 0x0F0F ) | ( ( x & 0x0F0F ) << 4 );
-
-			return ByteSwap( x );
-		}
-
-		[ForceInline]
-		public static int ReverseBits( int x ) { return bitcast<int>( ReverseBits( bitcast<uint>( x ) ) ); }
-
-		[ForceInline]
-		public static uint ReverseBits( uint x ) {
-			x = ( ( x >> 1 ) & 0x55555555 ) | ( ( x & 0x55555555 ) << 1 );
-			x = ( ( x >> 2 ) & 0x33333333 ) | ( ( x & 0x33333333 ) << 2 );
-			x = ( ( x >> 4 ) & 0x0F0F0F0F ) | ( ( x & 0x0F0F0F0F ) << 4 );
-
-			return ByteSwap( x );
-		}
-
-		[ForceInline]
-		public static long ReverseBits( long x ) { return bitcast<long>( ReverseBits( bitcast<ulong>( x ) ) ); }
-
-		[ForceInline]
-		public static ulong ReverseBits( ulong x ) {
-			x = ( ( x >> 1 ) & 0x5555555555555555 ) | ( ( x & 0x5555555555555555 ) << 1 );
-			x = ( ( x >> 2 ) & 0x3333333333333333 ) | ( ( x & 0x3333333333333333 ) << 2 );
-			x = ( ( x >> 4 ) & 0x0F0F0F0F0F0F0F0F ) | ( ( x & 0x0F0F0F0F0F0F0F0F ) << 4 );
-
-			return ByteSwap( x );
 		}
 
 		[ForceInline]

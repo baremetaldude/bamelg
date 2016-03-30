@@ -27,6 +27,9 @@ namespace BamelgForwarderSetup {
 
 			_statisticsTimer.Enabled = true;
 			UpdateStatisticsStatus();
+
+			_endpoint1.UpdateToolTip( _toolTip );
+			_endpoint2.UpdateToolTip( _toolTip );
 		}
 
 		private async void Setup_Shown( object sender, EventArgs e ) {
@@ -144,14 +147,16 @@ namespace BamelgForwarderSetup {
 
 			var connector = GetActiveConnector();
 
-			var props0 = await _client.GetEndpointProperties( connector, 0 );
-			var props1 = await _client.GetEndpointProperties( connector, 1 );
+			if( _endpoint1.IsStatisticsShown ) {
+				var props0 = await _client.GetEndpointProperties( connector, 0 );
+				_endpoint1.StatsInfo = props0;
+			}
 
-			_endpoint1.StatsInfo = props0;
-			_endpoint2.StatsInfo = props1;
+			if( _endpoint2.IsStatisticsShown ) {
+				var props1 = await _client.GetEndpointProperties( connector, 1 );
+				_endpoint2.StatsInfo = props1;
+			}
 		}
-
-
 
 		private void _updateStatistics_Click( object sender, EventArgs e ) {
 			_statisticsTimer.Enabled = !_statisticsTimer.Enabled;
