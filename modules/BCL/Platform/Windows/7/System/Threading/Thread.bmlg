@@ -13,6 +13,13 @@ namespace System.Threading {
 
 		private bool _implIsCurrent() { return _threadId == ThreadHandle.CurrentThreadID; }
 
+		private static Thread _implStart( DPC* action ) {
+			uint threadId;
+			var thread = new ThreadHandle( action, 0, CreateThreadFlags.None, threadId );
+
+			return new Thread { _thread = thread, _threadId = threadId };
+		}
+
 		private static Thread _implStart( Functors.Action action ) {
 			uint threadId;
 			var thread = new ThreadHandle( action, 0, CreateThreadFlags.None, threadId );
@@ -23,46 +30,6 @@ namespace System.Threading {
 		private static Thread _implStart( Delegates.Action action ) {
 			uint threadId;
 			var thread = new ThreadHandle( action, 0, CreateThreadFlags.None, threadId );
-
-			return new Thread { _thread = thread, _threadId = threadId };
-		}
-
-		private static Thread _implStart<T>( Functors.Action<T> action, T& data ) {
-			var startInfo = heapalloc Tuple<Functors.Action<T>, T> {
-				Item1 = action,
-				Item2 = data
-			};
-
-			uint threadId;
-			var thread = new ThreadHandle( data => {
-				var startInfoPtr = ( Tuple<Functors.Action<T>, T>* ) data;
-				var startInfoCopy = *startInfoPtr;
-				heapfree startInfoPtr;
-
-				startInfoCopy.Item1( startInfoCopy.Item2 );
-
-				return 0;
-			}, startInfo, 0, CreateThreadFlags.None, threadId );
-
-			return new Thread { _thread = thread, _threadId = threadId };
-		}
-
-		private static Thread _implStart<T>( Delegates.Action<T> action, T& data ) {
-			var startInfo = heapalloc Tuple<Delegates.Action<T>, T> {
-				Item1 = action,
-				Item2 = data
-			};
-
-			uint threadId;
-			var thread = new ThreadHandle( data => {
-				var startInfoPtr = ( Tuple<Delegates.Action<T>, T>* ) data;
-				var startInfoCopy = *startInfoPtr;
-				heapfree startInfoPtr;
-
-				startInfoCopy.Item1( startInfoCopy.Item2 );
-
-				return 0;
-			}, startInfo, 0, CreateThreadFlags.None, threadId );
 
 			return new Thread { _thread = thread, _threadId = threadId };
 		}

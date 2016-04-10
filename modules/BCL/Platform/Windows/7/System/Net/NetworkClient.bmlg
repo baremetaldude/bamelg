@@ -13,8 +13,12 @@ using Platform.IO;
 
 namespace System.Net {
 	public partial class NetworkClient {
-		private bool _implConnect( IPv4Endpoint endpoint ) {
+		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
 			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
+
+			if( @interface != IPv4Address.AllInterfaces ) {
+				if( !stream.Bind( new IPv4Endpoint( @interface, 0 ) ) ) return false;
+			}
 
 			if( stream.Connect( endpoint ) ) {
 				_stream = stream;
@@ -24,8 +28,12 @@ namespace System.Net {
 			return false;
 		}
 
-		private bool _implConnect( IPv6Endpoint endpoint ) {
+		private bool _implConnect( IPv6Endpoint endpoint, IPv6Address @interface ) {
 			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
+
+			if( @interface != IPv6Address.AllInterfaces ) {
+				if( !stream.Bind( new IPv6Endpoint( @interface, 0 ) ) ) return false;
+			}
 
 			if( stream.Connect( endpoint ) ) {
 				_stream = stream;

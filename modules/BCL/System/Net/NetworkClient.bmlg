@@ -15,11 +15,14 @@ namespace System.Net {
 		protected NetworkClient() { }
 
 		/// @{ Connect to TCP server
-		public bool Connect( IPv4Endpoint endpoint ) { return _implConnect( endpoint ); }
-		public bool Connect( IPv6Endpoint endpoint ) { return _implConnect( endpoint ); }
+		public bool Connect( IPv4Endpoint endpoint ) { return _implConnect( endpoint, IPv4Address.AllInterfaces ); }
+		public bool Connect( IPv6Endpoint endpoint ) { return _implConnect( endpoint, IPv6Address.AllInterfaces ); }
+
+		public bool Connect( IPv4Endpoint endpoint, IPv4Address @interface ) { return _implConnect( endpoint, @interface ); }
+		public bool Connect( IPv6Endpoint endpoint, IPv6Address @interface ) { return _implConnect( endpoint, @interface ); }
 		/// @}
 
-		/// @{ Connect to named pipe on Windows ( \\.\pipe\NameOfPipe ) or to unix domain socket ( /run/server.socket )
+		/// @{ Connect to named pipe on Windows ( \\.\pipe\LocalPipe, \\RemoteServer\pipe\RemotePipe ) or to unix domain socket ( /run/server.socket )
 		public bool ConnectLocal( string endpoint ) { return _implConnectLocal( endpoint ); }
 		public bool ConnectLocal( Utf8String endpoint ) { return _implConnectLocal( endpoint ); }
 		/// @}

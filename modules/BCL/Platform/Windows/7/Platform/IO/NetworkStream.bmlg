@@ -41,54 +41,67 @@ namespace Platform.IO {
 			else _handle = SocketHandle.Invalid;
 		}
 
+		public bool Ipv6Only {
+			get {
+				Boolean32 result;
+				if( WinsockApi.getsockopt( _handle, SocketOptionLevel.IPPROTO_IPV6, SocketOptionIpv6.IPV6_V6ONLY, &result, sizeof( result ) ) != 0 )
+					OnLastError( "getsockopt", thisproperty, Kernel32Api.LastError );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				if( WinsockApi.setsockopt( _handle, SocketOptionLevel.IPPROTO_IPV6, SocketOptionIpv6.IPV6_V6ONLY, &result, sizeof( result ) ) != 0 )
+					OnLastError( "setsockopt", thisproperty, Kernel32Api.LastError );
+			}
+		}
+
+		public void AddMembership( ip_mreq mreq ) {
+			if( WinsockApi.setsockopt( _handle, SocketOptionLevel.IPPROTO_IPV4, ( int ) SocketOptionIp.IP_ADD_MEMBERSHIP, &mreq, sizeof( mreq ) ) != 0 )
+				OnLastError( "setsockopt", thismethod, Kernel32Api.LastError );
+		}
+
+		public void DropMembership( ip_mreq mreq ) {
+			if( WinsockApi.setsockopt( _handle, SocketOptionLevel.IPPROTO_IPV4, ( int ) SocketOptionIp.IP_DROP_MEMBERSHIP, &mreq, sizeof( mreq ) ) != 0 )
+				OnLastError( "setsockopt", thismethod, Kernel32Api.LastError );
+		}
+
 		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
 		protected PlatformErrorAction OnLastError( string operation, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
 
 		public bool Connect( IPv4Endpoint endpoint ) {
-			Close();
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET ) );
 
-			using( var socket = new SocketHandleTCP() ) {
-			restart_Connect:
-				var status = socket.Connect( endpoint );
-				if( !status ) {
-					if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
-					return false;
-				}
-
-				socket.NoDelay = true;
-
-				_handle = socket;
-				socket = SocketHandleTCP.Invalid;
+		restart_Connect:
+			var status = socket.Connect( endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
 			}
 
+			socket.NoDelay = true;
 			return true;
 		}
 
 		public bool Connect( IPv6Endpoint endpoint ) {
-			Close();
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET6 ) );
 
-			using( var socket = new SocketHandleTCP() ) {
-			restart_Connect:
-				var status = socket.Connect( endpoint );
-				if( !status ) {
-					if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
-					return false;
-				}
-
-				socket.NoDelay = true;
-
-				_handle = socket;
-				socket = SocketHandleTCP.Invalid;
+		restart_Connect:
+			var status = socket.Connect( endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
 			}
 
+			socket.NoDelay = true;
 			return true;
 		}
 
 		public bool Bind( IPv4Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET ) );
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
 
 		restart_Bind:
-			var status = _handle.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
 
 			if( !status ) {
 				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;
@@ -99,10 +112,11 @@ namespace Platform.IO {
 		}
 
 		public bool Bind( IPv6Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET6 ) );
 			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
 
 		restart_Bind:
-			var status = _handle.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
 
 			if( !status ) {
 				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;

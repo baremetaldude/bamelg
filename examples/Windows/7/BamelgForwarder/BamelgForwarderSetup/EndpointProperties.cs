@@ -50,7 +50,7 @@ namespace BamelgForwarderSetup {
 			_toolTip.SetToolTip( _labelTcpv6ServerEndpoint, "Endpoint to connect , e.g. 127.0.0.1:4010" );
 			_toolTip.SetToolTip( _labelNamedPipeClientPath, "Endpoint to connect , e.g. \\\\.\\pipe\\LocalPipe or \\\\RemoteServer\\pipe\\RemotePipe" );
 			_toolTip.SetToolTip( _labelNamedPiperServerPath, "Endpoint to connect , e.g. \\\\.\\pipe\\RelayPipe" );
-			_toolTip.SetToolTip( _labelUdpv4Endpoint, "Endpoint to connect , e.g. 127.0.0.1:4010" );
+			_toolTip.SetToolTip( _labelUdpv4ReadFrom, "Endpoint to connect , e.g. 127.0.0.1:4010" );
 		}
 
 		private void _endpointType_SelectedIndexChanged( object sender, System.EventArgs e ) {
@@ -101,15 +101,22 @@ namespace BamelgForwarderSetup {
 				result.SerialPortStopBits = ( StopBitsValue ) _stopBits.SelectedIndex;
 
 				result.TCPv4Endpoint = _tcpv4Endpoint.Text;
+				result.TCPv4Interface = _tcpv4BindAddress.Text;
+
 				result.TCPv4ServerEndpoint = _tcpv4ServerEndpoint.Text;
 
 				result.TCPv6Endpoint = _tcpv6Endpoint.Text;
+				result.TCPv6Interface = _tcpv6BindAddress.Text;
+
+				result.UDPv4BindEndpoint = _udpv4BindEndpoint.Text;
+				result.UDPv4MulticastInterface = _udpv4MulticastInterface.Text;
+				result.UDPv4ReadEndpoint = _udpv4ReadEndpoint.Text;
+				result.UDPv4WriteEndpoint = _udpv4WriteEndpoint.Text;
+
 				result.TCPv6ServerEndpoint = _tcpv6ServerEndpoint.Text;
 
 				result.NamedPipePath = _namedPipeClientPath.Text;
 				result.NamedPipeServerPath = _namedPiperServerPath.Text;
-
-				result.UDPv4Endpoint = _udpv4Endpoint.Text;
 
 				result.TCPKeepAliveTimeout = TimeSpan.Parse( _tcpKeepAliveTimeout.Text );
 				result.TCPKeepAliveInterval = TimeSpan.Parse( _tcpKeepAliveInterval.Text );
@@ -140,14 +147,22 @@ namespace BamelgForwarderSetup {
 				_stopBits.SelectedIndex = ( int ) value.SerialPortStopBits;
 
 				_tcpv4Endpoint.Text = value.TCPv4Endpoint;
+				_tcpv4BindAddress.Text = value.TCPv4Interface;
+
 				_tcpv4ServerEndpoint.Text = value.TCPv4ServerEndpoint;
+
 				_tcpv6Endpoint.Text = value.TCPv6Endpoint;
+				_tcpv6BindAddress.Text = value.TCPv6Interface;
+
 				_tcpv6ServerEndpoint.Text = value.TCPv6ServerEndpoint;
 
 				_namedPipeClientPath.Text = value.NamedPipePath;
 				_namedPiperServerPath.Text = value.NamedPipeServerPath;
 
-				_udpv4Endpoint.Text = value.UDPv4Endpoint;
+				_udpv4BindEndpoint.Text = value.UDPv4BindEndpoint;
+				_udpv4MulticastInterface.Text = value.UDPv4MulticastInterface;
+				_udpv4ReadEndpoint.Text = value.UDPv4ReadEndpoint;
+				_udpv4WriteEndpoint.Text = value.UDPv4WriteEndpoint;
 
 				_tcpKeepAliveTimeout.Text = value.TCPKeepAliveTimeout.ToString();
 				_tcpKeepAliveInterval.Text = value.TCPKeepAliveInterval.ToString();
@@ -178,6 +193,27 @@ namespace BamelgForwarderSetup {
 
 			_path.Items.Clear();
 			_path.Items.AddRange( paths );
+		}
+
+		private async void _tcpv4BindAddress_DropDown( object sender, EventArgs e ) {
+			var interfaces = await new ForwarderHttpApi().GetIpv4Interfaces();
+
+			_tcpv4BindAddress.Items.Clear();
+			_tcpv4BindAddress.Items.AddRange( interfaces.ToArray() );
+		}
+
+		private async void _tcpv6BindAddress_DropDown( object sender, EventArgs e ) {
+			var interfaces = await new ForwarderHttpApi().GetIpv6Interfaces();
+
+			_tcpv6BindAddress.Items.Clear();
+			_tcpv6BindAddress.Items.AddRange( interfaces.ToArray() );
+		}
+
+		private async void _udpv4MulticastInterface_DropDown( object sender, EventArgs e ) {
+			var interfaces = await new ForwarderHttpApi().GetIpv4Interfaces();
+
+			_udpv4MulticastInterface.Items.Clear();
+			_udpv4MulticastInterface.Items.AddRange( interfaces.ToArray() );
 		}
 	}
 }

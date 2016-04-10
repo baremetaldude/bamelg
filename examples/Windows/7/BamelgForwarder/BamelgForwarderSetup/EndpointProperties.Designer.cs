@@ -71,14 +71,18 @@
 			this._tabSerial = new System.Windows.Forms.TabPage();
 			this._tabTcpv4Client = new System.Windows.Forms.TabPage();
 			this._tableTcpv4Client = new System.Windows.Forms.TableLayoutPanel();
+			this._labelTcpv4BindAddress = new System.Windows.Forms.Label();
 			this._tcpv4Endpoint = new System.Windows.Forms.TextBox();
+			this._tcpv4BindAddress = new System.Windows.Forms.ComboBox();
 			this._tabTcpv4Server = new System.Windows.Forms.TabPage();
 			this._tableTcpv4Server = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv4ServerEndpoint = new System.Windows.Forms.TextBox();
 			this._tabTcpv6Client = new System.Windows.Forms.TabPage();
 			this._tableTcpv6Client = new System.Windows.Forms.TableLayoutPanel();
+			this._labelTcpv6BindAddress = new System.Windows.Forms.Label();
 			this._tcpv6Endpoint = new System.Windows.Forms.TextBox();
 			this._labelTcpv6Endpoint = new System.Windows.Forms.Label();
+			this._tcpv6BindAddress = new System.Windows.Forms.ComboBox();
 			this._tabTcpv6Server = new System.Windows.Forms.TabPage();
 			this._tableTcpv6Server = new System.Windows.Forms.TableLayoutPanel();
 			this._tcpv6ServerEndpoint = new System.Windows.Forms.TextBox();
@@ -93,8 +97,14 @@
 			this._labelNamedPiperServerPath = new System.Windows.Forms.Label();
 			this._tabUdpv4 = new System.Windows.Forms.TabPage();
 			this._tableUdpv4 = new System.Windows.Forms.TableLayoutPanel();
-			this._udpv4Endpoint = new System.Windows.Forms.TextBox();
-			this._labelUdpv4Endpoint = new System.Windows.Forms.Label();
+			this._labelUdpv4SendTo = new System.Windows.Forms.Label();
+			this._udpv4ReadEndpoint = new System.Windows.Forms.TextBox();
+			this._labelUdpv4ReadFrom = new System.Windows.Forms.Label();
+			this._udpv4WriteEndpoint = new System.Windows.Forms.TextBox();
+			this._labelUdpv4BindEndpoint = new System.Windows.Forms.Label();
+			this._udpv4BindEndpoint = new System.Windows.Forms.TextBox();
+			this._labelUdpv4MulticastInterface = new System.Windows.Forms.Label();
+			this._udpv4MulticastInterface = new System.Windows.Forms.ComboBox();
 			_tableSerial = new System.Windows.Forms.TableLayoutPanel();
 			_settingsTable = new System.Windows.Forms.TableLayoutPanel();
 			_tableStatistics = new System.Windows.Forms.TableLayoutPanel();
@@ -501,7 +511,7 @@
 			this._labelTcpv4Endpoint.AutoSize = true;
 			this._labelTcpv4Endpoint.Location = new System.Drawing.Point(3, 6);
 			this._labelTcpv4Endpoint.Name = "_labelTcpv4Endpoint";
-			this._labelTcpv4Endpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv4Endpoint.Size = new System.Drawing.Size(71, 13);
 			this._labelTcpv4Endpoint.TabIndex = 0;
 			this._labelTcpv4Endpoint.Text = "Endpoint:";
 			// 
@@ -632,28 +642,51 @@
 			this._tableTcpv4Client.ColumnCount = 2;
 			this._tableTcpv4Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this._tableTcpv4Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv4Client.Controls.Add(this._labelTcpv4BindAddress, 0, 5);
 			this._tableTcpv4Client.Controls.Add(this._tcpv4Endpoint, 1, 0);
 			this._tableTcpv4Client.Controls.Add(this._labelTcpv4Endpoint, 0, 0);
+			this._tableTcpv4Client.Controls.Add(this._tcpv4BindAddress, 1, 5);
 			this._tableTcpv4Client.Dock = System.Windows.Forms.DockStyle.Fill;
 			this._tableTcpv4Client.Location = new System.Drawing.Point(3, 3);
 			this._tableTcpv4Client.Name = "_tableTcpv4Client";
-			this._tableTcpv4Client.RowCount = 6;
+			this._tableTcpv4Client.RowCount = 7;
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv4Client.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this._tableTcpv4Client.Size = new System.Drawing.Size(245, 281);
 			this._tableTcpv4Client.TabIndex = 1;
+			// 
+			// _labelTcpv4BindAddress
+			// 
+			this._labelTcpv4BindAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv4BindAddress.AutoSize = true;
+			this._labelTcpv4BindAddress.Location = new System.Drawing.Point(3, 33);
+			this._labelTcpv4BindAddress.Name = "_labelTcpv4BindAddress";
+			this._labelTcpv4BindAddress.Size = new System.Drawing.Size(71, 13);
+			this._labelTcpv4BindAddress.TabIndex = 1;
+			this._labelTcpv4BindAddress.Text = "Bind address:";
 			// 
 			// _tcpv4Endpoint
 			// 
 			this._tcpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._tcpv4Endpoint.Location = new System.Drawing.Point(61, 3);
+			this._tcpv4Endpoint.Location = new System.Drawing.Point(80, 3);
 			this._tcpv4Endpoint.Name = "_tcpv4Endpoint";
-			this._tcpv4Endpoint.Size = new System.Drawing.Size(181, 20);
+			this._tcpv4Endpoint.Size = new System.Drawing.Size(162, 20);
 			this._tcpv4Endpoint.TabIndex = 0;
+			// 
+			// _tcpv4BindAddress
+			// 
+			this._tcpv4BindAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._tcpv4BindAddress.FormattingEnabled = true;
+			this._tcpv4BindAddress.Location = new System.Drawing.Point(80, 29);
+			this._tcpv4BindAddress.Name = "_tcpv4BindAddress";
+			this._tcpv4BindAddress.Size = new System.Drawing.Size(162, 21);
+			this._tcpv4BindAddress.TabIndex = 2;
+			this._tcpv4BindAddress.DropDown += new System.EventHandler(this._tcpv4BindAddress_DropDown);
 			// 
 			// _tabTcpv4Server
 			// 
@@ -710,27 +743,40 @@
 			this._tableTcpv6Client.ColumnCount = 2;
 			this._tableTcpv6Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this._tableTcpv6Client.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
+			this._tableTcpv6Client.Controls.Add(this._labelTcpv6BindAddress, 0, 5);
 			this._tableTcpv6Client.Controls.Add(this._tcpv6Endpoint, 1, 0);
 			this._tableTcpv6Client.Controls.Add(this._labelTcpv6Endpoint, 0, 0);
+			this._tableTcpv6Client.Controls.Add(this._tcpv6BindAddress, 1, 5);
 			this._tableTcpv6Client.Dock = System.Windows.Forms.DockStyle.Fill;
 			this._tableTcpv6Client.Location = new System.Drawing.Point(3, 3);
 			this._tableTcpv6Client.Name = "_tableTcpv6Client";
-			this._tableTcpv6Client.RowCount = 6;
+			this._tableTcpv6Client.RowCount = 7;
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableTcpv6Client.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this._tableTcpv6Client.Size = new System.Drawing.Size(245, 281);
 			this._tableTcpv6Client.TabIndex = 3;
+			// 
+			// _labelTcpv6BindAddress
+			// 
+			this._labelTcpv6BindAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelTcpv6BindAddress.AutoSize = true;
+			this._labelTcpv6BindAddress.Location = new System.Drawing.Point(3, 33);
+			this._labelTcpv6BindAddress.Name = "_labelTcpv6BindAddress";
+			this._labelTcpv6BindAddress.Size = new System.Drawing.Size(71, 13);
+			this._labelTcpv6BindAddress.TabIndex = 1;
+			this._labelTcpv6BindAddress.Text = "Bind address:";
 			// 
 			// _tcpv6Endpoint
 			// 
 			this._tcpv6Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._tcpv6Endpoint.Location = new System.Drawing.Point(61, 3);
+			this._tcpv6Endpoint.Location = new System.Drawing.Point(80, 3);
 			this._tcpv6Endpoint.Name = "_tcpv6Endpoint";
-			this._tcpv6Endpoint.Size = new System.Drawing.Size(181, 20);
+			this._tcpv6Endpoint.Size = new System.Drawing.Size(162, 20);
 			this._tcpv6Endpoint.TabIndex = 0;
 			// 
 			// _labelTcpv6Endpoint
@@ -739,9 +785,19 @@
 			this._labelTcpv6Endpoint.AutoSize = true;
 			this._labelTcpv6Endpoint.Location = new System.Drawing.Point(3, 6);
 			this._labelTcpv6Endpoint.Name = "_labelTcpv6Endpoint";
-			this._labelTcpv6Endpoint.Size = new System.Drawing.Size(52, 13);
+			this._labelTcpv6Endpoint.Size = new System.Drawing.Size(71, 13);
 			this._labelTcpv6Endpoint.TabIndex = 0;
 			this._labelTcpv6Endpoint.Text = "Endpoint:";
+			// 
+			// _tcpv6BindAddress
+			// 
+			this._tcpv6BindAddress.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._tcpv6BindAddress.FormattingEnabled = true;
+			this._tcpv6BindAddress.Location = new System.Drawing.Point(80, 29);
+			this._tcpv6BindAddress.Name = "_tcpv6BindAddress";
+			this._tcpv6BindAddress.Size = new System.Drawing.Size(162, 21);
+			this._tcpv6BindAddress.TabIndex = 2;
+			this._tcpv6BindAddress.DropDown += new System.EventHandler(this._tcpv6BindAddress_DropDown);
 			// 
 			// _tabTcpv6Server
 			// 
@@ -906,8 +962,14 @@
 			this._tableUdpv4.ColumnCount = 2;
 			this._tableUdpv4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle());
 			this._tableUdpv4.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F));
-			this._tableUdpv4.Controls.Add(this._udpv4Endpoint, 1, 0);
-			this._tableUdpv4.Controls.Add(this._labelUdpv4Endpoint, 0, 0);
+			this._tableUdpv4.Controls.Add(this._labelUdpv4BindEndpoint, 0, 0);
+			this._tableUdpv4.Controls.Add(this._udpv4BindEndpoint, 1, 0);
+			this._tableUdpv4.Controls.Add(this._udpv4MulticastInterface, 1, 1);
+			this._tableUdpv4.Controls.Add(this._labelUdpv4SendTo, 0, 4);
+			this._tableUdpv4.Controls.Add(this._udpv4WriteEndpoint, 1, 4);
+			this._tableUdpv4.Controls.Add(this._udpv4ReadEndpoint, 1, 3);
+			this._tableUdpv4.Controls.Add(this._labelUdpv4ReadFrom, 0, 3);
+			this._tableUdpv4.Controls.Add(this._labelUdpv4MulticastInterface, 0, 1);
 			this._tableUdpv4.Dock = System.Windows.Forms.DockStyle.Fill;
 			this._tableUdpv4.Location = new System.Drawing.Point(3, 3);
 			this._tableUdpv4.Name = "_tableUdpv4";
@@ -917,27 +979,83 @@
 			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
 			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
-			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle());
+			this._tableUdpv4.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 20F));
 			this._tableUdpv4.Size = new System.Drawing.Size(245, 281);
 			this._tableUdpv4.TabIndex = 4;
 			// 
-			// _udpv4Endpoint
+			// _labelUdpv4SendTo
 			// 
-			this._udpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._udpv4Endpoint.Location = new System.Drawing.Point(61, 3);
-			this._udpv4Endpoint.Name = "_udpv4Endpoint";
-			this._udpv4Endpoint.Size = new System.Drawing.Size(181, 20);
-			this._udpv4Endpoint.TabIndex = 0;
+			this._labelUdpv4SendTo.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelUdpv4SendTo.AutoSize = true;
+			this._labelUdpv4SendTo.Location = new System.Drawing.Point(3, 85);
+			this._labelUdpv4SendTo.Name = "_labelUdpv4SendTo";
+			this._labelUdpv4SendTo.Size = new System.Drawing.Size(96, 13);
+			this._labelUdpv4SendTo.TabIndex = 1;
+			this._labelUdpv4SendTo.Text = "Send to:";
 			// 
-			// _labelUdpv4Endpoint
+			// _udpv4ReadEndpoint
 			// 
-			this._labelUdpv4Endpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
-			this._labelUdpv4Endpoint.AutoSize = true;
-			this._labelUdpv4Endpoint.Location = new System.Drawing.Point(3, 6);
-			this._labelUdpv4Endpoint.Name = "_labelUdpv4Endpoint";
-			this._labelUdpv4Endpoint.Size = new System.Drawing.Size(52, 13);
-			this._labelUdpv4Endpoint.TabIndex = 0;
-			this._labelUdpv4Endpoint.Text = "Endpoint:";
+			this._udpv4ReadEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._udpv4ReadEndpoint.Location = new System.Drawing.Point(105, 56);
+			this._udpv4ReadEndpoint.Name = "_udpv4ReadEndpoint";
+			this._udpv4ReadEndpoint.Size = new System.Drawing.Size(137, 20);
+			this._udpv4ReadEndpoint.TabIndex = 0;
+			// 
+			// _labelUdpv4ReadFrom
+			// 
+			this._labelUdpv4ReadFrom.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelUdpv4ReadFrom.AutoSize = true;
+			this._labelUdpv4ReadFrom.Location = new System.Drawing.Point(3, 59);
+			this._labelUdpv4ReadFrom.Name = "_labelUdpv4ReadFrom";
+			this._labelUdpv4ReadFrom.Size = new System.Drawing.Size(96, 13);
+			this._labelUdpv4ReadFrom.TabIndex = 0;
+			this._labelUdpv4ReadFrom.Text = "Read from:";
+			// 
+			// _udpv4WriteEndpoint
+			// 
+			this._udpv4WriteEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._udpv4WriteEndpoint.Location = new System.Drawing.Point(105, 82);
+			this._udpv4WriteEndpoint.Name = "_udpv4WriteEndpoint";
+			this._udpv4WriteEndpoint.Size = new System.Drawing.Size(137, 20);
+			this._udpv4WriteEndpoint.TabIndex = 2;
+			// 
+			// _labelUdpv4BindEndpoint
+			// 
+			this._labelUdpv4BindEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelUdpv4BindEndpoint.AutoSize = true;
+			this._labelUdpv4BindEndpoint.Location = new System.Drawing.Point(3, 6);
+			this._labelUdpv4BindEndpoint.Name = "_labelUdpv4BindEndpoint";
+			this._labelUdpv4BindEndpoint.Size = new System.Drawing.Size(96, 13);
+			this._labelUdpv4BindEndpoint.TabIndex = 3;
+			this._labelUdpv4BindEndpoint.Text = "Endpoint:";
+			// 
+			// _udpv4BindEndpoint
+			// 
+			this._udpv4BindEndpoint.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._udpv4BindEndpoint.Location = new System.Drawing.Point(105, 3);
+			this._udpv4BindEndpoint.Name = "_udpv4BindEndpoint";
+			this._udpv4BindEndpoint.Size = new System.Drawing.Size(137, 20);
+			this._udpv4BindEndpoint.TabIndex = 4;
+			// 
+			// _labelUdpv4MulticastInterface
+			// 
+			this._labelUdpv4MulticastInterface.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._labelUdpv4MulticastInterface.AutoSize = true;
+			this._labelUdpv4MulticastInterface.Location = new System.Drawing.Point(3, 33);
+			this._labelUdpv4MulticastInterface.Name = "_labelUdpv4MulticastInterface";
+			this._labelUdpv4MulticastInterface.Size = new System.Drawing.Size(96, 13);
+			this._labelUdpv4MulticastInterface.TabIndex = 5;
+			this._labelUdpv4MulticastInterface.Text = "Multicast interface:";
+			// 
+			// _udpv4MulticastInterface
+			// 
+			this._udpv4MulticastInterface.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Left | System.Windows.Forms.AnchorStyles.Right)));
+			this._udpv4MulticastInterface.FormattingEnabled = true;
+			this._udpv4MulticastInterface.Location = new System.Drawing.Point(105, 29);
+			this._udpv4MulticastInterface.Name = "_udpv4MulticastInterface";
+			this._udpv4MulticastInterface.Size = new System.Drawing.Size(137, 21);
+			this._udpv4MulticastInterface.TabIndex = 6;
+			this._udpv4MulticastInterface.DropDown += new System.EventHandler(this._udpv4MulticastInterface_DropDown);
 			// 
 			// EndpointProperties
 			// 
@@ -1041,8 +1159,8 @@
 		private System.Windows.Forms.TextBox _readenPackets;
 		private System.Windows.Forms.TabPage _tabUdpv4;
 		private System.Windows.Forms.TableLayoutPanel _tableUdpv4;
-		private System.Windows.Forms.TextBox _udpv4Endpoint;
-		private System.Windows.Forms.Label _labelUdpv4Endpoint;
+		private System.Windows.Forms.TextBox _udpv4ReadEndpoint;
+		private System.Windows.Forms.Label _labelUdpv4ReadFrom;
 		private System.Windows.Forms.Label _labelReconnectCount;
 		private System.Windows.Forms.Label _labelPacketsReaden;
 		private System.Windows.Forms.Label _labelReaden;
@@ -1050,5 +1168,15 @@
 		private System.Windows.Forms.Label _labelTcpv4ServerEndpoint;
 		private System.Windows.Forms.Label _labelTcpKeepAliveTimeout;
 		private System.Windows.Forms.Label _labelTcpKeepAliveInterval;
+		private System.Windows.Forms.Label _labelTcpv4BindAddress;
+		private System.Windows.Forms.Label _labelTcpv6BindAddress;
+		private System.Windows.Forms.ComboBox _tcpv4BindAddress;
+		private System.Windows.Forms.ComboBox _tcpv6BindAddress;
+		private System.Windows.Forms.Label _labelUdpv4SendTo;
+		private System.Windows.Forms.TextBox _udpv4WriteEndpoint;
+		private System.Windows.Forms.Label _labelUdpv4BindEndpoint;
+		private System.Windows.Forms.TextBox _udpv4BindEndpoint;
+		private System.Windows.Forms.ComboBox _udpv4MulticastInterface;
+		private System.Windows.Forms.Label _labelUdpv4MulticastInterface;
 	}
 }

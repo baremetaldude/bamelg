@@ -48,18 +48,16 @@ namespace Platform.IO {
 			else _handle = SocketHandle.Invalid;
 		}
 
-		private static FileCreationFlags FiberSpecificFlags { get { return Fiber.IsFiberExecuting ? FileCreationFlags.FILE_FLAG_OVERLAPPED : FileCreationFlags.None; } }
-
 		public bool OpenWrite( string name ) {
-			return Open( name, FileAccessRights.FILE_WRITE_DATA, FileCreationDisposition.CREATE_ALWAYS, FileShareMode.FILE_SHARE_READ, FiberSpecificFlags );
+			return Open( name, FileAccessRights.FILE_WRITE_DATA, FileCreationDisposition.CREATE_ALWAYS, FileShareMode.FILE_SHARE_READ, FileCreationFlags.FILE_FLAG_OVERLAPPED );
 		}
 
 		public bool OpenRead( string name ) {
-			return Open( name, FileAccessRights.FILE_READ_DATA, FileCreationDisposition.OPEN_EXISTING, FileShareMode.FILE_SHARE_READ, FiberSpecificFlags );
+			return Open( name, FileAccessRights.FILE_READ_DATA, FileCreationDisposition.OPEN_EXISTING, FileShareMode.FILE_SHARE_READ, FileCreationFlags.FILE_FLAG_OVERLAPPED );
 		}
 
 		public bool OpenAppend( string name ) {
-			return Open( name, FileAccessRights.FILE_APPEND_DATA, FileCreationDisposition.OPEN_ALWAYS, FileShareMode.FILE_SHARE_READ, FiberSpecificFlags );
+			return Open( name, FileAccessRights.FILE_APPEND_DATA, FileCreationDisposition.OPEN_ALWAYS, FileShareMode.FILE_SHARE_READ, FileCreationFlags.FILE_FLAG_OVERLAPPED );
 			// Kernel32Api.SetFilePointer( _handle, 0, nullref, FileSeekOrigin.FILE_END ); not necessary
 		}
 
@@ -74,7 +72,7 @@ namespace Platform.IO {
 			else
 				fShareMode = FileShareMode.FILE_SHARE_READ;
 
-			return Open( name, fDesiredAccess, fCreationDisposition, fShareMode, FiberSpecificFlags );
+			return Open( name, fDesiredAccess, fCreationDisposition, fShareMode, FileCreationFlags.FILE_FLAG_OVERLAPPED );
 		}
 
 		public bool Open( string name, FileAccessRights fDesiredAccess, FileCreationDisposition fCreationDisposition, FileShareMode fShareMode, FileCreationFlags fFlagsAndAttributes = 0 ) {
@@ -84,9 +82,14 @@ namespace Platform.IO {
 			Context = name;
 
 		restart_CreateFile:
-			_handle = bitcast<IOHandle>( Kernel32Api.CreateFile( name, fDesiredAccess, fShareMode, nullref, fCreationDisposition, fFlagsAndAttributes, HANDLE.Null ) );
+			SystemErrorCode error;
+			using( Fiber.AsyncCompletionRegion() ) {
+				_handle = bitcast<IOHandle>( Kernel32Api.CreateFile( name, fDesiredAccess, fShareMode, nullref, fCreationDisposition, fFlagsAndAttributes, HANDLE.Null ) );
+				error = Kernel32Api.LastError;
+			}
+
 			if( !_handle.IsValid ) {
-				if( OnLastError( "CreateFile" ) == PlatformErrorAction.Restart ) goto restart_CreateFile;
+				if( OnLastError( "CreateFile", error ) == PlatformErrorAction.Restart ) goto restart_CreateFile;
 				return false;
 			}
 

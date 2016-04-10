@@ -25,7 +25,7 @@ namespace BamelgForwarder {
 			public bool Trace = true, TraceTransfer = true;
 			public bool HttpApi = true;
 			public TimeSpan RestoreTimeout = TimeSpan.FromSeconds( 1 );
-			
+
 
 			public int PagesPerControlFiber = 4;
 			public int PagesPerTransferFiber = 4;
@@ -163,7 +163,7 @@ namespace BamelgForwarder {
 					yield return new Tuple<string, string>( @"\\.\" + commKey.ValueString[serialName.Name], serialName.Name );
 		}
 
-		static Binder.MapperUtf16 _endpointMapper = new Binder.MapperUtf16( 10 );
+		static Binder.MapperUtf16 _endpointMapper = new Binder.MapperUtf16( 32 );
 
 		static App() {
 			_endpointMapper.Add( "", memberinfo( Endpoint.Type ) );
@@ -183,13 +183,19 @@ namespace BamelgForwarder {
 			_endpointMapper.Add( memberinfo( Endpoint.SerialPortStopBits ) );
 
 			_endpointMapper.Add( memberinfo( Endpoint.TCPv4Endpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv4Interface ) );
+
 			_endpointMapper.Add( memberinfo( Endpoint.TCPv4ServerEndpoint ) );
 
 			_endpointMapper.Add( memberinfo( Endpoint.TCPv6Endpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.TCPv6Interface ) );
+
 			_endpointMapper.Add( memberinfo( Endpoint.TCPv6ServerEndpoint ) );
 
-			_endpointMapper.Add( memberinfo( Endpoint.UDPv4Endpoint ) );
-			_endpointMapper.Add( memberinfo( Endpoint.UDPv4RemoteEndpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4BindEndpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4MulticastInterface ) );
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4ReadEndpoint ) );
+			_endpointMapper.Add( memberinfo( Endpoint.UDPv4WriteEndpoint ) );
 
 			_endpointMapper.Add( memberinfo( Endpoint.NamedPipePath ) );
 			_endpointMapper.Add( memberinfo( Endpoint.NamedPipeServerPath ) );
@@ -311,14 +317,39 @@ namespace BamelgForwarder {
 			builder.AppendFormat( "'{0}': {1} <-> {2}", Name, Endpoint1, Endpoint2 );
 		}
 
-		public void Run() {
-			PrepareEndpoints();
-			EventLoop.Instance.BeginInvoke( StartFibers );
+		private Fiber.Semaphore _exit = new Fiber.Semaphore();
+		private Fiber.Semaphore _restart = new Fiber.Semaphore();
+
+		private void StartFibers() {
+			Endpoint1.ControlFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
+			Endpoint2.ControlFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
 		}
 
 		public void Stop() {
-			Endpoint1.TransmitterFiber.Cancel(); Endpoint1.TransmitterFiber = Fiber.Null;
-			Endpoint2.TransmitterFiber.Cancel(); Endpoint2.TransmitterFiber = Fiber.Null;
+			Endpoint1.ControlFiber.Cancel(); Endpoint1.ControlFiber = Fiber.Null;
+			Endpoint2.ControlFiber.Cancel(); Endpoint2.ControlFiber = Fiber.Null;
+
+			Endpoint1.WriteFiber.Cancel();
+			Endpoint2.WriteFiber.Cancel();
+		}
+
+		private void PrepareEndpoints() {
+			PrepareEndpoint( Endpoint1 );
+			PrepareEndpoint( Endpoint2 );
+
+			if( !Endpoint1.IsHold & !Endpoint2.IsHold ) // at least one endpoint must be listening
+				Endpoint1.IsHold = Endpoint2.IsHold = true;
+		}
+
+		private void PrepareEndpoint( Endpoint endpoint ) {
+			endpoint.Connector = this;
+			AddReference();
+			if( !endpoint.IsReadable & !endpoint.IsWritable ) endpoint.IsReadable = endpoint.IsWritable = true;
+		}
+
+		public void Run() {
+			PrepareEndpoints();
+			EventLoop.Instance.BeginInvoke( StartFibers );
 		}
 
 		public void Restart() {
@@ -329,14 +360,6 @@ namespace BamelgForwarder {
 			}
 			else
 				_restart.Increment();
-		}
-
-		private Fiber.Semaphore _exit = new Fiber.Semaphore();
-		private Fiber.Semaphore _restart = new Fiber.Semaphore();
-
-		private void StartFibers() {
-			Endpoint1.TransmitterFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint1, Endpoint2 ), App.Options.Trace ? Endpoint1.Name + " connector" : null );
-			Endpoint2.TransmitterFiber = Fiber.Start( App.Options.PagesPerControlFiber, () => Transfer( Endpoint2, Endpoint1 ), App.Options.Trace ? Endpoint2.Name + " connector" : null );
 		}
 
 		private void Restarter() {
@@ -355,20 +378,6 @@ namespace BamelgForwarder {
 			}
 
 			ReleaseReference();
-		}
-
-		private void PrepareEndpoints() {
-			Endpoint1.Connector = this;
-			Endpoint2.Connector = this;
-
-			AddReference();
-			AddReference();
-
-			if( !Endpoint1.IsHold & !Endpoint2.IsHold ) // at least one endpoint must be listening
-				Endpoint1.IsHold = Endpoint2.IsHold = true;
-
-			if( !Endpoint1.IsReadable & !Endpoint1.IsWritable ) Endpoint1.IsReadable = Endpoint1.IsWritable = true;
-			if( !Endpoint2.IsReadable & !Endpoint2.IsWritable ) Endpoint2.IsReadable = Endpoint2.IsWritable = true;
 		}
 
 		private void Transfer( Endpoint source, Endpoint destination ) {
@@ -393,16 +402,16 @@ namespace BamelgForwarder {
 						if( Fiber.IsCancelled ) break;
 						continue;
 					}
-
-					var sem = new Fiber.Semaphore();
-					source.WriteFiber = Fiber.Start( App.Options.PagesPerTransferFiber, () => {
-						using( Fiber.CancellationRegion() )
-							source.WriteTo( destination );
-						sem.Increment();
-					}, App.Options.Trace ? source.Name + " r/w" : null );
-
-					sem.Decrement();
 				}
+
+				var sem = new Fiber.Semaphore();
+				source.WriteFiber = Fiber.Start( App.Options.PagesPerTransferFiber, () => {
+					using( Fiber.CancellationRegion() )
+						source.WriteTo( destination );
+					sem.Increment();
+				}, App.Options.Trace ? source.Name + " r/w" : null );
+
+				sem.Decrement();
 
 				destination.ResetNonKeepAlive();
 			}
@@ -427,7 +436,7 @@ namespace BamelgForwarder {
 	}
 
 	public class Endpoint : NetworkClient, IPlatformErrorHandler, IFormattable {
-		internal Fiber TransmitterFiber = Fiber.Null, WriteFiber = Fiber.Null;
+		internal Fiber ControlFiber = Fiber.Null, WriteFiber = Fiber.Null;
 
 		public string Name;
 		internal Connector Connector;
@@ -473,6 +482,7 @@ namespace BamelgForwarder {
 
 		// @{ TCPv4 settings
 		public IPv4Endpoint TCPv4Endpoint;
+		public IPv4Address TCPv4Interface;
 		// @}
 
 		// @{ TCPv4Server settings
@@ -481,6 +491,7 @@ namespace BamelgForwarder {
 
 		// @{ TCPv6 settings
 		public IPv6Endpoint TCPv6Endpoint;
+		public IPv6Address TCPv6Interface;
 		// @}
 
 		// @{ TCPv6Server settings
@@ -488,8 +499,10 @@ namespace BamelgForwarder {
 		// @}
 
 		// @{ UDPv4 settings
-		public IPv4Endpoint UDPv4Endpoint;
-		public IPv4Endpoint UDPv4RemoteEndpoint;
+		public IPv4Endpoint UDPv4BindEndpoint;
+		public IPv4Address UDPv4MulticastInterface;
+		public IPv4Endpoint UDPv4ReadEndpoint;
+		public IPv4Endpoint UDPv4WriteEndpoint;
 		// @}
 
 		// @{ NamedPipe settings
@@ -538,12 +551,22 @@ namespace BamelgForwarder {
 
 			TCPKeepAliveTimeout = other.TCPKeepAliveTimeout;
 			TCPKeepAliveInterval = other.TCPKeepAliveInterval;
+
 			TCPv4Endpoint = other.TCPv4Endpoint;
+			TCPv4Interface = other.TCPv4Interface;
+
 			TCPv4ServerEndpoint = other.TCPv4ServerEndpoint;
+
 			TCPv6Endpoint = other.TCPv6Endpoint;
+			TCPv6Interface = other.TCPv6Interface;
+
 			TCPv6ServerEndpoint = other.TCPv6ServerEndpoint;
-			UDPv4Endpoint = other.UDPv4Endpoint;
-			UDPv4RemoteEndpoint = other.UDPv4RemoteEndpoint;
+
+			UDPv4BindEndpoint = other.UDPv4BindEndpoint;
+			UDPv4MulticastInterface = other.UDPv4MulticastInterface;
+			UDPv4ReadEndpoint = other.UDPv4ReadEndpoint;
+			UDPv4WriteEndpoint = other.UDPv4WriteEndpoint;
+
 			NamedPipePath = other.NamedPipePath;
 			NamedPipeServerPath = other.NamedPipeServerPath;
 
@@ -570,7 +593,7 @@ namespace BamelgForwarder {
 				case EndpointType.TCPv4Server: builder.Append( TCPv4ServerEndpoint ); break;
 				case EndpointType.TCPv6: builder.Append( TCPv6Endpoint ); break;
 				case EndpointType.TCPv6Server: builder.Append( TCPv6ServerEndpoint ); break;
-				case EndpointType.UDPv4: builder.Concat( UDPv4Endpoint, "<->", UDPv4RemoteEndpoint ); break;
+				case EndpointType.UDPv4: builder.Concat( UDPv4ReadEndpoint, "<->", UDPv4WriteEndpoint ); break;
 				case EndpointType.NamedPipe: builder.Append( NamedPipePath ); break;
 				case EndpointType.NamedPipeServer: builder.Append( NamedPipeServerPath ); break;
 			}
@@ -710,18 +733,31 @@ namespace BamelgForwarder {
 
 						var ns = new Platform.IO.UdpStream( socket ) {
 							ErrorHandler = ErrorHandler,
-							WriteEndpoint = new WsaAddress( UDPv4RemoteEndpoint )
+							LastReceiveFrom = new WsaAddress( UDPv4ReadEndpoint ),
+							WriteEndpoint = new WsaAddress( UDPv4WriteEndpoint )
 						};
 
-						if( !ns.Bind( UDPv4Endpoint ) ) break;
+						if( UDPv4ReadEndpoint.Address.IsMulticast ) {
+							var mreq = new ip_mreq {
+								imr_multiaddr = UDPv4WriteEndpoint.Address,
+								imr_interface = UDPv4MulticastInterface
+							};
+
+							ns.AddMembership( mreq );
+							
+							if( !ns.Bind( UDPv4BindEndpoint ) ) break;
+						}
+						else {
+							if( !ns.Bind( UDPv4BindEndpoint ) ) break;
+						}
 
 						_stream = ns;
 						return IsAlive = true;
 					} break;
 
-				case EndpointType.TCPv4: IsAlive = Connect( TCPv4Endpoint ); ApplyTcpSettings(); break;
+				case EndpointType.TCPv4: IsAlive = Connect( TCPv4Endpoint, TCPv4Interface ); ApplyTcpSettings(); break;
 				case EndpointType.TCPv4Server: IsAlive = Accept( TCPv4ServerEndpoint ); ApplyTcpSettings(); break;
-				case EndpointType.TCPv6: IsAlive = Connect( TCPv6Endpoint ); ApplyTcpSettings(); break;
+				case EndpointType.TCPv6: IsAlive = Connect( TCPv6Endpoint, TCPv6Interface ); ApplyTcpSettings(); break;
 				case EndpointType.TCPv6Server: IsAlive = Accept( TCPv6ServerEndpoint ); ApplyTcpSettings(); break;
 
 				case EndpointType.NamedPipe: return IsAlive = ConnectLocal( NamedPipePath );

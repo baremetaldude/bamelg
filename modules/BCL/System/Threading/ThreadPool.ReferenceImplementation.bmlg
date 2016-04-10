@@ -87,7 +87,11 @@ namespace System.Threading {
 
 			/// @{ thread-safe
 			public void Enqueue( DPC* task ) {
-				EnsureHasWorkerThreads();
+				if( MaxThreads == 0 ) {
+					Thread.Start( task );
+					return;
+				}
+
 				task->Next = null;
 
 				using( _taskLock.LockRegion() ) {
@@ -112,7 +116,7 @@ namespace System.Threading {
 				}
 
 				public void Start() {
-					Thread.Start<thistype>( Run, this );
+					Thread.Start( DPC.Create<thistype>( Run, this ) );
 				}
 
 				private void Run() {

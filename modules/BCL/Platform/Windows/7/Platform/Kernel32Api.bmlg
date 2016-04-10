@@ -1124,6 +1124,10 @@ namespace Platform {
 			this = Kernel32Api.CreateThread( nullref, stackSize, data => { bitcast<Functors.Action>( data )(); return 0; }, bitcast<void*>( start ), flags, threadId );
 		}
 
+		public ThreadHandle( System.Threading.DPC* start, uintptr stackSize = 0, CreateThreadFlags flags = CreateThreadFlags.None, uint& threadId = nullref ) {
+			this = Kernel32Api.CreateThread( nullref, stackSize, data => { System.Threading.DPC.RunAndDispose( bitcast<System.Threading.DPC*>( data ) ); return 0; }, bitcast<void*>( start ), flags, threadId );
+		}
+
 		public ThreadHandle( Delegates.Action start, uintptr stackSize = 0, CreateThreadFlags flags = CreateThreadFlags.None, uint& threadId = nullref ) {
 			cast<RuntimeObjectBase>( start ).AddReference();
 

@@ -80,6 +80,9 @@ namespace Platform {
 		public extern static int getsockname( SocketHandle socket, sockaddr* name, int& nameLength );
 		public extern static int getpeername( SocketHandle socket, sockaddr* name, int& nameLength );
 
+		public extern static int getaddrinfo( CString pNodeName, CString pServiceName, addrinfo* pHints, addrinfo** ppResult );
+		public extern static void freeaddrinfo( addrinfo* pAddrInfo );
+
 		public static readonly WinsockInitializer Instance = new WinsockInitializer();
 
 		internal static void GetExtensions() {
@@ -88,11 +91,22 @@ namespace Platform {
 			}
 		}
 
-		private static SystemErrorCode GetExtension( SocketHandle socket, string name, [In] Guid& functionId, void* fn ) {
+		public static SystemErrorCode GetExtension( SocketHandle socket, string name, [In] Guid& functionId, void* fn ) {
 			uint SIO_GET_EXTENSION_FUNCTION_POINTER = 3355443206;
 			if( WinsockApi.WSAIoctl( socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &functionId, ( uint ) sizeof( functionId ), fn, ( uint ) sizeof( fn ), 0U, nullref, null ) != 0 ) {
 				var error = Kernel32Api.LastError;
-				Console.WriteLine( "WSAIoctl: Unable to get required extension {0}( {1} ) - {2}", name, functionId, error );
+				// Console.WriteLine( "WSAIoctl: Unable to get required extension {0}( {1} ) - {2}", name, functionId, error );
+				return error;
+			}
+
+			return SystemErrorCode.NO_ERROR;
+		}
+
+		public static SystemErrorCode SetTcpKeepAlive( SocketHandle socket, tcp_keepalive& settings ) {
+			uint SIO_KEEPALIVE_VALS = 2550136836;
+			if( WinsockApi.WSAIoctl( socket, SIO_KEEPALIVE_VALS, &settings, ( uint ) sizeof( settings ), null, 0, 0U, nullref, null ) != 0 ) {
+				var error = Kernel32Api.LastError;
+				// Console.WriteLine( "WSAIoctl: Unable to set keep-alive values" );
 				return error;
 			}
 
@@ -391,22 +405,24 @@ namespace Platform {
 		}
 	}
 
+	public enum SCOPE_LEVEL : uint {
+		ScopeLevelInterface =    1,
+		ScopeLevelLink =         2,
+		ScopeLevelSubnet =       3,
+		ScopeLevelAdmin =        4,
+		ScopeLevelSite =         5,
+		ScopeLevelOrganization = 8,
+		ScopeLevelGlobal =      14,
+		ScopeLevelCount =       16,
+	}
+
 	[StructLayoutSequential]
 	public partial struct sockaddr_in6 : IFormattable {
 		public ADDRESS_FAMILY sin6_family;
 		public ushort_bigendian sin6_port;
 		public uint_bigendian sin6_flowinfo;
 		public IPv6Address sin6_addr;
-		public uint_bigendian sin6_scope_id;
-
-		public sockaddr_in6( System.Net.IPv6Address address, ushort port ) {
-			sin6_family = ADDRESS_FAMILY.AF_INET6;
-			sin6_addr = address;
-			sin6_port = port;
-
-			sin6_flowinfo = 0;
-			sin6_scope_id = 0;
-		}
+		public uint sin6_scope_id; // not BE
 
 		public static explicit operator sockaddr_in6( System.Net.IPv6Endpoint endpoint ) {
 			return new sockaddr_in6 {
@@ -414,14 +430,15 @@ namespace Platform {
 				sin6_addr = endpoint.Address,
 				sin6_port = endpoint.Port,
 				sin6_flowinfo = 0,
-				sin6_scope_id = 0
+				sin6_scope_id = endpoint.ScopeId
 			};
 		}
 
 		public static explicit operator System.Net.IPv6Endpoint( sockaddr_in6 endpoint ) {
 			return new System.Net.IPv6Endpoint {
 				Address = endpoint.sin6_addr,
-				Port = endpoint.sin6_port
+				Port = endpoint.sin6_port,
+				ScopeId = endpoint.sin6_scope_id
 			};
 		}
 
@@ -444,5 +461,14 @@ namespace Platform {
 		~WinsockInitializer() {
 			Assert.AreEqual( 0, WinsockApi.WSACleanup() );
 		}
+	}
+
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ip_mreq {
+		[ExplicitOffset( Offset = 0 )]
+		public IPv4Address imr_multiaddr;
+		[ExplicitOffset( Offset = 4 )]
+		public IPv4Address imr_interface;
 	}
 }

@@ -80,6 +80,8 @@ namespace System.Net {
 			Data[3] = num4;
 		}
 
+		public bool IsMulticast { get { return ( Data[0] & 0b11100000 ) == 0b11100000; } }
+
 		private static TextParseStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			byte[4] values;
 
@@ -248,6 +250,12 @@ namespace System.Net {
 				data[i] = address[i];
 		}
 
+		public bool IsLinkLocal { get { return Data[0] == 0xfe && ( Data[1] & 0xc0 ) == 0x80; } }
+		public bool IsSiteLocal { get { return Data[0] == 0xfe && ( Data[1] & 0xc0 ) == 0xc0; } }
+		public bool IsGlobal { get { return ( Data[0] & 0xf0 ) != 0 && ( Data[0] & 0xf0 ) != 0xf0; } }
+		public bool IsMappedIpv4 { get { return Data[0] == 0 && Data[1] == 0 && Data[2] == 0 && Data[3] == 0 && Data[4] == 0 && Data[5] == 0 && Data[6] == 0 && Data[7] == 0 && Data[8] == 0 && Data[9] == 0 && Data[10] == 0xff && Data[11] == 0xff; } }
+		public bool IsTranslatedIpv4 { get { return Data[0] == 0 && Data[1] == 0 && Data[2] == 0 && Data[3] == 0 && Data[4] == 0 && Data[5] == 0 && Data[6] == 0 && Data[7] == 0xff && Data[8] == 0xff && Data[9] == 0xff && Data[10] == 0 && Data[11] == 0; } }
+
 		private static TextParseStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			ushort[8] values;
 
@@ -380,14 +388,20 @@ namespace System.Net {
 		public IPv6Endpoint( IPv6Address address, ushort port ) {
 			Address = address;
 			Port = port;
+			ScopeId = 0;
 		}
 
 		public IPv6Address Address;
+		public uint ScopeId;
 		public ushort Port;
 
 		public void ToString( StringBuilder builder, string format ) {
 			builder.Append( '[' );
 			Address.ToString( builder, format );
+			if( ScopeId != 0 ) {
+				builder.Append( '%' );
+				builder.Append( ScopeId );
+			}
 			builder.Append( ']' );
 			builder.Append( ':' );
 			builder.Append( Port );
@@ -396,6 +410,7 @@ namespace System.Net {
 		private static TextParseStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			IPv6Address address;
 			ushort port;
+			uint scope = 0;
 
 			var parsePosition = text;
 			var remaining = length;
@@ -404,6 +419,11 @@ namespace System.Net {
 
 			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '[' ) ) return TextParseStatus.Format;
 			if( !IPv6Address.TryFetch( parsePosition, remaining, address, false, false ) ) return TextParseStatus.Format;
+
+			if( PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '%' ) ) {
+				if( !uint.TryFetch( parsePosition, remaining, scope, false, trimTrailingWhitespace ) ) return TextParseStatus.Format;
+			}
+
 			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ']' ) ) return TextParseStatus.Format;
 			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return TextParseStatus.Format;
 			if( !ushort.TryFetch( parsePosition, remaining, port, false, trimTrailingWhitespace ) ) return TextParseStatus.Format;
@@ -411,7 +431,7 @@ namespace System.Net {
 			if( readen != nullref ) readen = length - remaining;
 			else if( remaining != 0 ) return TextParseStatus.Format;
 
-			result = new IPv6Endpoint( address, port );
+			result = new IPv6Endpoint( address, port ) { ScopeId = scope };
 			return TextParseStatus.OK;
 		}
 

@@ -145,6 +145,7 @@ namespace System.IO {
 		// using( Fiber.AsyncCompletionRegion() ) { // TP context starts here
 		//		readv( ... ); // no Fiber-related calls may appear here
 		// }
+		// TLS-specific status codes (errno, LastError) must be transferred manually
 		public struct AsyncCompletionRegionInfo : System.Threading.DPC, IDisposable {
 			internal FiberInfo.Manager* CurrentManager;
 			internal FiberInfo* CompletionFiber;

@@ -57,7 +57,6 @@ namespace BamelgForwarderSetup {
 		public int? PacketsReaden;
 		public ulong? BytesReaden;
 
-		public string TCPv4Endpoint;
 		public TimeSpan TCPKeepAliveInterval;
 		public TimeSpan TCPKeepAliveTimeout;
 
@@ -67,8 +66,14 @@ namespace BamelgForwarderSetup {
 		public string TCPv4ServerEndpoint;
 		// @}
 
+		// @{ TCPv4 settings
+		public string TCPv4Endpoint;
+		public string TCPv4Interface;
+		// @}
+
 		// @{ TCPv6 settings
 		public string TCPv6Endpoint;
+		public string TCPv6Interface;
 		// @}
 
 		// @{ TCPv6Server settings
@@ -76,8 +81,10 @@ namespace BamelgForwarderSetup {
 		// @}
 
 		// @{ UDPv4 settings
-		public string UDPv4Endpoint;
-		public string UDPv4RemoteEndpoint;
+		public string UDPv4BindEndpoint;
+		public string UDPv4MulticastInterface;
+		public string UDPv4ReadEndpoint;
+		public string UDPv4WriteEndpoint;
 		// @}
 
 		public string NamedPipePath;
@@ -109,17 +116,22 @@ namespace BamelgForwarderSetup {
 			// result.Add( nameof( BytesReaden ), BytesReaden?.ToString() );
 
 			result.Add( nameof( TCPv4Endpoint ), TCPv4Endpoint );
+			result.Add( nameof( TCPv4Interface ), TCPv4Interface );
+
 			result.Add( nameof( TCPKeepAliveInterval ), TCPKeepAliveInterval.ToString() );
 			result.Add( nameof( TCPKeepAliveTimeout ), TCPKeepAliveTimeout.ToString() );
 
 			result.Add( nameof( TCPv4ServerEndpoint ), TCPv4ServerEndpoint );
 
 			result.Add( nameof( TCPv6Endpoint ), TCPv6Endpoint );
+			result.Add( nameof( TCPv6Interface ), TCPv6Interface );
 
 			result.Add( nameof( TCPv6ServerEndpoint ), TCPv6ServerEndpoint );
 
-			result.Add( nameof( UDPv4Endpoint ), UDPv4Endpoint );
-			result.Add( nameof( UDPv4RemoteEndpoint ), UDPv4RemoteEndpoint );
+			result.Add( nameof( UDPv4BindEndpoint ), UDPv4BindEndpoint );
+			result.Add( nameof( UDPv4MulticastInterface ), UDPv4MulticastInterface );
+			result.Add( nameof( UDPv4ReadEndpoint ), UDPv4ReadEndpoint );
+			result.Add( nameof( UDPv4WriteEndpoint ), UDPv4WriteEndpoint );
 
 			result.Add( nameof( NamedPipePath ), NamedPipePath );
 			result.Add( nameof( NamedPipeServerPath ), NamedPipeServerPath );
@@ -182,6 +194,34 @@ namespace BamelgForwarderSetup {
 		public async Task<List<string>> GetConnectors() {
 			try {
 				var json = await NewClient.DownloadStringTaskAsync( $"app/connectors" );
+				var result = JsonConvert.DeserializeObject<List<string>>( json );
+
+				return result;
+			}
+			catch( Exception excpt ) {
+				Status = excpt.Message;
+			}
+
+			return null;
+		}
+
+		public async Task<List<string>> GetIpv4Interfaces() {
+			try {
+				var json = await NewClient.DownloadStringTaskAsync( $"app/interfaces_ipv4" );
+				var result = JsonConvert.DeserializeObject<List<string>>( json );
+
+				return result;
+			}
+			catch( Exception excpt ) {
+				Status = excpt.Message;
+			}
+
+			return null;
+		}
+
+		public async Task<List<string>> GetIpv6Interfaces() {
+			try {
+				var json = await NewClient.DownloadStringTaskAsync( $"app/interfaces_ipv6" );
 				var result = JsonConvert.DeserializeObject<List<string>>( json );
 
 				return result;

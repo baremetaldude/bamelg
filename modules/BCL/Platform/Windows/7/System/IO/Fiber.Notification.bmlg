@@ -25,7 +25,7 @@ namespace System.IO {
 			private uint _asyncTransferred;
 
 			private Dispatcher.AlarmUnbiased* _alarmID;
-			
+
 			internal partial class Manager {
 				private System.Threading.Mutex _readyListAsyncLock = new System.Threading.Mutex();
 				private List<FiberInfo*> _readyListAsync = new List<FiberInfo*>();
@@ -404,7 +404,6 @@ namespace System.IO {
 					}
 				}
 
-
 				private SystemErrorCode FiberConnect( SocketHandle socket, void* address, int addressLength ) {
 					var socketAddress = ( sockaddr* ) address;
 
@@ -422,12 +421,22 @@ namespace System.IO {
 								case SystemErrorCode.WSAEINVAL: // not bound
 									if( socketAddress->Family == ADDRESS_FAMILY.AF_INET ) {
 										var bindEndpoint = ( sockaddr_in ) new System.Net.IPv4Endpoint( System.Net.IPv4Address.AllInterfaces, 0 );
-										if( WinsockApi.bind( socket, ( sockaddr* ) &bindEndpoint, sizeof( bindEndpoint ) ) != 0 ) return Kernel32Api.LastError;
+										if( WinsockApi.bind( socket, ( sockaddr* ) &bindEndpoint, sizeof( bindEndpoint ) ) != 0 ) {
+											var le = Kernel32Api.LastError;
+											// System.Console.WriteLine( "bind: {0}", le );
+											return le;
+										}
+
 										goto reconnect;
 									}
 									else if( socketAddress->Family == ADDRESS_FAMILY.AF_INET6 ) {
 										var bindEndpoint = ( sockaddr_in6 ) new System.Net.IPv6Endpoint( System.Net.IPv6Address.AllInterfaces, 0 );
-										if( WinsockApi.bind( socket, ( sockaddr* ) &bindEndpoint, sizeof( bindEndpoint ) ) != 0 ) return Kernel32Api.LastError;
+										if( WinsockApi.bind( socket, ( sockaddr* ) &bindEndpoint, sizeof( bindEndpoint ) ) != 0 ) {
+											var le = Kernel32Api.LastError;
+											// System.Console.WriteLine( "bind: {0}", le );
+											return le;
+										}
+
 										goto reconnect;
 									}
 
@@ -470,7 +479,6 @@ namespace System.IO {
 				public static SystemErrorCode Connect( SocketHandle handle, void* address, int addressLength ) {
 					if( Fiber.IsFiberExecuting ) {
 						return FiberManager.FiberConnect( handle, address, addressLength );
-
 					}
 					else {
 						var code = WinsockApi.connect( handle, ( sockaddr* ) address, addressLength );

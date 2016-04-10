@@ -41,6 +41,9 @@ namespace BamelgForwarder {
 					case "/app/serial_ports": return new ComPortsHandler( this );
 					case "/app/stat": return new HttpStatisticPageHandler( this );
 
+					case "/app/interfaces_ipv4": return new InterfacesIpv4Handler( this );
+					case "/app/interfaces_ipv6": return new InterfacesIpv6Handler( this );
+
 					case "/app/exit": return new AppExitHandler( this );
 					case "/app/save": return new AppSaveHandler( this );
 					case "/app/reload": return new AppReloadHandler( this );
@@ -338,6 +341,80 @@ namespace BamelgForwarder {
 			}
 		}
 
+		// http://localhost:4015/app/interfaces_ipv4
+		public class InterfacesIpv4Handler : JsonHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public InterfacesIpv4Handler( SessionHandler session )
+				: base( session ) {
+			}
+
+			public override void OnRender() {
+				switch( Method ) {
+					case HttpMethod.Get:
+						addrinfo* result = null;
+
+						var hints = default( addrinfo );
+						hints.ai_family = ADDRESS_FAMILY.AF_INET;
+						hints.ai_socktype = ( int ) SocketType.SOCK_STREAM;
+						hints.ai_protocol = ( int ) IPPROTO.IPPROTO_TCP;
+
+						WinsockApi.getaddrinfo( "", "", &hints, &result );
+
+						var writer = new JsonWriter( Response );
+						using( writer.Array() ) {
+							writer.Value( IPv4Address.AllInterfaces );
+							for( var ptr = result; ptr != null; ptr = ptr->ai_next )
+								writer.Value( new IPv4Address( cast<sockaddr_in*>( ptr->ai_addr )->Address ) );
+						}
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
+			}
+		}
+
+		// http://localhost:4015/app/interfaces_ipv6
+		public class InterfacesIpv6Handler : JsonHandler {
+			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
+			protected new SessionHandler Session; // override field type
+
+			public InterfacesIpv6Handler( SessionHandler session )
+				: base( session ) {
+			}
+
+			public override void OnRender() {
+				switch( Method ) {
+					case HttpMethod.Get:
+						addrinfo* result = null;
+
+						var hints = default( addrinfo );
+						hints.ai_family = ADDRESS_FAMILY.AF_INET6;
+						hints.ai_socktype = ( int ) SocketType.SOCK_STREAM;
+						hints.ai_protocol = ( int ) IPPROTO.IPPROTO_TCP;
+
+						WinsockApi.getaddrinfo( "", "", &hints, &result );
+
+						var writer = new JsonWriter( Response );
+						using( writer.Array() ) {
+							writer.Value( IPv6Address.AllInterfaces );
+							for( var ptr = result; ptr != null; ptr = ptr->ai_next )
+								writer.Value( cast<sockaddr_in6*>( ptr->ai_addr )->sin6_addr );
+						}
+						break;
+
+					default:
+						StatusCode = HttpStatusCode.MethodNotAllowed;
+						if( App.Options.Trace ) Response.AppendLine( "Wrong HTTP method: '{0}'", Method );
+						return;
+				}
+			}
+		}
+
 		// http://localhost:4015/connector/add
 		public class AddConnectorHandler : PageHandler {
 			[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
@@ -378,8 +455,8 @@ namespace BamelgForwarder {
 						var connector = new Connector();
 						connector.Name = _name;
 
-						connector.Endpoint1 = new Endpoint() { Name = "endpoint 1" };
-						connector.Endpoint2 = new Endpoint() { Name = "endpoint 2" };
+						connector.Endpoint1 = new Endpoint() { Name = "endpoint 1", SerialPortPath = @"\\.\COM1", NamedPipePath = @"\\.\LocalPipe1", NamedPipeServerPath = @"\\.\LocalPipe1" };
+						connector.Endpoint2 = new Endpoint() { Name = "endpoint 2", SerialPortPath = @"\\.\COM2", NamedPipePath = @"\\.\LocalPipe1", NamedPipeServerPath = @"\\.\LocalPipe2" };
 
 						App._connectorsByName.Add( connector.Name, connector );
 

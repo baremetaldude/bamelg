@@ -17,9 +17,9 @@ namespace System.Threading {
 
 		public static void Yield() { _implYield(); }
 
+		public static Thread Start( DPC* action ) { return _implStart( action ); }
+
 		public static Thread Start( Functors.Action action ) { return _implStart( action ); }
 		public static Thread Start( Delegates.Action action ) { return _implStart( action ); }
-		public static Thread Start<T>( Functors.Action<T> action, T& data ) { return _implStart<T>( action, data ); }
-		public static Thread Start<T>( Delegates.Action<T> action, T& data ) { return _implStart<T>( action, data ); }
 	}
 }
