@@ -32,43 +32,41 @@ namespace System.Net {
 		}
 
 		private bool _implListen( IPv4Endpoint endpoint ) {
-			SocketHandleTCP acceptSocket;
-			if( !acceptSocket.Create( ProtocolFamily.PF_INET, true ) ) return false;
+			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET, true ) ) {
+				if( !acceptSocket.IsValid ) return false;
 
-			finally { acceptSocket.Close(); }
+				acceptSocket.ReuseAddress = true;
+				acceptSocket.DefferedAccept = DefferedAccept;
+				acceptSocket.ImmediateDelivery = true;
 
-			acceptSocket.ReuseAddress = true;
-			acceptSocket.DefferedAccept = true;
-			acceptSocket.ImmediateDelivery = true;
+				if( !acceptSocket.Bind( endpoint ) ) return false;
+				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
 
-			if( !acceptSocket.Bind( endpoint ) ) return false;
-			if( !acceptSocket.Listen( ListenBacklog ) ) return false;
+				var acceptEntry = new AcceptSocketTCP4EventSink( this, acceptSocket );
+				acceptEntry.Register();
 
-			var acceptEntry = new AcceptSocketTCP4EventSink( this, acceptSocket );
-			acceptEntry.Register();
-
-			acceptSocket = SocketHandleTCP.Invalid; // do not close
-			return true;
+				acceptSocket = SocketHandleTCP.Invalid; // do not close
+				return true;
+			}
 		}
 
 		private bool _implListen( IPv6Endpoint endpoint ) {
-			SocketHandleTCP acceptSocket;
-			if( !acceptSocket.Create( ProtocolFamily.PF_INET6, true ) ) return false;
+			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET6, true ) ) {
+				if( !acceptSocket.IsValid ) return false;
 
-			finally { acceptSocket.Close(); }
+				acceptSocket.ReuseAddress = true;
+				acceptSocket.DefferedAccept = DefferedAccept;
+				acceptSocket.ImmediateDelivery = true;
 
-			acceptSocket.ReuseAddress = true;
-			acceptSocket.DefferedAccept = true;
-			acceptSocket.ImmediateDelivery = true;
+				if( !acceptSocket.Bind( endpoint ) ) return false;
+				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
 
-			if( !acceptSocket.Bind( endpoint ) ) return false;
-			if( !acceptSocket.Listen( ListenBacklog ) ) return false;
+				var acceptEntry = new AcceptSocketTCP6EventSink( this, acceptSocket );
+				acceptEntry.Register();
 
-			var acceptEntry = new AcceptSocketTCP6EventSink( this, acceptSocket );
-			acceptEntry.Register();
-
-			acceptSocket = SocketHandleTCP.Invalid; // do not close
-			return true;
+				acceptSocket = SocketHandleTCP.Invalid; // do not close
+				return true;
+			}
 		}
 
 		private bool _implListen( Utf8String path ) {
@@ -190,6 +188,17 @@ namespace System.Net {
 			client.StartFiber();
 		}
 
+		private void OnSocketAccepted( SocketHandleTCP handle ) {
+			if( MaxSessions > 0 && ActiveSessionCount >= MaxSessions ) {
+				handle.Close();
+				return;
+			}
+
+			var client = CreateSession( new NetworkStream( handle ) );
+			client.Handle = handle;
+			client.StartFiber();
+		}
+
 		public abstract partial class SessionHandler {
 			public IOHandleNonBlocking Handle;
 
@@ -201,7 +210,7 @@ namespace System.Net {
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceAcceptStarted( SocketHandle acceptSocket ) {
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "NS: Accepting started on socket:{0}", acceptSocket );
+				Trace.Write( "NS: Accepting started on socket:{0}", acceptSocket );
 		}
 		/// @}
 	}

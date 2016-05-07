@@ -5,6 +5,7 @@
 using System;
 using System.IO;
 using System.Net;
+using System.Web;
 
 using Platform.IO;
 using Platform.Libc;
@@ -15,21 +16,79 @@ namespace Example {
 			public CustomHttpServer() {
 			}
 
-			protected override RequestHandler CreateHandler( SessionHandler session ) {
-				switch( session.Resource ) {
-					case "/stat.json": return new HttpStatisticPageHandler( session );
-					case "/stat.txt": return new HttpStatisticTextPageHandler( session );
+			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+				return new SessionHandler( this, stream );
+			}
+			
+			public class SessionHandler : basetype.SessionHandler {
+				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+				public new declaringtype Server; // override field type
+
+				public SessionHandler( declaringtype parent, IStream stream )
+					: base( parent, stream ) {
+				}
+
+				protected override RequestHandler CreateHandler() {
+					switch( Resource ) {
+						case "/stat.json": return new HttpStatisticPageHandler( this );
+						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
 
 					case "/":
 					case "/index.html":
 					case "/Default.aspx":
-						return new TestPageHandler( session );
+							return new TestPageHandler( this );
 
-					case "/favicon.ico":
-						return new EmbeddedResourceHandler( session, "image/x-icon", new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+						case "/time.event":
+							return new TimeEventHandler( this );
+
+						case "/hello.aspx":
+							return new HelloWorldPageHandler( this );
+
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
 				}
 
 				return null;
+			}
+			}
+
+			public class HelloWorldPageHandler : PageHandler {
+				public HelloWorldPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.Append( "hello, world!" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+				}
+			}
+
+			public class TimeEventHandler : PageHandler {
+				public TimeEventHandler( SessionHandler session )
+					: base( session ) {
+					MediaType = System.Net.Mime.MediaTypeNames.Text.EventStream;
+					TextEncodingKind = System.Text.TextEncodingKind.Utf8;
+				}
+
+				public override void OnRender() {
+					var delay = TimeSpan.FromSeconds( 1 );
+					Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+
+					Response.Append( "retry: 0\n" );
+					Response.Append( "data: " ); Response.Append( Fiber.UtcNow.ToUnixMilliseconds() );
+
+					Response.Append( "\n\n" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+
+					HttpFormatter.HeaderAccessControl( Headers, "allow" );
+					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
+				}
 			}
 
 			public class TestPageHandler : PageHandler {

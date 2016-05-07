@@ -13,8 +13,14 @@ namespace Platform.Libc {
 	public struct SocketHandle : IOHandleNonBlocking, IFormattable {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public bool Listen( int backlog ) {
-			return LibcApi.listen( this, backlog ) == 0;
+		public SystemError Listen( int backlog ) {
+			if( LibcApi.listen( this, backlog ) != 0 ) return LibcApi.LastError;
+			return SystemError.None;
+		}
+
+		public SystemError Bind( void* address, int addressLength ) {
+			if( LibcApi.bind( this, ( sockaddr* ) address, addressLength ) != 0 ) return LibcApi.LastError;
+			return SystemError.None;
 		}
 
 		public SystemError Send( vararg iovec data ) { return WriteNonBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }

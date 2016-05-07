@@ -8,37 +8,43 @@ using System.Diagnostics;
 using System.IO;
 using System.Serialization;
 
+using Platform;
+using Platform.IO;
 using Platform.Kernel;
 using Platform.Libc;
 
 namespace System.Net {
 	public partial class NetworkClient {
-		private bool _implConnect( IPv4Endpoint endpoint ) {
-			using( var socket = new SocketHandleTCP() ) {
-				if( socket.Connect( endpoint ) != SystemError.None ) return false;
+		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
+			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
 
-				socket.ImmediateDelivery = true;
+			if( @interface != IPv4Address.AllInterfaces ) {
 
-				_stream = new Platform.IO.NetworkStream( socket );
-				socket = SocketHandleTCP.Invalid;
+				if( !stream.Bind( new IPv4Endpoint( @interface, 0 ) ) ) return false;
 			}
 
+			if( stream.Connect( endpoint ) ) {
+				_stream = stream;
 			return OnConnected();
 		}
 
-		private bool _implConnect( IPv6Endpoint endpoint ) {
-			using( var socket = new SocketHandleTCP() ) {
-				if( socket.Connect( endpoint ) != SystemError.None ) return false;
+			return false;
+		}
 
-				socket.ImmediateDelivery = true;
+		private bool _implConnect( IPv6Endpoint endpoint, IPv6Address @interface ) {
+			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
 
-				_stream = new Platform.IO.NetworkStream( socket );
-				socket = SocketHandleTCP.Invalid;
+			if( @interface != IPv6Address.AllInterfaces ) {
+				if( !stream.Bind( new IPv6Endpoint( @interface, 0 ) ) ) return false;
 			}
 
+			if( stream.Connect( endpoint ) ) {
+				_stream = stream;
 			return OnConnected();
 		}
 
+			return false;
+		}
 		private bool _implConnectLocal( string endpoint ) { return _implConnectLocal( ( Utf8String ) endpoint ); }
 
 		private bool _implConnectLocal( Utf8String endpoint ) {
@@ -57,5 +63,7 @@ namespace System.Net {
 
 		private bool _implAcceptLocal( string endpoint ) { return false; }
 		private bool _implAcceptLocal( Utf8String endpoint ) { return false; }
+
+		protected virtual IPlatformErrorHandler ErrorHandler { get { return PlatformErrorHandlerNull.Instance; } }
 	}
 }

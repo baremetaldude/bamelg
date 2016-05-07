@@ -16,7 +16,7 @@ namespace Platform {
 	}
 
 	public interface IPlatformErrorHandler {
-		PlatformErrorAction OnError( string context, SystemError errorCode );
+		PlatformErrorAction OnError( string operation, IFormattable context, SystemError errorCode );
 	}
 
 	public struct PlatformErrorHandlerNull : IPlatformErrorHandler {
@@ -24,7 +24,7 @@ namespace Platform {
 
 		#region IPlatformErrorHandler Members
 
-		public PlatformErrorAction OnError( string context, SystemError errorCode ) {
+		public PlatformErrorAction OnError( string operation, IFormattable context, SystemError errorCode ) {
 			return PlatformErrorAction.Default;
 		}
 
@@ -36,11 +36,10 @@ namespace Platform {
 
 		#region IPlatformErrorHandler Members
 
-		public PlatformErrorAction OnError( string context, SystemError errorCode ) {
+		public PlatformErrorAction OnError( string operation, IFormattable context, SystemError errorCode ) {
 			var message = LibcApi.GetErrorDescription( errorCode );
 
-			if( context.IsNullOrEmpty ) Console.WriteLine( message );
-			else Console.WriteLine( "'{0}': {1}", context, message );
+			Console.WriteLine( "'{0}': {1} {2}( {3} )", context, operation, errorCode, message );
 
 			return PlatformErrorAction.Default;
 		}
@@ -53,8 +52,8 @@ namespace Platform {
 
 		#region IPlatformErrorHandler Members
 
-		public PlatformErrorAction OnError( string context, SystemError errorCode ) {
-			PlatformErrorHandlerConsole.Instance.OnError( context, errorCode );
+		public PlatformErrorAction OnError( string operation, IFormattable context, SystemError errorCode ) {
+			PlatformErrorHandlerConsole.Instance.OnError( operation, context, errorCode );
 			Environment.Abort( ( int ) errorCode );
 
 			return PlatformErrorAction.Default;

@@ -18,26 +18,34 @@ namespace Example {
 			public CustomHttpServer() {
 			}
 
+			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+				return new SessionHandler( this, stream );
+			}
+
 			public class SessionHandler : basetype.SessionHandler {
 				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
 				public new declaringtype Server; // override field type
-			}
-
-			protected override RequestHandler CreateHandler( HttpServer.SessionHandler session ) {
-				switch( session.Resource ) {
-					case "/stat.json": return new HttpStatisticPageHandler( session );
-					case "/stat.txt": return new HttpStatisticTextPageHandler( session );
-
-					case "/":
-					case "/index.html":
-					case "/Default.aspx":
-						return new TestPageHandler( session );
-
-					case "/favicon.ico":
-						return new EmbeddedResourceHandler( session, "image/x-icon", new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+				
+				public SessionHandler( declaringtype parent, IStream stream )
+					: base( parent, stream ) {
 				}
 
-				return null;
+				protected override RequestHandler CreateHandler() {
+					switch( Resource ) {
+						case "/stat.json": return new HttpStatisticPageHandler( this );
+						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
+
+						case "/":
+						case "/index.html":
+						case "/Default.aspx":
+							return new TestPageHandler( this );
+
+						case "/favicon.ico":
+							return new EmbeddedResourceHandler( this, "image/x-icon", new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+					}
+
+					return null;
+				}
 			}
 
 			public class TestPageHandler : PageHandler {

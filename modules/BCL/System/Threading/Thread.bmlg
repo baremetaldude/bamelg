@@ -7,9 +7,11 @@
 namespace System.Threading {
 	// Platform-independent interface for dealing with OS threads
 	// Usage: Create threads with 'Start' and wait for their termination with 'Join' ( it also releases system resources, like thread descriptors/handles, don't forget to call it ).
-	public partial struct Thread {
+	public partial class Thread {
 		public bool IsCurrent { get { return _implIsCurrent(); } }
-		public static Thread CurrentThread { get { return _implCurrentThread(); } }
+
+		[ThreadStatic]
+		public static Thread CurrentThread = _implCurrentThread();
 
 		public void Join() { _implJoin(); }
 

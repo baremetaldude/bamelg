@@ -67,7 +67,7 @@ namespace Example {
 			var th = Thread.Start( SecondThread );
 			th.Join();
 
-			var th2 = Thread.Start<string>( ThirdThread, "third thread" );
+			var th2 = Thread.Start( DPC.Create<string>( ThirdThread, "third thread" ) );
 			th2.Join();
 
 			Console.WriteLine( "==== bye-bye ====" );

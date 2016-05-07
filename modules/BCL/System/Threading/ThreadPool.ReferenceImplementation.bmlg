@@ -110,13 +110,14 @@ namespace System.Threading {
 
 			private class WorkerInfo {
 				internal declaringtype* _parent;
+				internal Thread _thread;
 
 				public WorkerInfo( declaringtype* parent ) {
 					_parent = parent;
 				}
 
 				public void Start() {
-					Thread.Start( DPC.Create<thistype>( Run, this ) );
+					_thread = Thread.Start( DPC.Create<thistype>( Run, this ) );
 				}
 
 				private void Run() {
@@ -126,9 +127,8 @@ namespace System.Threading {
 
 					TraceFinished();
 
-					using( _parent->_completedLock.LockRegion() ) {
-						_parent->_completedList.Add( Thread.CurrentThread );
-					}
+					using( _parent->_completedLock.LockRegion() )
+						_parent->_completedList.Add( _thread );
 
 					_parent->_workerCompleted.Post();
 				}

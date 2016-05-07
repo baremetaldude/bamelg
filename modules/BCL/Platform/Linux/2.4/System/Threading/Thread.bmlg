@@ -7,65 +7,48 @@
 using Platform.Libc;
 
 namespace System.Threading {
-	public partial struct Thread {
-		private pthread_t _nativeThread;
+	public partial class Thread : IFormattable {
+		public pthread_t _nativeThread;
+		public bool DetachOnExit { get; set; } = false;
+		public bool JoinOnExit { get; set; } = false;
 
 		private bool _implIsCurrent() { return _nativeThread.IsCurrent; }
 
+		internal Thread() {
+		}
+
+		~Thread() {
+			if( !_nativeThread.IsValid ) return;
+
+			if( DetachOnExit ) _nativeThread.Detach();
+			else if( JoinOnExit ) _nativeThread.Join();
+		}
+
 		private static Thread _implStart( Functors.Action action ) {
 			var thread = new pthread_t( action );
-			return new Thread { _nativeThread = thread };
+			return new Thread() { _nativeThread = thread, DetachOnExit = true };
 		}
 
 		private static Thread _implStart( Delegates.Action action ) {
 			var thread = new pthread_t( action );
-			return new Thread { _nativeThread = thread };
+			return new Thread() { _nativeThread = thread, DetachOnExit = true };
 		}
 
-		private static Thread _implStart<T>( Functors.Action<T> action, T& data ) {
-			var startInfo = heapalloc Tuple<Functors.Action<T>, T> {
-				Item1 = action,
-				Item2 = data
-			};
-
-			var thread = new pthread_t( data => {
-				var startInfoPtr = ( Tuple<Functors.Action<T>, T>* ) data;
-				var startInfoCopy = *startInfoPtr;
-				heapfree startInfoPtr;
-
-				startInfoCopy.Item1( startInfoCopy.Item2 );
-
-				return null;
-			}, startInfo );
-
-			return new Thread { _nativeThread = thread };
+		private static Thread _implStart( DPC* action ) {
+			var thread = new pthread_t( action );
+			return new Thread() { _nativeThread = thread, DetachOnExit = true };
 		}
 
-		private static Thread _implStart<T>( Delegates.Action<T> action, T& data ) {
-			var startInfo = heapalloc Tuple<Delegates.Action<T>, T> {
-				Item1 = action,
-				Item2 = data
-			};
+		private static Thread _implCurrentThread() { return new Thread() { _nativeThread = pthread_t.CurrentThread }; }
 
-			var thread = new pthread_t( data => {
-				var startInfoPtr = ( Tuple<Delegates.Action<T>, T>* ) data;
-				var startInfoCopy = *startInfoPtr;
-				heapfree startInfoPtr;
-
-				startInfoCopy.Item1( startInfoCopy.Item2 );
-
-				return null;
-			}, startInfo );
-
-			return new Thread { _nativeThread = thread };
-		}
-
-		private static Thread _implCurrentThread() { return new Thread { _nativeThread = pthread_t.CurrentThread }; }
 
 		private static void _implSleep( int milliseconds ) { pthread_t.Sleep( milliseconds ); }
 
 		private static void _implYield() { pthread_t.Yield(); }
 
-		private void _implJoin() { _nativeThread.Join(); }
+		private void _implJoin() { _nativeThread.Join(); _nativeThread = pthread_t.Invalid; }
+		void IFormattable.ToString( StringBuilder builder, string format ) {
+			builder.Append( _nativeThread );
+		}
 	}
 }

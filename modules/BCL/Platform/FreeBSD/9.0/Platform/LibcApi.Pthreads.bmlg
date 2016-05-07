@@ -30,6 +30,10 @@ namespace Platform.Libc {
 			}, bitcast<void*>( start ) ) );
 		}
 
+		public pthread_t( System.Threading.DPC* start, pthread_attr_t& attrs = nullref ) {
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, data => { System.Threading.DPC.RunAndDispose( bitcast<System.Threading.DPC*>( data ) ); return null; }, start ) );
+		}
+
 		public pthread_t( System.Functors.Func<void*, void*> start, void* parameter = null, pthread_attr_t& attrs = nullref ) {
 			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, start, parameter ) );
 		}

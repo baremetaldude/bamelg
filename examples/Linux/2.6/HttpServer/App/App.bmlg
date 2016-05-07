@@ -19,28 +19,41 @@ namespace Example {
 		public class CustomHttpServer : HttpServer {
 			public CustomHttpServer() {
 			}
+		
+			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+				return new SessionHandler( this, stream );
+			}
 
-			protected override RequestHandler CreateHandler( SessionHandler session ) {
-				switch( session.Resource ) {
-					case "/stat.json": return new HttpStatisticPageHandler( session );
-					case "/stat.txt": return new HttpStatisticTextPageHandler( session );
+			public class SessionHandler : basetype.SessionHandler {
+				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+				public new declaringtype Server; // override field type
 
-					case "/":
-					case "/index.html":
-					case "/Default.aspx":
-						return new TestPageHandler( session );
-
-					case "/time.event":
-						return new TimeEventHandler( session );
-
-					case "/hello.aspx":
-						return new HelloWorldPageHandler( session );
-
-					case "/favicon.ico": return new EmbeddedResourceHandler( session, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
-					case "/time.html": return new EmbeddedResourceHandler( session, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
+				public SessionHandler( declaringtype parent, IStream stream )
+					: base( parent, stream ) {
 				}
 
-				return null;
+				protected override RequestHandler CreateHandler() {
+					switch( Resource ) {
+						case "/stat.json": return new HttpStatisticPageHandler( this );
+						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
+
+						case "/":
+						case "/index.html":
+						case "/Default.aspx":
+							return new TestPageHandler( this );
+
+						case "/time.event":
+							return new TimeEventHandler( this );
+
+						case "/hello.aspx":
+							return new HelloWorldPageHandler( this );
+
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
+					}
+
+					return null;
+				}
 			}
 
 			public class HelloWorldPageHandler : PageHandler {

@@ -38,7 +38,8 @@ namespace Platform.IO {
 			else _handle = FileHandle.Invalid;
 		}
 
-		private PlatformErrorAction OnLastError( SystemError errorCode ) { return ErrorHandler.OnError( Context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
 
 		public int Read( void* buffer, int length ) {
 			if( !_handle.IsValid || length == 0 || buffer == null ) return 0;
@@ -50,7 +51,7 @@ namespace Platform.IO {
 			restart_Read:
 				var error = _handle.Read( _timeout, data, length, transmitted );
 				if( error != SystemError.None ) {
-					if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Read;
+					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
 					break;
 				}
 
@@ -71,7 +72,7 @@ namespace Platform.IO {
 		restart_Read:
 			var error = _handle.Read( _timeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Read;
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
 				return totalReaden;
 			}
 
@@ -84,7 +85,7 @@ namespace Platform.IO {
 		restart_Write:
 			var error = _handle.Write( _timeout, buffer, length );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Write;
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
 				return;
 			}
 		}
@@ -96,7 +97,7 @@ namespace Platform.IO {
 		restart_Write:
 			var error = _handle.Write( _timeout, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Write;
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
 				return;
 			}
 		}
@@ -126,7 +127,7 @@ namespace Platform.IO {
 		restart_Open:
 			var error = IOHandle.Open( handle, name, FctlValue.O_RDONLY, 0 );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
 			}
 
@@ -143,7 +144,7 @@ namespace Platform.IO {
 		restart_Open:
 			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_TRUNC, permission );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
 			}
 
@@ -162,7 +163,7 @@ namespace Platform.IO {
 		restart_Open:
 			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_APPEND, permission );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
 			}
 
@@ -183,7 +184,7 @@ namespace Platform.IO {
 		restart_Seek:
 			var error = _handle.Seek( value, seekOrigin, result );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Seek;
+				if( OnLastError( "Seek", error ) == PlatformErrorAction.Restart ) goto restart_Seek;
 				return -1;
 			}
 

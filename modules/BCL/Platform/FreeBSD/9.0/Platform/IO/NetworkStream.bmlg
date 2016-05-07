@@ -6,6 +6,7 @@
 
 using System;
 using System.IO;
+using System.Net;
 
 using Platform.Kernel;
 using Platform.Libc;
@@ -22,10 +23,15 @@ namespace Platform.IO {
 		private IOHandleNonBlocking _handle = IOHandleNonBlocking.Invalid;
 		public IOHandleNonBlocking Handle {
 			get { return _handle; }
-			set { Close(); _handle = value; }
+			set {
+				if( _handle == value ) return;
+
+				Close();
+				_handle = value;
+			}
 		}
 
-		public bool CloseHandle = true;
+		public bool CloseHandle { get; set; } = true;
 		public string Context;
 
 		public NetworkStream() {
@@ -44,7 +50,66 @@ namespace Platform.IO {
 			else _handle = IOHandleNonBlocking.Invalid;
 		}
 
-		private PlatformErrorAction OnLastError( SystemError errorCode ) { return ErrorHandler.OnError( Context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
+
+		public bool Connect( IPv4Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET ) );
+
+		restart_Connect:
+			var status = socket.Connect( endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
+			}
+
+			socket.ImmediateDelivery = true;
+			return true;
+		}
+
+		public bool Connect( IPv6Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET6 ) );
+
+		restart_Connect:
+			var status = socket.Connect( endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
+			}
+
+			socket.ImmediateDelivery = true;
+			return true;
+		}
+
+		public bool Bind( IPv4Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET ) );
+			var nativeEndpoint = ( sockaddr_in ) endpoint;
+
+		restart_Bind:
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+
+			if( !status ) {
+				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;
+				return false;
+			}
+
+			return true;
+		}
+
+		public bool Bind( IPv6Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET6 ) );
+			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
+
+		restart_Bind:
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+
+			if( !status ) {
+				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;
+				return false;
+			}
+
+			return true;
+		}
 
 		public int Read( void* buffer, int count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
@@ -55,7 +120,7 @@ namespace Platform.IO {
 		restart_Receive:
 			var error = _handle.Read( _timeout, data, count, transmitted );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return transmitted;
 			}
 
@@ -68,7 +133,7 @@ namespace Platform.IO {
 		restart_Send:
 			var error = _handle.Write( _timeout, buffer, count );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
 				return;
 			}
 		}
@@ -80,7 +145,7 @@ namespace Platform.IO {
 		restart_Receive:
 			var error = _handle.Read( _timeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return totalReaden;
 			}
 
@@ -93,7 +158,7 @@ namespace Platform.IO {
 		restart_Send:
 			var error = _handle.Write( _timeout, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
-				if( OnLastError( error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
 				return;
 			}
 		}
