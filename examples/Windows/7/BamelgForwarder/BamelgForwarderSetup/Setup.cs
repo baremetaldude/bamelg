@@ -49,8 +49,9 @@ namespace BamelgForwarderSetup {
 			_connections.Items.Clear();
 
 			var connectors = await _client.GetConnectors();
-			foreach( var connector in connectors )
-				_connections.Items.Add( connector );
+			if( connectors != null )
+				foreach( var connector in connectors )
+					_connections.Items.Add( connector );
 		}
 
 		private async void _trace_Click( object sender, EventArgs e ) {
