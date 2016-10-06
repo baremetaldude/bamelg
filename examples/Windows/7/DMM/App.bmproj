@@ -12,7 +12,7 @@
     <ProjectGuid>{E25C41BB-A263-429c-A364-D6F07D9BF919}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>HelloWorld</AssemblyName>
+    <AssemblyName>DMM</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
     <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
@@ -55,7 +55,7 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
     <BuildType>Distribution</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>4</OptimizationLevel>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
@@ -70,6 +70,7 @@
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
+    <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="%24%28ModulesFolder%29\" />
@@ -116,6 +117,7 @@
     <Folder Include="%24%28ModulesFolder%29\BCL\System\Xml\Serialization\" />
     <Folder Include="App.Config\" />
     <Folder Include="App\" />
+    <Folder Include="Resources\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->

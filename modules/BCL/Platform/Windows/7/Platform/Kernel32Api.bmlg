@@ -637,6 +637,11 @@ namespace Platform {
 		[BackendSymbol( Name = "GetEnvironmentVariableW" )]
 		public extern static uint GetEnvironmentVariable( CUtf16String name, char* buffer, uint size );
 
+		[BackendSymbol( Name = "SetEnvironmentVariableA" )]
+		public extern static Boolean32 SetEnvironmentVariable( CString name, CString value );
+		[BackendSymbol( Name = "SetEnvironmentVariableW" )]
+		public extern static Boolean32 SetEnvironmentVariable( CUtf16String name, CUtf16String value );
+
 		public extern static Boolean32 GetProcessHandleCount( ProcessHandle process, uint& handleCount );
 		public extern static Boolean32 GetProcessIoCounters( ProcessHandle process, [Out] IO_COUNTERS& ioCounters );
 		[BackendSymbol( Name = "GetStartupInfoA" )]
@@ -1016,7 +1021,7 @@ namespace Platform {
 		public SystemErrorCode Read( void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeSpan.Zero, this, buffer, count, total ); }
 	}
 
-	public struct FileHandle : IOHandle {		
+	public struct FileHandle : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( uintptr.MaxValue ); } }
 		public static new thistype Null { get { return bitcast<thistype>( ( uintptr ) 0 ); } }
 
@@ -1029,7 +1034,7 @@ namespace Platform {
 			return Kernel32Api.DeleteFile( path );
 		}
 	}
-	
+
 	public struct IoCompletionPortHandle : HANDLE {
 	}
 

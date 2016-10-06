@@ -54,22 +54,88 @@ namespace Platform {
 		public extern static NtStatus RtlUTF8ToUnicodeN( char* unicodeStringDestination, uint unicodeStringMaxWCharCount, uint& unicodeStringActualWCharCount, CUtf8String UTF8StringSource, uint UTF8StringByteCount );
 		/// @}
 
-		/// @{ undocumented port api
+		/// @{ undocumented LPC api
 		/// See http://www.rsdn.ru/article/baseserv/lpc.xml
-		public extern static NtStatus NtCreatePort( [Out] PortHandle& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
-		public extern static NtStatus NtCreateWaitablePort( [Out] PortHandle& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
+		public extern static NtStatus NtCreatePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
+		public extern static NtStatus NtCreateWaitablePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
 
-		public extern static NtStatus NtReplyWaitReceivePort( PortHandle portHandle, void*& portContext, LPC_MESSAGE_HEADER* reply, LPC_MESSAGE_HEADER* incomingRequest );
-		public extern static NtStatus NtAcceptConnectPort( [Out] PortHandle& serverPortHandle, void* portContext, LPC_MESSAGE_HEADER* connectionMsg, bool acceptConnection, LPC_SECTION_OWNER_MEMORY& serverSharedMemory, [Out] LPC_SECTION_MEMORY& clientSharedMemory );
-		public extern static NtStatus NtCompleteConnectPort( PortHandle portHandle );
-		public extern static NtStatus NtReplyPort( PortHandle portHandle, LPC_MESSAGE_HEADER& reply );
-		public extern static NtStatus NtConnectPort( [Out] PortHandle& clientPortHandle, UNICODE_STRING& serverPortName, SECURITY_QUALITY_OF_SERVICE& securityQos, LPC_SECTION_OWNER_MEMORY& clientSharedMemory, [Out] LPC_SECTION_MEMORY& serverSharedMemory, [Out] uint& maximumMessageLength, void* connectionInfo, uint& connectionInfoLength );
-		public extern static NtStatus NtRequestPort( PortHandle portHandle, LPC_MESSAGE_HEADER* request );
-		public extern static NtStatus NtRequestWaitReplyPort( PortHandle portHandle, LPC_MESSAGE_HEADER* request, [Out] LPC_MESSAGE_HEADER* incomingReply );
-		public extern static NtStatus NtListenPort( PortHandle portHandle, LPC_MESSAGE_HEADER* connectionRequest );
-		public extern static NtStatus NtImpersonateClientOfPort( PortHandle portHandle, LPC_MESSAGE_HEADER* request );
-		// public extern static NtStatus  NtQueryInformationPort( PortHandle portHandle, PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length, uint& resultLength );
+		public extern static NtStatus NtReplyWaitReceivePort( PortHandleLpc portHandle, void*& portContext, LPC_MESSAGE_HEADER* reply, LPC_MESSAGE_HEADER* incomingRequest );
+		public extern static NtStatus NtAcceptConnectPort( [Out] PortHandleLpc& serverPortHandle, void* portContext, LPC_MESSAGE_HEADER* connectionMsg, bool acceptConnection, LPC_SECTION_OWNER_MEMORY& serverSharedMemory, [Out] LPC_SECTION_MEMORY& clientSharedMemory );
+		public extern static NtStatus NtCompleteConnectPort( PortHandleLpc portHandle );
+		public extern static NtStatus NtReplyPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER& reply );
+		public extern static NtStatus NtConnectPort( [Out] PortHandleLpc& clientPortHandle, UNICODE_STRING& serverPortName, SECURITY_QUALITY_OF_SERVICE& securityQos, LPC_SECTION_OWNER_MEMORY& clientSharedMemory, [Out] LPC_SECTION_MEMORY& serverSharedMemory, [Out] uint& maximumMessageLength, void* connectionInfo, uint& connectionInfoLength );
+		public extern static NtStatus NtRequestPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* request );
+		public extern static NtStatus NtRequestWaitReplyPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* request, [Out] LPC_MESSAGE_HEADER* incomingReply );
+		public extern static NtStatus NtListenPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* connectionRequest );
+		public extern static NtStatus NtImpersonateClientOfPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* request );
+		// public extern static NtStatus  NtQueryInformationPort( PortHandleLpc portHandle, PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length, uint& resultLength );
 		/// @}
+
+		/// @{ ALPC api
+		public extern static uint AlpcMaxAllowedMessageLength();
+		public extern static uint AlpcGetHeaderSize( uint flags );
+
+		public extern static NtStatus NtAlpcCreatePort( PortHandleAlpc* portHandle, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes );
+		// public extern static NtStatus NtAlpcDisconnectPort( PortHandleAlpc portHandle, uint flags );
+		// public extern static NtStatus NtAlpcQueryInformation( PortHandleAlpc portHandle, ALPC_PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length, uint* returnLength );
+		// public extern static NtStatus NtAlpcSetInformation( PortHandleAlpc portHandle, ALPC_PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length );
+		// public extern static NtStatus NtAlpcSendWaitReceivePort( PortHandleAlpc portHandle, uint sendFlags, LPC_MESSAGE* sendMessage, void* inMessageBuffer,LPC_MESSAGE* receiveBuffer,ulong* ReceiveBufferSize, void* outMessageBuffer, long* timeout );
+		// public extern static NtStatus NtAlpcConnectPort( PortHandleAlpc* PortHandle, UNICODE_STRING* portName, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes, uint flags, SID* requiredServerSid, PORT_MESSAGE* connectionMessage, uint* bufferLength, ALPC_MESSAGE_ATTRIBUTES* outMessageAttributes, ALPC_MESSAGE_ATTRIBUTES* inMessageAttributes, long* timeout  );
+		// public extern static NtStatus NtAlpcAcceptConnectPort( [Out] PortHandleAlpc* PortHandle, HANDLE connectionPortHandle, uint flags, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes, void* portContext, PORT_MESSAGE* connectionRequest, ALPC_MESSAGE_ATTRIBUTES* connectionMessageAttributes, bool acceptConnection );
+		// public extern static NtStatus NtAlpcCancelMessage( PortHandleAlpc PortHandle, uint flags, ALPC_CONTEXT_ATTR* messageContext );
+		// public extern static NtStatus NtAlpcImpersonateClientOfPort( PortHandleAlpc PortHandle, PORT_MESSAGE* portMessage, void* reserved );
+		// public extern static NtStatus NtAlpcOpenSenderProcess( ProcessHandle* processHandle, PortHandleAlpc portHandle, PORT_MESSAGE* portMessage, uint flags, ProcessAccessRights desiredAccess, OBJECT_ATTRIBUTES* objectAttributes );
+		// public extern static NtStatus NtAlpcOpenSenderThread( ThreadHandle* threadHandle, PortHandleAlpc portHandle, PORT_MESSAGE* portMessage, uint flags, ThreadAccessRights desiredAccess, OBJECT_ATTRIBUTES* objectAttributes );
+
+		// public extern static NtStatus AlpcInitializeMessageAttribute( uint attributeFlags, ALPC_MESSAGE_ATTRIBUTES* buffer, uint bufferSize, uint* requiredBufferSize );
+		// public extern static void* AlpcGetMessageAttribute( ALPC_MESSAGE_ATTRIBUTES* buffer, uint attributeFlag );
+		// public extern static NtStatus AlpcRegisterCompletionList( PortHandleAlpc portHandle, ALPC_COMPLETION_LIST_HEADER* buffer, uint size, uint concurrencyCount, uint attributeFlags  );
+		// public extern static NtStatus AlpcUnregisterCompletionList( PortHandleAlpc portHandle );
+		// public extern static NtStatus AlpcRundownCompletionList( PortHandleAlpc portHandle );
+		// public extern static NtStatus AlpcAdjustCompletionListConcurrencyCount( PortHandleAlpc portHandle, uint concurrencyCount );
+		
+		// public extern static bool AlpcRegisterCompletionListWorkerThread( void* completionList );
+		// public extern static bool AlpcUnregisterCompletionListWorkerThread( void* completionList );
+		// public extern static void AlpcGetCompletionListLastMessageInformation( void* completionList, uint* lastMessageId, uint* lastCallbackId );
+		// public extern static uint AlpcGetOutstandingCompletionListMessageCount( void* completionList );
+		// public extern static PORT_MESSAGE* AlpcGetMessageFromCompletionList( void* completionList, ALPC_MESSAGE_ATTRIBUTES **messageAttributes );
+		// public extern static void AlpcFreeCompletionListMessage( void* completionList, PORT_MESSAGE *message );
+		// public extern static ALPC_MESSAGE_ATTRIBUTES* AlpcGetCompletionListMessageAttributes(  void* completionList, PORT_MESSAGE* message );
+
+		// public extern static NtStatus NtAlpcCreatePortSection( PortHandleAlpc portHandle, uint flags, HANDLE sectionHandle, uintptr sectionSize, ALPC_HANDLE* alpcSectionHandle, uintptr* actualSectionSize );
+		// public extern static NtStatus NtAlpcDeletePortSection( PortHandleAlpc portHandle, uint flags, ALPC_HANDLE sectionHandle );
+		// public extern static NtStatus NtAlpcCreateResourceReserve( PortHandleAlpc portHandle, uint flags, uintptr MessageSize, ALPC_HANDLE* resourceId );
+		// public extern static NtStatus NtAlpcDeleteResourceReserve( PortHandleAlpc portHandle, uint flags, ALPC_HANDLE resourceId );
+		// public extern static NtStatus NtAlpcCreateSectionView( PortHandleAlpc portHandle, uint flags, ALPC_DATA_VIEW_ATTR* viewAttributes );
+		// public extern static NtStatus NtAlpcDeleteSectionView( PortHandleAlpc portHandle, uint flags, void* viewBase );
+		/// @}
+
+		public static void Assert( NtStatus condition, [In] CallerContext& callercontext = nullref ) {
+			if( condition ) return;
+
+			Console.Write( "Assertion failed: " );
+			Console.Write( callercontext.Expression );
+			Console.Write( " NtStatus: " );
+			Console.Write( condition );
+			Console.Write( " at line " );
+			Console.Write( callercontext.Row );
+
+			Assert.PrintContextInfo( callercontext );
+			Console.WriteLine();
+		}
+	}
+
+	public partial struct UNICODE_STRING {
+		// result valid only while 'value' alive
+		public static implicit operator UNICODE_STRING( string value ) {
+			Assert.IsTrue( value.Length < 32768 );
+
+			return new UNICODE_STRING {
+				Length = ( ushort )( value.Length * sizeof( char ) ),
+				MaximumLength = ( ushort )( value.Length * sizeof( char ) ),
+				Buffer = value
+			};
+		}
 	}
 
 	public partial struct _TEB {
@@ -160,12 +226,25 @@ namespace Platform {
 	}
 
 	public struct PORT_CONTEXT {
-		public PortHandle ReplyPort;
+		public PortHandleLpc ReplyPort;
 		public CString ClientLogin;
 		public void* ClientAuthorizationAttributes;
 	}
 
-	public struct PortHandle : HANDLE {
+	// internally implemented via ALPC
+	public struct PortHandleLpc : HANDLE {
+	}
+	
+	public struct PortHandleAlpc : HANDLE {
+		public PortHandleAlpc( int maxMessageLength = 256 ) {
+			var objectAttributes = default( OBJECT_ATTRIBUTES );
+			objectAttributes.Length = sizeof( objectAttributes );
+			// objectAttributes.Length = sizeof(attributes);
+
+			var portAttributes = default( ALPC_PORT_ATTRIBUTES );
+			portAttributes.MaxMessageLength = ( uint ) maxMessageLength;
+			NtApi.NtAlpcCreatePort( &this, &objectAttributes, &portAttributes );
+		}
 	}
 
 	[Throwable]
@@ -181,6 +260,20 @@ namespace Platform {
 
 			builder.Append( " }" );
 		}
+	}
+
+	[StructLayoutSequential]
+	public struct ALPC_PORT_ATTRIBUTES {
+		public uint Flags;
+		public SECURITY_QUALITY_OF_SERVICE SecurityQos;
+		public uintptr MaxMessageLength;
+		public uintptr MemoryBandwidth;
+		public uintptr MaxPoolUsage;
+		public uintptr MaxSectionSize;
+		public uintptr MaxViewSize;
+		public uintptr MaxTotalSectionSize;
+		public uint DupObjectTypes;
+		public uint Reserved;
 	}
 
 	/// See http://www.microsoft.com/msj/0197/exception/exception.aspx

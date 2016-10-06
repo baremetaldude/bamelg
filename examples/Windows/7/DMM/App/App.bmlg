@@ -1,0 +1,279 @@
+﻿//
+// Created by %USERNAME%
+//
+
+using System;
+using System.IO;
+using System.Net;
+using System.Web;
+
+using Platform;
+using Platform.IO;
+
+namespace Example {
+	public partial class App {
+		public class CustomHttpServer : HttpServer {
+			public CustomHttpServer() {
+			}
+
+			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+				return new SessionHandler( this, stream );
+			}
+
+			public class SessionHandler : basetype.SessionHandler {
+				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+				public new declaringtype Server; // override field type
+
+				public SessionHandler( declaringtype parent, IStream stream )
+					: base( parent, stream ) {
+				}
+
+				protected override RequestHandler CreateHandler() {
+					switch( Resource ) {
+						case "/stat.json": return new HttpStatisticPageHandler( this );
+						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
+
+						case "/":
+						case "/index.html":
+						case "/Default.aspx":
+							return new TestPageHandler( this );
+
+						case "/time.event":
+							return new TimeEventHandler( this );
+
+						case "/hello.aspx":
+							return new HelloWorldPageHandler( this );
+
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
+					}
+
+					return null;
+				}
+			}
+
+			public class HelloWorldPageHandler : PageHandler {
+				public HelloWorldPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.Append( "hello, world!" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+				}
+			}
+
+			public class TimeEventHandler : PageHandler {
+				public TimeEventHandler( SessionHandler session )
+					: base( session ) {
+					MediaType = System.Net.Mime.MediaTypeNames.Text.EventStream;
+					TextEncodingKind = System.Text.TextEncodingKind.Utf8;
+				}
+
+				public override void OnRender() {
+					var delay = TimeSpan.FromSeconds( 1 );
+					Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+
+					Response.Append( "retry: 0\n" );
+					Response.Append( "data: " ); Response.Append( Fiber.UtcNow.ToUnixMilliseconds() );
+
+					Response.Append( "\n\n" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+
+					HttpFormatter.HeaderAccessControl( Headers, "allow" );
+					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
+				}
+			}
+
+			public class TestPageHandler : PageHandler {
+				public TestPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					var server = ( CustomHttpServer ) Session.Server;
+					var time = Fiber.Now;
+
+					Response.Append( "<html>" );
+					{
+						Response.Append( "<head>" );
+						{
+							Response.Append( @"<title>UT61E DMM</title>" );
+						}
+						Response.Append( "</head>" );
+
+						Response.Append( "<body>" );
+						{
+							Response.AppendFormat( "<p></p>", time, server.ValidRequestCount );
+						}
+						Response.Append( "</body>" );
+					}
+					Response.Append( "</html>" );
+				}
+			}
+		}
+
+		public const int TcpConnectionPort = 8080;
+		public const Utf8String NamedPipeConnectionPath = @"\\.\pipe\BamelgDmmServer";
+
+		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
+
+
+		[EntryPoint]
+		private static void Main() {
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchConsoleQuit();
+
+			// var server = new CustomHttpServer();
+
+			// eventLoop.BeginInvoke( () => {
+			// 	Fiber.Start( 16, () => {
+			// 		var tcpListen = false;
+			// 		var tcpListenReported = false;
+
+			// 		var pipeListen = false;
+			// 		var pipeListenReported = false;
+
+			// 		while( true ) {
+			// 			if( !tcpListen ) {
+			// 				tcpListen = server.Listen( TcpConnectionPort );
+
+			// 				if( tcpListen )
+			// 					Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
+			// 				else if( !tcpListenReported ) {
+			// 					Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
+			// 					tcpListenReported = true;
+			// 				}
+			// 			}
+
+			// 			if( !pipeListen ) {
+			// 				pipeListen = server.Listen( NamedPipeConnectionPath );
+
+			// 				if( pipeListen )
+			// 					Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
+			// 				else if( !pipeListenReported ) {
+			// 					Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
+			// 					pipeListenReported = true;
+			// 				}
+			// 			}
+
+			// 			var all = true;
+
+			// 			all &= tcpListen;
+			// 			all &= pipeListen;
+
+			// 			if( !all ) {
+			// 				using( Fiber.CancellationRegion() ) {
+			// 					Fiber.Sleep( 1000 );
+			// 					if( Fiber.IsCancelled ) return;
+			// 				}
+
+			// 				continue;
+			// 			}
+
+			// 			break;
+			// 		}
+
+			// 		PrintConnectionOptions();
+			// 	}, "resource allocator" );
+			// } );
+
+			eventLoop.BeginInvoke( () => {
+				Fiber.Start( 16, () => {
+					var SerialPortPath = @"\\.\COM1";
+
+					var fs = new Platform.IO.FileStream() {
+						// ErrorHandler = ErrorHandler
+					};
+
+					if( fs.Open( SerialPortPath, FileAccessRights.GENERIC_WRITE | FileAccessRights.GENERIC_READ, FileCreationDisposition.OPEN_EXISTING ) ) {
+						var name2 = SerialPortPath;
+						if( name2.StartsWith( @"\\.\" ) ) name2 = name2.Substring( 4 );
+
+						var dcb = new DCB() {
+							// fBinary = true,
+							// fOutxCtsFlow = true,
+							fDtrControl = DCB.DtrControl.DTR_CONTROL_ENABLE,
+							fRtsControl = DCB.RtsControl.RTS_CONTROL_DISABLE,
+							BaudRate = 19200,
+							StopBits = DCB.StopBitsValue.ONESTOPBIT,
+							fParity = true,
+							Parity = DCB.ParityScheme.ODDPARITY,
+							ByteSize = 7
+							// XonLim = 512,
+							// XoffLim = 1
+						};
+
+						if( Kernel32Api.SetCommState( fs.Handle, &dcb ) ) {
+							// if( App.Options.Trace )
+							Console.WriteLine( "Set DCB '{0}': '{1}'", name2, dcb );
+						}
+						else {
+							// if( App.Options.Trace )
+							Console.WriteLine( "Unable to set DCB for '{0}': '{1}'", name2, dcb );
+						}
+
+						// if( !Kernel32Api.GetCommState( fs.Handle, &dcb ) )
+						//	if( App.Options.Trace )
+						Console.WriteLine( "Unable to get DCB for '{0}'", name2 );
+
+						// if( App.Options.Trace ) {
+						using( Console.AttributedRegion( RgbColor.Yellow ) )
+							Console.WriteLine( "Active DCB for '{0}': '{1}'", name2, dcb );
+						// }
+
+						var timeouts = new COMMTIMEOUTS {
+							ReadIntervalTimeout = 10,
+							ReadTotalTimeoutMultiplier = 0,
+							ReadTotalTimeoutConstant = 0,
+
+							WriteTotalTimeoutMultiplier = 0,
+							WriteTotalTimeoutConstant = 0
+						};
+
+						if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
+							// if( App.Options.Trace )
+							Console.WriteLine( "Unable to set timeouts for '{0}'", name2 );
+
+						var bufferedStream = new BufferedStream.ReadStream( fs, 32 );
+						var dmm = new Dmm.UT61E.Parser();
+
+						var requestBuffer = bufferedStream.BufferInfo;
+						for( ; ; ) {
+							using( Fiber.CancellationRegion() ) {
+								bufferedStream.Flush( FlushKind.Read );
+								// Console.WriteLine( "requestBuffer->AvailableToRead={0}", requestBuffer->AvailableToRead );
+								if( Fiber.IsCancelled ) return;
+							}
+
+							var result = dmm.Parse( requestBuffer->Start, requestBuffer->AvailableToRead );
+							if( result ) {
+								Console.WriteLine( "parser: {0}", dmm );
+							}
+							else
+								Console.WriteLine( "parser error: {0}", result );
+
+							bufferedStream.Drain( dmm.SkipBytes );
+						}
+					}
+				}, "serial listener" );
+			} );
+
+			eventLoop.Dispatch();
+		}
+
+		static void PrintConnectionOptions() {
+			Console.WriteLine( "@{ Possible connection URLs:" );
+			Console.WriteLine( "\thttp://127.0.0.1:{0}", TcpConnectionPort );
+			Console.WriteLine( "\thttp://localhost:{0}", TcpConnectionPort );
+			Console.WriteLine( "\t{0}", NamedPipeConnectionPath );
+			Console.WriteLine( "@}" );
+		}
+	}
+}

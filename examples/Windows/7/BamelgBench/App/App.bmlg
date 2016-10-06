@@ -4,6 +4,7 @@
 
 using System;
 using System.Diagnostics;
+using System.Text;
 using System.Xml;
 
 using Platform;
@@ -11,7 +12,7 @@ using Platform;
 namespace BamelgBench {
 	public partial class App {
 		private static ExitCodes Worker() {
-			if( Environment.CommandLine.Length <= 2 ) return ExitCodes.NotEnoughMinerals;
+			if( Environment.CommandLine.Length < 2 ) return ExitCodes.NotEnoughMinerals;
 
 			// for( var i = 0; i < Environment.CommandLine.Length; ++i ) Console.WriteLine( "[{0}]='{1}'", i, Environment.CommandLine[i] );
 			var commandLineBuilder = new CommandLineBuilder();
@@ -60,9 +61,9 @@ namespace BamelgBench {
 					using( writer.Tag( "KernelTimeReadable" ) ) writer.Write( kernelTime );
 					using( writer.Tag( "UserTimeReadable" ) ) writer.Write( userTime );
 					using( writer.Tag( "TotalTimeReadable" ) ) writer.Write( totalTime );
-					
+
 					using( writer.Tag( "ExitCode" ) ) writer.Write( exitCode );
-					
+
 					using( writer.Tag( "CreationTime" ) ) writer.Write( creationTime.Ticks );
 					using( writer.Tag( "ExitTime" ) ) writer.Write( exitTime.Ticks );
 					using( writer.Tag( "KernelTime" ) ) writer.Write( kernelTime.Ticks );
@@ -71,14 +72,19 @@ namespace BamelgBench {
 
 					using( writer.Tag( "ProcessCycles" ) ) writer.Write( processCycles );
 					using( writer.Tag( "MainThreadCycles" ) ) writer.Write( mainThreadCycles );
-					
+
 					using( writer.Tag( "PeakWorkingSetSize" ) ) writer.Write( memCounters.PeakWorkingSetSize );
 					using( writer.Tag( "PeakPagefileUsage" ) ) writer.Write( memCounters.PeakPagefileUsage );
 					using( writer.Tag( "PageFaultCount" ) ) writer.Write( memCounters.PageFaultCount );
 				}
 			}
 
-			Console.WriteLine( builder );
+			var outputPath = Environment.GetEnvironmentVariable( "BB_OUTPUT_PATH" );
+			if( !outputPath.IsNullOrEmpty )
+				System.IO.File.WriteAllText( ( string ) outputPath, builder );
+			else
+				Console.WriteLine( builder );
+
 			return ExitCodes.OK;
 		}
 
@@ -98,7 +104,14 @@ namespace BamelgBench {
 
 			if( code != 0 ) {
 				switch( code ) {
-					case ExitCodes.NotEnoughMinerals: Console.WriteLine( "Not enough minerals!" ); break;
+					case ExitCodes.NotEnoughMinerals:
+						Console.WriteLine( "Created by Eugeny Grishul. More info at http://bamelg.com" );
+						Console.WriteLine( "Usage:" );
+						Console.WriteLine( @"  bamelgbench.exe TestApp.exe parameter1 ""par ame ter2""" );
+						Console.WriteLine( "Environment variables:" );
+						Console.WriteLine( "  BB_OUTPUT_PATH=FileName.ext output to file instead of stdout" );
+						break;
+
 					case ExitCodes.UnableToCreateProcess: Console.WriteLine( "Unable to create process" ); break;
 					case ExitCodes.UnableToReadProcessInfo: Console.WriteLine( "Unable to read process info" ); break;
 					case ExitCodes.UnableToReadThreadInfo: Console.WriteLine( "Unable to read thread info" ); break;

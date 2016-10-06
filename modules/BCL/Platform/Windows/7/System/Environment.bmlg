@@ -14,10 +14,19 @@ namespace System {
 		}
 
 		public static void SetEnvironmentVariable( Utf8String variable, Utf8String value ) {
+			Kernel32Api.SetEnvironmentVariable( ( string ) variable, ( string ) value );
 		}
 
-		public static CUtf8String GetEnvironmentVariable( Utf8String variable ) {
-			return "";
+		public static Utf8String GetEnvironmentVariable( Utf8String variable ) {
+			var variable16 = ( string ) variable;
+
+		restart:
+			var length = Kernel32Api.GetEnvironmentVariable( variable16, null, 0U );
+			var value = new string.Builder( length );
+			var newLength = Kernel32Api.GetEnvironmentVariable( variable16, value.GetChars(), length );
+			if( newLength > length ) goto restart;
+
+			return ( Utf8String ) value.Detach();
 		}
 
 		public static int ExitCode = 0;

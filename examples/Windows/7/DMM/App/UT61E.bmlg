@@ -1,0 +1,200 @@
+//
+// Created by %USERNAME%
+//
+// See details at https://www-user.tu-chemnitz.de/~heha/hs/UNI-T/UT61E.LOG
+//
+
+using System;
+using System.IO;
+using System.Net;
+using System.Web;
+
+using Platform;
+using Platform.IO;
+
+namespace Dmm {
+	public enum ParseError {
+		[ErrorCodeSuccess]
+		None,
+		BadFormat,
+		WrongFraming,
+		NeedMoreData,
+		UnknownMeasurementMode,
+		BadValue,
+	}
+
+	namespace UT61E {
+		public enum MeasurementMode {
+			Volts,
+			MilliVolts,
+			Resistance,
+			Diode,
+			Continuity,
+			Capacitance,
+			Frequency,
+			MicroAmps,
+			MilliAmps,
+			Amps,
+			AmpsManual,
+		}
+
+		public struct Parser : IFormattable {
+			public Parser() {
+			}
+
+			public int SkipBytes = 0;
+
+			public MeasurementMode Mode = MeasurementMode.Volts;
+			public double Value = 0;
+			public bool Relative { get; set; } = false;
+			public bool LowBattery { get; set; } = false;
+			public bool Hold { get; set; } = false;
+			public bool DC { get; set; } = false;
+			public bool AC { get; set; } = false;
+			public bool AutoRange { get; set; } = false;
+			public bool Overload { get; set; } = false;
+			public bool Underload { get; set; } = false;
+			public bool Frequency { get; set; } = false;
+			public bool Duty { get; set; } = false;
+			public bool Max { get; set; } = false;
+			public bool Min { get; set; } = false;
+
+			public static readonly double[5] VoltageExponentMap = new double[5] {
+				0.0001,
+				 0.001,
+				  0.01,
+				   0.1,
+				     1
+			};
+
+			public static readonly double[7] ResistanceExponentMap = new double[7] {
+				 0.01,
+				  0.1,
+				    1,
+				   10,
+				  100,
+				 1000,
+				10000
+			};
+
+			public static readonly double[20] ExponentMap = new double[20] {
+				0.000000000001,
+				 0.00000000001,
+				  0.0000000001,
+				   0.000000001,
+				    0.00000001,
+				     0.0000001,
+				      0.000001,
+				       0.00001,
+				        0.0001,
+				         0.001,
+				          0.01,
+				           0.1,
+				             1,
+				            10,
+				           100,
+				          1000,
+				         10000,
+				        100000,
+				       1000000,
+				      10000000,
+			};
+
+			private const int ExponentBias = 12;
+
+			public ParseError Parse( byte* data, int length ) {
+				if( length < 14 ) { SkipBytes = 0; return ParseError.NeedMoreData; }
+				if( data[12] != '\r' || data[13] != '\n' ) { SkipBytes = 1; return ParseError.WrongFraming; }
+
+				SkipBytes = 14;
+
+				// Console.WriteLine( "raw data: {0}", new CStringSpan( data, ( uint ) length - 2 ) );
+				// Console.Write( "data: " );
+				// Console.Write( new CStringSpan( data, ( uint ) 6 ) );
+				// for( var i = 7; i < 12; ++i )
+				// 	Console.Write( " [{0}]={1:B8}", i, data[i] );
+				// System.Console.WriteLine();
+
+				var exponent = ( int ) data[0] - '0';
+				if( !Math.InRange( 0, exponent, 9 ) )
+					return ParseError.BadValue;
+
+				Overload = BitOperations.BitTest( data[7], ( byte ) 0 );
+				LowBattery = BitOperations.BitTest( data[7], ( byte ) 1 );
+				var negative = BitOperations.BitTest( data[7], ( byte ) 2 );
+				Duty = BitOperations.BitTest( data[7], ( byte ) 3 );
+
+				Relative = BitOperations.BitTest( data[8], ( byte ) 1 );
+
+				Min = BitOperations.BitTest( data[9], ( byte ) 1 );
+				Max = BitOperations.BitTest( data[9], ( byte ) 2 );
+				Underload = BitOperations.BitTest( data[9], ( byte ) 3 );
+
+				Frequency = BitOperations.BitTest( data[10], ( byte ) 0 );
+				AutoRange = BitOperations.BitTest( data[10], ( byte ) 1 );
+				AC = BitOperations.BitTest( data[10], ( byte ) 2 );
+				DC = BitOperations.BitTest( data[10], ( byte ) 3 );
+
+				Hold = BitOperations.BitTest( data[11], ( byte ) 1 );
+
+				switch( data[6] ) {
+					case ( byte ) '0': Mode = MeasurementMode.Amps; break;
+					case ( byte ) '1': Mode = MeasurementMode.Diode; break;
+					case ( byte ) '2': Mode = MeasurementMode.Frequency; break;
+					case ( byte ) '3': Mode = MeasurementMode.Resistance; break;
+					// case (byte)'4':Mode=MeasurementMode.Temperature;break;
+					case ( byte ) '5': Mode = MeasurementMode.Continuity; break;
+					case ( byte ) '6': Mode = MeasurementMode.Capacitance; break;
+					case ( byte ) '9': Mode = MeasurementMode.AmpsManual; break;
+					case ( byte ) ';': Mode = MeasurementMode.Volts; break;
+					case ( byte ) '=': Mode = MeasurementMode.MicroAmps; break;
+					// case (byte)' ':Mode=MeasurementMode.MicroAmps;break;
+					case ( byte ) '?': Mode = MeasurementMode.MilliAmps; break;
+
+					default: return ParseError.UnknownMeasurementMode;
+				}
+
+				int mantissa;
+
+				if( !int.TryParse( new CStringSpan( data + 1, 5 ), mantissa ) )
+					return ParseError.BadValue;
+
+				if( Mode == MeasurementMode.Volts && !AutoRange && mantissa >= 4 )
+					Mode = MeasurementMode.MilliVolts;
+
+				var bias = 0;
+
+				switch( Mode ) {
+					case MeasurementMode.Capacitance: bias = -12; break;
+
+					case MeasurementMode.MicroAmps: bias = -9; break;
+					case MeasurementMode.MilliAmps: bias = -6; break;
+					case MeasurementMode.Amps: bias = -3; break;
+
+					case MeasurementMode.MilliVolts: bias = -9; break;
+
+					case MeasurementMode.Volts: bias = -4; break;
+					case MeasurementMode.Diode: bias = -4; break;
+
+					case MeasurementMode.Resistance:
+					case MeasurementMode.Continuity:
+					case MeasurementMode.Frequency:
+						bias = -2;
+						break;
+				}
+
+				if( Duty ) Value = mantissa * ExponentMap[ExponentBias + exponent - 2];
+				else if( Frequency ) Value = mantissa * ExponentMap[ExponentBias + exponent - 2];
+				else Value = mantissa * ExponentMap[ExponentBias + exponent + bias];
+
+				if( negative ) Value = -Value;
+
+				return ParseError.None;
+			}
+
+			public void ToString( StringBuilder builder, string format ) {
+				builder.Concat( "Mode='", Mode, "' Value='", Value, "' Relative='", Relative, "' LowBattery='", LowBattery, "' Hold='", Hold, "' DC='", DC, "' AC='", AC, "' AutoRange='", AutoRange, "' Overload='", Overload, "' Underload='", Underload, "' Frequency='", Frequency, "' Duty='", Duty, "' Max='", Max, "' Min='", Min, '\'' );
+			}
+		}
+	}
+}

@@ -273,15 +273,43 @@ namespace System.IO {
 						return Fiber.FiberManager.FiberReadFile( timeout, handle, buffer, count, totalReceived );
 					}
 					else {
-						uint readen;
-						if( Kernel32Api.ReadFile( handle, buffer, ( uint ) count, readen, nullref ) ) {
-							totalReceived = ( int ) readen;
-							return SystemErrorCode.NO_ERROR;
-						}
+						// uint readen;
+						// if( Kernel32Api.ReadFile( handle, buffer, ( uint ) count, readen, nullref ) ) {
+						// 	totalReceived = ( int ) readen;
+						// 	return SystemErrorCode.NO_ERROR;
+						// }
 
-						totalReceived = ( int ) readen;
-						return Kernel32Api.LastError;
+						// totalReceived = ( int ) readen;
+						// return Kernel32Api.LastError;
+
+						var @event = default( SynchronousIOEvent );
+						var overlapped = default( OVERLAPPED );
+						overlapped.Event = bitcast<HANDLE>( &@event );
+
+						if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
+							return Kernel32Api.LastError;
+
+						for( ; !@event.Completed; )
+							Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+
+						totalReceived = @event.Written;
+						return @event.ErrorCode;
 					}
+				}
+
+				struct SynchronousIOEvent {
+					public bool Completed;
+					public int Written;
+					public SystemErrorCode ErrorCode;
+				}
+
+				[CallingConvention( Value = NtApi.DefaultCallingConvention )]
+				private static void SyncIOCompleted( SystemErrorCode errorCode, uint numberOfBytesTransfered, OVERLAPPED& overlapped ) {
+					var& @event = *bitcast<SynchronousIOEvent*>( overlapped.Event );
+
+					@event.Completed = true;
+					@event.ErrorCode = errorCode;
+					@event.Written = ( int ) numberOfBytesTransfered;
 				}
 
 				// Less than 'count' bytes can be transmitted
@@ -293,14 +321,29 @@ namespace System.IO {
 						return Fiber.FiberManager.FiberWriteFile( timeout, handle, buffer, count, totalTransmitted );
 					}
 					else {
-						uint written;
-						if( Kernel32Api.WriteFile( handle, buffer, ( uint ) count, written, nullref ) ) {
-							totalTransmitted = ( int ) written;
-							return SystemErrorCode.NO_ERROR;
-						}
+						// all files created with overlapped flag, otherwise them cannot be used in fibers later
 
-						totalTransmitted = ( int ) written;
-						return Kernel32Api.LastError;
+						// uint written;
+						// if( Kernel32Api.WriteFile( handle, buffer, ( uint ) count, written, nullref ) ) {
+						// 	totalTransmitted = ( int ) written;
+						// 	return SystemErrorCode.NO_ERROR;
+						// }
+
+						// totalTransmitted = ( int ) written;
+						// return Kernel32Api.LastError;
+
+						var @event = default( SynchronousIOEvent );
+						var overlapped = default( OVERLAPPED );
+						overlapped.Event = bitcast<HANDLE>( &@event );
+
+						if( !Kernel32Api.WriteFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
+							return Kernel32Api.LastError;
+
+						for( ; !@event.Completed; )
+							Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+
+						totalTransmitted = @event.Written;
+						return @event.ErrorCode;
 					}
 				}
 
