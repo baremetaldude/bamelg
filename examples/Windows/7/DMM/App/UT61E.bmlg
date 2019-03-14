@@ -44,8 +44,9 @@ namespace Dmm {
 
 			public int SkipBytes = 0;
 
+			public const double ResistanceDisconnected = 225800000;
+
 			public MeasurementMode Mode = MeasurementMode.Volts;
-			public double Value = 0;
 			public bool Relative { get; set; } = false;
 			public bool LowBattery { get; set; } = false;
 			public bool Hold { get; set; } = false;
@@ -58,6 +59,10 @@ namespace Dmm {
 			public bool Duty { get; set; } = false;
 			public bool Max { get; set; } = false;
 			public bool Min { get; set; } = false;
+
+			public double Value = 0;
+			public int Mantissa = 0;
+			public double Exponent = 1;
 
 			public static readonly double[5] VoltageExponentMap = new double[5] {
 				0.0001,
@@ -97,7 +102,7 @@ namespace Dmm {
 				         10000,
 				        100000,
 				       1000000,
-				      10000000,
+				      10000000
 			};
 
 			private const int ExponentBias = 12;
@@ -154,12 +159,10 @@ namespace Dmm {
 					default: return ParseError.UnknownMeasurementMode;
 				}
 
-				int mantissa;
-
-				if( !int.TryParse( new CStringSpan( data + 1, 5 ), mantissa ) )
+				if( !int.TryParse( new CStringSpan( data + 1, 5 ), Mantissa ) )
 					return ParseError.BadValue;
 
-				if( Mode == MeasurementMode.Volts && !AutoRange && mantissa >= 4 )
+				if( Mode == MeasurementMode.Volts && !AutoRange && Mantissa >= 4 )
 					Mode = MeasurementMode.MilliVolts;
 
 				var bias = 0;
@@ -183,9 +186,18 @@ namespace Dmm {
 						break;
 				}
 
-				if( Duty ) Value = mantissa * ExponentMap[ExponentBias + exponent - 2];
-				else if( Frequency ) Value = mantissa * ExponentMap[ExponentBias + exponent - 2];
-				else Value = mantissa * ExponentMap[ExponentBias + exponent + bias];
+				if( Duty ) {
+					Exponent = ExponentMap[ExponentBias + exponent - 2];
+					Value = Mantissa * Exponent;
+				}
+				else if( Frequency ) {
+					Exponent = ExponentMap[ExponentBias + exponent - 2];
+					Value = Mantissa * Exponent;
+				}
+				else {
+					Exponent = ExponentMap[ExponentBias + exponent + bias];
+					Value = Mantissa * Exponent;
+				}
 
 				if( negative ) Value = -Value;
 
@@ -193,7 +205,7 @@ namespace Dmm {
 			}
 
 			public void ToString( StringBuilder builder, string format ) {
-				builder.Concat( "Mode='", Mode, "' Value='", Value, "' Relative='", Relative, "' LowBattery='", LowBattery, "' Hold='", Hold, "' DC='", DC, "' AC='", AC, "' AutoRange='", AutoRange, "' Overload='", Overload, "' Underload='", Underload, "' Frequency='", Frequency, "' Duty='", Duty, "' Max='", Max, "' Min='", Min, '\'' );
+				builder.Concat( "Value='", Value, "' Mode='", Mode, "' Relative='", Relative, "' LowBattery='", LowBattery, "' Hold='", Hold, "' DC='", DC, "' AC='", AC, "' AutoRange='", AutoRange, "' Overload='", Overload, "' Underload='", Underload, "' Frequency='", Frequency, "' Duty='", Duty, "' Max='", Max, "' Min='", Min, '\'' );
 			}
 		}
 	}

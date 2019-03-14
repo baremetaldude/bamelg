@@ -3,8 +3,9 @@
   <PropertyGroup>
     <NativeTargetPlatform>Windows</NativeTargetPlatform>
     <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
-    <RootNamespace>BamelgBench</RootNamespace>
+    <RootNamespace>Example</RootNamespace>
     <CStringCodepage>866</CStringCodepage>
+    <Name>ThriftServer</Name>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -12,9 +13,9 @@
     <ProjectGuid>{E25C41BB-A263-429c-A364-D6F07D9BF919}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>BamelgBench</AssemblyName>
+    <AssemblyName>ThriftSvc</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
-    <TargetCpuName Condition="'$(TargetCpuName)' == ''">core2</TargetCpuName>
+    <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
@@ -23,19 +24,21 @@
     <DebugSymbols>false</DebugSymbols>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">false</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <StartProgram></StartProgram>
     <RemoteDebugMachine></RemoteDebugMachine>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <DebugSymbols>true</DebugSymbols>
+    <DebugSymbols>false</DebugSymbols>
     <RunUnitTests>true</RunUnitTests>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
     <OptimizationLevel>0</OptimizationLevel>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
     <WarningLevel>4</WarningLevel>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
@@ -43,31 +46,26 @@
     <OptimizationLevel>1</OptimizationLevel>
     <DefineConstants>TRACE;TRACE_EVENT_LOOP;TRACE_FIBER;TRACE_NETWORK_SERVER</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <DebugSymbols>true</DebugSymbols>
-    <GenerateMapFile>true</GenerateMapFile>
+    <DebugSymbols>false</DebugSymbols>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
     <BuildType>Distribution</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>4</OptimizationLevel>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
-    <HeapReserveSize>65536</HeapReserveSize>
-    <HeapCommitSize>65536</HeapCommitSize>
-    <StackReserveSize>65536</StackReserveSize>
-    <StackCommitSize>65536</StackCommitSize>
-    <StripCallerContextExpressions>true</StripCallerContextExpressions>
-    <RandomizedBaseAddress>false</RandomizedBaseAddress>
-    <GenerateMapFile>true</GenerateMapFile>
+    <CmdArgs></CmdArgs>
   </PropertyGroup>
   <PropertyGroup>
-    <OutputPath>bin\$(TargetCpu) - $(TargetCpuName)\$(BuildType)</OutputPath>
+    <OutputPath>bin/$(BuildType)</OutputPath>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="App.Config\App.Config.bmlg" />
+    <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
-    <EmbeddedResource Include="Resources\**\*" />
-    <LinkSource Include="App.res" />
+    <Compile Include="Example\**\*.bmlg" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->

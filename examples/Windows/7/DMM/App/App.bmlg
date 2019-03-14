@@ -1,271 +1,80 @@
 ﻿//
-// Created by %USERNAME%
+// Created by Eugeny Grishul
 //
 
 using System;
+using System.Collections;
+using System.Globalization;
 using System.IO;
 using System.Net;
+using System.Runtime;
+using System.Text;
 using System.Web;
 
 using Platform;
 using Platform.IO;
 
-namespace Example {
+namespace Dmm {
 	public partial class App {
-		public class CustomHttpServer : HttpServer {
-			public CustomHttpServer() {
-			}
-
-			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
-				return new SessionHandler( this, stream );
-			}
-
-			public class SessionHandler : basetype.SessionHandler {
-				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
-				public new declaringtype Server; // override field type
-
-				public SessionHandler( declaringtype parent, IStream stream )
-					: base( parent, stream ) {
-				}
-
-				protected override RequestHandler CreateHandler() {
-					switch( Resource ) {
-						case "/stat.json": return new HttpStatisticPageHandler( this );
-						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
-
-						case "/":
-						case "/index.html":
-						case "/Default.aspx":
-							return new TestPageHandler( this );
-
-						case "/time.event":
-							return new TimeEventHandler( this );
-
-						case "/hello.aspx":
-							return new HelloWorldPageHandler( this );
-
-						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
-						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
-					}
-
-					return null;
-				}
-			}
-
-			public class HelloWorldPageHandler : PageHandler {
-				public HelloWorldPageHandler( SessionHandler session )
-					: base( session ) {
-				}
-
-				public override void OnRender() {
-					Response.Append( "hello, world!" );
-				}
-
-				protected override void AddCustomHeaders() {
-					AddHeaderContentType( MediaType );
-				}
-			}
-
-			public class TimeEventHandler : PageHandler {
-				public TimeEventHandler( SessionHandler session )
-					: base( session ) {
-					MediaType = System.Net.Mime.MediaTypeNames.Text.EventStream;
-					TextEncodingKind = System.Text.TextEncodingKind.Utf8;
-				}
-
-				public override void OnRender() {
-					var delay = TimeSpan.FromSeconds( 1 );
-					Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
-
-					Response.Append( "retry: 0\n" );
-					Response.Append( "data: " ); Response.Append( Fiber.UtcNow.ToUnixMilliseconds() );
-
-					Response.Append( "\n\n" );
-				}
-
-				protected override void AddCustomHeaders() {
-					AddHeaderContentType( MediaType );
-
-					HttpFormatter.HeaderAccessControl( Headers, "allow" );
-					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
-				}
-			}
-
-			public class TestPageHandler : PageHandler {
-				public TestPageHandler( SessionHandler session )
-					: base( session ) {
-				}
-
-				public override void OnRender() {
-					var server = ( CustomHttpServer ) Session.Server;
-					var time = Fiber.Now;
-
-					Response.Append( "<html>" );
-					{
-						Response.Append( "<head>" );
-						{
-							Response.Append( @"<title>UT61E DMM</title>" );
-						}
-						Response.Append( "</head>" );
-
-						Response.Append( "<body>" );
-						{
-							Response.AppendFormat( "<p></p>", time, server.ValidRequestCount );
-						}
-						Response.Append( "</body>" );
-					}
-					Response.Append( "</html>" );
-				}
-			}
-		}
-
 		public const int TcpConnectionPort = 8080;
 		public const Utf8String NamedPipeConnectionPath = @"\\.\pipe\BamelgDmmServer";
 
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
 
+		private static readonly EventLoop _eventLoop = new EventLoop() { Tracing = true };
+		internal static List<DeviceHandler> _devices = new List<DeviceHandler>();
+
+		public static DeviceHandler _debugDevice;
+		public static readonly CustomHttpServer Server = new CustomHttpServer();
+
+		static void Break() {
+			System.Diagnostics.StackTrace.Print();
+			System.Diagnostics.Debugger.Break();
+		}
+
+		internal static yield<Tuple<string, string>> EnumerateComPorts() {
+			using( var commKey = HKEY.HKEY_LOCAL_MACHINE.OpenRead( @"HARDWARE\DEVICEMAP\SERIALCOMM" ) )
+				foreach( var serialName in commKey.GetValues() )
+					yield return new Tuple<string, string>( @"\\.\" + commKey.ValueString[serialName.Name], serialName.Name );
+		}
+
+		public static ILocalizer Localizer = AppLocalizer.EN.Instance;
 
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop() { Tracing = true };
-			eventLoop.CatchConsoleQuit();
+			// System.Console.WriteLine( "GetACP() == {0}", Kernel32Api.GetACP() );
+			// System.Console.WriteLine( "GetConsoleCP() = {0}", Kernel32Api.GetConsoleCP() );
 
-			// var server = new CustomHttpServer();
+			switch( ( uint ) Kernel32Api.GetConsoleCP() ) {
+				case 866:
+					CultureInfo.Default = CultureInfo.Current = CultureInfo.RU;
+					Localizer = AppLocalizer.RU.Instance;
+					break;
+			}
 
-			// eventLoop.BeginInvoke( () => {
-			// 	Fiber.Start( 16, () => {
-			// 		var tcpListen = false;
-			// 		var tcpListenReported = false;
+			Console.WriteLine( new VoltageFormatter( -0.0011 ) );
+			Console.WriteLine( new VoltageFormatter( 0.011 ) );
+			Console.WriteLine( new VoltageFormatter( 0.11 ) );
+			Console.WriteLine( new VoltageFormatter( 1.1 ) );
+			return;
 
-			// 		var pipeListen = false;
-			// 		var pipeListenReported = false;
+			// Break();
+			_eventLoop.CatchConsoleQuit();
 
-			// 		while( true ) {
-			// 			if( !tcpListen ) {
-			// 				tcpListen = server.Listen( TcpConnectionPort );
+			_eventLoop.BeginInvoke( Initialize );
 
-			// 				if( tcpListen )
-			// 					Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
-			// 				else if( !tcpListenReported ) {
-			// 					Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
-			// 					tcpListenReported = true;
-			// 				}
-			// 			}
+			_eventLoop.Dispatch();
+		}
 
-			// 			if( !pipeListen ) {
-			// 				pipeListen = server.Listen( NamedPipeConnectionPath );
+		static void Initialize() {
+			Server.Listen( TcpConnectionPort );
+			Server.Listen( NamedPipeConnectionPath );
+			PrintConnectionOptions();
 
-			// 				if( pipeListen )
-			// 					Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
-			// 				else if( !pipeListenReported ) {
-			// 					Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
-			// 					pipeListenReported = true;
-			// 				}
-			// 			}
+			_devices.Add( _debugDevice = new DeviceHandler() );
 
-			// 			var all = true;
-
-			// 			all &= tcpListen;
-			// 			all &= pipeListen;
-
-			// 			if( !all ) {
-			// 				using( Fiber.CancellationRegion() ) {
-			// 					Fiber.Sleep( 1000 );
-			// 					if( Fiber.IsCancelled ) return;
-			// 				}
-
-			// 				continue;
-			// 			}
-
-			// 			break;
-			// 		}
-
-			// 		PrintConnectionOptions();
-			// 	}, "resource allocator" );
-			// } );
-
-			eventLoop.BeginInvoke( () => {
-				Fiber.Start( 16, () => {
-					var SerialPortPath = @"\\.\COM1";
-
-					var fs = new Platform.IO.FileStream() {
-						// ErrorHandler = ErrorHandler
-					};
-
-					if( fs.Open( SerialPortPath, FileAccessRights.GENERIC_WRITE | FileAccessRights.GENERIC_READ, FileCreationDisposition.OPEN_EXISTING ) ) {
-						var name2 = SerialPortPath;
-						if( name2.StartsWith( @"\\.\" ) ) name2 = name2.Substring( 4 );
-
-						var dcb = new DCB() {
-							// fBinary = true,
-							// fOutxCtsFlow = true,
-							fDtrControl = DCB.DtrControl.DTR_CONTROL_ENABLE,
-							fRtsControl = DCB.RtsControl.RTS_CONTROL_DISABLE,
-							BaudRate = 19200,
-							StopBits = DCB.StopBitsValue.ONESTOPBIT,
-							fParity = true,
-							Parity = DCB.ParityScheme.ODDPARITY,
-							ByteSize = 7
-							// XonLim = 512,
-							// XoffLim = 1
-						};
-
-						if( Kernel32Api.SetCommState( fs.Handle, &dcb ) ) {
-							// if( App.Options.Trace )
-							Console.WriteLine( "Set DCB '{0}': '{1}'", name2, dcb );
-						}
-						else {
-							// if( App.Options.Trace )
-							Console.WriteLine( "Unable to set DCB for '{0}': '{1}'", name2, dcb );
-						}
-
-						// if( !Kernel32Api.GetCommState( fs.Handle, &dcb ) )
-						//	if( App.Options.Trace )
-						Console.WriteLine( "Unable to get DCB for '{0}'", name2 );
-
-						// if( App.Options.Trace ) {
-						using( Console.AttributedRegion( RgbColor.Yellow ) )
-							Console.WriteLine( "Active DCB for '{0}': '{1}'", name2, dcb );
-						// }
-
-						var timeouts = new COMMTIMEOUTS {
-							ReadIntervalTimeout = 10,
-							ReadTotalTimeoutMultiplier = 0,
-							ReadTotalTimeoutConstant = 0,
-
-							WriteTotalTimeoutMultiplier = 0,
-							WriteTotalTimeoutConstant = 0
-						};
-
-						if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
-							// if( App.Options.Trace )
-							Console.WriteLine( "Unable to set timeouts for '{0}'", name2 );
-
-						var bufferedStream = new BufferedStream.ReadStream( fs, 32 );
-						var dmm = new Dmm.UT61E.Parser();
-
-						var requestBuffer = bufferedStream.BufferInfo;
-						for( ; ; ) {
-							using( Fiber.CancellationRegion() ) {
-								bufferedStream.Flush( FlushKind.Read );
-								// Console.WriteLine( "requestBuffer->AvailableToRead={0}", requestBuffer->AvailableToRead );
-								if( Fiber.IsCancelled ) return;
-							}
-
-							var result = dmm.Parse( requestBuffer->Start, requestBuffer->AvailableToRead );
-							if( result ) {
-								Console.WriteLine( "parser: {0}", dmm );
-							}
-							else
-								Console.WriteLine( "parser error: {0}", result );
-
-							bufferedStream.Drain( dmm.SkipBytes );
-						}
-					}
-				}, "serial listener" );
-			} );
-
-			eventLoop.Dispatch();
+			foreach( var device in _devices )
+				device.Connect();
 		}
 
 		static void PrintConnectionOptions() {
@@ -274,6 +83,358 @@ namespace Example {
 			Console.WriteLine( "\thttp://localhost:{0}", TcpConnectionPort );
 			Console.WriteLine( "\t{0}", NamedPipeConnectionPath );
 			Console.WriteLine( "@}" );
+
+			foreach( var info in EnumerateComPorts() )
+				Console.WriteLine( @"Found serial port: {0} <- {1}", info.Item1, info.Item2 );
+
+		}
+	}
+
+	public class DeviceHandler : IPlatformErrorHandler, IFormattable {
+		public string SerialPortPath = @"\\.\COM4";
+		public string Name = "UT61E";
+
+		public EventLogBuffer Events = new EventLogBuffer() {
+			// Trace = true,
+
+			MaxCount = 10000,
+			MaxTime = TimeSpan.FromHours( 1 )
+		};
+
+		public bool Enabled = true;
+
+		public DeviceHandler() {
+		}
+
+		public void ToString( StringBuilder result, string format ) {
+			result.AppendFormat( "{0} ( {1} ); Events {{ {2} }}", Name, SerialPortPath, Events );
+		}
+
+		#region event buffer
+
+		public Fiber.Event NewMesageEvent = new Fiber.Event( false, true );
+
+		public void AddEvent( string text ) {
+			Events.Add( DateTime.UtcNow, text );
+			NewMesageEvent.Signal();
+		}
+
+		public void AddEvent( string format, vararg TypedReference parameters ) {
+			Events.Add( DateTime.UtcNow, string.Format( format, vararg( parameters, parameters.Length ) ) );
+			NewMesageEvent.Signal();
+		}
+
+		#endregion
+
+		public void Connect() {
+			Fiber.Start( 16, Connector, "serial connector" );
+			Fiber.Start( 16, ShuntTask, "shunt" );
+		}
+
+		public void Connector() {
+			// bvar y1 = new Yo() { FileName = @"t:\\yo1.txt" };
+			// var y2 = new Yo() { FileName = @"t:\\yo2.txt" };
+
+			// by1.AddReference();
+			// y2.AddReference();
+
+			// Fiber.Start( 16, y1.WriteFile, "log1" );
+			// Fiber.Start( 16, y2.WriteFile, "log2" );
+
+			while( !Fiber.IsCancelled ) {
+				Worker();
+
+				if( Enabled ) {
+					using( Fiber.CancellationRegion() )
+						Fiber.Sleep( 1000 );
+				}
+				else break;
+			}
+		}
+
+		class Yo {
+			public Yo() { }
+
+			public string FileName;
+
+			public void WriteFile() {
+				finally { ReleaseReference(); }
+
+				// EventLogBuffer.EventEntry* lastEvent = null;
+
+				// wait for first event arrival
+				if( App._debugDevice.Events.Events.Count == 0 ) {
+					using( Fiber.CancellationRegion() )
+						App._debugDevice.NewMesageEvent.Wait();
+					if( Fiber.IsCancelled ) return;
+				}
+
+				var lastEvent = App._debugDevice.Events.Events.Last();
+
+				// traverse event buffer from last reported event
+				using( var fs = new StreamWriter( System.IO.File.OpenWrite( FileName ) ) ) {
+					fs.UseAutoFlush = false; // prevent "Events" modification while traversing it using GetEnumerator( lastEvent ) in device data parser fiber
+
+					for( ; ; ) {
+						App._debugDevice.Events.Events.CreateMarker( lastEvent );
+
+						using( Fiber.CancellationRegion() )
+							App._debugDevice.NewMesageEvent.Wait();
+
+						if( !App._debugDevice.Events.Events.ReleaseMarker( lastEvent ) )
+							return;
+
+						if( Fiber.IsCancelled ) break;
+
+						var skipFirst = true;
+						foreach( var @event in App._debugDevice.Events.Events.GetEnumerator( lastEvent ) ) {
+							if( skipFirst ) { skipFirst = false; continue; }
+
+							fs.Write( @event->Text );
+							fs.WriteLine();
+						}
+
+						lastEvent = App._debugDevice.Events.Events.Last();
+
+						fs.TryFlush();
+					}
+				}
+			}
+		}
+
+		private bool TaskMeasureResistance = false, TaskMeasureResistanceStarted = false;
+		private double MeasuredResistance;
+		private Fiber.Semaphore _resistanceCompleted = new Fiber.Semaphore( 0 );
+		private Delegates.Action<double> OnResistanceParsed;
+
+		FixedPointSlidingQueue _resistance = new FixedPointSlidingQueue( TimeSpan.FromSeconds( 2 ), 100 );
+		FixedPointSlidingQueue.AverageView _avgView = new FixedPointSlidingQueue.AverageView( _resistance, TimeSpan.FromSeconds( 2 ) );
+
+		public void ShuntTask() {
+			Console.WriteLine( "{0} ...", App.Localizer.MeasureProbeResistance );
+
+			TaskMeasureResistance = true;
+			using( Fiber.CancellationRegion() )
+				_resistanceCompleted.Wait();
+			if( Fiber.IsCancelled ) return;
+
+			var probe = MeasuredResistance;
+			Console.WriteLine( "{0}: {1}", App.Localizer.ProbeResistance, probe );
+
+			Console.WriteLine( "{0} ...", App.Localizer.MeasureShuntResistance );
+			TaskMeasureResistance = true;
+			using( Fiber.CancellationRegion() )
+				_resistanceCompleted.Wait();
+			if( Fiber.IsCancelled ) return;
+
+			var shunt = MeasuredResistance;
+			shunt -= probe;
+			Console.WriteLine( "{0}: {1}", App.Localizer.ShuntResistance, shunt );
+
+			Console.WriteLine( "{0} ...", App.Localizer.MeasureShuntVoltage );
+
+			OnResistanceParsed = data => {
+				Console.WriteLine( "{0} A", data / shunt );
+			};
+
+			Fiber.FiberManager.Suspend();
+		}
+
+		public void Worker() {
+			StreamError = false;
+
+			var fs = new Platform.IO.FileStream() {
+				ErrorHandler = this
+			};
+
+			AddEvent( "Connecting to '{0}'", SerialPortPath );
+
+			if( fs.Open( SerialPortPath, FileAccessRights.GENERIC_WRITE | FileAccessRights.GENERIC_READ, FileCreationDisposition.OPEN_EXISTING ) ) {
+				var shortName = SerialPortPath;
+				if( shortName.StartsWith( @"\\.\" ) ) shortName = shortName.Substring( 4 );
+
+				fs.Timeout = TimeSpan.FromSeconds( 3 );
+
+				var dcb = new DCB() {
+					// fBinary = true,
+					// fOutxCtsFlow = true,
+					fDtrControl = DCB.DtrControl.DTR_CONTROL_ENABLE,
+					fRtsControl = DCB.RtsControl.RTS_CONTROL_DISABLE,
+					BaudRate = 19200,
+					StopBits = DCB.StopBitsValue.ONESTOPBIT,
+					fParity = true,
+					Parity = DCB.ParityScheme.ODDPARITY,
+					ByteSize = 7
+					// XonLim = 512,
+					// XoffLim = 1
+				};
+
+				if( Kernel32Api.SetCommState( fs.Handle, &dcb ) ) {
+					AddEvent( "Set DCB '{0}': '{1}'", shortName, dcb );
+				}
+				else {
+					AddEvent( "Unable to set DCB for '{0}': '{1}'", shortName, dcb );
+				}
+
+				if( !Kernel32Api.GetCommState( fs.Handle, &dcb ) )
+					AddEvent( "Unable to get DCB for '{0}'", shortName );
+
+				using( Console.AttributedRegion( RgbColor.Yellow ) )
+					AddEvent( "Active DCB for '{0}': '{1}'", shortName, dcb );
+
+				var timeouts = new COMMTIMEOUTS {
+					ReadIntervalTimeout = 10,
+					ReadTotalTimeoutMultiplier = 0,
+					ReadTotalTimeoutConstant = 0,
+
+					WriteTotalTimeoutMultiplier = 0,
+					WriteTotalTimeoutConstant = 0
+				};
+
+				if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
+					AddEvent( "Unable to set timeouts for '{0}'", shortName );
+
+				var bufferedStream = new BufferedStream.ReadStream( fs, 128 );
+				var dmm = new Dmm.UT61E.Parser();
+
+				var requestBuffer = bufferedStream.BufferInfo;
+				var prevBufferLength = 0;
+
+				for( ; ; ) {
+					using( Fiber.CancellationRegion() ) {
+						bufferedStream.Flush( FlushKind.Read );
+						// Console.WriteLine( "requestBuffer->AvailableToRead={0}", requestBuffer->AvailableToRead );
+					}
+
+					if( Fiber.IsCancelled || StreamError ) return;
+					if( requestBuffer->AvailableToRead == prevBufferLength ) continue; // skip parsing on timeouts
+
+					var result = dmm.Parse( requestBuffer->Start, requestBuffer->AvailableToRead );
+					if( result ) {
+						AddEvent( "Device data: {0}", dmm );
+
+						if( TaskMeasureResistance ) {
+							if( !TaskMeasureResistanceStarted && dmm.Value == Dmm.UT61E.Parser.ResistanceDisconnected ) {
+								TaskMeasureResistanceStarted = true;
+							}
+
+							if( dmm.Mode == Dmm.UT61E.MeasurementMode.Resistance && TaskMeasureResistanceStarted ) {
+								_resistance.Add( Fiber.UtcNow, dmm.Value );
+
+								double dev = 0;
+								foreach( var item in _resistance._values ) {
+									dev += Math.Sqr( _resistance.ToFloating( item->Value ) - _avgView.Value );
+								}
+
+								dev /= _resistance.Count;
+								dev = Math.Sqrt( dev );
+
+								if( dev <= 0.01 && _resistance.BufferedTimeframe >= _resistance.Timeframe * 3 / 4 && _avgView.Value != 0 ) {
+									MeasuredResistance = _avgView.Value;
+									TaskMeasureResistance = TaskMeasureResistanceStarted = false;
+									_resistanceCompleted.Increment();
+
+									_resistance.Clear();
+									// Console.WriteLine( "Resistance: {0}", MeasuredResistance );
+								}
+
+								// Console.WriteLine( "val={0}", dmm.Value );
+								// Console.WriteLine( "avg={0}", _avgView.Value );
+								// Console.WriteLine( "dev={0}", dev );
+								// Console.WriteLine();
+							}
+						}
+						else {
+							if( dmm.Mode == Dmm.UT61E.MeasurementMode.Volts ) {
+								OnResistanceParsed( dmm.Value );
+							}
+							else if( dmm.Mode == Dmm.UT61E.MeasurementMode.MilliVolts ) {
+								OnResistanceParsed( dmm.Value );
+							}
+						}
+					}
+					else
+						AddEvent( "parser error: {0}", result );
+
+					bufferedStream.Drain( dmm.SkipBytes );
+					prevBufferLength = requestBuffer->AvailableToRead;
+				}
+			}
+		}
+
+		bool StreamError = false;
+
+		#region IPlatformErrorHandler Members
+
+		public PlatformErrorAction OnError( string operation, IFormattable context, SystemErrorCode errorCode ) {
+			var message = Kernel32Api.GetLastErrorMessage( errorCode );
+
+			AddEvent( "'{0}': {1} {2} ( {3} )", context, operation, errorCode, message );
+
+			switch( errorCode ) {
+				case SystemErrorCode.ERROR_TIMEOUT:
+				case SystemErrorCode.ERROR_OPERATION_ABORTED:
+					break;
+
+				default:
+					StreamError = true;
+					break;
+			}
+
+			return PlatformErrorAction.Default;
+		}
+
+		#endregion
+	}
+
+		public struct MemorySizeFormatterUInt64 : IFormattable {
+		public ulong Value;
+
+		public MemorySizeFormatterUInt64( ulong value ) { Value = value; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			if( Value < 1024 ) builder.AppendFormat( "{0}", Value );
+			else if( Value < 1024 * 1024 ) builder.AppendFormat( "{0:F1} KiB", Value / 1024.0 );
+			else if( Value < 1024 * 1024 * 1024 ) builder.AppendFormat( "{0:F1} MiB", Value / ( double )( 1024 * 1024 ) );
+			else if( Value < 1024UL * 1024 * 1024 * 1024 ) builder.AppendFormat( "{0:F1} GiB", Value / ( double )( 1024 * 1024 * 1024 ) );
+			else if( Value < 1024UL * 1024 * 1024 * 1024 * 1024 ) builder.AppendFormat( "{0:F1} TiB", Value / ( double )( 1024UL * 1024 * 1024 * 1024 ) );
+			else if( Value < 1024UL * 1024 * 1024 * 1024 * 1024 * 1024 ) builder.AppendFormat( "{0:F1} PiB", Value / ( double )( 1024UL * 1024 * 1024 * 1024 * 1024 ) );
+		}
+	}
+
+	public struct VoltageFormatter : IFormattable {
+		public double Value;
+
+		public VoltageFormatter( double value ) { Value = value; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			var value = Value;
+			if( value < 0 ) {
+				builder.Append( '-' );
+				value = -value;
+			}
+
+			if( value < 1 ) builder.AppendFormat( "{0} mV", value * 1000 );
+			else if( value < 1000 ) builder.AppendFormat( "{0:F1} V", value );
+			else if( value < 1000 * 1000 ) builder.AppendFormat( "{0:F1} kV", value / 1000 );
+		}
+	}
+
+	public struct WattFormatter : IFormattable {
+		public double Value;
+
+		public WattFormatter( double value ) { Value = value; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			var value = Value;
+			if( value < 0 ) {
+				builder.Append( '-' );
+				value = -value;
+			}
+
+			if( value < 1 ) builder.AppendFormat( "{0} mW", value * 1000 );
+			else if( value < 1000 ) builder.AppendFormat( "{0:F1} W", value );
+			else if( value < 1000 * 1000 ) builder.AppendFormat( "{0:F1} kW", value / 1000 );
 		}
 	}
 }

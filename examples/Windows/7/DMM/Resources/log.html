@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<body>
+	<h1>Getting device log</h1>
+	<div id="result"></div>
+
+	<script>
+		if( typeof ( EventSource ) !== "undefined" ) {
+			var source = new EventSource( "log.event" );
+
+			var queue = [];
+
+			source.onmessage = function( event ) {
+				var r = document.getElementById( "result" );
+				// r.innerHTML = event.data + "<br/>" + r.innerHTML;
+				//r.innerHTML = event.data;
+				queue.push( event.data );
+				
+				while( queue.length > 10 )
+					queue.shift();
+					
+				var txt = "";
+				var index;
+				for( index = 0; index < queue.length; ++index ) {
+					txt = txt + "<br/>" + queue[index];
+				}
+				
+				r.innerHTML = txt;
+			};
+		} else {
+			document.getElementById( "result" ).innerHTML = "Your browser does not support server-sent events";
+		}
+	</script>
+</body>
+</html>
+
