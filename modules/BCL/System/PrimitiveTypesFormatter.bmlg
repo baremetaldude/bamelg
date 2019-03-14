@@ -32,7 +32,11 @@ namespace System {
 		const long DoubleBitsMantissaMask = 0xFFFFFFFFFFFFF;
 		const int DecimalBitsScaleMask = 0x1F0000;
 
-		internal struct FormattingHelper {
+		// Save 388 stack bytes for Fibers
+		[ThreadStatic]
+		internal static Formatter Instance = new Formatter { _writeIndex = 0 };
+
+		internal struct Formatter {
 			public uint[4] _value;
 
 			private bool _NaN;
@@ -52,7 +56,11 @@ namespace System {
 			internal int _writeIndex;
 			internal CStringSpan GetTextBuffer() { return new CStringSpan( &_buffer[0], ( uint ) _writeIndex ); }
 
-			public FormattingHelper() {
+			public Formatter() {
+				_writeIndex = 0;
+			}
+
+			public void Init() {
 				_writeIndex = 0;
 			}
 
@@ -684,6 +692,7 @@ namespace System {
 			}
 
 			private void Init( string format ) {
+				_writeIndex = 0;
 				Memory.Fill( _value, 0, sizeof( _value ) );
 				_offset = 0;
 				_NaN = _infinity = false;
@@ -909,11 +918,13 @@ namespace System {
 					// case 'P': return FormatPercent( _precision );
 					case 'X': FormatHexadecimal(); break;
 					case 'B': FormatBinary(); break;
+					
 					default:
+						// if( _isCustomFormat )
+						//	return FormatCustom( format );
+						
+						Assert.Fail( "The specified format '" + format + "' is invalid" );
 						break;
-					// if( _isCustomFormat )
-					//	return FormatCustom( format );
-					// throw new FormatException( "The specified format '" + format + "' is invalid" );
 				}
 			}
 
@@ -1151,96 +1162,96 @@ namespace System {
 			return new string( value, 1 );
 		}
 
-		public static SbcsString FormatInt8Sbcs( sbyte value ) { var helper = new FormattingHelper(); helper.FormatInt8( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatInt8Utf8( sbyte value ) { var helper = new FormattingHelper(); helper.FormatInt8( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatInt8Utf16( sbyte value ) { var helper = new FormattingHelper(); helper.FormatInt8( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatInt8Utf32( sbyte value ) { var helper = new FormattingHelper(); helper.FormatInt8( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatInt8Sbcs( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt8Utf8( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt8Utf16( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt8Utf32( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatUInt8Sbcs( byte value ) { var helper = new FormattingHelper(); helper.FormatUInt8( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatUInt8Utf8( byte value ) { var helper = new FormattingHelper(); helper.FormatUInt8( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatUInt8Utf16( byte value ) { var helper = new FormattingHelper(); helper.FormatUInt8( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatUInt8Utf32( byte value ) { var helper = new FormattingHelper(); helper.FormatUInt8( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatUInt8Sbcs( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt8Utf8( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt8Utf16( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt8Utf32( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatInt16Sbcs( short value ) { var helper = new FormattingHelper(); helper.FormatInt16( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatInt16Utf8( short value ) { var helper = new FormattingHelper(); helper.FormatInt16( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatInt16Utf16( short value ) { var helper = new FormattingHelper(); helper.FormatInt16( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatInt16Utf32( short value ) { var helper = new FormattingHelper(); helper.FormatInt16( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatInt16Sbcs( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt16Utf8( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt16Utf16( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt16Utf32( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatUInt16Sbcs( ushort value ) { var helper = new FormattingHelper(); helper.FormatUInt16( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatUInt16Utf8( ushort value ) { var helper = new FormattingHelper(); helper.FormatUInt16( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatUInt16Utf16( ushort value ) { var helper = new FormattingHelper(); helper.FormatUInt16( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatUInt16Utf32( ushort value ) { var helper = new FormattingHelper(); helper.FormatUInt16( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatUInt16Sbcs( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt16Utf8( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt16Utf16( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt16Utf32( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatInt32Sbcs( int value ) { var helper = new FormattingHelper(); helper.FormatInt32( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatInt32Utf8( int value ) { var helper = new FormattingHelper(); helper.FormatInt32( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatInt32Utf16( int value ) { var helper = new FormattingHelper(); helper.FormatInt32( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatInt32Utf32( int value ) { var helper = new FormattingHelper(); helper.FormatInt32( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatInt32Sbcs( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt32Utf8( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt32Utf16( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt32Utf32( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatUInt32Sbcs( uint value ) { var helper = new FormattingHelper(); helper.FormatUInt32( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatUInt32Utf8( uint value ) { var helper = new FormattingHelper(); helper.FormatUInt32( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatUInt32Utf16( uint value ) { var helper = new FormattingHelper(); helper.FormatUInt32( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatUInt32Utf32( uint value ) { var helper = new FormattingHelper(); helper.FormatUInt32( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatUInt32Sbcs( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt32Utf8( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt32Utf16( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt32Utf32( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatInt64Sbcs( long value ) { var helper = new FormattingHelper(); helper.FormatInt64( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatInt64Utf8( long value ) { var helper = new FormattingHelper(); helper.FormatInt64( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatInt64Utf16( long value ) { var helper = new FormattingHelper(); helper.FormatInt64( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatInt64Utf32( long value ) { var helper = new FormattingHelper(); helper.FormatInt64( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatInt64Sbcs( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt64Utf8( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt64Utf16( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt64Utf32( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatUInt64Sbcs( ulong value ) { var helper = new FormattingHelper(); helper.FormatUInt64( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatUInt64Utf8( ulong value ) { var helper = new FormattingHelper(); helper.FormatUInt64( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatUInt64Utf16( ulong value ) { var helper = new FormattingHelper(); helper.FormatUInt64( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatUInt64Utf32( ulong value ) { var helper = new FormattingHelper(); helper.FormatUInt64( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatUInt64Sbcs( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt64Utf8( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt64Utf16( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt64Utf32( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf32String(); }
 
 		public static string FormatInt8Hex( sbyte value ) {
-			var helper = new FormattingHelper();
-			helper.Init( "X", ( uint ) value, UInt8DefaultPrecision );
-			helper._precision = 2;
-			helper.FormatHexadecimal();
-			return helper.ToUtf16String();
+			Instance.Init();
+			Instance.Init( "X", ( uint ) value, UInt8DefaultPrecision );
+			Instance._precision = 2;
+			Instance.FormatHexadecimal();
+			return Instance.ToUtf16String();
 		}
 
 		public static string FormatInt16Hex( short value ) {
-			var helper = new FormattingHelper();
-			helper.Init( "X", ( uint ) value, UInt16DefaultPrecision );
-			helper._precision = 4;
-			helper.FormatHexadecimal();
-			return helper.ToUtf16String();
+			Instance.Init();
+			Instance.Init( "X", ( uint ) value, UInt16DefaultPrecision );
+			Instance._precision = 4;
+			Instance.FormatHexadecimal();
+			return Instance.ToUtf16String();
 		}
 
 		public static string FormatInt32Hex( int value ) {
-			var helper = new FormattingHelper();
-			helper.Init( "X", ( uint ) value, UInt32DefaultPrecision );
-			helper._precision = 8;
-			helper.FormatHexadecimal();
-			return helper.ToUtf16String();
+			Instance.Init();
+			Instance.Init( "X", ( uint ) value, UInt32DefaultPrecision );
+			Instance._precision = 8;
+			Instance.FormatHexadecimal();
+			return Instance.ToUtf16String();
 		}
 
 		public static string FormatInt64Hex( long value ) {
-			var helper = new FormattingHelper();
-			helper.Init( "X", ( ulong ) value, UInt64DefaultPrecision );
-			helper._precision = 16;
-			helper.FormatHexadecimal();
-			return helper.ToUtf16String();
+			Instance.Init();
+			Instance.Init( "X", ( ulong ) value, UInt64DefaultPrecision );
+			Instance._precision = 16;
+			Instance.FormatHexadecimal();
+			return Instance.ToUtf16String();
 		}
 
 		public static string FormatIntPtrHex( intptr value ) {
-			var helper = new FormattingHelper();
-			helper.Init( "X", ( ulong ) value, UInt64DefaultPrecision );
-			helper._precision = sizeof( intptr ) * 2;
-			helper.FormatHexadecimal();
-			return helper.ToUtf16String();
+			Instance.Init();
+			Instance.Init( "X", ( ulong ) value, UInt64DefaultPrecision );
+			Instance._precision = sizeof( intptr ) * 2;
+			Instance.FormatHexadecimal();
+			return Instance.ToUtf16String();
 		}
 
-		public static void FormatInteger( StringBuilder builder, string format, sbyte value ) { var helper = new FormattingHelper(); helper.Init( format, ( int ) value, Int8DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, byte value ) { var helper = new FormattingHelper(); helper.Init( format, ( int ) value, UInt8DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, short value ) { var helper = new FormattingHelper(); helper.Init( format, ( int ) value, Int16DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, ushort value ) { var helper = new FormattingHelper(); helper.Init( format, ( int ) value, UInt16DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, int value ) { var helper = new FormattingHelper(); helper.Init( format, ( int ) value, Int32DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, uint value ) { var helper = new FormattingHelper(); helper.Init( format, ( uint ) value, UInt32DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, long value ) { var helper = new FormattingHelper(); helper.Init( format, ( long ) value, Int64DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, ulong value ) { var helper = new FormattingHelper(); helper.Init( format, ( ulong ) value, UInt64DefaultPrecision ); helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatDouble( StringBuilder builder, string format, float value ) { var helper = new FormattingHelper(); if( helper.InitDouble( format, value, SingleDefaultPrecision ) ) helper.ApplyFormat( format ); helper.AppendTo( builder ); }
-		public static void FormatDouble( StringBuilder builder, string format, double value ) { var helper = new FormattingHelper(); if( helper.InitDouble( format, value, DoubleDefaultPrecision ) ) helper.ApplyFormat( format ); helper.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, sbyte value ) { Instance.Init( format, ( int ) value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, byte value ) { Instance.Init( format, ( int ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, short value ) { Instance.Init( format, ( int ) value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, ushort value ) { Instance.Init( format, ( int ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, int value ) { Instance.Init( format, ( int ) value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, uint value ) { Instance.Init( format, ( uint ) value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, long value ) { Instance.Init( format, ( long ) value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, string format, ulong value ) { Instance.Init( format, ( ulong ) value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatDouble( StringBuilder builder, string format, float value ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatDouble( StringBuilder builder, string format, double value ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
 
 		public static string FormatUInt8Hex( byte value ) { return FormatInt8Hex( bitcast<sbyte>( value ) ); }
 		public static string FormatUInt16Hex( ushort value ) { return FormatInt16Hex( bitcast<short>( value ) ); }
@@ -1251,15 +1262,15 @@ namespace System {
 		private static double[9] Exponent10 = new double[9] { 1E+1, 1E+2, 1E+4, 1E+8, 1E+16, 1E+32, 1E+64, 1E+128, 1E+256 };
 		private static double[9] InverseExponent10 = new double[9] { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
 
-		public static SbcsString FormatSingleIEEE754Sbcs( double value ) { var helper = new FormattingHelper(); helper.FormatSingleIEEE754( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatSingleIEEE754Utf8( double value ) { var helper = new FormattingHelper(); helper.FormatSingleIEEE754( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatSingleIEEE754Utf16( double value ) { var helper = new FormattingHelper(); helper.FormatSingleIEEE754( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatSingleIEEE754Utf32( double value ) { var helper = new FormattingHelper(); helper.FormatSingleIEEE754( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatSingleIEEE754Sbcs( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatSingleIEEE754Utf8( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatSingleIEEE754Utf16( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatSingleIEEE754Utf32( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatDoubleIEEE754Sbcs( double value ) { var helper = new FormattingHelper(); helper.FormatDoubleIEEE754( value ); return helper.ToSbcsString(); }
-		public static Utf8String FormatDoubleIEEE754Utf8( double value ) { var helper = new FormattingHelper(); helper.FormatDoubleIEEE754( value ); return helper.ToUtf8String(); }
-		public static Utf16String FormatDoubleIEEE754Utf16( double value ) { var helper = new FormattingHelper(); helper.FormatDoubleIEEE754( value ); return helper.ToUtf16String(); }
-		public static Utf32String FormatDoubleIEEE754Utf32( double value ) { var helper = new FormattingHelper(); helper.FormatDoubleIEEE754( value ); return helper.ToUtf32String(); }
+		public static SbcsString FormatDoubleIEEE754Sbcs( double value ) { Instance.Init(); Instance.FormatDoubleIEEE754( value ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatDoubleIEEE754Utf8( double value ) { Instance.Init(); Instance.FormatDoubleIEEE754( value ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatDoubleIEEE754Utf16( double value ) { Instance.Init(); Instance.FormatDoubleIEEE754( value ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatDoubleIEEE754Utf32( double value ) { Instance.Init(); Instance.FormatDoubleIEEE754( value ); return Instance.ToUtf32String(); }
 
 		private static byte[24] _12hourMapping = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 

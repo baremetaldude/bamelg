@@ -4,7 +4,7 @@
     <NativeTargetPlatform>Linux</NativeTargetPlatform>
     <NativeTargetPlatformVersion>2.6</NativeTargetPlatformVersion>
     <RootNamespace>Example</RootNamespace>
-    <CStringCodepage>20866</CStringCodepage>
+    <SbcsStringCodepage>20866</SbcsStringCodepage>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -14,14 +14,14 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>FloatingPointLayout</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
-    <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
   <PropertyGroup>
     <SshUser Condition=" '$(SshUser)' == '' ">root</SshUser>
     <SshKeyFile Condition=" '$(SshKeyFile)' == '' ">..\..\..\example.private.rsa</SshKeyFile>
-    <RemoteDebugMachine Condition=" '$(RemoteDebugMachine)' == '' ">fedorax86</RemoteDebugMachine>
+    <RemoteDebugMachine Condition="'$(TargetCpu)' == 'X86_32' AND '$(RemoteDebugMachine)' == '' ">fedorax86</RemoteDebugMachine>
+    <RemoteDebugMachine Condition="'$(TargetCpu)' == 'X86_64' AND '$(RemoteDebugMachine)' == '' ">fedorax64</RemoteDebugMachine>
     <RemoteExecutablePath Condition="'$(RemoteExecutablePath)' == ''">/usr/local/bin/$(AssemblyName)</RemoteExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Validate|AnyCPU' ">
@@ -101,15 +101,12 @@
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutputPath>bin/$(BuildType)</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Bamelg\Bamelg.MSBuild.targets" />
+  <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->
   <!--Target Name="AfterBuild"> ... </Target-->
 </Project>

@@ -831,8 +831,10 @@ namespace Platform.Gdk {
 	public static partial struct GdkPixbufApi {
 		public extern static GdkPixbuf* gdk_pixbuf_add_alpha( GdkPixbuf* pixbuf, Boolean32 substituteColor, byte r, byte g, byte b );
 		public extern static GdkPixbuf* gdk_pixbuf_apply_embedded_orientation( GdkPixbuf* src );
+		public extern static int gdk_pixbuf_calculate_rowstride( GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height );
 		public extern static GdkPixbuf* gdk_pixbuf_copy( GdkPixbuf* pixbuf );
 		public extern static void gdk_pixbuf_copy_area( GdkPixbuf* srcPixbuf, int srcX, int srcY, int width, int height, GdkPixbuf* destPixbuf, int destX, int destY );
+		public extern static Boolean32 gdk_pixbuf_copy_options( GdkPixbuf* srcPixbuf, GdkPixbuf* destPixbuf );
 		public extern static uint gdk_pixbuf_error_quark();
 		public extern static void gdk_pixbuf_fill( GdkPixbuf* pixbuf, uint pixel );
 		public extern static int gdk_pixbuf_get_bits_per_sample( GdkPixbuf* pixbuf );
@@ -868,11 +870,15 @@ namespace Platform.Gdk {
 		public extern static GBytes* gdk_pixbuf_read_pixel_bytes( GdkPixbuf* pixbuf );
 		public extern static byte* gdk_pixbuf_read_pixels( GdkPixbuf* pixbuf );
 		public extern static GdkPixbuf* gdk_pixbuf_ref( GdkPixbuf* pixbuf );
+		public extern static Boolean32 gdk_pixbuf_remove_option( GdkPixbuf* pixbuf, sbyte* key );
 		public extern static void gdk_pixbuf_saturate_and_pixelate( GdkPixbuf* src, GdkPixbuf* dest, float saturation, Boolean32 pixelate );
 		public extern static Boolean32 gdk_pixbuf_save_to_bufferv( GdkPixbuf* pixbuf, sbyte** buffer, uint* bufferSize, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
 		public extern static Boolean32 gdk_pixbuf_save_to_callbackv( GdkPixbuf* pixbuf, Functors.Func<sbyte*, uint, GError**, void*, Boolean32> saveFunc, void* userData, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
 		public extern static Boolean32 gdk_pixbuf_save_to_stream_finish( GAsyncResult* asyncResult, GError** error );
+		public extern static Boolean32 gdk_pixbuf_save_to_streamv( GdkPixbuf* pixbuf, GOutputStream* stream, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_save_to_streamv_async( GdkPixbuf* pixbuf, GOutputStream* stream, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
 		public extern static Boolean32 gdk_pixbuf_savev( GdkPixbuf* pixbuf, CUtf8String filename, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
+		public extern static Boolean32 gdk_pixbuf_set_option( GdkPixbuf* pixbuf, sbyte* key, sbyte* value );
 		public extern static void gdk_pixbuf_unref( GdkPixbuf* pixbuf );
 
 		public extern static void gdk_pixbuf_composite( GdkPixbuf* src, GdkPixbuf* dest, int destX, int destY, int destWidth, int destHeight, double offsetX, double offsetY, double scaleX, double scaleY, GdkInterpType interpType, int overallAlpha );
@@ -923,6 +929,7 @@ namespace Platform.Gdk {
 		[BackendHintReadNone]
 		public extern static GType gdk_pixbuf_format_get_type();
 		public extern static Boolean32 gdk_pixbuf_format_is_disabled( GdkPixbufFormat* format );
+		public extern static Boolean32 gdk_pixbuf_format_is_save_option_supported( GdkPixbufFormat* format, sbyte* optionKey );
 		public extern static Boolean32 gdk_pixbuf_format_is_scalable( GdkPixbufFormat* format );
 		public extern static Boolean32 gdk_pixbuf_format_is_writable( GdkPixbufFormat* format );
 		public extern static void gdk_pixbuf_format_set_disabled( GdkPixbufFormat* format, Boolean32 disabled );
@@ -1325,6 +1332,7 @@ namespace Platform.Gdk {
 		GDK_PIXBUF_ERROR_UNKNOWN_TYPE =          3,
 		GDK_PIXBUF_ERROR_UNSUPPORTED_OPERATION = 4,
 		GDK_PIXBUF_ERROR_FAILED =                5,
+		GDK_PIXBUF_ERROR_INCOMPLETE_ANIMATION =  6,
 	}
 	public enum GdkPixbufRotation : uint {
 		GDK_PIXBUF_ROTATE_NONE =              0,
@@ -1848,7 +1856,7 @@ namespace Platform.Gdk {
 		[ExplicitOffset( Offset = 32 )]
 		public ushort data_format;
 		[ExplicitOffset( Offset = 40 )]
-		public UnnamedUnion_9D49855A data;
+		public UnnamedUnion_E5B52012 data;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
@@ -2674,7 +2682,7 @@ namespace Platform.Gdk {
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
-	public partial struct UnnamedUnion_9D49855A {
+	public partial struct UnnamedUnion_E5B52012 {
 		[Overlapped( Offset = 0 )]
 		public sbyte[20] b;
 		[Overlapped( Offset = 0 )]

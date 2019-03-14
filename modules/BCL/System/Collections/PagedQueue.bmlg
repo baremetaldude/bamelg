@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -9,8 +9,8 @@ using System.Runtime;
 
 namespace System.Collections {
 	// Designed for huge amounts of small structs
-	// O(1) allocation and removal
-	// Object addresses not changed after resize
+	// O(1) Enqueue and Dequeue
+	// Elements not moved after resize
 	public class PagedQueue<T> {
 		private int _version;
 
@@ -26,7 +26,8 @@ namespace System.Collections {
 
 		public int Count { get; private set; }
 		public int Capacity { get { return _pageCount * BlockSize; } }
-		public int PageCount { get { return _pageCount; } }
+		public int PageCount { get { return _pageCount * ( Memory.DefaultPageReserveSize / Memory.PlatformDefaultPageSize ); } }
+		public int Version { get { return _version; } }
 
 		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
 
@@ -67,6 +68,9 @@ namespace System.Collections {
 		private PageInfo* AllocatePage() {
 			byte* memory;
 			if( _freePage != null ) {
+				_freePage->Tail = _freePage->Head = _freePage->Count = 0;
+				_freePage->Next = null;
+
 				memory = ( byte* ) _freePage->Elements;
 				_freePage = null;
 			}
@@ -114,25 +118,70 @@ namespace System.Collections {
 		private static PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
 
 		public void* Dequeue() {
-			CommonCollectionOperations.UpdateVersion( &_version );
-
 			var result = Dequeue( _firstPage );
 			if( result == null ) return null;
+
+			CommonCollectionOperations.UpdateVersion( &_version );
 
 			if( _firstPage->Count == 0 ) {
 				var next = _firstPage->Next;
 
-				if( _freePage == null )
-					_freePage = _firstPage;
-				else {
-					FreePage( _freePage ); // delete cold page
-					_freePage = _firstPage; // _freePage = hot page
-				}
+				if( next != null ) {
+					if( _freePage == null )
+						_freePage = _firstPage;
+					else {
+						FreePage( _freePage ); // delete cold page
+						_freePage = _firstPage; // _freePage = hot page
+					}
 
-				_firstPage = next;
+					_firstPage = next;
+				}
+			}
+
+			if( _markers != null ) {
+				if( _markers.ContainsKey( ( uintptr ) result ) )
+					_markers.Remove( ( uintptr ) result );
 			}
 
 			return result;
+		}
+
+		public Dictionary<uintptr, int> _markers;
+
+		public void CreateMarker( T* element ) {
+			if( element == null ) return;
+
+			var holdingPage = GetPageInfo( element );
+			Debug.Assert( holdingPage->Parent == this );
+			Debug.Assert( holdingPage->Count > 0 ); // only when we have elements in page
+
+			if( _markers == null ) _markers = new Dictionary<uintptr, int>();
+
+			int refCount = 0;
+			if( _markers.TryGetValue( ( uintptr ) element, refCount ) )
+				_markers[( uintptr ) element] = refCount + 1;
+			else
+				_markers.Add( ( uintptr ) element, 1 );
+		}
+
+		public bool ReleaseMarker( T* element ) {
+			if( element == null ) return false;
+			if( _markers == null ) return false;
+
+			var holdingPage = GetPageInfo( element );
+			Debug.Assert( holdingPage->Parent == this );
+
+			int refCount = 0;
+			if( _markers.TryGetValue( ( uintptr ) element, refCount ) ) {
+				if( refCount == 1 )
+					_markers.Remove( ( uintptr ) element );
+				else
+					_markers[( uintptr ) element] = refCount - 1;
+
+				return true;
+			}
+
+			return false;
 		}
 
 		public yield<T*> GetEnumerator( T* startingValue ) {

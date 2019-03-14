@@ -1,0 +1,46 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+namespace Platform.X {
+	public partial struct Display : IDisposable {
+		public static Display* Open() { return XApi.XOpenDisplay( null ); }
+		public static Display* Open( CUtf8String display ) { return XApi.XOpenDisplay( display ); }
+
+		public void Close() { XApi.XCloseDisplay( &this ); }
+		public void Dispose() { Close(); }
+
+		public int ProtocolRevision { get { return this != nullref ? XApi.XProtocolRevision( &this ) : -1; } }
+		public int ProtocolVersion { get { return this != nullref ? XApi.XProtocolVersion( &this ) : -1; } }
+
+		public void Flush() { XApi.XFlush( &this ); }
+
+		public Screen* DefaultScreen { get { return XApi.XDefaultScreenOfDisplay( &this ); } }
+		public Screen* Screens[int index] { get { return XApi.XScreenOfDisplay( &this, index ); } }
+
+		public Window DefaultRootWindow { get { return XApi.XDefaultRootWindow( &this ); } }
+		public Window RootWindows[int index] { get { return XApi.XRootWindow( &this, index ); } }
+
+		public string ToString() {
+			return string.Format( "Display: protocol v{0}.{1}", ProtocolVersion, ProtocolRevision );
+		}
+	}
+	public struct XlibLock {
+		private readonly Display* _display;
+
+		public XlibLock( Display* display ) { XApi.XLockDisplay( _display = display ); }
+		~XlibLock() { XApi.XUnlockDisplay( _display ); }
+	}
+
+	public partial struct Screen {
+		public Display* DisplayOfScreen { get { return XApi.XDisplayOfScreen( &this ); } }
+
+		public int Width { get { return XApi.XWidthOfScreen( &this ); } }
+		public int Height { get { return XApi.XHeightOfScreen( &this ); } }
+	}
+}

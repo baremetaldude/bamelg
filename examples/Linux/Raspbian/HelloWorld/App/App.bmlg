@@ -1,0 +1,73 @@
+﻿//
+// Created by $USER
+//
+
+using System;
+using System.Threading;
+
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		[ThreadStatic]
+		static int _threadLocal = 7;
+
+		[ThreadStatic]
+		static string _threadLocal2 = new string( "TLS init value" );
+
+		[FiberStatic]
+		static int _fiberLocal1 = 9;
+
+		[FiberStatic]
+		static string _fiberLocal2 = new string( "FLS init value" );
+
+		private static void PrintThreadInfo() {
+			Console.WriteLine( "CurrentThread: {0}", bitcast<void*>( pthread_t.CurrentThread ) );
+			Console.WriteLine( "_threadLocal={0} &_threadLocal={1}", _threadLocal, &_threadLocal );
+			Console.WriteLine( "_threadLocal2='{0}' &_threadLocal2='{1}'", _threadLocal2, &_threadLocal2 );
+			Console.WriteLine( "_fiberLocal1={0} &_fiberLocal1={1}", _fiberLocal1, &_fiberLocal1 );
+			Console.WriteLine( "_fiberLocal2='{0}' &_fiberLocal2='{1}'", _fiberLocal2, &_fiberLocal2 );
+		}
+
+		private static void SecondThread() {
+			Console.WriteLine( ( Utf8String ) "--> SecondThread" );
+			Console.WriteLine( "==== Hello another {0}! ====", "world" );
+			PrintThreadInfo();
+		}
+
+		private static void ThirdThread( string value ) {
+			Console.WriteLine( "==== Hello {0}! ====", value );
+			PrintThreadInfo();
+		}
+		
+		[EntryPoint]
+		private static void Main() {
+			Console.WriteLine( Utf8String.Format( "==== Hello {0}! ====", "world" ) );
+
+			Console.WriteLine( "IsTerminalSupportsRGB={0} IsTerminalSupports256Color={1} IsTerminalSupports16Color={2}", Console.IsTerminalSupportsRGB, Console.IsTerminalSupports256Color, Console.IsTerminalSupports16Color );
+
+			using( Console.AttributedRegion( ConsoleColor.DarkGreen ) ) Console.WriteLine( "Hello dark green world! Well warded." );
+			using( Console.AttributedRegion( ConsoleColor.Green ) ) Console.WriteLine( "Hello green world! Feed the trees!" );
+			using( Console.AttributedRegion( ConsoleColor.DarkRed ) ) Console.WriteLine( "Hello dark red world! Yar!" );
+			using( Console.AttributedRegion( ConsoleColor.Red ) ) Console.WriteLine( "Hello red world! A trial by fire!" );
+			using( Console.AttributedRegion( ConsoleColor.DarkBlue ) ) Console.WriteLine( "Hello dark blue world! Nighty night!" );
+			using( Console.AttributedRegion( ConsoleColor.Blue ) ) Console.WriteLine( "Hello blue world! Where is the party?" );
+			using( Console.AttributedRegion( ConsoleColor.DarkYellow ) ) Console.WriteLine( "Hello dark yellow world! I got something to show ya." );
+			using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.WriteLine( "Hello yellow world! Bringing the heat!" );
+			using( Console.AttributedRegion( ConsoleColor.DarkCyan ) ) Console.WriteLine( "Hello dark cyan world! I must repair what came undone." );
+			using( Console.AttributedRegion( ConsoleColor.Cyan ) ) Console.WriteLine( "Hello cyan world! With alacrity!" );
+			using( Console.AttributedRegion( ConsoleColor.DarkMagenta ) ) Console.WriteLine( "Hello dark magenta world! Blink and you'll miss me." );
+			using( Console.AttributedRegion( new Console.OutputAttributes() { ForegroundColor = ConsoleColor.Magenta } ) ) Console.WriteLine( "Hello magenta world! The Hidden Ones smile." );
+
+			PrintThreadInfo();
+
+			var thread = new pthread_t( SecondThread );
+			thread.Join();
+
+			var th2 = new pthread_t( DPC.Create<string>( ThirdThread, "third thread" ) );
+			th2.Join();
+			
+			Console.WriteLine( "==== bye-bye ====" );
+		}
+	}
+}

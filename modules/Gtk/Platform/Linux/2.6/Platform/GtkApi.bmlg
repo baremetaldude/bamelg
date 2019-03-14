@@ -475,8 +475,8 @@ namespace Platform.Gtk {
 		public void AddItem( SbcsString text ) { GtkApi.gtk_combo_box_append_text( &this, new CUtf8String( text.GetChars() ) ); }
 
 		public void InsertItem( int position, Utf8String text ) { GtkApi.gtk_combo_box_insert_text( &this, position, text ); }
-		public void RemoveItem( int position) { GtkApi.gtk_combo_box_remove_text( &this, position ); }
-		
+		public void RemoveItem( int position ) { GtkApi.gtk_combo_box_remove_text( &this, position ); }
+
 		public void Clear() { Model = ( GtkTreeModel* ) GtkApi.gtk_list_store_newv( 1, new GType[1] { GType.G_TYPE_STRING } ); }
 
 		public int SelectedIndex {
@@ -1272,7 +1272,7 @@ namespace Platform.Gtk {
 				return result;
 			}
 			set {
-				if( value.IsNullOrEmpty ) 
+				if( value.IsNullOrEmpty )
 					GtkApi.gtk_text_buffer_set_text( &this, new CUtf8String( new byte[1] { ' ' } ), 1 );
 				else {
 					var str = ( CUtf8String ) value;

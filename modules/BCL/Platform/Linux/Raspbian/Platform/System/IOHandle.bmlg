@@ -1,0 +1,416 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Runtime;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	[PrimitiveType( Size = sizeof( uint ) )]
+	public struct IOHandle : IFormattable, IDisposable {
+		public static IOHandle Invalid { get { return new IOHandle( -1 ); } }
+		public bool IsValid { get { return this != Invalid; } }
+
+		public IOHandle( int handle ) {
+			this = bitcast<IOHandle>( handle );
+		}
+
+		public static SystemError Open( IOHandle& result, CUtf8String name, FctlValue flags, int permissions ) {
+			var resultCode = result.OpenBlocking( name, flags, permissions );
+			if( !result.IsValid ) return resultCode;
+			return SystemError.None;
+		}
+
+		public SystemError Seek( long value, SeekOrigin seekOrigin, long& newPosition ) {
+			using( Fiber.AsyncCompletionRegion() ) {
+				var result = LibcApi.lseek64( this, value, AdaptationLayer.MapSeekOrigin( seekOrigin ) );
+				if( newPosition != nullref ) newPosition = result;
+				if( result == -1 ) return LibcApi.LastError;
+				return SystemError.None;
+			}
+		}
+
+		public void Close() {
+			if( this != Invalid )
+				LibcApi.AssertErrno( LibcApi.close( this ) );
+
+			this = Invalid;
+		}
+
+		public void Dispose() {
+			Close();
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		internal void EnsureNonBlocking() {
+			Assert.IsTrue( IsNonBlocking );
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		internal void EnsureBlocking() {
+			Assert.IsTrue( !IsNonBlocking );
+		}
+
+		protected SystemError WriteNonBlocking( TimeSpan timeout, vararg iovec data ) {
+			if( data.Length == 0 ) return SystemError.None;
+
+			if( Fiber.IsFiberExecuting ) {
+				return Fiber.FiberManager.WriteNonBlocking( timeout, this, data, ( int ) data.Length );
+			}
+			else {
+				using( new AlarmRegion( timeout ) ) {
+					var totalWritten = LibcApi.writev( this, data, data.Length.ToSigned() );
+					if( totalWritten < 0 ) {
+						var lastError = LibcApi.LastError;
+						if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+						totalWritten = 0;
+						return lastError;
+					}
+
+					return SystemError.None;
+				}
+			}
+		}
+
+		// All bytes will be sent or error returned
+		protected SystemError WriteNonBlocking( TimeSpan timeout, void* buffer, int count ) {
+			if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemError.None;
+
+			if( Fiber.IsFiberExecuting ) {
+				return Fiber.FiberManager.WriteNonBlocking( timeout, this, buffer, count );
+			}
+			else {
+				using( new AlarmRegion( timeout ) ) {
+					var totalWritten = LibcApi.write( this, buffer, count );
+					if( totalWritten < 0 ) {
+						var lastError = LibcApi.LastError;
+						if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+						return lastError;
+					}
+
+					return SystemError.None;
+				}
+			}
+		}
+
+		protected SystemError ReadNonBlocking( TimeSpan timeout, int& totalReceived, vararg iovec data ) {
+			if( Fiber.IsFiberExecuting ) {
+				return Fiber.FiberManager.ReadNonBlocking( timeout, this, data, ( int ) data.Length, totalReceived );
+			}
+			else {
+				if( timeout <= TimeSpan.Zero ) {
+					totalReceived = LibcApi.readv( this, &data[0], data.Length.ToSigned() );
+					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+
+					return SystemError.None;
+				}
+				else {
+					var @event = new pollfd { Handle = this, ListenedEvents = PollEvents.POLLIN, RaisedEvents = PollEvents.None };
+
+				restart_poll:
+					var polledDescriptors = LibcApi.poll( &@event, 1, ( int ) timeout.TotalMilliseconds );
+					if( polledDescriptors < 0 ) {
+						switch( LibcApi.LastError ) {
+							case SystemError.EINTR: goto restart_poll;
+						}
+					}
+
+					if( polledDescriptors == 0 ) return SystemError.ETIMEDOUT;
+
+					totalReceived = LibcApi.readv( this, &data[0], data.Length.ToSigned() );
+					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+
+					return SystemError.None;
+				}
+			}
+		}
+
+		// Less than 'count' bytes can be received
+		protected SystemError ReadNonBlocking( TimeSpan timeout, void* buffer, int count, int& totalReceived ) {
+			totalReceived = 0;
+			if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemError.None;
+
+			if( Fiber.IsFiberExecuting ) {
+				return Fiber.FiberManager.ReadNonBlocking( timeout, this, buffer, count, totalReceived );
+			}
+			else {
+				if( timeout <= TimeSpan.Zero ) {
+					totalReceived = LibcApi.read( this, buffer, count );
+					if( totalReceived < 0 ) {
+						totalReceived = 0;
+						return LibcApi.LastError;
+					}
+
+					return SystemError.None;
+				}
+				else {
+					var @event = new pollfd { Handle = this, ListenedEvents = PollEvents.POLLIN, RaisedEvents = PollEvents.None };
+
+				restart_poll:
+					var polledDescriptors = LibcApi.poll( &@event, 1, ( int ) timeout.TotalMilliseconds );
+					if( polledDescriptors < 0 ) {
+						switch( LibcApi.LastError ) {
+							case SystemError.EINTR: goto restart_poll;
+						}
+					}
+
+					if( polledDescriptors == 0 ) return SystemError.ETIMEDOUT;
+
+					totalReceived = LibcApi.read( this, buffer, count );
+					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+
+					return SystemError.None;
+				}
+			}
+		}
+
+		protected SystemError OpenBlocking( CUtf8String name, FctlValue flags, int permissions ) {
+			var result = SystemError.None;
+
+			using( Fiber.AsyncCompletionRegion() ) {
+				this = bitcast<FileHandle>( LibcApi.open( name, flags, permissions ) );
+				if( !IsValid ) result = LibcApi.LastError;
+			}
+
+			return result;
+		}
+
+		public SystemError RawWrite( vararg iovec vectors ) {
+			if( vectors.Length == 0 ) return SystemError.None;
+
+			var transmitted = 0;
+
+			var bufferLength = 0;
+			foreach( var vector in vectors )
+				bufferLength += ( int ) vector.iov_len;
+
+			do {
+				var written = LibcApi.writev( this, &vectors[0], vectors.Length.ToSigned() );
+				if( written < 0 ) return LibcApi.LastError;
+
+				transmitted += written;
+			} while( transmitted < bufferLength );
+
+			return SystemError.None;
+		}
+
+		protected SystemError WriteBlocking( TimeSpan timeout, vararg iovec vectors ) {
+			if( vectors.Length == 0 ) return SystemError.None;
+
+			EnsureBlocking();
+
+			using( Fiber.AsyncCompletionRegion() )
+			using( new AlarmRegion( timeout ) )
+				return RawWrite( vararg( vectors, vectors.Length ) );
+		}
+
+		public SystemError RawRead( int& transmitted, vararg iovec vectors ) {
+			transmitted = 0;
+			if( vectors.Length == 0 ) return SystemError.None;
+
+			var bufferLength = 0;
+			foreach( var vector in vectors )
+				bufferLength += ( int ) vector.iov_len;
+
+			do {
+				var readen = LibcApi.readv( this, &vectors[0], vectors.Length.ToSigned() );
+				if( readen == 0 ) return SystemError.None;
+				if( readen < 0 ) return LibcApi.LastError;
+
+				transmitted += readen;
+			} while( transmitted < bufferLength );
+
+			return SystemError.None;
+		}
+
+		protected SystemError ReadBlocking( TimeSpan timeout, int& transmitted, vararg iovec vectors ) {
+			transmitted = 0;
+			if( vectors.Length == 0 ) return SystemError.None;
+
+			EnsureBlocking();
+			using( Fiber.AsyncCompletionRegion() )
+			using( new AlarmRegion( timeout ) )
+				return RawRead( transmitted, vararg( vectors, vectors.Length ) );
+		}
+
+		public SystemError RawWrite( void* buffer, int bufferLength ) {
+			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+
+			var transmitted = 0;
+
+			do {
+				var written = LibcApi.write( this, ( byte* ) buffer + transmitted, bufferLength );
+				if( written < 0 ) return LibcApi.LastError;
+
+				transmitted += written;
+				bufferLength -= written;
+			} while( transmitted < bufferLength );
+
+			return SystemError.None;
+		}
+
+		// Less than 'count' bytes can be transmitted
+		protected SystemError WriteBlocking( TimeSpan timeout, void* buffer, int bufferLength ) {
+			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+
+			using( Fiber.AsyncCompletionRegion() )
+			using( new AlarmRegion( timeout ) )
+				return RawWrite( buffer, bufferLength );
+		}
+
+		public SystemError RawRead( void* buffer, int bufferLength, int& transmitted, bool fullBlock = false ) {
+			transmitted = 0;
+			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+
+			do {
+				var readen = LibcApi.read( this, ( byte* ) buffer + transmitted, bufferLength );
+				if( readen == 0 ) break;
+				if( readen < 0 ) return LibcApi.LastError;
+
+				transmitted += readen;
+				bufferLength -= readen;
+			} while( fullBlock && transmitted < bufferLength );
+
+			return SystemError.None;
+		}
+
+		// Less than 'count' bytes can be transmitted
+		// if 'fullBlock' == true then try to accumulate full buffer
+		// if 'fullBlock' == false then try to fetch any available data
+		protected SystemError ReadBlocking( TimeSpan timeout, void* buffer, int bufferLength, int& transmitted, bool fullBlock = false ) {
+			transmitted = 0;
+			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+
+			using( Fiber.AsyncCompletionRegion() )
+			using( new AlarmRegion( timeout ) )
+				return RawRead( buffer, bufferLength, transmitted, fullBlock );
+		}
+
+		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlValue flags, SymlinkFollowOption symlinkFollowOption ) {
+			using( Fiber.AsyncCompletionRegion() ) {
+				this = bitcast<FileHandle>( LibcApi.openat( parent, name, flags, symlinkFollowOption ) );
+				if( !IsValid ) return LibcApi.LastError;
+				return SystemError.None;
+			}
+		}
+
+		public bool IsClosedOnExec {
+			get {
+				FctlValue options;
+				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+					return false;
+
+				return ( options & FctlValue.FD_CLOEXEC ) != 0;
+			}
+			set {
+				FctlValue options;
+				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+					return;
+
+				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FctlValue.FD_CLOEXEC.Value(), value );
+
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFD, options ) );
+			}
+		}
+
+		public bool IsNonBlocking {
+			get {
+				FctlValue options;
+				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+					return false;
+
+				return ( options & FctlValue.O_NONBLOCK ) != 0;
+			}
+			set {
+				FctlValue options;
+				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+					return;
+
+				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FctlValue.O_NONBLOCK.Value(), value );
+
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+			}
+		}
+
+		public int AvailableBytes {
+			get {
+				int result;
+				LibcApi.AssertErrno( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &result ) );
+				return result;
+			}
+		}
+
+		public void DropAvailableBytes() {
+			var available = AvailableBytes;
+
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				while( available > 0 ) {
+					var readen = LibcApi.read( this, buffer, Math.Min( available, ( int ) bufferLength ) );
+					if( readen <= 0 ) break;
+
+					available -= readen;
+				}
+			}
+		}
+
+		public uint ID {
+			get { return bitcast<uint>( this ); }
+		}
+
+		protected void DumpRelevantData( StringBuilder builder ) {
+			builder.AppendFormat( " ID={0} nonblock={1} cloexec={2}", ID, IsNonBlocking, IsClosedOnExec );
+
+			int availableBytes;
+			if( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
+			else builder.AppendFormat( " AvailableBytes={0}", "---" );
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( "{" );
+			DumpRelevantData( builder );
+			builder.Append( " }" );
+		}
+	}
+
+	// Some handles like file handles cannot be polled via select/poll/epoll ( bad linux/BSD programmers, no such scary things in Win32 )
+	public struct IOHandleBlocking : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SystemError Write( vararg iovec data ) { return WriteBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
+		public SystemError Write( void* buffer, int count ) { return WriteBlocking( TimeSpan.Zero, buffer, count ); }
+
+		public SystemError Read( int& totalReaden, vararg iovec data ) { return ReadBlocking( TimeSpan.Zero, totalReaden, vararg( data, data.Length ) ); }
+		public SystemError Read( void* buffer, int count, int& totalReceived ) { return ReadBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+
+		public SystemError Write( TimeSpan timeout, vararg iovec data ) { return WriteBlocking( timeout, vararg( data, data.Length ) ); }
+		public SystemError Write( TimeSpan timeout, void* buffer, int count ) { return WriteBlocking( timeout, buffer, count ); }
+
+		public SystemError Read( TimeSpan timeout, int& totalReaden, vararg iovec data ) { return ReadBlocking( timeout, totalReaden, vararg( data, data.Length ) ); }
+		public SystemError Read( TimeSpan timeout, void* buffer, int count, int& totalReceived ) { return ReadBlocking( timeout, buffer, count, totalReceived ); }
+	}
+
+	// Sockets, pipes, character devices works fine with O_NONBLOCK allows efficient multiplexing in event loop
+	public struct IOHandleNonBlocking : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SystemError Write( vararg iovec data ) { return WriteNonBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
+		public SystemError Write( void* buffer, int count ) { return WriteNonBlocking( TimeSpan.Zero, buffer, count ); }
+
+		public SystemError Read( int& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeSpan.Zero, totalReceived, vararg( data, data.Length ) ); }
+		public SystemError Read( void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+
+		public SystemError Write( TimeSpan timeout, vararg iovec data ) { return WriteNonBlocking( timeout, vararg( data, data.Length ) ); }
+		public SystemError Write( TimeSpan timeout, void* buffer, int count ) { return WriteNonBlocking( timeout, buffer, count ); }
+
+		public SystemError Read( TimeSpan timeout, int& totalReceived, vararg iovec data ) { return ReadNonBlocking( timeout, totalReceived, vararg( data, data.Length ) ); }
+		public SystemError Read( TimeSpan timeout, void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( timeout, buffer, count, totalReceived ); }
+	}
+}

@@ -246,7 +246,7 @@ namespace System {
 				do {
 					index = index * 10 + currentChar - '0';
 					if( index < 0 ) {
-						throw new FormatException( TextParseStatus.FormatArgumentIndex );
+						BclErrorHandler.ParserException( TextParsingStatus.FormatArgumentIndex );
 						return;
 					}
 
@@ -259,7 +259,7 @@ namespace System {
 				} while( currentChar >= '0' && currentChar <= '9' );
 
 				if( index >= parameters.Length ) {
-					throw new FormatException( TextParseStatus.FormatArgumentIndex );
+					BclErrorHandler.ParserException( TextParsingStatus.FormatArgumentIndex );
 					return;
 				}
 
@@ -366,7 +366,7 @@ namespace System {
 			return;
 
 		incorrect_format:
-			throw new FormatException( TextParseStatus.Format );
+			BclErrorHandler.ParserException( TextParsingStatus.Format );
 			return;
 		}
 

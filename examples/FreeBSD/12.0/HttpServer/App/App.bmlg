@@ -1,0 +1,313 @@
+﻿//
+// Created by $USER
+//
+
+using System;
+using System.Collections;
+using System.IO;
+using System.Net;
+using System.Runtime;
+using System.Serialization;
+using System.Threading;
+using System.Web;
+
+using Platform.IO;
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		public class CustomHttpServer : HttpServer {
+			public CustomHttpServer() {
+			}
+
+			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
+				return new SessionHandler( this, stream );
+			}
+
+			public class SessionHandler : basetype.SessionHandler {
+				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
+				public new declaringtype Server; // override field type
+
+				public SessionHandler( declaringtype parent, IStream stream )
+					: base( parent, stream ) {
+				}
+
+				protected override RequestHandler CreateHandler() {
+					switch( Resource ) {
+						case "/stat.json": return new HttpStatisticPageHandler( this );
+						case "/stat.txt": return new HttpStatisticTextPageHandler( this );
+
+						case "/":
+						case "/index.html":
+						case "/Default.aspx":
+							return new TestPageHandler( this );
+
+						case "/time.event":
+							return new TimeEventHandler( this );
+
+						case "/hello.aspx":
+							return new HelloWorldPageHandler( this );
+
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( EmbeddedResources.favicon_ico ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
+					}
+
+					return null;
+				}
+			}
+
+			public class HelloWorldPageHandler : PageHandler {
+				public HelloWorldPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.Append( "hello, world!" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+				}
+			}
+
+			public class TimeEventHandler : ServerSentEventHandler {
+				public TimeEventHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.UseAutoFlush = false;
+
+					var delay = TimeSpan.FromSeconds( 1 );
+
+					while( true ) {
+						using( Fiber.CancellationRegion() ) {
+							Response.Write( "data: " );
+							Response.Write( Fiber.UtcNow.ToUnixMilliseconds() );
+							Response.WriteLine();
+
+							Response.Write( "id: " );
+							Response.Write( @Fiber.UtcNow.Ticks );
+							Response.WriteLine();
+
+							Flush();
+							if( Session.StreamError ) break;
+
+							Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+							if( Fiber.IsCancelled ) break;
+						}
+					}
+				}
+
+				protected override void AddCustomHeaders() {
+					base.AddCustomHeaders();
+
+					// for debug purpose
+					HttpFormatter.HeaderAccessControl( Headers, "allow" ); 
+					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
+				}
+			}
+
+			public class TestPageHandler : PageHandler {
+				public TestPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					var server = ( CustomHttpServer ) Session.Server;
+					var time = Fiber.Now;
+
+					Response.Append( "<html>" );
+					{
+						Response.Append( "<head>" );
+						{
+							Response.Append( @"<title>Bamelg server</title>" );
+						}
+						Response.Append( "</head>" );
+
+						Response.Append( "<body>" );
+						{
+							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10}</p>", time, server.ValidRequestCount );
+							Response.Concat( "<p>TotalAcceptedClientCount: ", server.TotalAcceptedClientCount, "; InvalidRequestCount=", server.InvalidRequestCount, "; ActiveSessionCount=", server.ActiveSessionCount, "</p>" );
+							Response.Append( "<p>Some unicode symbols: тут немножко Юникода</p>" );
+							Response.Append( @"<p>Server sent events <a href=""time.html"">example</a></p>" );
+						}
+						Response.Append( "</body>" );
+					}
+					Response.Append( "</html>" );
+				}
+			}
+		}
+
+		public static Thread MainThread = Thread.CurrentThread;
+
+		[EntryPoint]
+		private static void Main() {
+			if( Environment.CommandLine.Length == 1 ) { // no args
+			}
+			else if( Environment.CommandLine.Length == 2 ) { // path to config
+				var configPath = Environment.CommandLine[1];
+
+				if( System.IO.File.Exists( configPath ) ) {
+					using( var stream = System.IO.File.OpenRead( configPath ) )
+					using( var reader = new StreamReader( stream ) )
+						IniSerializer<AppSettings>.Deserialize( Options, reader );
+				}
+			}
+			else {
+				Console.WriteLine( "Usage:" );
+				Console.WriteLine( "\t" + "HttpServer" );
+				Console.WriteLine( "\t" + "HttpServer /path/config.ini" );
+			}
+
+			if( Options.MaxThreads <= 0 ) Options.MaxThreads = Environment.ProcessorCount;
+			
+			Memory.MultithreadedEnvironment = Options.MaxThreads > 0;
+			Fiber.UseGuardPage = Options.FiberUseGuardPage;
+
+			if( Options.Trace ) {
+				utsname value;
+				LibcApi.uname( value );
+
+				Console.WriteLine( "PID={0}", LibcApi.getpid() );
+				Console.WriteLine( "sysname == '{0}', nodename == '{1}', release == '{2}', version == '{3}', machine == '{4}'", new CString( &value.sysname[0] ), new CString( &value.nodename[0] ), new CString( &value.release[0] ), new CString( &value.version[0] ), new CString( &value.machine[0] ) );
+				Console.WriteLine();
+
+				System.Console.WriteLine( "@{ Options:" );
+				IniSerializer<AppSettings>.Serialize( Options, Console.Out );
+				Console.WriteLine( "@}" );
+				System.Console.WriteLine();
+
+				Console.WriteLine( "@{ Environment variables:" );
+				for( var i = 0; LibcApi.environ[i] != null; ++i ) Console.WriteLine( "\t{0}", LibcApi.environ[i] );
+				Console.WriteLine( "@}" );
+				Console.WriteLine();
+			}
+
+
+			if( Options.MaxThreads > 1 ) {
+				var threads = new List<Thread>( Options.MaxThreads );
+				_eventLoops = new List<EventLoop>();
+
+				for( var i = 1; i < Options.MaxThreads; ++i )
+					threads.Add( Thread.Start( CreateAdditionalServer ) );
+
+				CreateServer();
+
+				foreach( var eventLoop in _eventLoops )
+					eventLoop.RequestExit();
+
+				foreach( var thread in threads )
+					thread.Join();
+			}
+			else {
+				CreateServer();
+			}
+		}
+
+		static void CreateServer() {
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchExitSignals(); // convert signals to events
+
+			CreateServer( eventLoop );
+		}
+
+		static List<EventLoop> _eventLoops;
+		static Mutex _eventLoopsLock;
+
+		static void CreateAdditionalServer() {
+			var eventLoop = new EventLoop();
+
+			using( _eventLoopsLock.LockRegion() )
+				_eventLoops.Add( eventLoop );
+
+			eventLoop.BlockExitSignals(); // block signals
+
+			CreateServer( eventLoop );
+		}
+
+		static void CreateServer( EventLoop eventLoop ) {
+			var server = new CustomHttpServer() { // one server per thread
+				ListenBacklog = Options.ListenBacklog,
+				ClientFiberStackPages = Options.ClientFiberStackPages,
+				MaxClientRequestLength = Options.MaxClientRequestLength,
+				MaxSessions = Options.MaxSessions,
+				ReusePort = Options.MaxThreads > 1
+			};
+
+			eventLoop.BeginInvoke( () => {
+				Fiber.Start( 16, () => {
+					var tcpListen = false;
+					var tcpListenReported = false;
+
+					var unixListen = !MainThread.IsCurrent;
+					var unixListenReported = false;
+
+					while( true ) {
+						if( !tcpListen ) {
+							tcpListen = server.Listen( Options.ListenEndpoint );
+
+							if( tcpListen )
+								Console.WriteLine( "Listen {0}", Options.ListenEndpoint );
+							else if( !tcpListenReported ) {
+								Console.WriteLine( "Unable bind {0}", Options.ListenEndpoint );
+								tcpListenReported = true;
+							}
+						}
+
+						if( !unixListen ) {
+							unixListen = server.Listen( Options.ListenUnixPath );
+
+							if( unixListen )
+								Console.WriteLine( "Listen socket '{0}'", Options.ListenUnixPath );
+							else if( !unixListenReported ) {
+								Console.WriteLine( "Unable to bind socket '{0}'", Options.ListenUnixPath );
+								unixListenReported = true;
+							}
+						}
+
+						var all = true;
+
+						all &= tcpListen;
+						all &= unixListen;
+
+						if( !all ) {
+							using( Fiber.CancellationRegion() ) {
+								Fiber.Sleep( 1000 );
+								if( Fiber.IsCancelled ) return;
+							}
+
+							continue;
+						}
+
+						break;
+					}
+
+					if( MainThread.IsCurrent ) PrintConnectionOptions();
+				}, "resource allocator" );
+			} );
+
+			if( Options.Trace ) Console.WriteLine( "Thread {0} dispatching HTTP requests", pthread_t.CurrentThreadId );
+			eventLoop.Dispatch();
+		}
+
+		static void PrintConnectionOptions() {
+			Console.WriteLine( "@{ Possible connection URLs:" );
+			foreach( var @interface in LibcApi.GetNetworkInterfaces() ) {
+				if( @interface->ifa_addr == null ) continue;
+
+				if( @interface->ifa_addr->sa_family == ProtocolFamily.PF_INET ) {
+					var& address = *( sockaddr_in* ) @interface->ifa_addr;
+					Console.WriteLine( "    interface={0,-10} http://{1}:{2}", @interface->ifa_name, cast<IPv4Endpoint>( address ).Address, Options.ListenEndpoint.Port );
+				} else if( @interface->ifa_addr->sa_family == ProtocolFamily.PF_INET6 ) {
+					var& address = *( sockaddr_in6* ) @interface->ifa_addr;
+					Console.WriteLine( "    interface={0,-10} http://[{1}]:{2}", @interface->ifa_name, cast<IPv6Endpoint>( address ).Address, Options.ListenEndpoint.Port );
+				}
+			}
+
+			Console.WriteLine( "    http://{0}:{1}", LibcApi.GetHostName(), Options.ListenEndpoint.Port );
+
+			Console.WriteLine( "@}" );
+		}
+	}
+}

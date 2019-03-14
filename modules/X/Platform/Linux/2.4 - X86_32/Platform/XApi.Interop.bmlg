@@ -8,7 +8,7 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace Platform.X {
-	[ExternLibrary( Image = "/usr/lib/libX11.so" )]
+	[ExternLibrary( Image = "/usr/lib/libX11.so.6" )]
 	public static partial struct XApi {
 		public extern static int _Xmblen( sbyte* str, int len );
 		public extern static int _Xmbtowc( char* p0, sbyte* p1, int p2 );
@@ -949,12 +949,15 @@ namespace Platform.X {
 	}
 	public partial struct _XrmHashBucketRec {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Atom {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Colormap {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Cursor {
 	}
@@ -970,20 +973,25 @@ namespace Platform.X {
 	}
 	public partial struct Display {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Drawable {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Font {
 	}
 	public partial struct GC {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct GContext {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct KeySym {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Pixmap {
 	}
@@ -1045,6 +1053,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 12 )]
 		public int scanline_pad;
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Time {
 	}
@@ -1068,9 +1077,11 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 28 )]
 		public int map_entries;
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct VisualID {
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct Window {
 	}
@@ -1241,7 +1252,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 24 )]
 		public int format;
 		[ExplicitOffset( Offset = 28 )]
-		public UnnamedUnion_2C2EEB57 data;
+		public UnnamedUnion_5C96EEBE data;
 	}
 	[ExplicitSize( Size = 12 )]
 	[Alignment( Boundary = 4 )]
@@ -1865,6 +1876,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 20 )]
 		public int height_inc;
 	}
+	[Alignment( Boundary = 4 )]
 	[PrimitiveType( Size = sizeof( uintptr ) )]
 	public partial struct XID {
 	}
@@ -1984,7 +1996,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 0 )]
 		public XIMStatusDataType type;
 		[ExplicitOffset( Offset = 4 )]
-		public UnnamedUnion_2C2E93CB data;
+		public UnnamedUnion_5C96C070 data;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
@@ -2010,7 +2022,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 8 )]
 		public Boolean32 encoding_is_wchar;
 		[ExplicitOffset( Offset = 12 )]
-		public UnnamedUnion_2C2E9C0B @string;
+		public UnnamedUnion_5C96C8B0 @string;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -2030,7 +2042,7 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 8 )]
 		public Boolean32 encoding_is_wchar;
 		[ExplicitOffset( Offset = 12 )]
-		public UnnamedUnion_2C2E9FE9 @string;
+		public UnnamedUnion_5C96C456 @string;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -2654,9 +2666,9 @@ namespace Platform.X {
 		[ExplicitOffset( Offset = 40 )]
 		public int height_inc;
 		[ExplicitOffset( Offset = 44 )]
-		public UnnamedStruct_7C88DCB4 min_aspect;
+		public UnnamedStruct_3D36F867 min_aspect;
 		[ExplicitOffset( Offset = 52 )]
-		public UnnamedStruct_7C88DCB4 max_aspect;
+		public UnnamedStruct_3D36F867 max_aspect;
 		[ExplicitOffset( Offset = 60 )]
 		public int base_width;
 		[ExplicitOffset( Offset = 64 )]
@@ -2942,7 +2954,7 @@ namespace Platform.X {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_7C88DCB4 {
+	public partial struct UnnamedStruct_3D36F867 {
 		[ExplicitOffset( Offset = 0 )]
 		public int x;
 		[ExplicitOffset( Offset = 4 )]
@@ -2950,7 +2962,7 @@ namespace Platform.X {
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_2C2E93CB {
+	public partial struct UnnamedUnion_5C96C070 {
 		[Overlapped( Offset = 0 )]
 		public XIMText* text;
 		[Overlapped( Offset = 0 )]
@@ -2958,23 +2970,23 @@ namespace Platform.X {
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_2C2E9C0B {
-		[Overlapped( Offset = 0 )]
-		public sbyte* mbs;
-		[Overlapped( Offset = 0 )]
-		public char* wcs;
-	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_2C2E9FE9 {
+	public partial struct UnnamedUnion_5C96C456 {
 		[Overlapped( Offset = 0 )]
 		public sbyte* multi_byte;
 		[Overlapped( Offset = 0 )]
 		public char* wide_char;
 	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_5C96C8B0 {
+		[Overlapped( Offset = 0 )]
+		public sbyte* mbs;
+		[Overlapped( Offset = 0 )]
+		public char* wcs;
+	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_2C2EEB57 {
+	public partial struct UnnamedUnion_5C96EEBE {
 		[Overlapped( Offset = 0 )]
 		public sbyte[20] b;
 		[Overlapped( Offset = 0 )]

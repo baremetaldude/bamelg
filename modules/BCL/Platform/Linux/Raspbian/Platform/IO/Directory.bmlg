@@ -1,0 +1,217 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Runtime;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.IO {
+	public static class Directory {
+		public struct Entry {
+			public IOHandle DirectoryHandle;
+			public CUtf8String Name;
+			public DirectoryEntryType Type;
+
+			public Utf8String FullPath;
+
+			public bool GetStat( stat& result ) { return NonSharedApi.fstatat( DirectoryHandle, Name, &result, SymlinkFollowOption.None ) == 0; }
+			public bool GetSymlinkStat( stat& result ) { return NonSharedApi.fstatat( DirectoryHandle, Name, &result, SymlinkFollowOption.AT_SYMLINK_NOFOLLOW ) == 0; }
+
+			public bool IsFile { get { return Type == DirectoryEntryType.DT_REG; } }
+			public bool IsDirectory { get { return Type == DirectoryEntryType.DT_DIR; } }
+			public bool IsSymlink { get { return Type == DirectoryEntryType.DT_LNK; } }
+			public bool IsFIFO { get { return Type == DirectoryEntryType.DT_FIFO; } }
+			public bool IsSocket { get { return Type == DirectoryEntryType.DT_SOCK; } }
+		}
+
+		public static bool Exists( Utf8String path ) {
+			stat stat;
+
+			if( NonSharedApi.stat( path, &stat ) < 0 ) return false;
+
+			return stat.IsDirectory;
+		}
+
+		// Deep ceration os subdirectories
+		public static SystemError Create( Permission permission, uint owner, uint group, vararg Utf8String paths ) {
+			if( paths.Length == 0 ) return SystemError.None;
+
+			var result = Create( paths[0], permission, owner, group );
+			if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+
+			var handle = new DirectoryHandle();
+			result = handle.Open( paths[0] ); finally { handle.Close(); }
+			if( result != SystemError.None ) return result;
+
+			for( var i = 1; i < paths.Length; ++i ) {
+				result = Create( handle, paths[i], permission, owner, group );
+				if( result != SystemError.None && result != SystemError.EEXIST ) return result;
+
+				var newHandle = new DirectoryHandle();
+				result = newHandle.Open( handle, paths[i] );
+				if( result != SystemError.None ) return result;
+				handle.Close();
+				handle = newHandle;
+			}
+
+			return result;
+		}
+
+		public static SystemError Create( Utf8String path, Permission permission = ( Permission ) 0b111111101, uint owner = uint.MaxValue, uint group = uint.MaxValue ) {
+			var result = SystemError.None;
+
+			if( LibcApi.mkdir( path, permission ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && LibcApi.chmod( path, permission ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && ( owner != uint.MaxValue || group != uint.MaxValue ) && LibcApi.chown( path, owner, group ) < 0 )
+				result = LibcApi.LastError;
+
+			return result;
+		}
+
+		public static SystemError Create( IOHandle parent, Utf8String path, Permission permission = ( Permission ) 0b111111101, uint owner = uint.MaxValue, uint group = uint.MaxValue ) {
+			var result = SystemError.None;
+
+			if( LibcApi.mkdirat( parent, path, permission ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && LibcApi.fchmodat( parent, path, permission, SymlinkFollowOption.None ) < 0 )
+				result = LibcApi.LastError;
+
+			if( result == SystemError.None && ( owner != uint.MaxValue || group != uint.MaxValue ) && LibcApi.fchownat( parent, path, owner, group, SymlinkFollowOption.None ) < 0 )
+				result = LibcApi.LastError;
+
+			return result;
+		}
+
+		// 'createFullPath' not always necessary since we have 'openat', 'linkat' etc.
+		public static yield<Entry> GetFiles( CUtf8String path, bool createFullPath = false ) {
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( int ) Memory.DefaultPageSize;
+
+				using( var handle = new DirectoryHandle( path ) ) {
+					var entry = new Entry { DirectoryHandle = handle };
+					int readen;
+
+					for( var errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ); readen > 0; errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ) ) {
+						var dptrstart = &buffer[0];
+
+						for( var dptr = bitcast<dirent64*>( dptrstart ); bitcast<byte*>( dptr ) < dptrstart + readen; dptr = bitcast<dirent64*>( bitcast<byte*>( dptr ) + dptr->Length ) ) {
+							if( dptr->INode == 0 || dptr->Type == DirectoryEntryType.DT_DIR ) continue;
+
+							entry.Name = new CUtf8String( &dptr->d_name[0] );
+							entry.Type = dptr->Type;
+
+							switch( entry.Name ) {
+								case ".":
+								case "..":
+									continue;
+							}
+
+							if( createFullPath ) {
+								using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
+									nameBuilder.Value.Append( path );
+									nameBuilder.Value.Append( Path.PathSeparator );
+									nameBuilder.Value.Append( entry.Name );
+									entry.FullPath = nameBuilder.Value.ToUtf8String();
+								}
+							}
+
+							yield return entry;
+						}
+					}
+				}
+			}
+		}
+
+		public static yield<Entry> GetContents( CUtf8String path, bool createFullPath = false ) {
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( int ) Memory.DefaultPageSize;
+
+				using( var handle = new DirectoryHandle( path ) ) {
+					var entry = new Entry { DirectoryHandle = handle };
+					int readen;
+
+					for( var errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ); readen > 0; errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ) ) {
+						var dptrstart = &buffer[0];
+
+						for( var dptr = bitcast<dirent64*>( dptrstart ); bitcast<byte*>( dptr ) < dptrstart + readen; dptr = bitcast<dirent64*>( bitcast<byte*>( dptr ) + dptr->Length ) ) {
+							if( dptr->INode == 0 ) continue;
+
+							entry.Name = new CUtf8String( &dptr->d_name[0] );
+							entry.Type = dptr->Type;
+
+							switch( entry.Name ) {
+								case ".":
+								case "..":
+									continue;
+							}
+
+							if( createFullPath ) {
+								using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
+									nameBuilder.Value.Append( path );
+									nameBuilder.Value.Append( Path.PathSeparator );
+									nameBuilder.Value.Append( entry.Name );
+									entry.FullPath = nameBuilder.Value.ToUtf8String();
+								}
+							}
+
+							yield return entry;
+						}
+					}
+				}
+			}
+		}
+
+		public static yield<Entry> GetContents( Entry& directory, bool createFullPath = false ) {
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( int ) Memory.DefaultPageSize;
+
+				using( var handle = new DirectoryHandle( directory.DirectoryHandle, directory.Name ) ) {
+					var entry = new Entry { DirectoryHandle = handle };
+					int readen;
+
+					for( var errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ); readen > 0; errorCode = handle.getdents64( ( dirent64* ) &buffer[0], bufferLength, readen ) ) {
+						var dptrstart = &buffer[0];
+
+						for( var dptr = bitcast<dirent64*>( dptrstart ); bitcast<byte*>( dptr ) < dptrstart + readen; dptr = bitcast<dirent64*>( bitcast<byte*>( dptr ) + dptr->Length ) ) {
+							if( dptr->INode == 0 ) continue;
+
+							entry.Name = new CUtf8String( &dptr->d_name[0] );
+							entry.Type = dptr->Type;
+
+							switch( entry.Name ) {
+								case ".":
+								case "..":
+									continue;
+							}
+
+							if( createFullPath && directory.FullPath != null ) {
+								using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
+									nameBuilder.Value.Append( directory.FullPath );
+									nameBuilder.Value.Append( Path.PathSeparator );
+									nameBuilder.Value.Append( entry.Name );
+									entry.FullPath = nameBuilder.Value.ToUtf8String();
+								}
+							}
+
+							yield return entry;
+						}
+					}
+				}
+			}
+		}
+	}
+}

@@ -48,7 +48,7 @@ namespace System.IO {
 
 			var resultPtr = cast<T*>( _bufferInfo->ReadBufferStart );
 			_bufferInfo->OnReadPerformed( sizeof( T ) );
-			return *resultPtr;
+			return unaligned( *resultPtr );
 		}
 
 		private T PeekPrimitive<T>() {
@@ -58,7 +58,7 @@ namespace System.IO {
 			}
 
 			var resultPtr = cast<T*>( _bufferInfo->ReadBufferStart );
-			return *resultPtr;
+			return unaligned( *resultPtr );
 		}
 
 		/// @{ primitive types

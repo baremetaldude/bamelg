@@ -1,0 +1,37 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime;
+using System.Runtime.InteropServices;
+
+namespace Platform.Libc {
+	public static partial struct PthreadsApi {
+		/// http://www.kernel.org/doc/man-pages/online/pages/man3/pthread_create.3.html
+		public extern static SystemError _pthread_create( pthread_t* handle, pthread_attr_t* attr, System.Functors.Func<void*, void*> start, void* parameter );
+	}
+
+	public static partial struct PthreadsApi {
+		public static SystemError pthread_create( pthread_t* handle, pthread_attr_t* attr, System.Functors.Func<void*, void*> start, void* parameter ) {
+			var payload = heapalloc Tuple<System.Functors.Func<void*, void*>, void*> {
+				Item1 = start,
+				Item2 = parameter
+			};
+
+			return PthreadsApi._pthread_create( handle, attr, data => {
+				var p = ( Tuple<System.Functors.Func<void*, void*>, void*>* ) data;
+				var payloadCopy = *p;
+				heapfree p;
+
+				Loader.InitializeTls();
+				var result = payloadCopy.Item1( payloadCopy.Item2 );
+				Loader.FinalizeTls();
+
+				return result;
+			}, payload );
+		}
+	}
+}

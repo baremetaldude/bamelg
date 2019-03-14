@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using Platform.Libc;
 
 namespace Platform.JpegLib {
-	[ExternLibrary( Image = "/usr/lib/libjpeg.so" )]
+	[ExternLibrary( Image = "/usr/lib/libjpeg.so.62" )]
 	public static partial struct JpegLibApi {
 		public const int Version = 62;
 
@@ -25,6 +25,7 @@ namespace Platform.JpegLib {
 		public extern static void jpeg_copy_critical_parameters( jpeg_decompress_struct* srcinfo, jpeg_compress_struct* dstinfo );
 		public extern static void jpeg_CreateCompress( jpeg_compress_struct* cinfo, int version, uint structsize );
 		public extern static void jpeg_CreateDecompress( jpeg_decompress_struct* cinfo, int version, uint structsize );
+		public extern static void jpeg_crop_scanline( jpeg_decompress_struct* cinfo, uint* xoffset, uint* width );
 		public extern static void jpeg_default_colorspace( jpeg_compress_struct* cinfo );
 		public extern static void jpeg_destroy( jpeg_common_struct* cinfo );
 		public extern static void jpeg_destroy_compress( jpeg_compress_struct* cinfo );
@@ -40,6 +41,7 @@ namespace Platform.JpegLib {
 		public extern static int jpeg_quality_scaling( int quality );
 		public extern static jvirt_barray_control** jpeg_read_coefficients( jpeg_decompress_struct* cinfo );
 		public extern static int jpeg_read_header( jpeg_decompress_struct* cinfo, Boolean32 requireImage );
+		public extern static Boolean32 jpeg_read_icc_profile( jpeg_decompress_struct* cinfo, byte** iccDataPtr, uint* iccDataLen );
 		public extern static uint jpeg_read_raw_data( jpeg_decompress_struct* cinfo, byte*** data, uint maxLines );
 		public extern static uint jpeg_read_scanlines( jpeg_decompress_struct* cinfo, byte** scanlines, uint maxLines );
 		public extern static Boolean32 jpeg_resync_to_restart( jpeg_decompress_struct* cinfo, int desired );
@@ -50,6 +52,7 @@ namespace Platform.JpegLib {
 		public extern static void jpeg_set_marker_processor( jpeg_decompress_struct* cinfo, int markerCode, Functors.Func<jpeg_decompress_struct*, Boolean32> routine );
 		public extern static void jpeg_set_quality( jpeg_compress_struct* cinfo, int quality, Boolean32 forceBaseline );
 		public extern static void jpeg_simple_progression( jpeg_compress_struct* cinfo );
+		public extern static uint jpeg_skip_scanlines( jpeg_decompress_struct* cinfo, uint numLines );
 		public extern static void jpeg_start_compress( jpeg_compress_struct* cinfo, Boolean32 writeAllTables );
 		public extern static Boolean32 jpeg_start_decompress( jpeg_decompress_struct* cinfo );
 		public extern static Boolean32 jpeg_start_output( jpeg_decompress_struct* cinfo, int scanNumber );
@@ -58,6 +61,7 @@ namespace Platform.JpegLib {
 		public extern static void jpeg_stdio_src( jpeg_decompress_struct* cinfo, FILE* infile );
 		public extern static void jpeg_suppress_tables( jpeg_compress_struct* cinfo, Boolean32 suppress );
 		public extern static void jpeg_write_coefficients( jpeg_compress_struct* cinfo, jvirt_barray_control** coefArrays );
+		public extern static void jpeg_write_icc_profile( jpeg_compress_struct* cinfo, byte* iccDataPtr, uint iccDataLen );
 		public extern static void jpeg_write_m_byte( jpeg_compress_struct* cinfo, int val );
 		public extern static void jpeg_write_m_header( jpeg_compress_struct* cinfo, int marker, uint datalen );
 		public extern static void jpeg_write_marker( jpeg_compress_struct* cinfo, int marker, byte* dataptr, uint datalen );
@@ -538,7 +542,7 @@ namespace Platform.JpegLib {
 		[ExplicitOffset( Offset = 20 )]
 		public int msg_code;
 		[ExplicitOffset( Offset = 24 )]
-		public UnnamedUnion_D98B4F6F msg_parm;
+		public UnnamedUnion_0081D478 msg_parm;
 		[ExplicitOffset( Offset = 104 )]
 		public int trace_level;
 		[ExplicitOffset( Offset = 108 )]
@@ -672,7 +676,7 @@ namespace Platform.JpegLib {
 	}
 	[ExplicitSize( Size = 80 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_D98B4F6F {
+	public partial struct UnnamedUnion_0081D478 {
 		[Overlapped( Offset = 0 )]
 		public int[8] i;
 		[Overlapped( Offset = 0 )]

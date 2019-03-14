@@ -50,31 +50,55 @@ namespace System.Runtime {
 			_implDecommitPages( ptr, count );
 		}
 
+		public static void* TryAllocate( uint size ) {
+			var result = _implAllocate( size );
+			TrackAllocation( result, size );
+			return result;
+		}
+
+		public static void* TryAllocateAligned( uint size, uint align ) {
+			var result = _implAllocateAligned( size, align );
+			TrackAlignedAllocation( result, size, align );
+			return result;
+		}
+
+		public static void* TryAllocateClear( uint size ) {
+			var result = _implAllocateClear( size );
+			TrackAllocation( result, size );
+			return result;
+		}
+
+		public static void* TryAllocateAlignedClear( uint size, uint align ) {
+			var result = _implAllocateAlignedClear( size, align );
+			TrackAlignedAllocation( result, size, align );
+			return result;
+		}
+		
 		public static void* Allocate( uint size ) {
 			var result = _implAllocate( size );
 			TrackAllocation( result, size );
-			if( result == null ) throw new OutOfMemoryException( size );
+			if( result == null ) BclErrorHandler.OutOfMemoryException( size );
 			return result;
 		}
 
 		public static void* AllocateAligned( uint size, uint align ) {
 			var result = _implAllocateAligned( size, align );
 			TrackAlignedAllocation( result, size, align );
-			if( result == null ) throw new OutOfMemoryException( size );
+			if( result == null ) BclErrorHandler.OutOfMemoryException( size );
 			return result;
 		}
 
 		public static void* AllocateClear( uint size ) {
 			var result = _implAllocateClear( size );
 			TrackAllocation( result, size );
-			if( result == null ) throw new OutOfMemoryException( size );
+			if( result == null ) BclErrorHandler.OutOfMemoryException( size );
 			return result;
 		}
 
 		public static void* AllocateAlignedClear( uint size, uint align ) {
 			var result = _implAllocateAlignedClear( size, align );
 			TrackAlignedAllocation( result, size, align );
-			if( result == null ) throw new OutOfMemoryException( size );
+			if( result == null ) BclErrorHandler.OutOfMemoryException( size );
 			return result;
 		}
 
@@ -242,19 +266,19 @@ namespace System.Runtime {
 		}
 
 		[ForceInline]
-		public static void Copy<T>( T* destination, T* source, uintptr length ) { memcpy( destination, source, sizeof( T ) * length, 1, false ); }
+		public static void Copy<T>( T* destination, T* source, uintptr length ) { memcpy( destination, source, sizeof( T ) * length, false ); }
 
 		[ForceInline]
-		public static void Copy( void* destination, void* source, uintptr length ) { memcpy( destination, source, length, 1, false ); }
+		public static void Copy( void* destination, void* source, uintptr length ) { memcpy( destination, source, length, false ); }
 
 		[ForceInline]
-		public static void Move( void* destination, void* source, uintptr length ) { memmove( destination, source, length, 1, false ); }
+		public static void Move( void* destination, void* source, uintptr length ) { memmove( destination, source, length, false ); }
 
 		[ForceInline]
-		public static void Clear( void* destination, uintptr length ) { memset( destination, ( byte ) 0, length, 1, false ); }
+		public static void Clear( void* destination, uintptr length ) { memset( destination, ( byte ) 0, length, false ); }
 
 		[ForceInline]
-		public static void Fill( void* destination, byte value, uintptr length ) { memset( destination, value, length, 1, false ); }
+		public static void Fill( void* destination, byte value, uintptr length ) { memset( destination, value, length, false ); }
 
 		public enum PrefetchAccessType : uint {
 			Read,
@@ -277,14 +301,14 @@ namespace System.Runtime {
 		/// \param start - is the address to be prefetched
 		internal extern static void Prefetch( void* start, [EvaluateConstant] [StrictField] PrefetchAccessType accessType, [EvaluateConstant] [StrictField] PrefetchLocality locality, [EvaluateConstant] [StrictField] PrefetchCacheType cacheType );
 
-		/// http://llvm.org/docs/LangRef.html#int_memcpy
-		internal extern static void memcpy( void* destination, void* source, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
+		/// https://llvm.org/docs/LangRef.html#int-memcpy
+		internal extern static void memcpy( void* destination, void* source, uintptr length, [EvaluateConstant] bool isVolatile );
 
-		/// http://llvm.org/docs/LangRef.html#int_memmove
-		internal extern static void memmove( void* destination, void* source, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
+		/// https://llvm.org/docs/LangRef.html#llvm-memmove-intrinsic
+		internal extern static void memmove( void* destination, void* source, uintptr length, [EvaluateConstant] bool isVolatile );
 
-		/// http://llvm.org/docs/LangRef.html#int_memset
-		internal extern static void memset( void* destination, byte value, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
+		/// https://llvm.org/docs/LangRef.html#llvm-memset-intrinsics
+		internal extern static void memset( void* destination, byte value, uintptr length, [EvaluateConstant] bool isVolatile );
 
 		// @{ Support for LLVM atomics
 		/// http://llvm.org/docs/LangRef.html#i_fence

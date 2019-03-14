@@ -2257,7 +2257,7 @@ namespace Platform.Glib {
 		[Overlapped( Offset = 0 )]
 		public double v_double;
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_F9006AC1 mpn;
+		public UnnamedStruct_D4FBD39F mpn;
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
@@ -2321,7 +2321,7 @@ namespace Platform.Glib {
 		[Overlapped( Offset = 0 )]
 		public float v_float;
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_F9006B26 mpn;
+		public UnnamedStruct_D4FBD1EC mpn;
 	}
 	public partial struct GHashTable {
 	}
@@ -3093,7 +3093,7 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 0 )]
 		public GMutex* runtime_mutex;
 		[ExplicitOffset( Offset = 4 )]
-		public UnnamedUnion_3D8E5D70 static_mutex;
+		public UnnamedUnion_17564690 static_mutex;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
@@ -3405,7 +3405,7 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 0 )]
 		public uintptr g_type;
 		[ExplicitOffset( Offset = 4 )]
-		public UnnamedUnion_DE4624A9[2] data;
+		public UnnamedUnion_5F01E3F5[2] data;
 	}
 	[ExplicitSize( Size = 12 )]
 	[Alignment( Boundary = 4 )]
@@ -3417,24 +3417,24 @@ namespace Platform.Glib {
 		[ExplicitOffset( Offset = 8 )]
 		public uint n_prealloced;
 	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_D4FBD1EC {
+		public uint mantissa { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] & 127 ) << 16; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] &= 128; cast<byte*>( &this )[2] |= cast<byte>( value >> 16 ) & 127; } }
+		public uint biased_exponent { get { return cast<byte*>( &this )[2] >> 7 | cast<ushort>( cast<byte*>( &this )[3] & 127 ) << 1; } set { cast<byte*>( &this )[2] &= 127; cast<byte*>( &this )[2] |= ( cast<byte>( value ) & 128 ) << 7; cast<byte*>( &this )[3] &= 128; cast<byte*>( &this )[3] |= cast<byte>( value >> 24 ) & 127; } }
+		public bool sign { get { return ( cast<byte*>( &this )[3] & 128 ) != 0; } set { cast<byte*>( &this )[3] &= 127; cast<byte*>( &this )[3] |= cast<byte>( value ) << 7; } }
+	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_F9006AC1 {
+	public partial struct UnnamedStruct_D4FBD39F {
 		public uint mantissa_low { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] ) << 16 | cast<uint>( cast<byte*>( &this )[3] ) << 24; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] = cast<byte>( value >> 16 ); cast<byte*>( &this )[3] = cast<byte>( value >> 24 ); } }
 		public uint mantissa_high { get { return cast<byte*>( &this )[4] | cast<ushort>( cast<byte*>( &this )[5] ) << 8 | cast<uint>( cast<byte*>( &this )[6] & 15 ) << 16; } set { cast<byte*>( &this )[4] = cast<byte>( value ); cast<byte*>( &this )[5] = cast<byte>( value >> 8 ); cast<byte*>( &this )[6] &= 240; cast<byte*>( &this )[6] |= cast<byte>( value >> 48 ) & 15; } }
 		public uint biased_exponent { get { return cast<byte*>( &this )[6] >> 4 | cast<ushort>( cast<byte*>( &this )[7] & 127 ) << 4; } set { cast<byte*>( &this )[6] &= 15; cast<byte*>( &this )[6] |= ( cast<byte>( value ) & 240 ) << 4; cast<byte*>( &this )[7] &= 128; cast<byte*>( &this )[7] |= cast<byte>( value >> 56 ) & 127; } }
 		public bool sign { get { return ( cast<byte*>( &this )[7] & 128 ) != 0; } set { cast<byte*>( &this )[7] &= 127; cast<byte*>( &this )[7] |= cast<byte>( value ) << 7; } }
 	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_F9006B26 {
-		public uint mantissa { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8 | cast<uint>( cast<byte*>( &this )[2] & 127 ) << 16; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); cast<byte*>( &this )[2] &= 128; cast<byte*>( &this )[2] |= cast<byte>( value >> 16 ) & 127; } }
-		public uint biased_exponent { get { return cast<byte*>( &this )[2] >> 7 | cast<ushort>( cast<byte*>( &this )[3] & 127 ) << 1; } set { cast<byte*>( &this )[2] &= 127; cast<byte*>( &this )[2] |= ( cast<byte>( value ) & 128 ) << 7; cast<byte*>( &this )[3] &= 128; cast<byte*>( &this )[3] |= cast<byte>( value >> 24 ) & 127; } }
-		public bool sign { get { return ( cast<byte*>( &this )[3] & 128 ) != 0; } set { cast<byte*>( &this )[3] &= 127; cast<byte*>( &this )[3] |= cast<byte>( value ) << 7; } }
-	}
 	[ExplicitSize( Size = 24 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_3D8E5D70 {
+	public partial struct UnnamedUnion_17564690 {
 		[Overlapped( Offset = 0 )]
 		public sbyte[24] pad;
 		[Overlapped( Offset = 0 )]
@@ -3446,7 +3446,7 @@ namespace Platform.Glib {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_DE4624A9 {
+	public partial struct UnnamedUnion_5F01E3F5 {
 		[Overlapped( Offset = 0 )]
 		public int v_int;
 		[Overlapped( Offset = 0 )]

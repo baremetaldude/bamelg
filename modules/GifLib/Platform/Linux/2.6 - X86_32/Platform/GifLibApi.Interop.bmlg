@@ -8,12 +8,10 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace Platform.GifLib {
-	[ExternLibrary( Image = "/usr/lib/libgif.so" )]
+	[ExternLibrary( Image = "/usr/lib/libgif.so.7" )]
 	public static partial struct GifLibApi {
-		public extern static int AddExtensionBlock( SavedImage* @new, int len, byte* extData );
-		public extern static void ApplyTranslation( SavedImage* image, byte* translation );
-		public extern static int BitSize( int n );
-		public extern static int DGifCloseFile( GifFileType* gifFile );
+		public extern static int DGifCloseFile( GifFileType* gifFile, int* errorCode );
+		public extern static int DGifExtensionToGCB( uint gifExtensionLength, byte* gifExtension, GraphicsControlBlock* gCB );
 		public extern static int DGifGetCode( GifFileType* gifFile, int* gifCodeSize, byte** gifCodeBlock );
 		public extern static int DGifGetCodeNext( GifFileType* gifFile, byte** gifCodeBlock );
 		public extern static int DGifGetExtension( GifFileType* gifFile, int* gifExtCode, byte** gifExtension );
@@ -24,42 +22,46 @@ namespace Platform.GifLib {
 		public extern static int DGifGetPixel( GifFileType* gifFile, byte gifPixel );
 		public extern static int DGifGetRecordType( GifFileType* gifFile, GifRecordType* gifType );
 		public extern static int DGifGetScreenDesc( GifFileType* gifFile );
-		public extern static GifFileType* DGifOpen( void* userPtr, Functors.Func<GifFileType*, byte*, int, int> readFunc );
-		public extern static GifFileType* DGifOpenFileHandle( int gifFileHandle );
-		public extern static GifFileType* DGifOpenFileName( CUtf8String gifFileName );
+		public extern static GifFileType* DGifOpen( void* userPtr, Functors.Func<GifFileType*, byte*, int, int> readFunc, int* error );
+		public extern static GifFileType* DGifOpenFileHandle( int gifFileHandle, int* error );
+		public extern static GifFileType* DGifOpenFileName( CUtf8String gifFileName, int* error );
+		public extern static int DGifSavedExtensionToGCB( GifFileType* gifFile, int imageIndex, GraphicsControlBlock* gCB );
 		public extern static int DGifSlurp( GifFileType* gifFile );
-		public extern static void DrawBox( SavedImage* image, int x, int y, int w, int d, int color );
-		public extern static void DrawBoxedText( SavedImage* image, int x, int y, CUtf8String legend, int border, int bg, int fg );
-		public extern static void DrawRectangle( SavedImage* image, int x, int y, int w, int d, int color );
-		public extern static void DrawText( SavedImage* image, int x, int y, CUtf8String legend, int color );
-		public extern static int DumpScreen2Gif( CUtf8String fileName, int reqGraphDriver, intptr reqGraphMode1, intptr reqGraphMode2, intptr reqGraphMode3 );
-		public extern static int EGifCloseFile( GifFileType* gifFile );
-		public extern static GifFileType* EGifOpen( void* userPtr, Functors.Func<GifFileType*, byte*, int, int> writeFunc );
-		public extern static GifFileType* EGifOpenFileHandle( int gifFileHandle );
-		public extern static GifFileType* EGifOpenFileName( CUtf8String gifFileName, int gifTestExistance );
+		public extern static int EGifCloseFile( GifFileType* gifFile, int* errorCode );
+		public extern static uint EGifGCBToExtension( GraphicsControlBlock* gCB, byte* gifExtension );
+		public extern static int EGifGCBToSavedExtension( GraphicsControlBlock* gCB, GifFileType* gifFile, int imageIndex );
+		public extern static sbyte* EGifGetGifVersion( GifFileType* gifFile );
+		public extern static GifFileType* EGifOpen( void* userPtr, Functors.Func<GifFileType*, byte*, int, int> writeFunc, int* error );
+		public extern static GifFileType* EGifOpenFileHandle( int gifFileHandle, int* error );
+		public extern static GifFileType* EGifOpenFileName( CUtf8String gifFileName, int gifTestExistance, int* error );
 		public extern static int EGifPutCode( GifFileType* gifFile, int gifCodeSize, byte* gifCodeBlock );
 		public extern static int EGifPutCodeNext( GifFileType* gifFile, byte* gifCodeBlock );
 		public extern static int EGifPutComment( GifFileType* gifFile, CUtf8String gifComment );
 		public extern static int EGifPutExtension( GifFileType* gifFile, int gifExtCode, int gifExtLen, void* gifExtension );
-		public extern static int EGifPutExtensionFirst( GifFileType* gifFile, int gifExtCode, int gifExtLen, void* gifExtension );
-		public extern static int EGifPutExtensionLast( GifFileType* gifFile, int gifExtCode, int gifExtLen, void* gifExtension );
-		public extern static int EGifPutExtensionNext( GifFileType* gifFile, int gifExtCode, int gifExtLen, void* gifExtension );
+		public extern static int EGifPutExtensionBlock( GifFileType* gifFile, int gifExtLen, void* gifExtension );
+		public extern static int EGifPutExtensionLeader( GifFileType* gifFile, int gifExtCode );
+		public extern static int EGifPutExtensionTrailer( GifFileType* gifFile );
 		public extern static int EGifPutImageDesc( GifFileType* gifFile, int gifLeft, int gifTop, int width, int gifHeight, int gifInterlace, ColorMapObject* gifColorMap );
 		public extern static int EGifPutLine( GifFileType* gifFile, byte* gifLine, int gifLineLen );
 		public extern static int EGifPutPixel( GifFileType* gifFile, byte gifPixel );
 		public extern static int EGifPutScreenDesc( GifFileType* gifFile, int gifWidth, int gifHeight, int gifColorRes, int gifBackGround, ColorMapObject* gifColorMap );
-		public extern static void EGifSetGifVersion( CUtf8String version );
+		public extern static void EGifSetGifVersion( CUtf8String version, bool gif89 );
 		public extern static int EGifSpew( GifFileType* gifFile );
-		public extern static void FreeExtension( SavedImage* image );
-		public extern static void FreeMapObject( ColorMapObject* object );
-		public extern static void FreeSavedImages( GifFileType* gifFile );
-		public extern static int GifLastError();
-		public extern static void MakeExtension( SavedImage* @new, int function );
-		public extern static ColorMapObject* MakeMapObject( int colorCount, GifColorType* colorMap );
-		public extern static SavedImage* MakeSavedImage( GifFileType* gifFile, SavedImage* copyFrom );
-		public extern static void PrintGifError();
-		public extern static int QuantizeBuffer( uint width, uint height, int* colorMapSize, byte* redInput, byte* greenInput, byte* blueInput, byte* outputBuffer, GifColorType* outputColorMap );
-		public extern static ColorMapObject* UnionColorMap( ColorMapObject* colorIn1, ColorMapObject* colorIn2, byte* colorTransIn2 );
+		public extern static int GifAddExtensionBlock( int* extensionBlockCount, ExtensionBlock** extensionBlocks, int function, uint len, byte* extData );
+		public extern static void GifApplyTranslation( SavedImage* image, byte* translation );
+		public extern static int GifBitSize( int n );
+		public extern static void GifDrawBox( SavedImage* image, int x, int y, int w, int d, int color );
+		public extern static void GifDrawBoxedText8x8( SavedImage* image, int x, int y, CUtf8String legend, int border, int bg, int fg );
+		public extern static void GifDrawRectangle( SavedImage* image, int x, int y, int w, int d, int color );
+		public extern static void GifDrawText8x8( SavedImage* image, int x, int y, CUtf8String legend, int color );
+		public extern static sbyte* GifErrorString( int errorCode );
+		public extern static void GifFreeExtensions( int* extensionBlockCount, ExtensionBlock** extensionBlocks );
+		public extern static void GifFreeMapObject( ColorMapObject* object );
+		public extern static void GifFreeSavedImages( GifFileType* gifFile );
+		public extern static ColorMapObject* GifMakeMapObject( int colorCount, GifColorType* colorMap );
+		public extern static SavedImage* GifMakeSavedImage( GifFileType* gifFile, SavedImage* copyFrom );
+		public extern static int GifQuantizeBuffer( uint width, uint height, int* colorMapSize, byte* redInput, byte* greenInput, byte* blueInput, byte* outputBuffer, GifColorType* outputColorMap );
+		public extern static ColorMapObject* GifUnionColorMap( ColorMapObject* colorIn1, ColorMapObject* colorIn2, byte* colorTransIn2 );
 	}
 	public enum GifRecordType : uint {
 		UNDEFINED_RECORD_TYPE =   0,
@@ -68,11 +70,7 @@ namespace Platform.GifLib {
 		EXTENSION_RECORD_TYPE =   3,
 		TERMINATE_RECORD_TYPE =   4,
 	}
-	public enum GifScreenDumpType : uint {
-		GIF_DUMP_SGI_WINDOW = 1000,
-		GIF_DUMP_X_WINDOW =   1001,
-	}
-	[ExplicitSize( Size = 12 )]
+	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct ColorMapObject {
 		[ExplicitOffset( Offset = 0 )]
@@ -80,6 +78,8 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 4 )]
 		public int BitsPerPixel;
 		[ExplicitOffset( Offset = 8 )]
+		public bool SortFlag;
+		[ExplicitOffset( Offset = 12 )]
 		public GifColorType* Colors;
 	}
 	[ExplicitSize( Size = 12 )]
@@ -88,7 +88,7 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 0 )]
 		public int ByteCount;
 		[ExplicitOffset( Offset = 4 )]
-		public sbyte* Bytes;
+		public byte* Bytes;
 		[ExplicitOffset( Offset = 8 )]
 		public int Function;
 	}
@@ -101,7 +101,7 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 2 )]
 		public byte Blue;
 	}
-	[ExplicitSize( Size = 60 )]
+	[ExplicitSize( Size = 76 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct GifFileType {
 		[ExplicitOffset( Offset = 0 )]
@@ -113,16 +113,24 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 12 )]
 		public int SBackGroundColor;
 		[ExplicitOffset( Offset = 16 )]
-		public ColorMapObject* SColorMap;
+		public byte AspectByte;
 		[ExplicitOffset( Offset = 20 )]
-		public int ImageCount;
+		public ColorMapObject* SColorMap;
 		[ExplicitOffset( Offset = 24 )]
+		public int ImageCount;
+		[ExplicitOffset( Offset = 28 )]
 		public GifImageDesc Image;
-		[ExplicitOffset( Offset = 48 )]
-		public SavedImage* SavedImages;
 		[ExplicitOffset( Offset = 52 )]
-		public void* UserData;
+		public SavedImage* SavedImages;
 		[ExplicitOffset( Offset = 56 )]
+		public int ExtensionBlockCount;
+		[ExplicitOffset( Offset = 60 )]
+		public ExtensionBlock* ExtensionBlocks;
+		[ExplicitOffset( Offset = 64 )]
+		public int Error;
+		[ExplicitOffset( Offset = 68 )]
+		public void* UserData;
+		[ExplicitOffset( Offset = 72 )]
 		public void* Private;
 	}
 	[ExplicitSize( Size = 24 )]
@@ -137,11 +145,23 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 12 )]
 		public int Height;
 		[ExplicitOffset( Offset = 16 )]
-		public int Interlace;
+		public bool Interlace;
 		[ExplicitOffset( Offset = 20 )]
 		public ColorMapObject* ColorMap;
 	}
-	[ExplicitSize( Size = 40 )]
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GraphicsControlBlock {
+		[ExplicitOffset( Offset = 0 )]
+		public int DisposalMode;
+		[ExplicitOffset( Offset = 4 )]
+		public bool UserInputFlag;
+		[ExplicitOffset( Offset = 8 )]
+		public int DelayTime;
+		[ExplicitOffset( Offset = 12 )]
+		public int TransparentColor;
+	}
+	[ExplicitSize( Size = 36 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct SavedImage {
 		[ExplicitOffset( Offset = 0 )]
@@ -149,10 +169,8 @@ namespace Platform.GifLib {
 		[ExplicitOffset( Offset = 24 )]
 		public byte* RasterBits;
 		[ExplicitOffset( Offset = 28 )]
-		public int Function;
-		[ExplicitOffset( Offset = 32 )]
 		public int ExtensionBlockCount;
-		[ExplicitOffset( Offset = 36 )]
+		[ExplicitOffset( Offset = 32 )]
 		public ExtensionBlock* ExtensionBlocks;
 	}
 }

@@ -1,0 +1,70 @@
+﻿//
+// Created by $USER
+//
+
+using System;
+using System.Collections;
+using System.Net;
+
+using Platform.IO;
+
+namespace Example {
+	public partial class App {
+		[EntryPoint]
+		private static void Main() {
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchExitSignals(); // convert signals to events
+
+			// @{ setup server
+			ushort tcpPort = 7070;
+			Utf8String unixSocket = "/var/run/ThriftServer.socket";
+
+			var serverHandler = new ThriftServerImpl();
+			var server = new ThriftServer( new Svc2.RequestHandler( serverHandler ) );
+
+			server.Listen( tcpPort );
+			server.Listen( unixSocket );
+			// @}
+
+			Console.WriteConcatLine( "Dispatching started: use port ", 7070, " or '", unixSocket, "' to connect" );
+			eventLoop.Dispatch();
+		}
+
+		public class ThriftServerImpl : Svc2.IApi {
+			public ThriftServerImpl() {
+			}
+
+			public int add( int left, int right ) {
+				return left + right;
+			}
+
+			public List<Utf8String> get_strings() {
+				var result = new List<Utf8String>();
+				result.Add( "yo1" );
+				result.Add( "yo2" );
+				result.Add( "yo3" );
+				return result;
+			}
+
+			public Dictionary<Utf8String, Utf8String> echo( Dictionary<Utf8String, Utf8String> value ) {
+				value.Add( "google", "maps" );
+				value.Add( "yandex", "карты" );
+				return value;
+			}
+
+			public HashSet<Utf8String> get_strings2() {
+				var result = new HashSet<Utf8String>();
+				result.Add( "bamelg" );
+				result.Add( "pwnz" );
+				return result;
+			}
+
+			public KVP echo2( KVP value ) {
+				return new KVP() {
+					Name = new[3] byte default( 1 ),
+					Value = new[4] byte default( 2 )
+				};
+			}
+		}
+	}
+}

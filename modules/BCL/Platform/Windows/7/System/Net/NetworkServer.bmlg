@@ -100,11 +100,10 @@ namespace System.Net {
 					TraceClientAccepted( clientSocket );
 
 					var stream = new NetworkStream( clientSocket ) {
-						ErrorHandler = PlatformErrorHandlerNull.Instance
 					};
-					SetConsoleErrorHandler( stream );
 
 					var client = _server.CreateSession( stream );
+					stream.ErrorHandler = client.StreamStatus;
 					client.StartFiber();
 				}
 
@@ -171,11 +170,9 @@ namespace System.Net {
 				TraceClientAccepted( _pipe );
 
 				var stream = new FileStream( _pipe ) {
-					ErrorHandler = PlatformErrorHandlerNull.Instance,
 					Context = Context,
 					CloseHandle = false
 				};
-				SetConsoleErrorHandler( stream );
 
 				if( _server.ListeningPipes == 0 ) {
 					var listenResult = _server.ListenNamedPipe( Context, NamedPipeAccessMode.PIPE_ACCESS_DUPLEX, NamedPipeCreateMode.PIPE_ACCEPT_REMOTE_CLIENTS | NamedPipeCreateMode.PIPE_TYPE_MESSAGE | NamedPipeCreateMode.PIPE_READMODE_MESSAGE );
@@ -183,23 +180,20 @@ namespace System.Net {
 				}
 
 				var client = _server.CreateSession( stream );
+				stream.ErrorHandler = client.StreamStatus;
 				client._pipeSink = this;
 				client.StartFiber();
 			}
 		}
 
-		[Conditional( ConditionString = "DEBUG" )]
-		private static void SetConsoleErrorHandler( NetworkStream value ) {
-			value.ErrorHandler = PlatformErrorHandlerConsole.Instance;
-		}
-
-		[Conditional( ConditionString = "DEBUG" )]
-		private static void SetConsoleErrorHandler( FileStream value ) {
-			value.ErrorHandler = PlatformErrorHandlerConsole.Instance;
-		}
-
 		public abstract partial class SessionHandler {
 			internal AcceptNamedPipeEventSink _pipeSink;
+
+			internal PlatformErrorHandlerStatus StreamStatus;
+
+			private bool _implStreamError() {
+				return StreamStatus.ErrorOccured;
+			}
 
 			private void _implOnExit() {
 				if( _pipeSink != null ) {

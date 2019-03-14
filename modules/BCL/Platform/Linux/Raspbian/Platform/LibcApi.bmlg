@@ -1,0 +1,514 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Net;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using Platform.Kernel;
+
+namespace Platform.Libc {
+	public static partial struct LibcApi {
+		public static readonly intptr PageSize = LibcApi.getpagesize();
+
+		public static IOHandle StdIn { get { return new IOHandle( 0 ); } }
+		public static IOHandle StdOut { get { return new IOHandle( 1 ); } }
+		public static IOHandle StdErr { get { return new IOHandle( 2 ); } }
+
+		public const Functors.Action<int> SIG_DFL = bitcast<Functors.Action<int>>( ( intptr ) 0 );
+		public const Functors.Action<int> SIG_IGN = bitcast<Functors.Action<int>>( ( intptr ) 1 );
+		// public const Functors.Action<int> SIG_ERR = bitcast<Functors.Action<int>>( ( intptr ) -1 );
+
+		public static SystemError LastError { get { return *__errno_location(); } set { *__errno_location() = value; } }
+
+		public extern static CUtf8String* environ;
+		public extern static CUtf8String program_invocation_name, program_invocation_short_name;
+
+		/// http://linux.die.net/man/3/makecontext
+		public extern static void makecontext( ucontext_t& ucp, Functors.Action<Functors.Action<void*>, void*> nonTerminatingMethod, int argc, Functors.Action<void*> method, void* parameter );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/prctl.2.html
+		public extern static int prctl( ProcessControlActions action, uint arg2 = 0, uint arg3 = 0, uint arg4 = 0, uint arg5 = 0 );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/open.2.html
+		public extern static IOHandle open( CUtf8String name, FctlValue flags, int permissions );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl.2.html
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl_list.2.html
+		public extern static int ioctl( IOHandle handle, IoctlCommand option, void* result );
+		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlValue value );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/openat.2.html
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlValue flags, SymlinkFollowOption option );
+
+		public static bool Assert( int code, [In] CallerContext& callercontext = nullref ) {
+			if( code != 0 ) {
+				Console.WriteConcat( "Error code ", ( SystemError ) code, " assertion ", callercontext.Expression, " at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static bool AssertErrno( int code, [In] CallerContext& callercontext = nullref ) {
+			if( code < 0 ) {
+				var lastError = LibcApi.LastError;
+
+				Console.WriteConcat( "Error code ", lastError, " assertion '", callercontext.Expression, "' at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static bool Assert( IOHandle code, [In] CallerContext& callercontext = nullref ) {
+			if( !code.IsValid ) {
+				var lastError = LibcApi.LastError;
+
+				Console.Write( "Error code ", lastError, " assertion '", callercontext.Expression, "' at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static yield<ifaddrs*> GetNetworkInterfaces() {
+			ifaddrs* interfaces = null;
+			LibcApi.getifaddrs( &interfaces ); finally { LibcApi.freeifaddrs( interfaces ); }
+
+			for( var @interface = interfaces; @interface != null; @interface = @interface->ifa_next )
+				yield return @interface;
+		}
+
+		public static string GetHostName() {
+			string hostName;
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				LibcApi.AssertErrno( LibcApi.gethostname( ( sbyte* ) buffer, bufferLength ) );
+				hostName = string.FromSBCS( Environment.DefaultCodePage, buffer );
+			}
+
+			return hostName;
+		}
+
+		public static CString GetErrorDescription( SystemError code ) {
+			// using( var page = Memory.CachedPages.PopScoped() ) {
+			// 	var buffer = ( sbyte* ) page.Value;
+			// 	var bufferLength = ( uint ) Memory.DefaultPageSize;
+			//
+			// 	LibcApi.strerror_r( code, buffer, bufferLength );
+
+			// 	return string.FromSBCS( new CString( buffer ) );
+			// }
+
+			return LibcApi.strerror( code );
+		}
+
+		public extern static intptr syscall( SystemCall code );
+		public extern static intptr syscall( SystemCall code, intptr p0 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3, intptr p4 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3, intptr p4, intptr p5 );
+	}
+
+	public partial struct in_addr {
+		public in_addr( IPv4Address& address ) {
+			Address = address.UIntData;
+		}
+
+		[Overlapped( Offset = memberinfo( s_addr ).ByteOffset )]
+		public uint_bigendian Address;
+	}
+
+	public partial struct sockaddr_in : IFormattable {
+		public sockaddr_in( IPv4Address& address, ushort port ) {
+			ProtocolFamily = ProtocolFamily.PF_INET;
+			Address = address.UIntData;
+			Port = port;
+		}
+
+		public static explicit operator thistype( IPv4Endpoint& endpoint ) {
+			return new thistype( endpoint.Address, endpoint.Port );
+		}
+
+		public static explicit operator IPv4Endpoint( thistype& @this ) {
+			return new IPv4Endpoint( new IPv4Address( @this.Address ), @this.Port );
+		}
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sin_family; } set { sin_family = value.Value(); } }
+		public uint_bigendian& Address { get { return *( uint_bigendian* ) &sin_addr.s_addr; } set { *( uint_bigendian* ) &sin_addr.s_addr = value; } }
+		public ushort_bigendian& Port { get { return *( ushort_bigendian* ) &sin_port; } set { *( ushort_bigendian* ) &sin_port = value; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			cast<IPv4Endpoint>( this ).ToString( builder, format );
+		}
+	}
+
+	public partial struct sockaddr_in6 : IFormattable {
+		public sockaddr_in6( IPv6Address address, ushort port ) {
+			ProtocolFamily = Platform.Libc.ProtocolFamily.PF_INET6;
+			Address = address.Data;
+			Port = port;
+
+			sin6_flowinfo = 0;
+			sin6_scope_id = 0;
+		}
+
+		public static explicit operator sockaddr_in6( IPv6Endpoint& endpoint ) {
+			return new sockaddr_in6( endpoint.Address, endpoint.Port );
+		}
+
+		public static explicit operator IPv6Endpoint( sockaddr_in6& @this ) {
+			return new IPv6Endpoint( new IPv6Address( @this.Address ), @this.Port );
+		}
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sin6_family; } set { sin6_family = value.Value(); } }
+		public byte[16]& Address { get { return *( byte[16]* ) &sin6_addr; } set { *( byte[16]* ) &sin6_addr = value; } }
+		public ushort_bigendian& Port { get { return *( ushort_bigendian* ) &sin6_port; } set { *( ushort_bigendian* ) &sin6_port = value; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			cast<IPv6Endpoint>( this ).ToString( builder, format );
+		}
+	}
+
+	public partial struct sockaddr_un : IFormattable {
+		public sockaddr_un() {
+			ProtocolFamily = ProtocolFamily.PF_UNIX;
+			sun_path[0] = 0;
+		}
+
+		public sockaddr_un( Utf8String path ) {
+			if( !Assert.IsTrue( path.ByteLength + 1 < sun_path.Length ) ) return;
+
+			ProtocolFamily = ProtocolFamily.PF_UNIX;
+			Memory.Copy( &sun_path[0], path.GetChars(), path.ByteLength + 1 );
+		}
+
+		public bool IsAbstract { get { return sun_path[0] == 0; } }
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sun_family; } set { sun_family = value.Value(); } }
+
+		public new void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Path='{0}' }}", new CUtf8String( &sun_path[0] ) );
+		}
+	}
+
+	public partial struct DynamicLibraryHandle {
+		public static DynamicLibraryHandle RTLD_DEFAULT = bitcast<DynamicLibraryHandle>( ( intptr ) 0 );
+		public static DynamicLibraryHandle RTLD_NEXT = bitcast<DynamicLibraryHandle>( ( intptr ) -1 );
+	}
+
+	public partial struct timeval : IFormattable {
+		public timeval() { tv_sec = 0; tv_usec = 0; }
+		public timeval( intptr seconds ) { tv_sec = seconds; tv_usec = 0; }
+		public timeval( intptr seconds, intptr microseconds ) { tv_sec = seconds; tv_usec = microseconds; }
+
+		public timeval( TimeSpan& span ) {
+			tv_sec = ( int ) span.TotalSeconds;
+			tv_usec = ( int )( ( span.Ticks / 10 ) % 1000000 );
+		}
+
+		public timeval( DateTime& time )
+			: this( new TimeSpan( time.Ticks - timeval.AdjustEpochTicks ) ) { } // dont convert to Universal Time
+
+		public int TotalMilliseconds {
+			get {
+				return ( int )( tv_sec * 1000 + tv_usec / 1000 );
+			}
+		}
+
+		public static timeval UtcNow {
+			get {
+				timeval result;
+				LibcApi.gettimeofday( result, null );
+				return result;
+			}
+		}
+
+		public static timeval Now {
+			get {
+				var result = UtcNow;
+				result.tv_sec += GetCurrentTimezoneSecondsOffset( result.tv_sec );
+				return result;
+			}
+		}
+
+		// int unixSeconds = LibcApi.time( null );
+		public static int GetCurrentTimezoneSecondsOffset( intptr unixSeconds ) {
+			var local = LibcApi.localtime( &unixSeconds );
+			if( local == null ) {
+				Assert.Fail( "cannot get localtime" );
+				LibcApi.exit( 1 );
+			}
+
+			return ( int ) local->tm_gmtoff;
+		}
+
+		internal const long AdjustEpochSeconds = 62135596800;
+		internal const long AdjustEpochTicks = 621355968000000000;
+
+		public long TimeSpanTicks {
+			get { return tv_sec * 1000000L * 10 + tv_usec * 10; }
+		}
+
+		public long DateTimeTicks {
+			get { return TimeSpanTicks + AdjustEpochTicks; }
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			var time = ( DateTime ) this;
+			builder.Append( time, format );
+		}
+	}
+
+	public partial struct timespec : IFormattable {
+		public timespec() { }
+		public timespec( intptr seconds, intptr nanoseconds ) { tv_sec = seconds; tv_nsec = nanoseconds; }
+
+		public timespec( TimeSpan& span ) {
+			tv_sec = ( int ) span.TotalSeconds;
+			tv_nsec = ( int )( ( span.Ticks * 100 ) % 1000000000L );
+		}
+
+		public timespec( DateTime& time )
+			: this( new TimeSpan( time.Ticks - timeval.AdjustEpochTicks ) ) { } // dont convert to Universal Time
+
+		public static timespec operator +( timespec& left, timespec& right ) {
+			var result = new timespec( left.tv_sec + right.tv_sec, left.tv_nsec + right.tv_nsec );
+
+			if( result.tv_nsec >= 1000000000 ) {
+				++result.tv_sec;
+				result.tv_nsec -= 1000000000;
+			}
+
+			return result;
+		}
+
+		public static timespec FromDays( double value ) { return ( timespec ) TimeSpan.FromDays( value ); }
+		public static timespec FromHours( double value ) { return ( timespec ) TimeSpan.FromHours( value ); }
+		public static timespec FromMinutes( double value ) { return ( timespec ) TimeSpan.FromMinutes( value ); }
+		public static timespec FromSeconds( double value ) { return ( timespec ) TimeSpan.FromSeconds( value ); }
+		public static timespec FromMilliseconds( double value ) { return ( timespec ) TimeSpan.FromMilliseconds( value ); }
+
+		public static timespec RealTime { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_gettime( ClockType.CLOCK_REALTIME, result ) ); return result; } }
+		public static timespec MonotonicTime { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_gettime( ClockType.CLOCK_MONOTONIC, result ) ); return result; } }
+		public static timespec ProcessTime { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_gettime( ClockType.CLOCK_PROCESS_CPUTIME_ID, result ) ); return result; } }
+		public static timespec ThreadTime { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_gettime( ClockType.CLOCK_THREAD_CPUTIME_ID, result ) ); return result; } }
+
+		public static timespec RealTimeResolution { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_getres( ClockType.CLOCK_REALTIME, result ) ); return result; } }
+		public static timespec MonotonicTimeResolution { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_getres( ClockType.CLOCK_MONOTONIC, result ) ); return result; } }
+		public static timespec ProcessTimeResolution { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_getres( ClockType.CLOCK_PROCESS_CPUTIME_ID, result ) ); return result; } }
+		public static timespec ThreadTimeResolution { get { timespec result; LibcApi.AssertErrno( RealTimeApi.clock_getres( ClockType.CLOCK_THREAD_CPUTIME_ID, result ) ); return result; } }
+
+		public static timespec UtcNow { get { return RealTime; } }
+
+		public static timespec Now {
+			get {
+				var result = UtcNow;
+				result.tv_sec += timeval.GetCurrentTimezoneSecondsOffset( result.tv_sec );
+				return result;
+			}
+		}
+
+		public long TimeSpanTicks {
+			get { return tv_sec * ( 10L * 1000000 ) + tv_nsec / 100; }
+		}
+
+		public long DateTimeTicks {
+			get { return TimeSpanTicks + timeval.AdjustEpochTicks; }
+		}
+
+		public static explicit operator timespec( TimeSpan& value ) { return new timespec( value ); }
+		public static explicit operator timespec( DateTime& value ) { return new timespec( value ); }
+
+		public void ToString( StringBuilder builder, string format ) {
+			var time = ( DateTime ) this;
+			builder.Append( time, format );
+		}
+	}
+
+	public partial struct pollfd : IFormattable {
+		public IOHandle Handle { get { return *( IOHandle* ) &fd; } set { *( IOHandle* ) &fd = value; } }
+		public PollEvents ListenedEvents { get { return *( PollEvents* ) &events; } set { *( PollEvents* ) &events = value; } }
+		public PollEvents RaisedEvents { get { return *( PollEvents* ) &revents; } set { *( PollEvents* ) &revents = value; } }
+
+		public bool InputEvent { get { return ( RaisedEvents & PollEvents.POLLIN ) != 0; } }
+		public bool OutputEvent { get { return ( RaisedEvents & PollEvents.POLLOUT ) != 0; } }
+		public bool ErrorEvent { get { return ( RaisedEvents & ( PollEvents.POLLERR | PollEvents.POLLHUP | PollEvents.POLLNVAL ) ) != 0; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Handle={0} ListenedEvents={1} RaisedEvents={2} }}", Handle.ID, ListenedEvents, RaisedEvents );
+		}
+	}
+
+	[Flags]
+	public enum Permission {
+		None,
+
+		OthersExecute,
+		OthersWrite,
+		OthersRead,
+
+		GroupExecute,
+		GroupWrite,
+		GroupRead,
+
+		OwnerExecute,
+		OwnerWrite,
+		OwnerRead,
+	}
+
+	public partial struct dirent64 {
+		public ulong INode { get { return d_ino; } }
+		public long Offset { get { return d_off; } }
+		public ushort Length { get { return d_reclen; } }
+		public DirectoryEntryType Type { get { return ( DirectoryEntryType ) d_type; } }
+	}
+
+	public partial struct stat {
+		public bool IsFile { get { return !IsDirectory; } }
+		public bool IsDirectory { get { return ( st_mode & StatFlags.S_IFDIR ) == StatFlags.S_IFDIR; } }
+		public bool IsSymlink { get { return ( st_mode & StatFlags.S_IFLNK ) == StatFlags.S_IFLNK; } }
+		public bool IsCharacterSpecial { get { return ( st_mode & StatFlags.S_IFCHR ) == StatFlags.S_IFCHR; } }
+		public bool IsSocket { get { return ( st_mode & StatFlags.S_IFSOCK ) == StatFlags.S_IFSOCK; } }
+
+		public DateTime CreationTime { get { return ( DateTime ) st_ctim; } }
+		public DateTime LastAccessTime { get { return ( DateTime ) st_atim; } }
+		public DateTime LastModificationTime { get { return ( DateTime ) st_mtim; } }
+	}
+
+	public partial struct iovec {
+		public iovec( void* address, uintptr length ) { iov_base = address; iov_len = length; }
+
+		public static implicit operator iovec( MemorySegment& value ) { return new iovec( value.Start, ( uint ) value.Count ); }
+	}
+
+	public static partial struct AdaptationLayer {
+		public static FileSeekOrigin MapSeekOrigin( System.IO.SeekOrigin value ) {
+			[CheckAllEnumValues]
+			switch( value ) {
+				case System.IO.SeekOrigin.Begin: return FileSeekOrigin.SEEK_SET;
+				case System.IO.SeekOrigin.Current: return FileSeekOrigin.SEEK_CUR;
+				case System.IO.SeekOrigin.End: return FileSeekOrigin.SEEK_END;
+			}
+
+			Assert.InvalidParameter( nameof( value ) );
+			return FileSeekOrigin.SEEK_SET;
+		}
+
+		public static System.IO.SeekOrigin MapSeekOrigin( FileSeekOrigin value ) {
+			[CheckAllEnumValues]
+			switch( value ) {
+				case FileSeekOrigin.SEEK_SET: return System.IO.SeekOrigin.Begin;
+				case FileSeekOrigin.SEEK_CUR: return System.IO.SeekOrigin.Current;
+				case FileSeekOrigin.SEEK_END: return System.IO.SeekOrigin.End;
+				case FileSeekOrigin.SEEK_DATA:
+				case FileSeekOrigin.SEEK_HOLE: Assert.NotImplemented(); return System.IO.SeekOrigin.Begin;
+			}
+
+			Assert.InvalidParameter( nameof( value ) );
+			return System.IO.SeekOrigin.Begin;
+		}
+
+		public const bool IsMemorySegmentLayoutEqualsToIovec = memberinfo( MemorySegment.Start ).ByteOffset == memberinfo( iovec.iov_base ).ByteOffset && sizeof( MemorySegment ) == sizeof( iovec );
+	}
+
+	public static partial struct LibcApi {
+		public static SignalCode SIGRTMIN { get { return __libc_current_sigrtmin(); } }
+		public static SignalCode SIGRTMAX { get { return __libc_current_sigrtmax(); } }
+	}
+
+	public partial struct sigset_t {
+		public sigset_t() { LibcApi.sigemptyset( &this ); }
+		public sigset_t( vararg SignalCode signals )
+			: this() {
+			Add( vararg( signals, signals.Length ) );
+		}
+
+		public void Empty() { LibcApi.sigemptyset( &this ); }
+		public void Fill() { LibcApi.sigfillset( &this ); }
+
+		public void Add( vararg SignalCode signals ) { foreach( var signal in signals ) Add( signal ); }
+		public void Remove( vararg SignalCode signals ) { foreach( var signal in signals ) Remove( signal ); }
+
+		public void Add( SignalCode signal ) { LibcApi.sigaddset( &this, signal ); }
+		public void Remove( SignalCode signal ) { LibcApi.sigdelset( &this, signal ); }
+
+		public bool Contains( SignalCode signal ) { return LibcApi.sigismember( &this, signal ) == 0; }
+
+		private const int MaxSignals = sizeof( thistype ) * 8;
+
+		public yield<SignalCode> GetEnumerator() {
+			var accessor = new BitArrayAccessor( ( uint* ) &this, MaxSignals );
+			for( var i = 0; i < MaxSignals; ++i ) {
+				if( accessor[i] )
+					yield return ( SignalCode )( i + 1 );
+			}
+		}
+	}
+
+	public struct AlarmRegion : IDisposable {
+		private TimeSpan _timeout;
+
+		public AlarmRegion( TimeSpan timeout ) {
+			_timeout = timeout;
+			if( timeout <= TimeSpan.Zero ) return;
+
+			// LibcApi.signal( SignalCode.SIGALRM, AlarmSignalHandler );
+			var sa = default( sigaction );
+			var& handler = sa.__sigaction_handler.sa_handler; *&handler = AlarmSignalHandler;
+			LibcApi.sigaction( ( int ) SignalCode.SIGALRM, &sa, null );
+
+			var @new = new itimerval { it_interval = default( timeval ), it_value = new timeval( timeout ) };
+			LibcApi.setitimer( 0, &@new, null );
+		}
+
+		public void Dispose() {
+			if( _timeout <= TimeSpan.Zero ) return;
+			LibcApi.signal( SignalCode.SIGALRM, LibcApi.SIG_IGN );
+		}
+
+		private static void AlarmSignalHandler( int signal ) { }
+	}
+
+	[PrimitiveType( Size = sizeof( uintptr ) )]
+	public partial struct DynamicLibraryHandle {
+	}
+
+	public partial struct epoll_event : IFormattable {
+		public EPOLL_EVENTS Events { get { return *( EPOLL_EVENTS* ) &events; } set { *( EPOLL_EVENTS* ) &events = value; } }
+		public void* Data { get { return data.ptr; } set { data = new epoll_data( value ); } }
+
+		public bool InputEvent { get { return ( Events & EPOLL_EVENTS.EPOLLIN ) != 0; } }
+		public bool OutputEvent { get { return ( Events & EPOLL_EVENTS.EPOLLOUT ) != 0; } }
+		public bool ErrorEvent { get { return ( Events & ( EPOLL_EVENTS.EPOLLERR | EPOLL_EVENTS.EPOLLHUP | EPOLL_EVENTS.EPOLLRDHUP ) ) != 0; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Events={0} Data={1} }}", Events, Data );
+		}
+	}
+
+	public partial struct epoll_data {
+		public epoll_data( void* value ) { this = default( thistype ); var& rv = ptr; rv = value; }
+		public epoll_data( int value ) { this = default( thistype ); var& rv = fd; rv = value; }
+		public epoll_data( uint value ) { this = default( thistype ); var& rv = u32; rv = value; }
+		public epoll_data( ulong value ) { this = default( thistype ); var& rv = u64; rv = value; }
+	}
+}

@@ -275,7 +275,14 @@ namespace Platform {
 		public uint HighDateTime;
 	}
 	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
 	public partial struct OVERLAPPED {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong Internal;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr InternalHigh;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong Offset;
 		[ExplicitOffset( Offset = 24 )]
 		public HANDLE Event;
 	}

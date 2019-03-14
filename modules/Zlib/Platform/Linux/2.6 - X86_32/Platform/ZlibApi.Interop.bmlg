@@ -8,23 +8,26 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace Platform.Zlib {
-	[ExternLibrary( Image = "/usr/lib/libz.so" )]
+	[ExternLibrary( Image = "/usr/lib/libz.so.1" )]
 	public static partial struct ZlibApi {
-		public const SbcsString Version = "1.2.8";
+		public const SbcsString Version = "1.2.11";
 
 		public extern static uintptr adler32( uintptr adler, byte* buf, uint len );
 		public extern static uintptr adler32_combine( uintptr p0, uintptr p1, intptr p2 );
 		public extern static uintptr adler32_combine64( uintptr p0, uintptr p1, long p2 );
+		public extern static uintptr adler32_z( uintptr adler, byte* buf, uint len );
 		public extern static ZlibError compress( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen );
 		public extern static ZlibError compress2( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen, int level );
 		public extern static uintptr compressBound( uintptr sourceLen );
 		public extern static uintptr crc32( uintptr crc, byte* buf, uint len );
 		public extern static uintptr crc32_combine( uintptr p0, uintptr p1, intptr p2 );
 		public extern static uintptr crc32_combine64( uintptr p0, uintptr p1, long p2 );
+		public extern static uintptr crc32_z( uintptr adler, byte* buf, uint len );
 		public extern static ZlibError deflate( z_stream* strm, FlushOptions flush );
 		public extern static uintptr deflateBound( z_stream* strm, uintptr sourceLen );
 		public extern static ZlibError deflateCopy( z_stream* dest, z_stream* source );
 		public extern static ZlibError deflateEnd( z_stream* strm );
+		public extern static int deflateGetDictionary( z_stream* strm, byte* dictionary, uint* dictLength );
 		public extern static ZlibError deflateInit_( z_stream* strm, int level, CString version, int streamSize );
 		public extern static ZlibError deflateInit2_( z_stream* strm, int level, CompressionMethod method, int windowBits, int memLevel, DeflateStrategy strategy, CUtf8String version, int streamSize );
 		public extern static ZlibError deflateParams( z_stream* strm, int level, DeflateStrategy strategy );
@@ -46,6 +49,8 @@ namespace Platform.Zlib {
 		public extern static int gzeof( gzFile* file );
 		public extern static sbyte* gzerror( gzFile* file, int* errnum );
 		public extern static int gzflush( gzFile* file, int flush );
+		public extern static uint gzfread( void* buf, uint size, uint nitems, gzFile* file );
+		public extern static uint gzfwrite( void* buf, uint size, uint nitems, gzFile* file );
 		public extern static int gzgetc( gzFile* file );
 		public extern static int gzgetc_( gzFile* file );
 		public extern static sbyte* gzgets( gzFile* file, sbyte* buf, int len );
@@ -69,6 +74,7 @@ namespace Platform.Zlib {
 		public extern static ZlibError inflateBack( z_stream* strm, Functors.Func<void*, byte**, uint> in, void* inDesc, Functors.Func<void*, byte*, uint, int> out, void* outDesc );
 		public extern static ZlibError inflateBackEnd( z_stream* strm );
 		public extern static ZlibError inflateBackInit_( z_stream* strm, int windowBits, byte* window, CUtf8String version, int streamSize );
+		public extern static uintptr inflateCodesUsed( z_stream* p0 );
 		public extern static ZlibError inflateCopy( z_stream* dest, z_stream* source );
 		public extern static ZlibError inflateEnd( z_stream* strm );
 		public extern static int inflateGetDictionary( z_stream* strm, byte* dictionary, uint* dictLength );
@@ -84,7 +90,9 @@ namespace Platform.Zlib {
 		public extern static ZlibError inflateSync( z_stream* strm );
 		public extern static ZlibError inflateSyncPoint( z_stream* p0 );
 		public extern static ZlibError inflateUndermine( z_stream* p0, int p1 );
+		public extern static int inflateValidate( z_stream* p0, int p1 );
 		public extern static ZlibError uncompress( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen );
+		public extern static int uncompress2( byte* dest, uintptr* destLen, byte* source, uintptr* sourceLen );
 		public extern static CString zError( ZlibError p0 );
 		public extern static uintptr zlibCompileFlags();
 		public extern static CString zlibVersion();
@@ -158,11 +166,7 @@ namespace Platform.Zlib {
 		[ExplicitOffset( Offset = 8 )]
 		public long pos;
 	}
-	[ExplicitSize( Size = 4 )]
-	[Alignment( Boundary = 4 )]
 	public partial struct internal_state {
-		[ExplicitOffset( Offset = 0 )]
-		public int dummy;
 	}
 	[ExplicitSize( Size = 56 )]
 	[Alignment( Boundary = 4 )]

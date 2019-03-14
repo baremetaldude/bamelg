@@ -80,6 +80,7 @@ namespace System.IO {
 
 		public void TryFlush() { TryFlush( FlushKind.Write, FlushLimit ); }
 		private void AutoFlush() { if( UseAutoFlush ) TryFlush( FlushKind.Write, FlushLimit ); }
+		public bool IsReadyToFlush { get { return ( uint ) _buffer.Length >= FlushLimit; } }
 
 		private void TryFlush( FlushKind flushKind, uint limit ) {
 			Debug.Assert( !IsDisposed );
@@ -87,7 +88,7 @@ namespace System.IO {
 			switch( flushKind ) {
 				case FlushKind.Write:
 				case FlushKind.SynchronizeWrite:
-					if( ( uint ) _buffer.Length > limit ) {
+					if( ( uint ) _buffer.Length >= limit ) {
 						WriteUtf16( _buffer.GetChars(), ( uint ) _buffer.Length );
 						_buffer.Length = 0;
 					}

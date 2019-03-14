@@ -189,6 +189,9 @@ namespace Platform {
 
 		// public extern static Boolean32 SetConsoleIcon( HICON icon );
 
+		/// https://msdn.microsoft.com/en-us/library/dd318070(VS.85).aspx
+		public extern static uint GetACP();
+
 		/// http://msdn.microsoft.com/en-us/library/ms683162(VS.85).aspx
 		public extern static CodePageID GetConsoleCP();
 		/// http://msdn.microsoft.com/en-us/library/ms686013(VS.85).aspx
@@ -1014,11 +1017,11 @@ namespace Platform {
 		public static new thistype Invalid { get { return bitcast<thistype>( uintptr.MaxValue ); } }
 		public static new thistype Null { get { return bitcast<thistype>( ( uintptr ) 0 ); } }
 
-		public SystemErrorCode Write( TimeSpan timeout, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( timeout, this, buffer, count, total ); }
-		public SystemErrorCode Read( TimeSpan timeout, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( timeout, this, buffer, count, total ); }
+		public SystemErrorCode Write( TimeSpan timeout, ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( timeout, this, offset, buffer, count, total ); }
+		public SystemErrorCode Read( TimeSpan timeout, ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( timeout, this, offset, buffer, count, total ); }
 
-		public SystemErrorCode Write( void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( TimeSpan.Zero, this, buffer, count, total ); }
-		public SystemErrorCode Read( void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeSpan.Zero, this, buffer, count, total ); }
+		public SystemErrorCode Write( ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( TimeSpan.Zero, this, offset, buffer, count, total ); }
+		public SystemErrorCode Read( ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeSpan.Zero, this, offset, buffer, count, total ); }
 	}
 
 	public struct FileHandle : IOHandle {
@@ -1306,27 +1309,6 @@ namespace Platform {
 		public STARTUPINFOW() {
 			this = default( thistype );
 			SelfSize = sizeof( thistype );
-		}
-	}
-
-	[Throwable]
-	public struct SystemException : IFormattable {
-		public HANDLE Handle = HANDLE.Invalid;
-		public SystemErrorCode ErrorCode = 0;
-
-		public SystemException( SystemErrorCode errorCode ) {
-			ErrorCode = errorCode;
-		}
-
-		public SystemException( HANDLE handle, SystemErrorCode errorCode ) {
-			Handle = handle;
-			ErrorCode = errorCode;
-		}
-
-		public void ToString( StringBuilder builder, string format ) {
-			builder.Concat( typeof( thistype ), " { ErrorCode=", ErrorCode );
-
-			builder.Append( " }" );
 		}
 	}
 }

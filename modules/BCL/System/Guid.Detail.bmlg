@@ -10,7 +10,7 @@ using System.Serialization;
 
 namespace System {
 	public sealed partial struct Guid : IBinarySerializable, ITextSerializable, IFormattable {
-		private byte[16] Data; 
+		private byte[16] Data;
 
 		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
 		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadGuid(); }
@@ -193,7 +193,7 @@ namespace System {
 			}
 		}
 
-		private static TextParseStatus TryFetch<TElement>( TElement* text, uint textLength, Guid& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint textLength, Guid& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			var data = ( byte* ) &parsedResult;
 			var result = false;
 
@@ -338,7 +338,7 @@ namespace System {
 
 			if( !result && readen != nullref ) readen = 0;
 
-			return result ? TextParseStatus.OK : TextParseStatus.Format;
+			return result ? TextParsingStatus.OK : TextParsingStatus.Format;
 		}
 
 		[UnitTest]

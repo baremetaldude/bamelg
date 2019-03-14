@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using Platform.Libc;
 
 namespace Platform.Sctp {
-	[ExternLibrary( Image = "/usr/lib/libsctp.so" )]
+	[ExternLibrary( Image = "/usr/lib/libsctp.so.1" )]
 	public static partial struct SctpApi {
 		public extern static int sctp_bindx( int sd, sockaddr* addrs, int addrcnt, int flags );
 		public extern static int sctp_connectx( int sd, sockaddr* addrs, int addrcnt, int* id );
@@ -394,7 +394,7 @@ namespace Platform.Sctp {
 	[Alignment( Boundary = 4 )]
 	public partial struct sctp_notification {
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_AE77AEE0 sn_header;
+		public UnnamedStruct_3D722BF4 sn_header;
 		[Overlapped( Offset = 0 )]
 		public sctp_assoc_change sn_assoc_change;
 		[Overlapped( Offset = 0 )]
@@ -638,7 +638,7 @@ namespace Platform.Sctp {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_AE77AEE0 {
+	public partial struct UnnamedStruct_3D722BF4 {
 		[ExplicitOffset( Offset = 0 )]
 		public ushort sn_type;
 		[ExplicitOffset( Offset = 2 )]

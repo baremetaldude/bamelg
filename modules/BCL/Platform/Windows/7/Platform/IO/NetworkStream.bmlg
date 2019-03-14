@@ -135,7 +135,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; count > 0; ) {
 			restart_ReadFile:
-				var error = _handle.Read( _timeout, data, count, transmitted );
+				var error = _handle.Read( _timeout, 0, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 					break;
@@ -158,7 +158,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
-				var error = _handle.Write( _timeout, data, count, transmitted );
+				var error = _handle.Write( _timeout, 0, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 					break;

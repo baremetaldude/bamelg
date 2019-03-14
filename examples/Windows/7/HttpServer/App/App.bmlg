@@ -15,11 +15,11 @@ namespace Example {
 		public class CustomHttpServer : HttpServer {
 			public CustomHttpServer() {
 			}
-		
+
 			protected override NetworkServer.SessionHandler CreateSession( IStream stream ) {
 				return new SessionHandler( this, stream );
 			}
-			
+
 			public class SessionHandler : basetype.SessionHandler {
 				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
 				public new declaringtype Server; // override field type
@@ -44,14 +44,14 @@ namespace Example {
 						case "/hello.aspx":
 							return new HelloWorldPageHandler( this );
 
-						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
-						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html[0], ( uint ) EmbeddedResources.time_html.Length ) );
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( EmbeddedResources.favicon_ico ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
 					}
 
 					return null;
 				}
 			}
-			
+
 			public class HelloWorldPageHandler : PageHandler {
 				public HelloWorldPageHandler( SessionHandler session )
 					: base( session ) {
@@ -66,27 +66,40 @@ namespace Example {
 				}
 			}
 
-			public class TimeEventHandler : PageHandler {
+			public class TimeEventHandler : ServerSentEventHandler {
 				public TimeEventHandler( SessionHandler session )
 					: base( session ) {
-					MediaType = System.Net.Mime.MediaTypeNames.Text.EventStream;
-					TextEncodingKind = System.Text.TextEncodingKind.Utf8;
 				}
 
 				public override void OnRender() {
+					Response.UseAutoFlush = false;
+
 					var delay = TimeSpan.FromSeconds( 1 );
-					Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
 
-					Response.Append( "retry: 0\n" );
-					Response.Append( "data: " ); Response.Append( Fiber.UtcNow.ToUnixMilliseconds() );
+					while( true ) {
+						using( Fiber.CancellationRegion() ) {
+							Response.Write( "data: " );
+							Response.Write( Fiber.UtcNow.ToUnixMilliseconds() );
+							Response.WriteLine();
 
-					Response.Append( "\n\n" );
+							Response.Write( "id: " );
+							Response.Write( @Fiber.UtcNow.Ticks );
+							Response.WriteLine();
+
+							Flush();
+							if( Session.StreamError ) break;
+
+							Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+							if( Fiber.IsCancelled ) break;
+						}
+					}
 				}
 
 				protected override void AddCustomHeaders() {
-					AddHeaderContentType( MediaType );
+					base.AddCustomHeaders();
 
-					HttpFormatter.HeaderAccessControl( Headers, "allow" );
+					// for debug purpose
+					HttpFormatter.HeaderAccessControl( Headers, "allow" ); 
 					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
 				}
 			}
@@ -113,7 +126,7 @@ namespace Example {
 							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10}</p>", time, server.ValidRequestCount );
 							Response.Concat( "<p>TotalAcceptedClientCount: ", server.TotalAcceptedClientCount, "; InvalidRequestCount=", server.InvalidRequestCount, "; ActiveSessionCount=", server.ActiveSessionCount, "</p>" );
 							Response.Append( "<p>Some unicode symbols: тут немножко Юникода</p>" );
-							Response.Append( @"<p><a href=""time.html"">Current time ( server-side event )</a></p>" );
+							Response.Append( @"<p>Server sent events <a href=""time.html"">example</a></p>" );
 						}
 						Response.Append( "</body>" );
 					}
@@ -134,57 +147,57 @@ namespace Example {
 
 			var server = new CustomHttpServer();
 
-			//eventLoop.BeginInvoke( () => {
+			// eventLoop.BeginInvoke( () => {
 			//	Fiber.Start( 16, () => {
-					var tcpListen = false;
-					var tcpListenReported = false;
+			var tcpListen = false;
+			var tcpListenReported = false;
 
-					var pipeListen = false;
-					var pipeListenReported = false;
+			var pipeListen = false;
+			var pipeListenReported = false;
 
-					while( true ) {
-						if( !tcpListen ) {
-							tcpListen = server.Listen( TcpConnectionPort );
+			while( true ) {
+				if( !tcpListen ) {
+					tcpListen = server.Listen( TcpConnectionPort );
 
-							if( tcpListen )
-								Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
-							else if( !tcpListenReported ) {
-								Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
-								tcpListenReported = true;
-							}
-						}
+					if( tcpListen )
+						Console.WriteLine( "Listen TCP port {0}", TcpConnectionPort );
+					else if( !tcpListenReported ) {
+						Console.WriteLine( "Unable bind TCP port {0}", TcpConnectionPort );
+						tcpListenReported = true;
+					}
+				}
 
-						if( !pipeListen ) {
-							pipeListen = server.Listen( NamedPipeConnectionPath );
+				if( !pipeListen ) {
+					pipeListen = server.Listen( NamedPipeConnectionPath );
 
-							if( pipeListen )
-								Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
-							else if( !pipeListenReported ) {
-								Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
-								pipeListenReported = true;
-							}
-						}
+					if( pipeListen )
+						Console.WriteLine( "Listen named pipe '{0}'", NamedPipeConnectionPath );
+					else if( !pipeListenReported ) {
+						Console.WriteLine( "Unable to bind named pipe '{0}'", NamedPipeConnectionPath );
+						pipeListenReported = true;
+					}
+				}
 
-						var all = true;
+				var all = true;
 
-						all &= tcpListen;
-						all &= pipeListen;
+				all &= tcpListen;
+				all &= pipeListen;
 
-						if( !all ) {
-							using( Fiber.CancellationRegion() ) {
-								Fiber.Sleep( 1000 );
-								if( Fiber.IsCancelled ) return;
-							}
-
-							continue;
-						}
-
-						break;
+				if( !all ) {
+					using( Fiber.CancellationRegion() ) {
+						Fiber.Sleep( 1000 );
+						if( Fiber.IsCancelled ) return;
 					}
 
-					PrintConnectionOptions();
+					continue;
+				}
+
+				break;
+			}
+
+			PrintConnectionOptions();
 			//	}, "resource allocator" );
-			//} );
+			// } );
 
 			eventLoop.Dispatch();
 		}

@@ -109,9 +109,9 @@ namespace System.IO {
 
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceBlocked( FiberInfo* fiber ) { Trace.Write( "Fiber: Blocked [{0}] by mutex {1}", *fiber, &this ); }
+			private void TraceBlocked( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Blocked [{0}] by mutex {1}", *fiber, &this ); }
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceResumed( FiberInfo* fiber ) { Trace.Write( "Fiber: Resumed [{0}] by mutex {1}", *fiber, &this ); }
+			private void TraceResumed( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Resumed [{0}] by mutex {1}", *fiber, &this ); }
 			/// @}
 
 			public RegionHolder LockRegion() { return new RegionHolder( this ); }
@@ -246,9 +246,9 @@ namespace System.IO {
 
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceBlocked( FiberInfo* fiber ) { Trace.Write( "Fiber: Blocked [{0}] by semaphore {1}", *fiber, &this ); }
+			private void TraceBlocked( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Blocked [{0}] by semaphore {1}", *fiber, &this ); }
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceResumed( FiberInfo* fiber ) { Trace.Write( "Fiber: Resumed [{0}] by semaphore {1}", *fiber, &this ); }
+			private void TraceResumed( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Resumed [{0}] by semaphore {1}", *fiber, &this ); }
 			/// @}
 
 			public RegionHolder LockRegion() { return new RegionHolder( this ); }
@@ -299,8 +299,7 @@ namespace System.IO {
 				}
 
 				currentFiber->WaitNext = _firstWaiter;
-				if( _firstWaiter == null )
-					_firstWaiter = currentFiber;
+				_firstWaiter = currentFiber;
 
 				TraceBlocked( currentFiber );
 
@@ -314,7 +313,7 @@ namespace System.IO {
 				// Debug.Assert( Fiber.IsFiberExecuting ); signal can occur in main fiber too
 
 				if( IsSignalled ) return;
-				IsSignalled = true;
+				if( !IsAutoReset ) IsSignalled = true;
 
 				for( var ready = _firstWaiter; ready != null; ) {
 					var next = ready->WaitNext; ready->WaitNext = null;
@@ -343,9 +342,9 @@ namespace System.IO {
 
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceBlocked( FiberInfo* fiber ) { Trace.Write( "Fiber: Blocked [{0}] by event {1}", *fiber, &this ); }
+			private void TraceBlocked( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Blocked [{0}] by event {1}", *fiber, &this ); }
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceResumed( FiberInfo* fiber ) { Trace.Write( "Fiber: Resumed [{0}] by event {1}", *fiber, &this ); }
+			private void TraceResumed( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Resumed [{0}] by event {1}", *fiber, &this ); }
 			/// @}
 		}
 
@@ -414,9 +413,9 @@ namespace System.IO {
 
 			/// @{ Tracing
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceBlocked( FiberInfo* fiber ) { Trace.Write( "Fiber: Blocked [{0}] by barrier {1}", *fiber, &this ); }
+			private void TraceBlocked( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Blocked [{0}] by barrier {1}", *fiber, &this ); }
 			[Conditional( ConditionString = TraceConditionString )]
-			private void TraceResumed( FiberInfo* fiber ) { Trace.Write( "Fiber: Resumed [{0}] by barrier {1}", *fiber, &this ); }
+			private void TraceResumed( FiberInfo* fiber ) { Console.WriteLine( "Fiber: Resumed [{0}] by barrier {1}", *fiber, &this ); }
 			/// @}
 		}
 	}

@@ -35,7 +35,7 @@ namespace System {
 		// NOTE for fetch methods:
 		// if 'readen' == nullref trying to parse entrire string
 		// if 'readen' != nullref trying to parse at least start of string
-		private static TextParseStatus TryFetchBool<TElement>( TElement* buffer, uint length, bool& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static TextParsingStatus TryFetchBool<TElement>( TElement* buffer, uint length, bool& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			var result = true;
 
 			var start = SkipWhitespace<TElement>( buffer, length, 0U, trimLeadingWhitespace );
@@ -75,10 +75,10 @@ namespace System {
 
 			if( !result && readen != nullref ) readen = 0;
 
-			return result ? TextParseStatus.OK : TextParseStatus.Format;
+			return result ? TextParsingStatus.OK : TextParsingStatus.Format;
 		}
 
-		private static TextParseStatus TryFetchSignedInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static TextParsingStatus TryFetchSignedInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			if( readen != nullref ) readen = length;
 
 			var digitsStarted = false;
@@ -157,30 +157,30 @@ namespace System {
 						if( readen != nullref && digitsStarted ) {
 							readen = i;
 							parsedResult = minusSpecified ? -result : result;
-							return TextParseStatus.OK;
+							return TextParsingStatus.OK;
 						}
 
 						parsedResult = 0;
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 			}
 
 			if( digitsStarted ) {
 				parsedResult = minusSpecified ? -result : result;
-				return TextParseStatus.OK;
+				return TextParsingStatus.OK;
 			}
 
 			parsedResult = 0;
 
 			if( readen != nullref ) readen = 0;
-			return TextParseStatus.Format;
+			return TextParsingStatus.Format;
 
 		overflow_detected:
 			if( readen != nullref ) readen = 0;
-			return TextParseStatus.Overflow;
+			return TextParsingStatus.Overflow;
 		}
 
-		public static TextParseStatus TryFetchUnsignedInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		public static TextParsingStatus TryFetchUnsignedInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			if( readen != nullref ) readen = length;
 
 			var digitsStarted = false;
@@ -244,30 +244,30 @@ namespace System {
 						if( readen != nullref && digitsStarted ) {
 							readen = i;
 							parsedResult = result;
-							return TextParseStatus.OK;
+							return TextParsingStatus.OK;
 						}
 
 						parsedResult = 0;
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 			}
 
 			if( digitsStarted ) {
 				parsedResult = result;
-				return TextParseStatus.OK;
+				return TextParsingStatus.OK;
 			}
 
 			parsedResult = 0;
 
 			if( readen != nullref ) readen = 0;
-			return TextParseStatus.Format;
+			return TextParsingStatus.Format;
 
 		overflow_detected:
 			if( readen != nullref ) readen = 0;
-			return TextParseStatus.Overflow;
+			return TextParsingStatus.Overflow;
 		}
 
-		private static TextParseStatus TryFetchHexInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static TextParsingStatus TryFetchHexInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			var digitsStarted = false;
 			var trailingWhitespaceStarted = false;
 
@@ -320,23 +320,23 @@ namespace System {
 								readen = end;
 
 								parsedResult = result;
-								return TextParseStatus.OK;
+								return TextParsingStatus.OK;
 							}
 							else if( end != length ) {
 								parsedResult = 0;
-								return TextParseStatus.Format;
+								return TextParsingStatus.Format;
 							}
 						}
 
 						parsedResult = 0;
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 
 			got_digit:
 				if( result != 0 ) ++digits;
 
-				if( trailingWhitespaceStarted ) return TextParseStatus.Format;
-				if( digits > maxDigits ) return TextParseStatus.Overflow;
+				if( trailingWhitespaceStarted ) return TextParsingStatus.Format;
+				if( digits > maxDigits ) return TextParsingStatus.Overflow;
 
 				digitsStarted = true;
 
@@ -350,16 +350,16 @@ namespace System {
 				if( readen != nullref ) readen = length;
 
 				parsedResult = result;
-				return TextParseStatus.OK;
+				return TextParsingStatus.OK;
 			}
 
 			if( readen != nullref ) readen = 0;
 			parsedResult = 0;
-			return TextParseStatus.Format;
+			return TextParsingStatus.Format;
 		}
 
-		private static TextParseStatus GetHexArrayLength<TElement>( TElement* buffer, uint length, uint& arrayLength, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
-			if( buffer == null || length == 0 ) return TextParseStatus.Format;
+		private static TextParsingStatus GetHexArrayLength<TElement>( TElement* buffer, uint length, uint& arrayLength, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			if( buffer == null || length == 0 ) return TextParsingStatus.Format;
 
 			var trailingWhitespaceStarted = false;
 
@@ -394,7 +394,7 @@ namespace System {
 					case 'E':
 					case 'F':
 						++arrayLength;
-						if( trailingWhitespaceStarted ) return TextParseStatus.Format;
+						if( trailingWhitespaceStarted ) return TextParsingStatus.Format;
 						continue;
 
 					default:
@@ -404,39 +404,39 @@ namespace System {
 							if( readen != nullref ) {
 								readen = end;
 
-								var result = TextParseStatus.OK;
-								if( ( arrayLength & 1 ) != 0 ) { result = TextParseStatus.Format; arrayLength = 0; }
+								var result = TextParsingStatus.OK;
+								if( ( arrayLength & 1 ) != 0 ) { result = TextParsingStatus.Format; arrayLength = 0; }
 								else arrayLength /= 2;
 								return result;
 							}
 							else if( end != length ) {
 								arrayLength = 0;
-								return TextParseStatus.Format;
+								return TextParsingStatus.Format;
 							}
 						}
 
 						arrayLength = 0;
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 			}
 
 			if( arrayLength > 0 ) {
 				if( readen != nullref ) readen = length;
 
-				var result = TextParseStatus.OK;
-				if( ( arrayLength & 1 ) != 0 ) { result = TextParseStatus.Format; arrayLength = 0; }
+				var result = TextParsingStatus.OK;
+				if( ( arrayLength & 1 ) != 0 ) { result = TextParsingStatus.Format; arrayLength = 0; }
 				else arrayLength /= 2;
 				return result;
 			}
 
 			if( readen != nullref ) readen = 0;
 			arrayLength = 0;
-			return TextParseStatus.Format;
+			return TextParsingStatus.Format;
 		}
 
-		private static TextParseStatus TryFetchHexArray<TElement>( TElement* buffer, uint length, byte[]& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
-			if( buffer == null || length == 0 ) return TextParseStatus.Format;
-		
+		private static TextParsingStatus TryFetchHexArray<TElement>( TElement* buffer, uint length, byte[]& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			if( buffer == null || length == 0 ) return TextParsingStatus.Format;
+
 			uint arrayLength;
 			var status = GetHexArrayLength<TElement>( buffer, length, arrayLength, readen, trimLeadingWhitespace, trimTrailingWhitespace );
 			if( !status ) return status;
@@ -446,7 +446,7 @@ namespace System {
 
 			byte digit;
 			parsedResult = new[arrayLength] byte;
-			if( parsedResult == null ) return TextParseStatus.Format;
+			if( parsedResult == null ) return TextParsingStatus.Format;
 
 			var start = SkipWhitespace<TElement>( buffer, length, 0U, trimLeadingWhitespace );
 
@@ -490,20 +490,20 @@ namespace System {
 							if( readen != nullref ) {
 								readen = end;
 
-								return TextParseStatus.OK;
+								return TextParsingStatus.OK;
 							}
 							else if( end != length ) {
 								parsedResult = null;
-								return TextParseStatus.Format;
+								return TextParsingStatus.Format;
 							}
 						}
 
 						parsedResult = null;
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 
 			got_digit:
-				if( trailingWhitespaceStarted ) return TextParseStatus.Format;
+				if( trailingWhitespaceStarted ) return TextParsingStatus.Format;
 
 				if( ( digits & 1 ) == 0 ) parsedResult[i / 2] = digit << 4;
 				else parsedResult[i / 2] |= digit;
@@ -514,196 +514,196 @@ namespace System {
 
 			if( digits > 0 ) {
 				if( readen != nullref ) readen = length;
-				return TextParseStatus.OK;
+				return TextParsingStatus.OK;
 			}
 
 			if( readen != nullref ) readen = 0;
 			parsedResult = null;
-			return TextParseStatus.Format;
+			return TextParsingStatus.Format;
 		}
 
-		public static TextParseStatus TryFetchWhitespace( byte*& buffer, uint& remaining ) { var end = SkipWhitespace<byte>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
-		public static TextParseStatus TryFetchWhitespace( char*& buffer, uint& remaining ) { var end = SkipWhitespace<char>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
-		public static TextParseStatus TryFetchWhitespace( uint*& buffer, uint& remaining ) { var end = SkipWhitespace<uint>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParseStatus.OK : TextParseStatus.Format; }
+		public static TextParsingStatus TryFetchWhitespace( byte*& buffer, uint& remaining ) { var end = SkipWhitespace<byte>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParsingStatus.OK : TextParsingStatus.Format; }
+		public static TextParsingStatus TryFetchWhitespace( char*& buffer, uint& remaining ) { var end = SkipWhitespace<char>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParsingStatus.OK : TextParsingStatus.Format; }
+		public static TextParsingStatus TryFetchWhitespace( uint*& buffer, uint& remaining ) { var end = SkipWhitespace<uint>( buffer, remaining, 0, true ); buffer += end; remaining -= end; return end != 0 ? TextParsingStatus.OK : TextParsingStatus.Format; }
 
-		public static TextParseStatus TryFetchSpecificChar( byte*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParseStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParseStatus.OK : TextParseStatus.Format; }
-		public static TextParseStatus TryFetchSpecificChar( char*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParseStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParseStatus.OK : TextParseStatus.Format; }
-		public static TextParseStatus TryFetchSpecificChar( uint*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParseStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParseStatus.OK : TextParseStatus.Format; }
+		public static TextParsingStatus TryFetchSpecificChar( byte*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
+		public static TextParsingStatus TryFetchSpecificChar( char*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
+		public static TextParsingStatus TryFetchSpecificChar( uint*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
 
 		/// @{ parse 1-byte strings
-		public static TextParseStatus TryFetchBool( byte*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchBool( byte*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchInt8( byte*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt16( byte*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt32( byte*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt64( byte*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt8( byte*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt16( byte*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt32( byte*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt64( byte*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<byte, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchUInt8( byte*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt16( byte*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt32( byte*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt64( byte*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt8( byte*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt16( byte*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt32( byte*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt64( byte*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<byte, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchHexUInt8( byte*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt16( byte*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt32( byte*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt64( byte*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt8( byte*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt16( byte*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt32( byte*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt64( byte*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<byte, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryParseBool( byte* buffer, uint length, bool& parsedResult ) { return TryFetchBool<byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseBool( byte* buffer, uint length, bool& parsedResult ) { return TryFetchBool<byte>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseInt8( byte* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<byte, sbyte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt16( byte* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<byte, short>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt32( byte* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<byte, int>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt64( byte* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<byte, long>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt8( byte* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<byte, sbyte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt16( byte* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<byte, short>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt32( byte* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<byte, int>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt64( byte* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<byte, long>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseUInt8( byte* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<byte, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt16( byte* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<byte, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt32( byte* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<byte, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt64( byte* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<byte, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt8( byte* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<byte, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt16( byte* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<byte, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt32( byte* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<byte, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt64( byte* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<byte, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseHexUInt8( byte* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<byte, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt16( byte* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<byte, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt32( byte* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<byte, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt64( byte* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<byte, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt8( byte* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<byte, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt16( byte* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<byte, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt32( byte* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<byte, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt64( byte* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<byte, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseSingleIEEE754( byte* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseDoubleIEEE754( byte* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( byte* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( byte* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<byte>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseByteArray( byte* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<byte>( buffer, length, parsedResult ); }
-		public static byte[] ParseByteArray( byte* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static TextParsingStatus TryParseByteArray( byte* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<byte>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( byte* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static bool ParseBool( byte* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static bool ParseBool( byte* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static sbyte ParseInt8( byte* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static short ParseInt16( byte* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static int ParseInt32( byte* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static long ParseInt64( byte* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static sbyte ParseInt8( byte* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static short ParseInt16( byte* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static int ParseInt32( byte* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static long ParseInt64( byte* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static byte ParseUInt8( byte* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ushort ParseUInt16( byte* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static uint ParseUInt32( byte* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ulong ParseUInt64( byte* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static byte ParseUInt8( byte* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ushort ParseUInt16( byte* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static uint ParseUInt32( byte* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ulong ParseUInt64( byte* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static byte ParseHexUInt8( byte* buffer, uint length ) { byte parsedResult; var status = TryParseHexUInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ushort ParseHexUInt16( byte* buffer, uint length ) { ushort parsedResult; var status = TryParseHexUInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static uint ParseHexUInt32( byte* buffer, uint length ) { uint parsedResult; var status = TryParseHexUInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ulong ParseHexUInt64( byte* buffer, uint length ) { ulong parsedResult; var status = TryParseHexUInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static byte ParseHexUInt8( byte* buffer, uint length ) { byte parsedResult; var status = TryParseHexUInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ushort ParseHexUInt16( byte* buffer, uint length ) { ushort parsedResult; var status = TryParseHexUInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static uint ParseHexUInt32( byte* buffer, uint length ) { uint parsedResult; var status = TryParseHexUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ulong ParseHexUInt64( byte* buffer, uint length ) { ulong parsedResult; var status = TryParseHexUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( byte* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( byte* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static float ParseSingleIEEE754( byte* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( byte* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		/// @{ parse 2-byte strings
-		public static TextParseStatus TryFetchBool( char*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchBool( char*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchInt8( char*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt16( char*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt32( char*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt64( char*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt8( char*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt16( char*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt32( char*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt64( char*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<char, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchUInt8( char*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt16( char*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt32( char*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt64( char*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt8( char*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt16( char*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt32( char*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt64( char*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<char, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchHexUInt8( char*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt16( char*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt32( char*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt64( char*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt8( char*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt16( char*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt32( char*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt64( char*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<char, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryParseBool( char* buffer, uint length, bool& parsedResult ) { return TryFetchBool<char>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseBool( char* buffer, uint length, bool& parsedResult ) { return TryFetchBool<char>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseInt8( char* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<char, sbyte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt16( char* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<char, short>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt32( char* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<char, int>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt64( char* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<char, long>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt8( char* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<char, sbyte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt16( char* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<char, short>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt32( char* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<char, int>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt64( char* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<char, long>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseUInt8( char* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<char, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt16( char* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<char, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt32( char* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<char, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt64( char* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<char, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt8( char* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<char, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt16( char* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<char, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt32( char* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<char, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt64( char* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<char, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseHexUInt8( char* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<char, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt16( char* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<char, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt32( char* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<char, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt64( char* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<char, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt8( char* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<char, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt16( char* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<char, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt32( char* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<char, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt64( char* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<char, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseSingleIEEE754( char* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<char>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseDoubleIEEE754( char* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<char>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( char* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<char>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( char* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<char>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseByteArray( char* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<char>( buffer, length, parsedResult ); }
-		public static byte[] ParseByteArray( char* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		
-		public static bool ParseBool( char* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static TextParsingStatus TryParseByteArray( char* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<char>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( char* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static sbyte ParseInt8( char* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static short ParseInt16( char* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static int ParseInt32( char* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static long ParseInt64( char* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static bool ParseBool( char* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static byte ParseUInt8( char* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ushort ParseUInt16( char* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static uint ParseUInt32( char* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ulong ParseUInt64( char* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static sbyte ParseInt8( char* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static short ParseInt16( char* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static int ParseInt32( char* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static long ParseInt64( char* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( char* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( char* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static byte ParseUInt8( char* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ushort ParseUInt16( char* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static uint ParseUInt32( char* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ulong ParseUInt64( char* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+
+		public static float ParseSingleIEEE754( char* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( char* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		/// @{ parse 4-byte strings
-		public static TextParseStatus TryFetchBool( uint*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchBool( uint*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchInt8( uint*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt16( uint*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt32( uint*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchInt64( uint*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt8( uint*& buffer, uint& remaining, sbyte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, sbyte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt16( uint*& buffer, uint& remaining, short& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, short>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt32( uint*& buffer, uint& remaining, int& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, int>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchInt64( uint*& buffer, uint& remaining, long& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchSignedInt<uint, long>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchUInt8( uint*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt16( uint*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt32( uint*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchUInt64( uint*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt8( uint*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt16( uint*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt32( uint*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchUInt64( uint*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchUnsignedInt<uint, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryFetchHexUInt8( uint*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt16( uint*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt32( uint*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
-		public static TextParseStatus TryFetchHexUInt64( uint*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt8( uint*& buffer, uint& remaining, byte& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt16( uint*& buffer, uint& remaining, ushort& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, ushort>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt32( uint*& buffer, uint& remaining, uint& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static TextParsingStatus TryFetchHexUInt64( uint*& buffer, uint& remaining, ulong& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchHexInt<uint, ulong>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
-		public static TextParseStatus TryParseBool( uint* buffer, uint length, bool& parsedResult ) { return TryFetchBool<uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseBool( uint* buffer, uint length, bool& parsedResult ) { return TryFetchBool<uint>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseInt8( uint* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<uint, sbyte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt16( uint* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<uint, short>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt32( uint* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<uint, int>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseInt64( uint* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<uint, long>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt8( uint* buffer, uint length, sbyte& parsedResult ) { return TryFetchSignedInt<uint, sbyte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt16( uint* buffer, uint length, short& parsedResult ) { return TryFetchSignedInt<uint, short>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt32( uint* buffer, uint length, int& parsedResult ) { return TryFetchSignedInt<uint, int>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseInt64( uint* buffer, uint length, long& parsedResult ) { return TryFetchSignedInt<uint, long>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseUInt8( uint* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<uint, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt16( uint* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<uint, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt32( uint* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<uint, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseUInt64( uint* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<uint, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt8( uint* buffer, uint length, byte& parsedResult ) { return TryFetchUnsignedInt<uint, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt16( uint* buffer, uint length, ushort& parsedResult ) { return TryFetchUnsignedInt<uint, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt32( uint* buffer, uint length, uint& parsedResult ) { return TryFetchUnsignedInt<uint, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseUInt64( uint* buffer, uint length, ulong& parsedResult ) { return TryFetchUnsignedInt<uint, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseHexUInt8( uint* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<uint, byte>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt16( uint* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<uint, ushort>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt32( uint* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<uint, uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseHexUInt64( uint* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<uint, ulong>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt8( uint* buffer, uint length, byte& parsedResult ) { return TryFetchHexInt<uint, byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt16( uint* buffer, uint length, ushort& parsedResult ) { return TryFetchHexInt<uint, ushort>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt32( uint* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<uint, uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseHexUInt64( uint* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<uint, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseSingleIEEE754( uint* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<uint>( buffer, length, parsedResult ); }
-		public static TextParseStatus TryParseDoubleIEEE754( uint* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( uint* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( uint* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<uint>( buffer, length, parsedResult ); }
 
-		public static TextParseStatus TryParseByteArray( uint* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<uint>( buffer, length, parsedResult ); }
-		public static byte[] ParseByteArray( uint* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static TextParsingStatus TryParseByteArray( uint* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<uint>( buffer, length, parsedResult ); }
+		public static byte[] ParseByteArray( uint* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static bool ParseBool( uint* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static bool ParseBool( uint* buffer, uint length ) { bool parsedResult; var status = TryParseBool( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static sbyte ParseInt8( uint* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static short ParseInt16( uint* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static int ParseInt32( uint* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static long ParseInt64( uint* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static sbyte ParseInt8( uint* buffer, uint length ) { sbyte parsedResult; var status = TryParseInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static short ParseInt16( uint* buffer, uint length ) { short parsedResult; var status = TryParseInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static int ParseInt32( uint* buffer, uint length ) { int parsedResult; var status = TryParseInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static long ParseInt64( uint* buffer, uint length ) { long parsedResult; var status = TryParseInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static byte ParseUInt8( uint* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ushort ParseUInt16( uint* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static uint ParseUInt32( uint* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static ulong ParseUInt64( uint* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static byte ParseUInt8( uint* buffer, uint length ) { byte parsedResult; var status = TryParseUInt8( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ushort ParseUInt16( uint* buffer, uint length ) { ushort parsedResult; var status = TryParseUInt16( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static uint ParseUInt32( uint* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static ulong ParseUInt64( uint* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( uint* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( uint* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); if( !status ) throw new FormatException( status ); return parsedResult; }
+		public static float ParseSingleIEEE754( uint* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( uint* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		private static readonly int[15] ExponentBias = new int[15] { 4, 7, 10, 14, 17, 20, 24, 27, 30, 34, 37, 40, 44, 47, 50 };
@@ -714,13 +714,13 @@ namespace System {
 		private static readonly ulong[21] MantissaPower10By16 = new ulong[21] { 0x8E1BC9BF04000000, 0x9DC5ADA82B70B59E, 0xAF298D050E4395D6, 0xC2781F49FFCFA6D4, 0xD7E77A8F87DAF7FA, 0xEFB3AB16C59B14A0, 0x850FADC09923329C, 0x93BA47C980E98CDE, 0xA402B9C5A8D3A6E6, 0xB616A12B7FE617A8, 0xCA28A291859BBF90, 0xE070F78D39275566, 0xF92E0C3537826140, 0x8A5296FFE33CC92C, 0x9991A6F3D6BF1762, 0xAA7EEBFB9DF9DE8A, 0xBD49D14AA79DBC7E, 0xD226FC195C6A2F88, 0xE950DF20247C83F8, 0x81842F29F2CCE373, 0x8FCAC257558EE4E2 };
 		private static readonly ulong[21] MantissaPower01By16 = new ulong[21] { 0xE69594BEC44DE160, 0xCFB11EAD453994C3, 0xBB127C53B17EC165, 0xA87FEA27A539E9B3, 0x97C560BA6B0919B5, 0x88B402F7FD7553AB, 0xF64335BCF065D3A0, 0xDDD0467C64BCE4C4, 0xC7CABA6E7C5382ED, 0xB3F4E093DB73A0B7, 0xA21727DB38CB0053, 0x91FF83775423CC29, 0x8380DEA93DA4BC82, 0xECE53CEC4A314F00, 0xD5605FCDCF32E217, 0xC0314325637A1978, 0xAD1C8EAB5EE43BA2, 0x9BECCE62836AC5B0, 0x8C71DCD9BA0B495C, 0xFD00B89747823938, 0xE3E27A444D8D991A };
 
-		private static TextParseStatus TryParseSingleIEEE754<TElement>( TElement* text, uint length, float& parsedResult ) {
+		private static TextParsingStatus TryParseSingleIEEE754<TElement>( TElement* text, uint length, float& parsedResult ) {
 			double result;
 			var status = TryParseIEEE754<TElement>( text, length, result );
 			if( status ) {
 				if( !result.IsSpecial )
 					if( result < float.MinValue || result > float.MaxValue )
-						return TextParseStatus.Overflow;
+						return TextParsingStatus.Overflow;
 
 				parsedResult = ( float ) result;
 			}
@@ -728,7 +728,7 @@ namespace System {
 			return status;
 		}
 
-		private static TextParseStatus TryParseIEEE754<TElement>( TElement* text, uint length, double& parsedResult ) {
+		private static TextParsingStatus TryParseIEEE754<TElement>( TElement* text, uint length, double& parsedResult ) {
 			var mainDoublePart = 0UL;
 			var mainPartDigits = 0;
 
@@ -758,11 +758,11 @@ namespace System {
 					case '\x2028': case '\x2029':
 					case '\x202F': case '\x205F':
 					case '\x3000':
-						if( minusSpecified ) return TextParseStatus.Format;
+						if( minusSpecified ) return TextParsingStatus.Format;
 						continue;
 
 					case '-':
-						if( minusSpecified ) return TextParseStatus.Format;
+						if( minusSpecified ) return TextParsingStatus.Format;
 						minusSpecified = true;
 						continue;
 					default: goto fetchIntegerPart;
@@ -869,14 +869,14 @@ namespace System {
 					case 'e':
 					case 'E': {
 							++readIndex;
-							if( readIndex >= length ) return TextParseStatus.Format;
+							if( readIndex >= length ) return TextParsingStatus.Format;
 
 							var isNegativeExponent = false;
 
 							if( text[readIndex] == '-' || text[readIndex] == '+' ) {
 								isNegativeExponent = text[readIndex] == '-';
 								++readIndex;
-								if( readIndex >= length ) return TextParseStatus.Format;
+								if( readIndex >= length ) return TextParsingStatus.Format;
 							}
 
 							if( cast<char>( text[readIndex] ).IsDigit ) {
@@ -888,14 +888,14 @@ namespace System {
 								}
 							}
 							else {
-								return TextParseStatus.Format;
+								return TextParsingStatus.Format;
 							}
 
 							if( isNegativeExponent )
 								exponentPart = -exponentPart;
 						} break;
 					default:
-						return TextParseStatus.Format;
+						return TextParsingStatus.Format;
 				}
 
 			// handle trailing whitespaces
@@ -916,7 +916,7 @@ namespace System {
 					case '\x3000':
 						continue;
 
-					default: return TextParseStatus.Format;
+					default: return TextParsingStatus.Format;
 				}
 			}
 
@@ -1003,7 +1003,7 @@ namespace System {
 
 		doubleValueComputed:
 			parsedResult = minusSpecified ? -doubleValue : doubleValue;
-			return TextParseStatus.OK;
+			return TextParsingStatus.OK;
 		}
 
 		private static void MultiplyMantissa( ulong& mantissa, ulong value, int& biasedExponent ) {

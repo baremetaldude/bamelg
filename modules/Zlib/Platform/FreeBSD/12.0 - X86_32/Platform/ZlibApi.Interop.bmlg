@@ -1,0 +1,197 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+namespace Platform.Zlib {
+	[ExternLibrary( Image = "/usr/lib/libz.so" )]
+	public static partial struct ZlibApi {
+		public const SbcsString Version = "1.2.11";
+
+		public extern static uintptr adler32( uintptr adler, byte* buf, uint len );
+		public extern static uintptr adler32_combine( uintptr p0, uintptr p1, long p2 );
+		public extern static uintptr adler32_z( uintptr adler, byte* buf, uintptr len );
+		public extern static int compress( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen );
+		public extern static int compress2( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen, int level );
+		public extern static uintptr compressBound( uintptr sourceLen );
+		public extern static uintptr crc32( uintptr crc, byte* buf, uint len );
+		public extern static uintptr crc32_combine( uintptr p0, uintptr p1, long p2 );
+		public extern static uintptr crc32_z( uintptr adler, byte* buf, uintptr len );
+		public extern static ZlibError deflate( z_stream* stream, FlushOptions options );
+		public extern static uintptr deflateBound( z_stream* strm, uintptr sourceLen );
+		public extern static int deflateCopy( z_stream* dest, z_stream* source );
+		public extern static ZlibError deflateEnd( z_stream* stream );
+		public extern static int deflateGetDictionary( z_stream* strm, byte* dictionary, uint* dictLength );
+		public extern static ZlibError deflateInit_( z_stream* stream, int level, CString version, int streamSize );
+		public extern static ZlibError deflateInit2_( z_stream* stream, int level, CompressionMethod method, int maxWindowBits, int memoryLevel, DeflateStrategy strategy, CString version, int streamSize );
+		public extern static int deflateParams( z_stream* strm, int level, int strategy );
+		public extern static int deflatePending( z_stream* strm, uint* pending, int* bits );
+		public extern static int deflatePrime( z_stream* strm, int bits, int value );
+		public extern static int deflateReset( z_stream* strm );
+		public extern static int deflateResetKeep( z_stream* p0 );
+		public extern static int deflateSetDictionary( z_stream* strm, byte* dictionary, uint dictLength );
+		public extern static int deflateSetHeader( z_stream* strm, gz_header* head );
+		public extern static int deflateTune( z_stream* strm, int goodLength, int maxLazy, int niceLength, int maxChain );
+		public extern static uint* get_crc_table();
+		public extern static int gzbuffer( gzFile* file, uint size );
+		public extern static void gzclearerr( gzFile* file );
+		public extern static int gzclose( gzFile* file );
+		public extern static int gzclose_r( gzFile* file );
+		public extern static int gzclose_w( gzFile* file );
+		public extern static int gzdirect( gzFile* file );
+		public extern static gzFile* gzdopen( int fd, sbyte* mode );
+		public extern static int gzeof( gzFile* file );
+		public extern static sbyte* gzerror( gzFile* file, int* errnum );
+		public extern static int gzflush( gzFile* file, int flush );
+		public extern static uintptr gzfread( void* buf, uintptr size, uintptr nitems, gzFile* file );
+		public extern static uintptr gzfwrite( void* buf, uintptr size, uintptr nitems, gzFile* file );
+		public extern static int gzgetc( gzFile* file );
+		public extern static int gzgetc_( gzFile* file );
+		public extern static sbyte* gzgets( gzFile* file, sbyte* buf, int len );
+		public extern static long gzoffset( gzFile* p0 );
+		public extern static gzFile* gzopen( sbyte* p0, sbyte* p1 );
+		public extern static int gzputc( gzFile* file, int c );
+		public extern static int gzputs( gzFile* file, sbyte* s );
+		public extern static int gzread( gzFile* file, void* buf, uint len );
+		public extern static int gzrewind( gzFile* file );
+		public extern static long gzseek( gzFile* p0, long p1, int p2 );
+		public extern static int gzsetparams( gzFile* file, int level, int strategy );
+		public extern static long gztell( gzFile* p0 );
+		public extern static int gzungetc( int c, gzFile* file );
+		public extern static int gzvprintf( gzFile* file, sbyte* format, sbyte* va );
+		public extern static int gzwrite( gzFile* file, void* buf, uint len );
+		public extern static ZlibError inflate( z_stream* stream, FlushOptions options );
+		public extern static int inflateBack( z_stream* strm, Functors.Func<void*, byte**, uint> in, void* inDesc, Functors.Func<void*, byte*, uint, int> out, void* outDesc );
+		public extern static int inflateBackEnd( z_stream* strm );
+		public extern static int inflateBackInit_( z_stream* strm, int windowBits, byte* window, CUtf8String version, int streamSize );
+		public extern static uintptr inflateCodesUsed( z_stream* p0 );
+		public extern static int inflateCopy( z_stream* dest, z_stream* source );
+		public extern static ZlibError inflateEnd( z_stream* stream );
+		public extern static int inflateGetDictionary( z_stream* strm, byte* dictionary, uint* dictLength );
+		public extern static int inflateGetHeader( z_stream* strm, gz_header* head );
+		public extern static ZlibError inflateInit_( z_stream* stream, CString version, int streamSize );
+		public extern static int inflateInit2_( z_stream* strm, int windowBits, CUtf8String version, int streamSize );
+		public extern static intptr inflateMark( z_stream* strm );
+		public extern static int inflatePrime( z_stream* strm, int bits, int value );
+		public extern static int inflateReset( z_stream* strm );
+		public extern static int inflateReset2( z_stream* strm, int windowBits );
+		public extern static int inflateResetKeep( z_stream* p0 );
+		public extern static int inflateSetDictionary( z_stream* strm, byte* dictionary, uint dictLength );
+		public extern static int inflateSync( z_stream* strm );
+		public extern static int inflateSyncPoint( z_stream* p0 );
+		public extern static int inflateUndermine( z_stream* p0, int p1 );
+		public extern static int inflateValidate( z_stream* p0, int p1 );
+		public extern static int uncompress( byte* dest, uintptr* destLen, byte* source, uintptr sourceLen );
+		public extern static int uncompress2( byte* dest, uintptr* destLen, byte* source, uintptr* sourceLen );
+		public extern static CString zError( int code );
+		public extern static uintptr zlibCompileFlags();
+		public extern static CString zlibVersion();
+	}
+	public enum CompressionMethod : uint {
+		Z_DEFLATED = 8,
+	}
+	public enum DeflateStrategy : uint {
+		Z_DEFAULT_STRATEGY = 0,
+		Z_FILTERED =         1,
+		Z_HUFFMAN_ONLY =     2,
+		Z_RLE =              3,
+		Z_FIXED =            4,
+	}
+	[Flags]
+	public enum FlushOptions : uint {
+		Z_NO_FLUSH =   0,
+		Z_SYNC_FLUSH = 2,
+		Z_FINISH =     4,
+		Z_FULL_FLUSH = 3,
+	}
+	public enum ZlibError : int {
+		Z_VERSION_ERROR = -6,
+		Z_BUF_ERROR =     -5,
+		Z_MEM_ERROR =     -4,
+		Z_DATA_ERROR =    -3,
+		Z_STREAM_ERROR =  -2,
+		Z_ERRNO =         -1,
+		[ErrorCodeSuccess]
+		Z_OK =             0,
+		Z_STREAM_END =     1,
+		Z_NEED_DICT =      2,
+	}
+	[ExplicitSize( Size = 52 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gz_header {
+		[ExplicitOffset( Offset = 0 )]
+		public int text;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr time;
+		[ExplicitOffset( Offset = 8 )]
+		public int xflags;
+		[ExplicitOffset( Offset = 12 )]
+		public int os;
+		[ExplicitOffset( Offset = 16 )]
+		public byte* extra;
+		[ExplicitOffset( Offset = 20 )]
+		public uint extra_len;
+		[ExplicitOffset( Offset = 24 )]
+		public uint extra_max;
+		[ExplicitOffset( Offset = 28 )]
+		public byte* name;
+		[ExplicitOffset( Offset = 32 )]
+		public uint name_max;
+		[ExplicitOffset( Offset = 36 )]
+		public byte* comment;
+		[ExplicitOffset( Offset = 40 )]
+		public uint comm_max;
+		[ExplicitOffset( Offset = 44 )]
+		public int hcrc;
+		[ExplicitOffset( Offset = 48 )]
+		public int done;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gzFile {
+		[ExplicitOffset( Offset = 0 )]
+		public uint have;
+		[ExplicitOffset( Offset = 4 )]
+		public byte* next;
+		[ExplicitOffset( Offset = 8 )]
+		public long pos;
+	}
+	public partial struct internal_state {
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct z_stream {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* next_in;
+		[ExplicitOffset( Offset = 4 )]
+		public uint avail_in;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr total_in;
+		[ExplicitOffset( Offset = 12 )]
+		public byte* next_out;
+		[ExplicitOffset( Offset = 16 )]
+		public uint avail_out;
+		[ExplicitOffset( Offset = 20 )]
+		public uintptr total_out;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte* msg;
+		[ExplicitOffset( Offset = 28 )]
+		public internal_state* state;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<void*, uint, uint, void*> zalloc;
+		[ExplicitOffset( Offset = 36 )]
+		public Functors.Action<void*, void*> zfree;
+		[ExplicitOffset( Offset = 40 )]
+		public void* opaque;
+		[ExplicitOffset( Offset = 44 )]
+		public int data_type;
+		[ExplicitOffset( Offset = 48 )]
+		public uintptr adler;
+		[ExplicitOffset( Offset = 52 )]
+		public uintptr reserved;
+	}
+}

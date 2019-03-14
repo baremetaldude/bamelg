@@ -83,7 +83,10 @@ namespace Platform.Kernel {
 		PR_FP_EXC_DISABLED =           0,
 		PR_MCE_KILL_CLEAR =            0,
 		PR_MCE_KILL_LATE =             0,
+		PR_SPEC_NOT_AFFECTED =         0,
+		PR_SPEC_STORE_BYPASS =         0,
 		PR_TIMING_STATISTICAL =        0,
+		PR_CAP_AMBIENT_IS_SET =        1,
 		PR_ENDIAN_LITTLE =             1,
 		PR_FP_EXC_NONRECOV =           1,
 		PR_FP_MODE_FR =                1,
@@ -92,9 +95,11 @@ namespace Platform.Kernel {
 		PR_MCE_KILL_SET =              1,
 		PR_SET_MM_START_CODE =         1,
 		PR_SET_PDEATHSIG =             1,
+		PR_SPEC_PRCTL =                1,
 		PR_TIMING_TIMESTAMP =          1,
 		PR_TSC_ENABLE =                1,
 		PR_UNALIGN_NOPRINT =           1,
+		PR_CAP_AMBIENT_RAISE =         2,
 		PR_ENDIAN_PPC_LITTLE =         2,
 		PR_FP_EXC_ASYNC =              2,
 		PR_FP_MODE_FRE =               2,
@@ -102,13 +107,17 @@ namespace Platform.Kernel {
 		PR_GET_PDEATHSIG =             2,
 		PR_MCE_KILL_DEFAULT =          2,
 		PR_SET_MM_END_CODE =           2,
+		PR_SPEC_ENABLE =               2,
 		PR_TSC_SIGSEGV =               2,
 		PR_UNALIGN_SIGBUS =            2,
+		PR_CAP_AMBIENT_LOWER =         3,
 		PR_FP_EXC_PRECISE =            3,
 		PR_GET_DUMPABLE =              3,
 		PR_SET_MM_START_DATA =         3,
+		PR_CAP_AMBIENT_CLEAR_ALL =     4,
 		PR_SET_DUMPABLE =              4,
 		PR_SET_MM_END_DATA =           4,
+		PR_SPEC_DISABLE =              4,
 		PR_GET_UNALIGN =               5,
 		PR_SET_MM_START_STACK =        5,
 		PR_SET_MM_START_BRK =          6,
@@ -117,6 +126,7 @@ namespace Platform.Kernel {
 		PR_SET_MM_BRK =                7,
 		PR_SET_KEEPCAPS =              8,
 		PR_SET_MM_ARG_START =          8,
+		PR_SPEC_FORCE_DISABLE =        8,
 		PR_GET_FPEMU =                 9,
 		PR_SET_MM_ARG_END =            9,
 		PR_SET_FPEMU =                10,
@@ -160,10 +170,18 @@ namespace Platform.Kernel {
 		PR_MPX_DISABLE_MANAGEMENT =   44,
 		PR_SET_FP_MODE =              45,
 		PR_GET_FP_MODE =              46,
+		PR_CAP_AMBIENT =              47,
+		PR_SVE_SET_VL =               50,
+		PR_SVE_GET_VL =               51,
+		PR_GET_SPECULATION_CTRL =     52,
+		PR_SET_SPECULATION_CTRL =     53,
 		PR_FP_EXC_SW_ENABLE =        128,
+		PR_SVE_VL_LEN_MASK =       65535,
 		PR_FP_EXC_DIV =            65536,
 		PR_FP_EXC_OVF =           131072,
+		PR_SVE_VL_INHERIT =       131072,
 		PR_FP_EXC_UND =           262144,
+		PR_SVE_SET_VL_ONEXEC =    262144,
 		PR_FP_EXC_RES =           524288,
 		PR_FP_EXC_INV =          1048576,
 		PR_SET_PTRACER =      1499557217,
@@ -221,30 +239,55 @@ namespace Platform.Kernel {
 		SO_BPF_EXTENSIONS =                48,
 		SO_INCOMING_CPU =                  49,
 		SO_ATTACH_BPF =                    50,
+		SO_ATTACH_REUSEPORT_CBPF =         51,
+		SO_ATTACH_REUSEPORT_EBPF =         52,
+		SO_CNX_ADVICE =                    53,
+		SO_MEMINFO =                       55,
+		SO_INCOMING_NAPI_ID =              56,
+		SO_COOKIE =                        57,
+		SO_PEERGROUPS =                    59,
+		SO_ZEROCOPY =                      60,
 	}
 	public enum SocketPropertyGroup : uint {
-		SOL_IP =       0,
-		SOL_SOCKET =   1,
-		SOL_TCP =      6,
-		SOL_UDP =     17,
-		SOL_IPV6 =    41,
-		SOL_ICMPV6 =  58,
-		SOL_SCTP =   132,
-		SOL_RAW =    255,
-		SOL_IPX =    256,
-		SOL_AX25 =   257,
-		SOL_ATALK =  258,
-		SOL_NETROM = 259,
-		SOL_ROSE =   260,
-		SOL_DECNET = 261,
-		SOL_X25 =    262,
-		SOL_PACKET = 263,
-		SOL_ATM =    264,
-		SOL_AAL =    265,
-		SOL_IRDA =   266,
+		SOL_IP =          0,
+		SOL_SOCKET =      1,
+		SOL_TCP =         6,
+		SOL_UDP =        17,
+		SOL_IPV6 =       41,
+		SOL_ICMPV6 =     58,
+		SOL_SCTP =      132,
+		SOL_RAW =       255,
+		SOL_IPX =       256,
+		SOL_AX25 =      257,
+		SOL_ATALK =     258,
+		SOL_NETROM =    259,
+		SOL_ROSE =      260,
+		SOL_DECNET =    261,
+		SOL_X25 =       262,
+		SOL_PACKET =    263,
+		SOL_ATM =       264,
+		SOL_AAL =       265,
+		SOL_IRDA =      266,
+		SOL_NETBEUI =   267,
+		SOL_LLC =       268,
+		SOL_DCCP =      269,
+		SOL_NETLINK =   270,
+		SOL_TIPC =      271,
+		SOL_RXRPC =     272,
+		SOL_PPPOL2TP =  273,
+		SOL_BLUETOOTH = 274,
+		SOL_PNPIPE =    275,
+		SOL_RDS =       276,
+		SOL_IUCV =      277,
+		SOL_CAIF =      278,
+		SOL_ALG =       279,
+		SOL_NFC =       280,
+		SOL_KCM =       281,
+		SOL_TLS =       282,
 	}
 	public enum SocketPropertyTcp : int {
 		TCP_COOKIE_IN_ALWAYS =      1,
+		TCP_MD5SIG_FLAG_PREFIX =    1,
 		TCP_NODELAY =               1,
 		TCP_COOKIE_OUT_NEVER =      2,
 		TCP_MAXSEG =                2,
@@ -275,7 +318,17 @@ namespace Platform.Kernel {
 		TCP_REPAIR_OPTIONS =       22,
 		TCP_FASTOPEN =             23,
 		TCP_TIMESTAMP =            24,
+		TCP_NOTSENT_LOWAT =        25,
+		TCP_CC_INFO =              26,
+		TCP_SAVE_SYN =             27,
+		TCP_SAVED_SYN =            28,
+		TCP_REPAIR_WINDOW =        29,
+		TCP_FASTOPEN_CONNECT =     30,
+		TCP_ULP =                  31,
 		TCP_COOKIE_PAIR_SIZE =     32,
+		TCP_MD5SIG_EXT =           32,
+		TCP_FASTOPEN_KEY =         33,
+		TCP_FASTOPEN_NO_COOKIE =   34,
 		TCP_MD5SIG_MAXKEYLEN =     80,
 		TCP_MSS =                 512,
 		TCP_MSS_DEFAULT =         536,
@@ -606,6 +659,18 @@ namespace Platform.Kernel {
 		kexec_file_load =        320,
 		bpf =                    321,
 		execveat =               322,
+		userfaultfd =            323,
+		membarrier =             324,
+		mlock2 =                 325,
+		copy_file_range =        326,
+		preadv2 =                327,
+		pwritev2 =               328,
+		pkey_mprotect =          329,
+		pkey_alloc =             330,
+		pkey_free =              331,
+		statx =                  332,
+		io_pgetevents =          333,
+		rseq =                   334,
 	}
 	public enum SystemError : int {
 		[ErrorCodeSuccess]
@@ -885,19 +950,35 @@ namespace Platform.Kernel {
 		[ExplicitOffset( Offset = 8 )]
 		public sbyte[8] sat_zero;
 	}
-	public partial struct task_struct {
-	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct vfs_cap_data {
 		[ExplicitOffset( Offset = 0 )]
 		public uint magic_etc;
 		[ExplicitOffset( Offset = 4 )]
-		public UnnamedStruct_E6848193[2] data;
+		public UnnamedStruct_D50D5009[2] data;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct vfs_ns_cap_data {
+		[ExplicitOffset( Offset = 0 )]
+		public uint magic_etc;
+		[ExplicitOffset( Offset = 4 )]
+		public UnnamedStruct_D50D4FE8[2] data;
+		[ExplicitOffset( Offset = 20 )]
+		public uint rootid;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_E6848193 {
+	public partial struct UnnamedStruct_D50D4FE8 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint permitted;
+		[ExplicitOffset( Offset = 4 )]
+		public uint inheritable;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_D50D5009 {
 		[ExplicitOffset( Offset = 0 )]
 		public uint permitted;
 		[ExplicitOffset( Offset = 4 )]

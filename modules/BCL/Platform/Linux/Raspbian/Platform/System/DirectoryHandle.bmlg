@@ -1,0 +1,29 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+
+using Platform.IO;
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct DirectoryHandle : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public DirectoryHandle() { }
+		public DirectoryHandle( CUtf8String name ) { LibcApi.Assert( Open( name ) ); }
+		public DirectoryHandle( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { LibcApi.Assert( Open( parent, name, symlinkFollowOption ) ); }
+
+		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ); }
+		public SystemError Open( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { return OpenAtBlocking( parent, name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, symlinkFollowOption ); }
+
+		public SystemError getdents64( dirent64* buffer, intptr length, int& readen ) {
+			using( Fiber.AsyncCompletionRegion() )
+				return KernelApi.getdents64( readen, this, buffer, length );
+		}
+	}
+}

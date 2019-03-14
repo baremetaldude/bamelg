@@ -1,0 +1,212 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+using System.IO;
+using System.Serialization;
+
+using Platform;
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System.Net {
+	public abstract partial class NetworkServer {
+		protected EventLoop _eventLoop;
+
+		protected NetworkServer() {
+			Assert.IsTrue( EventLoop.Instance.EnableFibers );
+
+			_eventLoop = EventLoop.Instance;
+		}
+
+		public void Listen( SocketHandle acceptSocket ) {
+			var acceptEntry = new AcceptSocketEventSink( this, acceptSocket );
+			acceptEntry.Register();
+		}
+
+		private bool _implListen( ushort port ) {
+			return _implListen( new IPv6Endpoint( IPv6Address.AllInterfaces, port ) ) | _implListen( new IPv4Endpoint( IPv4Address.AllInterfaces, port ) );
+		}
+
+		private bool _implListen( IPv4Endpoint endpoint ) {
+			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET, true ) ) {
+				if( !acceptSocket.IsValid ) return false;
+
+				acceptSocket.ReuseAddress = true;
+				acceptSocket.ImmediateDelivery = true;
+				if( ReusePort ) acceptSocket.ReusePort = true;
+
+				if( !acceptSocket.Bind( endpoint ) ) return false;
+				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
+
+				var acceptEntry = new AcceptSocketTCP4EventSink( this, acceptSocket );
+				acceptEntry.Register();
+
+				acceptSocket = SocketHandleTCP.Invalid; // do not close
+				return true;
+			}
+		}
+
+		private bool _implListen( IPv6Endpoint endpoint ) {
+			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET6, true ) ) {
+				if( !acceptSocket.IsValid ) return false;
+
+				acceptSocket.ReuseAddress = true;
+				acceptSocket.ImmediateDelivery = true;
+
+				if( !acceptSocket.Bind( endpoint ) ) return false;
+				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
+
+				var acceptEntry = new AcceptSocketTCP6EventSink( this, acceptSocket );
+				acceptEntry.Register();
+
+				acceptSocket = SocketHandleTCP.Invalid; // do not close
+				return true;
+			}
+		}
+
+		private bool _implListen( Utf8String path ) {
+			using( var acceptSocket = new SocketHandleLocal( SocketType.SOCK_STREAM, true ) ) {
+				if( !acceptSocket.IsValid ) return false;
+
+				LibcApi.unlink( path );
+				if( !acceptSocket.Bind( path ) ) return false;
+
+				FileHandle.SetPermissions( path, ( Permission ) 0b110110110 );
+				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
+
+				var acceptEntry = new AcceptSocketEventSink( this, acceptSocket );
+				acceptEntry.Register();
+
+				acceptSocket = SocketHandleLocal.Invalid; // do not close
+				return true;
+			}
+		}
+
+		private bool _implListen( string path ) { return _implListen( ( Utf8String ) path ); }
+
+		private class AcceptSocketTCP4EventSink : EventLoop.AcceptSocketTCP4EventSink {
+			private declaringtype _server;
+
+			public AcceptSocketTCP4EventSink( declaringtype server, SocketHandle socket )
+				: base( server._eventLoop, socket ) {
+				_server = server;
+
+				TraceAcceptStarted( socket );
+			}
+
+			public override void Dispose() {
+				_server = null;
+
+				base.Dispose();
+			}
+
+			protected override void OnAccepted( SocketHandleTCP socket, sockaddr_in& socketInfo ) {
+				TraceClientAccepted( socketInfo, socket );
+				_server.OnSocketAccepted( socket );
+			}
+
+			/// @{ Tracing
+			[Conditional( ConditionString = TraceConditionString )]
+			private static void TraceClientAccepted( sockaddr_in& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
+			}
+			/// @}
+		}
+
+		private class AcceptSocketTCP6EventSink : EventLoop.AcceptSocketTCP6EventSink {
+			private declaringtype _server;
+
+			public AcceptSocketTCP6EventSink( declaringtype server, SocketHandle socket )
+				: base( server._eventLoop, socket ) {
+				_server = server;
+
+				TraceAcceptStarted( socket );
+			}
+
+			public override void Dispose() {
+				_server = null;
+
+				base.Dispose();
+			}
+
+			protected override void OnAccepted( SocketHandleTCP socket, sockaddr_in6& socketInfo ) {
+				TraceClientAccepted( socketInfo, socket );
+				_server.OnSocketAccepted( socket );
+			}
+
+			/// @{ Tracing
+			[Conditional( ConditionString = TraceConditionString )]
+			private static void TraceClientAccepted( sockaddr_in6& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
+			}
+			/// @}
+		}
+
+		private class AcceptSocketEventSink : EventLoop.AcceptSocketAnyEventSink {
+			private declaringtype _server;
+
+			public AcceptSocketEventSink( declaringtype server, SocketHandle socket )
+				: base( server._eventLoop, socket ) {
+				_server = server;
+			}
+
+			public override void Dispose() {
+				_server = null;
+
+				base.Dispose();
+			}
+
+			protected override void OnAccepted( SocketHandle socket ) {
+				TraceClientAccepted( socket );
+				_server.OnSocketAccepted( socket );
+			}
+
+			/// @{ Tracing
+			[Conditional( ConditionString = TraceConditionString )]
+			private static void TraceClientAccepted( SocketHandle clientSocketHandle ) {
+				using( Console.AttributedRegion( TraceStyleNormal ) )
+					Console.WriteLine( "NS: Client accepted to {0}", clientSocketHandle );
+			}
+			/// @}
+		}
+
+		private void OnSocketAccepted( SocketHandle handle ) {
+			if( MaxSessions > 0 && ActiveSessionCount >= MaxSessions ) {
+				handle.Close();
+				return;
+			}
+
+			var client = CreateSession( new NetworkStream( handle ) );
+			client.Handle = handle;
+			client.StartFiber();
+		}
+
+		public abstract partial class SessionHandler {
+			public IOHandleNonBlocking Handle;
+
+			internal PlatformErrorHandlerStatus StreamStatus;
+
+			private bool _implStreamError() {
+				return StreamStatus.ErrorOccured;
+			}
+
+			private void _implOnExit() {
+			}
+		}
+
+		/// @{ Tracing
+		[Conditional( ConditionString = TraceConditionString )]
+		private static void TraceAcceptStarted( SocketHandle acceptSocket ) {
+			using( Console.AttributedRegion( TraceStyleNormal ) )
+				Console.WriteLine( "NS: Accepting started on socket:{0}", acceptSocket );
+		}
+		/// @}
+	}
+}

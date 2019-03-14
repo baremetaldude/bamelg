@@ -20,14 +20,29 @@ namespace System {
 			// TestEncodings();
 			// PrintDefaultColorsLab( DefaultColors256, DefaultColors256.Length );
 
+			UpdateTerminalCapabilities();
+		}
+
+		private static void UpdateTerminalCapabilities() {
 			var term = Environment.GetEnvironmentVariable( "TERM" );
 			switch( term ) {
-				case "xterm": IsTerminalSupports16Color = true; break;
-				case "xterm-256color": IsTerminalSupports16Color = IsTerminalSupports256Color = true; break;
+				case "xterm":
+					break;
+
+				case "xterm-16color":
+					IsTerminalSupports16Color = true;
+					break;
+					
+				case "xterm-256color": 
+					IsTerminalSupports16Color = IsTerminalSupports256Color = true;
+					break;
 			}
 
-			if( !Environment.GetEnvironmentVariable( "KONSOLE_DBUS_SERVICE" ).IsNullOrEmpty )
+			if( Environment.GetEnvironmentVariable( "COLORTERM" ) != CUtf8String.Null ) {
+				IsTerminalSupports16Color = true;
+				IsTerminalSupports256Color = true;
 				IsTerminalSupportsRGB = true;
+			}
 		}
 
 		private static void WriteVector( vararg iovec vectors ) {
@@ -665,27 +680,24 @@ namespace System {
 			}
 
 			if( IsTerminalSupports16Color ) {
-				SeparateTerminalCommand( builder ); builder.Append( ( foreground ? 30 : 40 ) + ( colorIndex & 7 ) );
-				if( colorIndex > 7 ) { SeparateTerminalCommand( builder ); builder.Append( foreground ? 1 : 5 ); }
+				SeparateTerminalCommand( builder ); builder.Append( ( foreground ? 30 : 40 ) + ( colorIndex & 7 ) + ( colorIndex > 7 ? 60 : 0 ) );
 				return;
 			}
 		}
 
+		// http://man7.org/linux/man-pages/man4/console_codes.4.html
 		public static void ApplyAttributes( Console.OutputAttributes& attributes ) {
 			if( !Console.IsTerminalSupportsRGB & !Console.IsTerminalSupports256Color & !Console.IsTerminalSupports16Color ) return;
 
 			using( var builderScope = StringBuilder.CachedBuilders.PopScoped() ) {
 				var& builder = builderScope.Value;
 
-				builder.Append( "\x001B[" );
+				builder.Append( "\x001B[" ); // Control sequence introducer
 
 				builder.Append( '0' ); // defaults
 
-				if( IsTerminalSupports256Color | IsTerminalSupportsRGB ) {
-					if( attributes.Bold ) { SeparateTerminalCommand( builder ); builder.Append( '1' ); }
-					if( attributes.Blink ) { SeparateTerminalCommand( builder ); builder.Append( '5' ); }
-				}
-
+				if( attributes.Bold ) { SeparateTerminalCommand( builder ); builder.Append( '1' ); }
+				if( attributes.Blink ) { SeparateTerminalCommand( builder ); builder.Append( '5' ); }
 				if( attributes.Thin ) { SeparateTerminalCommand( builder ); builder.Append( '2' ); }
 				if( attributes.Italic ) { SeparateTerminalCommand( builder ); builder.Append( '3' ); }
 				if( attributes.Underline ) { SeparateTerminalCommand( builder ); builder.Append( '4' ); }
@@ -694,7 +706,8 @@ namespace System {
 				if( !attributes.DefaultForegroundColor ) WriteColor( builder, true, attributes.ForegroundColor, attributes.ForegroundColorIndex );
 				if( !attributes.DefaultBackgroundColor ) WriteColor( builder, false, attributes.BackgroundColor, attributes.BackgroundColorIndex );
 
-				builder.Append( 'm' );
+				builder.Append( 'm' ); // ECMA-48 Set Graphics Rendition
+
 
 				Console.Write( builder );
 			}

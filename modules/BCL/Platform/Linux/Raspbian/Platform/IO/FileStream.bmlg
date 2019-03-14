@@ -1,0 +1,203 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.IO {
+	public class FileStream : IStream {
+		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerAbort.Instance;
+		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
+
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.VectoredIO | StreamCapabilities.Timeout | StreamCapabilities.Seek; } }
+		public StreamingBufferInfo* BufferInfo { get { return null; } }
+
+		private FileHandle _handle = FileHandle.Invalid;
+		public FileHandle Handle {
+			get { return _handle; }
+			set { Close(); _handle = value; }
+		}
+
+		public bool CloseHandle = true;
+		public string Context;
+
+		public FileStream() { }
+		public FileStream( FileHandle handle ) { _handle = handle; }
+
+		~FileStream() { Close(); }
+		public override void Dispose() { Close(); base.Dispose(); }
+
+		public void Close() {
+			if( CloseHandle ) _handle.Close();
+			else _handle = FileHandle.Invalid;
+		}
+
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
+
+		public int Read( void* buffer, int length ) {
+			if( !_handle.IsValid || length == 0 || buffer == null ) return 0;
+
+			var data = ( byte* ) buffer;
+
+			var transmitted = 0;
+			for( ; length > 0; ) {
+			restart_Read:
+				var error = _handle.Read( _timeout, data, length, transmitted );
+				if( error != SystemError.None ) {
+					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
+					break;
+				}
+
+				data += transmitted;
+				if( transmitted < length ) break;
+
+				length -= transmitted;
+			}
+
+			return ( int )( data - ( byte* ) buffer );
+		}
+
+		public int Read( vararg MemorySegment segments ) {
+			if( !_handle.IsValid || segments.Length == 0 ) return 0;
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+
+			int totalReaden;
+		restart_Read:
+			var error = _handle.Read( _timeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
+				return totalReaden;
+			}
+
+			return totalReaden;
+		}
+
+		public void Write( void* buffer, int length ) {
+			if( !_handle.IsValid || length == 0 || buffer == null ) return;
+
+		restart_Write:
+			var error = _handle.Write( _timeout, buffer, length );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
+				return;
+			}
+		}
+
+		public void Write( vararg MemorySegment segments ) {
+			if( !_handle.IsValid || segments.Length == 0 ) return;
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+
+		restart_Write:
+			var error = _handle.Write( _timeout, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
+				return;
+			}
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+			if( !_handle.IsValid ) return;
+
+			switch( flushKind ) {
+				case FlushKind.SynchronizeWrite:
+					using( Fiber.AsyncCompletionRegion() )
+						LibcApi.fdatasync( _handle );
+					break;
+			}
+		}
+
+		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); result.OpenRead( name ); return result; }
+		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenWrite( name, permission ); return result; }
+		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenAppend( name, permission ); return result; }
+
+		public bool OpenRead( CUtf8String name ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FctlValue.O_RDONLY, 0 );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_TRUNC, permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_APPEND, permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			Seek( 0, System.IO.SeekOrigin.End );
+			return true;
+		}
+
+		public long Seek( long value ) {
+			return Seek( value, System.IO.SeekOrigin.Begin );
+		}
+
+		public long Seek( long value, SeekOrigin seekOrigin ) {
+			long result;
+
+		restart_Seek:
+			var error = _handle.Seek( value, seekOrigin, result );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Seek", error ) == PlatformErrorAction.Restart ) goto restart_Seek;
+				return -1;
+			}
+
+			return result;
+		}
+
+		public long Position { get { return LibcApi.lseek64( _handle, 0, FileSeekOrigin.SEEK_CUR ); } }
+
+		private TimeSpan _timeout = TimeSpan.Zero;
+
+		public TimeSpan Timeout {
+			get { return _timeout; }
+			set { _timeout = value; }
+		}
+	}
+}

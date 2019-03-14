@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Runtime;
+using System.Web;
 
 using Platform.IO;
 using Platform.Libc;
@@ -13,8 +14,6 @@ using Platform.Libc;
 namespace Example {
 	public partial class App {
 		public class CustomHttpServer : HttpServer {
-			public string Title = "Bamelg server";
-
 			public CustomHttpServer() {
 			}
 
@@ -25,7 +24,7 @@ namespace Example {
 			public class SessionHandler : basetype.SessionHandler {
 				[Overlapped( Offset = memberinfo( basetype.Server ).ByteOffset )]
 				public new declaringtype Server; // override field type
-				
+
 				public SessionHandler( declaringtype parent, IStream stream )
 					: base( parent, stream ) {
 				}
@@ -40,38 +39,95 @@ namespace Example {
 						case "/Default.aspx":
 							return new TestPageHandler( this );
 
-						case "/favicon.ico":
-							return new EmbeddedResourceHandler( this, "image/x-icon", new MemorySegment( &EmbeddedResources.favicon_ico[0], ( uint ) EmbeddedResources.favicon_ico.Length ) );
+						case "/time.event":
+							return new TimeEventHandler( this );
+
+						case "/hello.aspx":
+							return new HelloWorldPageHandler( this );
+
+						case "/favicon.ico": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Image.Icon, new MemorySegment( &EmbeddedResources.favicon_ico ) );
+						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( &EmbeddedResources.time_html ) );
 					}
 
 					return null;
 				}
 			}
 
-			public class TestPageHandler : PageHandler {
-				[Overlapped( Offset = memberinfo( RequestHandler.Session ).ByteOffset )]
-				public new SessionHandler Session; // override field type
-
-				public TestPageHandler( HttpServer.SessionHandler session )
+			public class HelloWorldPageHandler : PageHandler {
+				public HelloWorldPageHandler( SessionHandler session )
 					: base( session ) {
 				}
 
 				public override void OnRender() {
+					Response.Append( "hello, world!" );
+				}
+
+				protected override void AddCustomHeaders() {
+					AddHeaderContentType( MediaType );
+				}
+			}
+
+			public class TimeEventHandler : ServerSentEventHandler {
+				public TimeEventHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					Response.UseAutoFlush = false;
+
+					var delay = TimeSpan.FromSeconds( 1 );
+
+					while( true ) {
+						using( Fiber.CancellationRegion() ) {
+							Response.Write( "data: " );
+							Response.Write( Fiber.UtcNow.ToUnixMilliseconds() );
+							Response.WriteLine();
+
+							Response.Write( "id: " );
+							Response.Write( @Fiber.UtcNow.Ticks );
+							Response.WriteLine();
+
+							Flush();
+							if( Session.StreamError ) break;
+
+							Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+							if( Fiber.IsCancelled ) break;
+						}
+					}
+				}
+
+				protected override void AddCustomHeaders() {
+					base.AddCustomHeaders();
+
+					// for debug purpose
+					HttpFormatter.HeaderAccessControl( Headers, "allow" ); 
+					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
+				}
+			}
+
+			public class TestPageHandler : PageHandler {
+				public TestPageHandler( SessionHandler session )
+					: base( session ) {
+				}
+
+				public override void OnRender() {
+					var server = ( CustomHttpServer ) Session.Server;
 					var time = Fiber.Now;
 
 					Response.Append( "<html>" );
 					{
 						Response.Append( "<head>" );
 						{
-							Response.AppendFormat( @"<title>{0}</title>", Session.Server.Title );
+							Response.Append( @"<title>Bamelg server</title>" );
 						}
 						Response.Append( "</head>" );
 
 						Response.Append( "<body>" );
 						{
-							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10} MaxSessions={2}</p>", time, Session.Server.ValidRequestCount, Session.Server.MaxSessions );
-							Response.Concat( "<p>TotalAcceptedClientCount: ", Session.Server.TotalAcceptedClientCount, "; InvalidRequestCount=", Session.Server.InvalidRequestCount, "; ActiveSessionCount=", Session.Server.ActiveSessionCount, "</p>" );
+							Response.AppendFormat( "<p>Bamelg server {0}! ValidRequestCount={1,10}</p>", time, server.ValidRequestCount );
+							Response.Concat( "<p>TotalAcceptedClientCount: ", server.TotalAcceptedClientCount, "; InvalidRequestCount=", server.InvalidRequestCount, "; ActiveSessionCount=", server.ActiveSessionCount, "</p>" );
 							Response.Append( "<p>Some unicode symbols: тут немножко Юникода</p>" );
+							Response.Append( @"<p>Server sent events <a href=""time.html"">example</a></p>" );
 						}
 						Response.Append( "</body>" );
 					}

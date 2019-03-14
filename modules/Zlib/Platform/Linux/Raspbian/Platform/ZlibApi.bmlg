@@ -1,0 +1,27 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace Platform.Zlib {
+	public static partial struct ZlibApi {
+		public static ZlibError inflateInit( z_stream* stream ) { return inflateInit_( stream, Version, sizeof( *stream ) ); }
+
+		public static ZlibError deflateInit( z_stream* stream, int level ) {
+			return deflateInit_( stream, level, Version, sizeof( *stream ) );
+			// return deflateInit2_( stream, level, CompressionMethod.Z_DEFLATED, 18, 9, DeflateStrategy.Z_DEFAULT_STRATEGY, Version, sizeof( *stream ) );
+			// return deflateInit2_( stream, level, CompressionMethod.Z_DEFLATED, 15 + 16, 9, DeflateStrategy.Z_DEFAULT_STRATEGY, Version, sizeof( *stream ) );
+			// return deflateInit2_( stream, level, CompressionMethod.Z_DEFLATED, -15, 9, DeflateStrategy.Z_DEFAULT_STRATEGY, Version, sizeof( *stream ) );
+		}
+
+		public static ZlibError deflateGZInit( z_stream* stream, int level ) {
+			return deflateInit2_( stream, level, CompressionMethod.Z_DEFLATED, 15 + 16, level, DeflateStrategy.Z_DEFAULT_STRATEGY, Version, sizeof( *stream ) );
+		}
+	}
+}

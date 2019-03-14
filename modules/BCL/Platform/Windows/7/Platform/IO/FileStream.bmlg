@@ -20,6 +20,8 @@ namespace Platform.IO {
 		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.Seek; } }
 		public StreamingBufferInfo* BufferInfo { get { return null; } }
 
+		private ulong Offset;
+
 		private IOHandle _handle = IOHandle.Invalid;
 		public IOHandle Handle {
 			get { return _handle; }
@@ -94,6 +96,7 @@ namespace Platform.IO {
 				return false;
 			}
 
+			Offset = 0;
 			return true;
 		}
 
@@ -128,33 +131,34 @@ namespace Platform.IO {
 
 		public long Position {
 			get {
-			restart_SetFilePointerEx:
-				long result;
-				if( !Kernel32Api.SetFilePointerEx( _handle, 0, result, FileSeekOrigin.FILE_CURRENT ) ) {
-					if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
-					return -1;
-				}
+				// restart_SetFilePointerEx:
+				// 	long result;
+				// 	if( !Kernel32Api.SetFilePointerEx( _handle, 0, result, FileSeekOrigin.FILE_CURRENT ) ) {
+				// 		if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
+				// 		return -1;
+				// 	}
 
-				return result;
+				return ( long ) Offset;
 			}
 		}
 
 		public long Seek( long offset, SeekOrigin origin ) {
-			var fileSeekOrigin = FileSeekOrigin.FILE_CURRENT;
+			// 	var fileSeekOrigin = FileSeekOrigin.FILE_CURRENT;
 
-			switch( origin ) {
-				case SeekOrigin.Begin: fileSeekOrigin = FileSeekOrigin.FILE_BEGIN; break;
-				case SeekOrigin.End: fileSeekOrigin = FileSeekOrigin.FILE_END; break;
-			}
+			// 	switch( origin ) {
+			// 		case SeekOrigin.Begin: fileSeekOrigin = FileSeekOrigin.FILE_BEGIN; break;
+			// 		case SeekOrigin.End: fileSeekOrigin = FileSeekOrigin.FILE_END; break;
+			// 	}
 
-		restart_SetFilePointerEx:
-			long result;
-			if( !Kernel32Api.SetFilePointerEx( _handle, 0, result, fileSeekOrigin ) ) {
-				if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
-				return -1;
-			}
+			// restart_SetFilePointerEx:
+			// 	long result;
+			// 	if( !Kernel32Api.SetFilePointerEx( _handle, 0, result, fileSeekOrigin ) ) {
+			// 		if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
+			// 		return -1;
+			// 	}
 
-			return result;
+			// 	return result;
+			return 0;
 		}
 
 		private PlatformErrorAction OnLastError( string operation, IFormattable context, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
@@ -168,12 +172,13 @@ namespace Platform.IO {
 
 		restart_ReadFile:
 			int readen;
-			var error = _handle.Read( _timeout, buffer, count, readen );
+			var error = _handle.Read( _timeout, Offset, buffer, count, readen );
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 				return readen;
 			}
 
+			Offset += readen;
 			return ( int ) readen;
 		}
 
@@ -182,12 +187,13 @@ namespace Platform.IO {
 
 		restart_WriteFile:
 			int written;
-			var error = _handle.Write( _timeout, buffer, count, written );
+			var error = _handle.Write( _timeout, Offset, buffer, count, written );
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 				return;
 			}
 
+			Offset += count;
 			Assert.IsTrue( written == count );
 		}
 

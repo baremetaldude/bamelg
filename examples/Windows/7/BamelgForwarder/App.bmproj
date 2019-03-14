@@ -4,7 +4,7 @@
     <NativeTargetPlatform>Windows</NativeTargetPlatform>
     <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
     <RootNamespace>BamelgForwarder</RootNamespace>
-    <CStringCodepage>866</CStringCodepage>
+    <SbcsStringCodepage>866</SbcsStringCodepage>
     <MainFile>App\HttpPostSerializer.bmlg</MainFile>
   </PropertyGroup>
   <PropertyGroup>
@@ -15,7 +15,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>BamelgForwarder</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
-    <TargetCpuName Condition="'$(TargetCpuName)' == ''">core2</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
@@ -64,9 +63,6 @@
     <RandomizedBaseAddress>false</RandomizedBaseAddress>
     <CmdArgs></CmdArgs>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutputPath>bin\$(TargetCpu) - $(TargetCpuName)\$(BuildType)</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
@@ -79,7 +75,7 @@
     <EmbeddedResource Include="Resources\**\*" />
     <LinkSource Include="App.res" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Bamelg\Bamelg.MSBuild.targets" />
+  <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->
   <!--Target Name="AfterBuild"> ... </Target-->
 </Project>

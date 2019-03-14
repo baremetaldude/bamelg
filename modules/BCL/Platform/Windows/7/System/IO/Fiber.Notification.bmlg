@@ -137,14 +137,21 @@ namespace System.IO {
 					IOCompleted( errorCode, numberOfBytesTransfered, *( OVERLAPPED* ) &overlapped );
 				}
 
-				private SystemErrorCode FiberReadFile( TimeSpan timeout, HANDLE handle, void* buffer, int count, int& totalReceived ) {
+				private SystemErrorCode FiberReadFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalReceived ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
 					totalReceived = 0;
+					// CurrentFiber->_asyncOperation.Internal = 0;
+					CurrentFiber->_asyncOperation.Offset = offset;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
+					CurrentFiber->_asyncErrorCode = SystemErrorCode.ERROR_SUCCESS;
 
-					if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, CurrentFiber->_asyncOperation, IOCompleted ) )
-						return Kernel32Api.LastError;
+				restart:
+					if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, CurrentFiber->_asyncOperation, IOCompleted ) ) {
+						var code = Kernel32Api.LastError;
+
+						return code;
+					}
 
 					BeginTimeout( timeout );
 
@@ -154,20 +161,25 @@ namespace System.IO {
 					var isCancelled = CurrentFiber->IsCancelled;
 
 					if( isTimedOut | isCancelled ) {
-						Kernel32Api.CancelIoEx( handle, CurrentFiber->_asyncOperation );
+						if( Kernel32Api.CancelIoEx( handle, CurrentFiber->_asyncOperation ) || Kernel32Api.LastError != SystemErrorCode.ERROR_NOT_FOUND ) {
+							Suspend();
+						}
+						else
+							CurrentFiber->_asyncTransferred = 0;
+
 						if( isTimedOut ) return CurrentFiber->_asyncErrorCode = SystemErrorCode.ERROR_TIMEOUT;
-						CurrentFiber->_asyncTransferred = 0;
 					}
 
 					totalReceived = ( int ) CurrentFiber->_asyncTransferred;
 					return CurrentFiber->_asyncErrorCode;
 				}
 
-				private SystemErrorCode FiberWriteFile( TimeSpan timeout, HANDLE handle, void* buffer, int count, int& totalTransmitted ) {
+				private SystemErrorCode FiberWriteFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalTransmitted ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
 					totalTransmitted = 0;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
+					CurrentFiber->_asyncOperation.Offset = offset;
 
 					if( !Kernel32Api.WriteFileEx( handle, buffer, ( uint ) count, CurrentFiber->_asyncOperation, IOCompleted ) )
 						return Kernel32Api.LastError;
@@ -265,12 +277,12 @@ namespace System.IO {
 				}
 
 				// Less than 'count' bytes can be received
-				public static SystemErrorCode ReadFile( TimeSpan timeout, HANDLE handle, void* buffer, int count, int& totalReceived ) {
+				public static SystemErrorCode ReadFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalReceived ) {
 					totalReceived = 0;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberReadFile( timeout, handle, buffer, count, totalReceived );
+						return Fiber.FiberManager.FiberReadFile( timeout, handle, offset, buffer, count, totalReceived );
 					}
 					else {
 						// uint readen;
@@ -285,12 +297,32 @@ namespace System.IO {
 						var @event = default( SynchronousIOEvent );
 						var overlapped = default( OVERLAPPED );
 						overlapped.Event = bitcast<HANDLE>( &@event );
+						overlapped.Offset = offset;
 
 						if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
 							return Kernel32Api.LastError;
 
-						for( ; !@event.Completed; )
-							Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+						if( timeout > TimeSpan.Zero ) {
+							var startedAt = DateTime.UnbiasedNow;
+							var now = startedAt;
+
+							for( ; !@event.Completed; ) {
+								var ms = ( timeout - ( now - startedAt ) ).TotalMilliseconds;
+
+								if( Kernel32Api.SleepEx( ( uint ) ms, true ) == 0 ) {
+									totalReceived = 0;
+									Kernel32Api.CancelIoEx( handle, overlapped );
+
+									return SystemErrorCode.ERROR_TIMEOUT;
+								}
+
+								now = DateTime.UnbiasedNow;
+							}
+						}
+						else {
+							for( ; !@event.Completed; )
+								Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+						}
 
 						totalReceived = @event.Written;
 						return @event.ErrorCode;
@@ -313,12 +345,12 @@ namespace System.IO {
 				}
 
 				// Less than 'count' bytes can be transmitted
-				public static SystemErrorCode WriteFile( TimeSpan timeout, HANDLE handle, void* buffer, int count, int& totalTransmitted ) {
+				public static SystemErrorCode WriteFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalTransmitted ) {
 					totalTransmitted = 0;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberWriteFile( timeout, handle, buffer, count, totalTransmitted );
+						return Fiber.FiberManager.FiberWriteFile( timeout, handle, offset, buffer, count, totalTransmitted );
 					}
 					else {
 						// all files created with overlapped flag, otherwise them cannot be used in fibers later
@@ -335,12 +367,32 @@ namespace System.IO {
 						var @event = default( SynchronousIOEvent );
 						var overlapped = default( OVERLAPPED );
 						overlapped.Event = bitcast<HANDLE>( &@event );
+						overlapped.Offset = offset;
 
 						if( !Kernel32Api.WriteFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
 							return Kernel32Api.LastError;
 
-						for( ; !@event.Completed; )
-							Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+						if( timeout > TimeSpan.Zero ) {
+							var startedAt = DateTime.UnbiasedNow;
+							var now = startedAt;
+
+							for( ; !@event.Completed; ) {
+								var ms = ( timeout - ( now - startedAt ) ).TotalMilliseconds;
+
+								if( Kernel32Api.SleepEx( ( uint ) ms, true ) == 0 ) {
+									totalTransmitted = 0;
+									Kernel32Api.CancelIoEx( handle, overlapped );
+
+									return SystemErrorCode.ERROR_TIMEOUT;
+								}
+
+								now = DateTime.UnbiasedNow;
+							}
+						}
+						else {
+							for( ; !@event.Completed; )
+								Kernel32Api.SleepEx( Kernel32Api.INFINITE, true );
+						}
 
 						totalTransmitted = @event.Written;
 						return @event.ErrorCode;

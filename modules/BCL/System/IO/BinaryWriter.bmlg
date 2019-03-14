@@ -33,7 +33,7 @@ namespace System.IO {
 
 		private void WritePrimitive<T>( T& value ) {
 			if( !Assert.IsTrue( BaseStream.EnsureWritable( _bufferInfo, sizeof( T ) ) ) ) return;
-			*cast<T*>( _bufferInfo->WriteBufferStart ) = value;
+			unaligned( *cast<T*>( _bufferInfo->WriteBufferStart ) ) = value;
 			_bufferInfo->OnWritePerformed( sizeof( value ) );
 		}
 

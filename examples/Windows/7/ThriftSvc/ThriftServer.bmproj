@@ -4,7 +4,7 @@
     <NativeTargetPlatform>Windows</NativeTargetPlatform>
     <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
     <RootNamespace>Example</RootNamespace>
-    <CStringCodepage>866</CStringCodepage>
+    <SbcsStringCodepage>866</SbcsStringCodepage>
     <Name>ThriftServer</Name>
   </PropertyGroup>
   <PropertyGroup>
@@ -15,7 +15,6 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <AssemblyName>ThriftSvc</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
-    <TargetCpuName Condition="'$(TargetCpuName)' == ''">pentium</TargetCpuName>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
@@ -58,16 +57,13 @@
     <DebugSymbols>false</DebugSymbols>
     <CmdArgs></CmdArgs>
   </PropertyGroup>
-  <PropertyGroup>
-    <OutputPath>bin/$(BuildType)</OutputPath>
-  </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
     <Compile Include="Example\**\*.bmlg" />
   </ItemGroup>
-  <Import Project="$(MSBuildExtensionsPath32)\Bamelg\Bamelg.MSBuild.targets" />
+  <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->
   <!--Target Name="AfterBuild"> ... </Target-->
 </Project>

@@ -54,9 +54,9 @@ namespace System.IO {
 				public ulong RSI; // volatile register, but need to pass parameters
 			}
 
-			private static void PrepareContext( ucontext& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+			private static void PrepareContext( ucontext_t& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
 				LibcApi.getcontext( &context );
-				context.uc_link = ( ucontext* ) &FiberManager.CurrentFiber->Context;
+				context.uc_link = ( ucontext_t* ) &FiberManager.CurrentFiber->Context;
 				context.uc_stack.ss_sp = stack;
 				context.uc_stack.ss_size = ( uint ) stackSize;
 				LibcApi.makecontext( context, FiberFunction, 2, function, parameter );
@@ -89,7 +89,7 @@ namespace System.IO {
 			private static void SwitchEnvironment( FiberInfo* context, FiberInfo* newContext ) {
 			}
 
-			private static void SwitchCurrentContext( ucontext& context, ucontext& newContext ) {
+			private static void SwitchCurrentContext( ucontext_t& context, ucontext_t& newContext ) {
 				LibcApi.swapcontext( &context, &newContext );
 			}
 

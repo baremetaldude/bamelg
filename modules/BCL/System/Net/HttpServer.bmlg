@@ -240,7 +240,7 @@ namespace System.Net {
 			public void SendStatus( HttpStatusCode code ) {
 				TraceResponseStatus( this, code );
 
-				var formatter = new PrimitiveTypesFormatter.FormattingHelper();
+				var formatter = new PrimitiveTypesFormatter.Formatter();
 				formatter.Append( "HTTP/1.1 " );
 				formatter.FormatInt32( code.Value() );
 				formatter.Append( "\r\nServer: bamelg" );
@@ -253,6 +253,7 @@ namespace System.Net {
 			}
 
 			#region HttpRequestParser.StreamListener implementation
+
 			void HttpRequestParser.StreamListener.Header( CStringSpan& header, CStringSpan& value ) {
 				CString.MakeLower( header.Location, header.Length ); // in-place modification
 
@@ -281,6 +282,7 @@ namespace System.Net {
 
 				if( Handler != null ) Handler.OnHeaderParsed( header, value );
 			}
+
 			#endregion
 		}
 
@@ -406,6 +408,96 @@ namespace System.Net {
 			}
 		}
 
+		public abstract class ServerSentEventHandler : RequestHandler {
+			public ServerSentEventHandler( SessionHandler session )
+				: base( session ) {
+				Headers = Session.Server._headerBuilders.Pop();
+			}
+
+			public override void Dispose() {
+				FreeHeaders();
+				base.Dispose();
+			}
+
+			private void FreeHeaders() {
+				if( Headers != null ) { Session.Server._headerBuilders.Push( Headers ); Headers = null; }
+			}
+
+			public StringBuilder Headers; // Do not capture these fields; them cached and shared between requests
+			public StreamWriter Response;
+			public abstract void OnRender(); // Fill 'Response' with text
+
+			public TextEncodingKind TextEncodingKind = TextEncodingKind.Utf8;
+			public System.Text.CodePageID TextEncodingCodepage = Environment.DefaultCodePage;
+			public HttpStatusCode StatusCode = HttpStatusCode.OK;
+
+			public override void OnHeaderParsed( CStringSpan& header, CStringSpan& value ) {
+				if( header == ( SbcsString ) "last-event-id" ) {
+					ParseLastEventID( value );
+				}
+			}
+
+			protected virtual void ParseLastEventID( CStringSpan& value ) {
+			}
+
+			protected virtual void AddCustomHeaders() {
+				AddHeaderContentType( System.Net.Mime.MediaTypeNames.Text.EventStream );
+				AddHeaderNoCache();
+				AddHeaderServer();
+				HttpFormatter.HeaderXFrameOptions( Headers, false );
+			}
+
+			protected void AddHeaderServer() {
+				if( !Session.Server.SendServerTokens ) return;
+
+				HttpFormatter.HeaderServer( Headers, "bamelg" );
+				HttpFormatter.HeaderXPoweredBy( Headers, "bamelg" );
+			}
+
+			protected void AddHeaderNoCache() {
+				Headers.AppendLine( "Pragma: no-cache" );
+				Headers.AppendLine( "Cache-Control: no-store,no-cache,max-age=0,must-revalidate" );
+			}
+
+			protected void AddHeaderContentType( string contentType ) {
+				HttpFormatter.HeaderContentType( Headers, contentType, TextEncodingKind, TextEncodingCodepage );
+			}
+
+			public override void BeginOutput() {
+				// @{ headers
+				HttpFormatter.StatusCode( Headers, StatusCode );
+
+				// @{ auto-headers
+				HttpFormatter.HeaderKeepAlive( Headers, Session.IsKeepAliveRequest = false );
+				// @}
+
+				AddCustomHeaders(); // custom headers
+
+				Headers.AppendLine(); // end of headers
+				// @}
+
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+
+				FreeHeaders();
+
+				if( StatusCode == HttpStatusCode.OK ) {
+					Response = new StreamWriter( Session.Stream, TextEncodingKind, StreamWriter.ByteOrderMarkHeader.Skip );
+					OnRender();
+				}
+			}
+
+			public void WriteEventEnd() {
+				Response.Write( "\n\n" );
+			}
+
+			public void Flush() {
+				WriteEventEnd();
+				// StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
+				// Response.Clear();
+				Response.Flush( FlushKind.Write );
+			}
+		}
+
 		// Designed for ease of use, not for streaming
 		public abstract class PageHandler : RequestHandler, Binder.IEvent {
 			public PageHandler( SessionHandler session, string mediaType = "text/html" )
@@ -525,17 +617,17 @@ namespace System.Net {
 
 			void Binder.IEvent.NotFound( IFormattable name ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': mapping not found", name );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': mapping not found", name );
 			}
 
 			void Binder.IEvent.IncompatibleMapping( Binder.Mapping* mapping, System.Reflection.Type& type ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': incompatible type {1}", *mapping, type );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': incompatible type {1}", *mapping, type );
 			}
 
 			void Binder.IEvent.ParseError( Binder.Mapping* mapping ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors )  Response.AppendLine( "'{0}': parsing error", *mapping );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': parsing error", *mapping );
 			}
 		}
 
@@ -555,6 +647,15 @@ namespace System.Net {
 				_data = data;
 			}
 
+			public EmbeddedResourceHandler( SessionHandler parent, string mediaType, byte[] data )
+				: base( parent ) {
+				Headers = Session.Server._headerBuilders.Pop();
+				MediaType = mediaType;
+
+				_dataHolder = data;
+				_data = new MemorySegment( data );
+			}
+
 			public override void Dispose() {
 				Session.Server._headerBuilders.Push( Headers );
 				base.Dispose();
@@ -563,7 +664,11 @@ namespace System.Net {
 			public StringBuilder Headers;
 			private MemorySegment _data;
 
+			private byte[] _dataHolder;
+
 			public string MediaType;
+
+			public bool XFrameOptions { get; set; }
 
 			public DateTime LastModified = System.Runtime.CompilerServices.CompilerInfo.BuildDate;
 
@@ -582,7 +687,7 @@ namespace System.Net {
 					HttpFormatter.HeaderXPoweredBy( Headers, "bamelg" );
 				}
 
-				HttpFormatter.HeaderXFrameOptions( Headers, false );
+				HttpFormatter.HeaderXFrameOptions( Headers, XFrameOptions );
 			}
 
 			public override void BeginOutput() {
@@ -624,7 +729,7 @@ namespace System.Net {
 					{
 						Response.AppendLine( "<p>Welcome to Bamelg embedded HTTP server!</p>" );
 						Response.AppendLine( "<p>Define custom 'SessionHandler' and override 'CreateSession'</p>" );
-						
+
 					}
 					Response.AppendLine( "</body>" );
 				}

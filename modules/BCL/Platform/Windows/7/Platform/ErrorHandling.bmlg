@@ -58,4 +58,20 @@ namespace Platform {
 
 		#endregion
 	}
+
+	public struct PlatformErrorHandlerStatus : IPlatformErrorHandler {
+		public bool ErrorOccured = false;
+
+		public PlatformErrorHandlerStatus() {
+		}
+
+		#region IPlatformErrorHandler Members
+
+		public PlatformErrorAction OnError( string operation, IFormattable context, SystemErrorCode errorCode ) {
+			ErrorOccured = true;
+			return PlatformErrorAction.Default;
+		}
+
+		#endregion
+	}
 }

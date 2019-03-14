@@ -1,0 +1,43 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Handlers for non-Try* methods
+// Default behavior is to terminate app with stack trace and some error message
+//
+
+namespace System {
+	public static struct BclErrorHandler {
+		/// @{ Per-fiber handlers
+		/// @}
+		
+		/// @{ Per-thread handlers (save FLS space)
+		/// @}
+		
+		/// @{ Per-process handlers (save TLS space)
+		public static Functors.Action<TextParsingStatus> ParserException = DefaultParserException;
+		public static Functors.Action<uint> OutOfMemoryException = DefaultOutOfMemoryException;
+		/// @}
+		
+		public static void DefaultParserException( TextParsingStatus code ) {
+			switch( code ) {
+				case TextParsingStatus.OK: break;
+				case TextParsingStatus.Format: Assert.Fail( "Input string was not in a correct format" ); Environment.Abort( 1 ); break;
+				case TextParsingStatus.FormatArgumentIndex: Assert.Fail( "Index must be greater than or equal to zero and less than the size of the argument list" ); Environment.Abort( 1 ); break;
+				case TextParsingStatus.Overflow: Assert.Fail( "Value was either too large or too small" ); Environment.Abort( 1 ); break;
+				default: Assert.Unreachable(); break;
+			}
+		}
+		
+		public static void DefaultOutOfMemoryException( uint size ) {
+			Console.Write( "Unable to allocate " );
+			Console.Write( size );
+			Console.Write( " bytes" );
+			
+			Assert.Fail( "OutOfMemory" );
+			
+			Environment.Abort( 1 );
+		}
+	}
+}

@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using Platform.Libc;
 
 namespace Platform.Aio {
-	[ExternLibrary( Image = "/usr/lib/libaio.so" )]
+	[ExternLibrary( Image = "/usr/lib/libaio.so.1" )]
 	public static partial struct AioApi {
 		public extern static int io_cancel( io_context* ctx, iocb* iocb, io_event* evt );
 		public extern static int io_destroy( io_context* ctx );
@@ -109,7 +109,7 @@ namespace Platform.Aio {
 		[ExplicitOffset( Offset = 8 )]
 		public uint key;
 		[ExplicitOffset( Offset = 12 )]
-		public uint __pad2;
+		public uint aio_rw_flags;
 		[ExplicitOffset( Offset = 16 )]
 		public short aio_lio_opcode;
 		[ExplicitOffset( Offset = 18 )]
@@ -117,11 +117,11 @@ namespace Platform.Aio {
 		[ExplicitOffset( Offset = 20 )]
 		public int aio_fildes;
 		[ExplicitOffset( Offset = 24 )]
-		public UnnamedUnion_DFC7713A u;
+		public UnnamedUnion_3824DD5C u;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedUnion_DFC7713A {
+	public partial struct UnnamedUnion_3824DD5C {
 		[Overlapped( Offset = 0 )]
 		public io_iocb_common c;
 		[Overlapped( Offset = 0 )]

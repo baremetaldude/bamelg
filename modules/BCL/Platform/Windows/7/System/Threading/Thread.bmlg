@@ -48,15 +48,13 @@ namespace System.Threading {
 		private static void _implYield() { Kernel32Api.SwitchToThread(); }
 
 		private void _implJoin() {
-			var thread = _thread;
-			if( thread == ThreadHandle.Invalid ) {
+			if( _thread == ThreadHandle.Invalid ) {
 				if( _threadId == ThreadHandle.CurrentThreadID ) return;
 
-				thread = Kernel32Api.OpenThread( ThreadAccessRights.SYNCHRONIZE, false, _threadId );
+				_thread = Kernel32Api.OpenThread( ThreadAccessRights.SYNCHRONIZE, false, _threadId );
 			}
 
-			if( _threadId != ThreadHandle.CurrentThreadID ) thread.Join();
-			thread.Dispose();
+			if( _threadId != ThreadHandle.CurrentThreadID ) _thread.Join();
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {

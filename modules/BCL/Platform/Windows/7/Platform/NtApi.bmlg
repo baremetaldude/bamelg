@@ -81,7 +81,7 @@ namespace Platform {
 		// public extern static NtStatus NtAlpcSetInformation( PortHandleAlpc portHandle, ALPC_PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length );
 		// public extern static NtStatus NtAlpcSendWaitReceivePort( PortHandleAlpc portHandle, uint sendFlags, LPC_MESSAGE* sendMessage, void* inMessageBuffer,LPC_MESSAGE* receiveBuffer,ulong* ReceiveBufferSize, void* outMessageBuffer, long* timeout );
 		// public extern static NtStatus NtAlpcConnectPort( PortHandleAlpc* PortHandle, UNICODE_STRING* portName, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes, uint flags, SID* requiredServerSid, PORT_MESSAGE* connectionMessage, uint* bufferLength, ALPC_MESSAGE_ATTRIBUTES* outMessageAttributes, ALPC_MESSAGE_ATTRIBUTES* inMessageAttributes, long* timeout  );
-		// public extern static NtStatus NtAlpcAcceptConnectPort( [Out] PortHandleAlpc* PortHandle, HANDLE connectionPortHandle, uint flags, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes, void* portContext, PORT_MESSAGE* connectionRequest, ALPC_MESSAGE_ATTRIBUTES* connectionMessageAttributes, bool acceptConnection );
+		// public extern static NtStatus NtAlpcAcceptConnectPort( [Out] PortHandleAlpc* PortHandle, PortHandleAlpc connectionPortHandle, uint flags, OBJECT_ATTRIBUTES* objectAttributes, ALPC_PORT_ATTRIBUTES* portAttributes, void* portContext, PORT_MESSAGE* connectionRequest, ALPC_MESSAGE_ATTRIBUTES* connectionMessageAttributes, bool acceptConnection );
 		// public extern static NtStatus NtAlpcCancelMessage( PortHandleAlpc PortHandle, uint flags, ALPC_CONTEXT_ATTR* messageContext );
 		// public extern static NtStatus NtAlpcImpersonateClientOfPort( PortHandleAlpc PortHandle, PORT_MESSAGE* portMessage, void* reserved );
 		// public extern static NtStatus NtAlpcOpenSenderProcess( ProcessHandle* processHandle, PortHandleAlpc portHandle, PORT_MESSAGE* portMessage, uint flags, ProcessAccessRights desiredAccess, OBJECT_ATTRIBUTES* objectAttributes );
@@ -93,7 +93,7 @@ namespace Platform {
 		// public extern static NtStatus AlpcUnregisterCompletionList( PortHandleAlpc portHandle );
 		// public extern static NtStatus AlpcRundownCompletionList( PortHandleAlpc portHandle );
 		// public extern static NtStatus AlpcAdjustCompletionListConcurrencyCount( PortHandleAlpc portHandle, uint concurrencyCount );
-		
+
 		// public extern static bool AlpcRegisterCompletionListWorkerThread( void* completionList );
 		// public extern static bool AlpcUnregisterCompletionListWorkerThread( void* completionList );
 		// public extern static void AlpcGetCompletionListLastMessageInformation( void* completionList, uint* lastMessageId, uint* lastCallbackId );
@@ -234,7 +234,7 @@ namespace Platform {
 	// internally implemented via ALPC
 	public struct PortHandleLpc : HANDLE {
 	}
-	
+
 	public struct PortHandleAlpc : HANDLE {
 		public PortHandleAlpc( int maxMessageLength = 256 ) {
 			var objectAttributes = default( OBJECT_ATTRIBUTES );
@@ -244,21 +244,6 @@ namespace Platform {
 			var portAttributes = default( ALPC_PORT_ATTRIBUTES );
 			portAttributes.MaxMessageLength = ( uint ) maxMessageLength;
 			NtApi.NtAlpcCreatePort( &this, &objectAttributes, &portAttributes );
-		}
-	}
-
-	[Throwable]
-	public struct NtException : IFormattable {
-		public NtStatus ErrorCode = 0;
-
-		public NtException( NtStatus errorCode ) {
-			ErrorCode = errorCode;
-		}
-
-		public void ToString( StringBuilder builder, string format ) {
-			builder.Concat( typeof( thistype ), " { ErrorCode=", ErrorCode );
-
-			builder.Append( " }" );
 		}
 	}
 

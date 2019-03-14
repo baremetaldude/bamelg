@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Serialization;
 
+using Platform;
 using Platform.IO;
 using Platform.Kernel;
 using Platform.Libc;
@@ -201,6 +202,12 @@ namespace System.Net {
 
 		public abstract partial class SessionHandler {
 			public IOHandleNonBlocking Handle;
+
+			internal PlatformErrorHandlerStatus StreamStatus;
+
+			private bool _implStreamError() {
+				return StreamStatus.ErrorOccured;
+			}
 
 			private void _implOnExit() {
 			}

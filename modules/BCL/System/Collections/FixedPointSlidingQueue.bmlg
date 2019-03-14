@@ -39,6 +39,23 @@ namespace System.Collections {
 			get { return _values.Capacity; }
 		}
 
+		public void Clear() {
+			if( _values.Count > 0 ) {
+				foreach( var view in Views ) {
+					if( view.FrameStart == null )
+						continue;
+
+					foreach( var element in _values.GetEnumerator( view.FrameStart ) )
+						view.OnValueRemoved( this, element );
+
+					view.FrameStart = null;
+				}
+
+				while( _values.Count > 0 )
+					_values.Dequeue();
+			}
+		}
+
 		public int Update( DateTime time ) {
 			int dropped = 0;
 			if( _values.Count > 0 )
@@ -48,7 +65,7 @@ namespace System.Collections {
 
 					ValueInfo* newStart = null;
 					foreach( var element in _values.GetEnumerator( view.FrameStart ) ) {
-						if( ( time - element->Date ) <= view.Timeframe ) {
+						if( ( time - element->Date ) < view.Timeframe ) {
 							newStart = element;
 							break;
 						}
@@ -60,7 +77,7 @@ namespace System.Collections {
 				}
 
 		start_remove:
-			if( Count > 0 ) {
+			if( _values.Count > 0 ) {
 				var top = _values.First()->Date;
 
 				if( ( time - top ) >= Timeframe ) {
@@ -94,7 +111,7 @@ namespace System.Collections {
 			public ValueInfo* FrameStart = null;
 
 			public SlidingView( declaringtype parent, TimeSpan timeframe ) {
-				Debug.Assert( timeframe <= parent.Timeframe );
+				if( timeframe > parent.Timeframe ) timeframe = parent.Timeframe;
 
 				Timeframe = timeframe;
 				parent.Views.Add( this );

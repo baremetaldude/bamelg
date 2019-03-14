@@ -339,19 +339,18 @@ namespace System.IO {
 					if( result == null ) return null;
 
 					if( UseGuardPage ) {
-						switch( CompilerInfo.CurrentCpu ) {
-							case CpuID.X86_32:
-							case CpuID.X86_64:
-								Memory.DecommitPages( result, 1 );
-								break;
-
-							default:
-								Assert.NotImplemented();
-								break;
+						if( Memory.StackGrowsDown ) {
+							Memory.DecommitPages( result, 1 );
+							return result + Memory.DefaultPageSize;
+						}
+						else {
+							Memory.DecommitPages( result + Memory.DefaultPageSize * pageCount, 1 );
+							return result;
 						}
 					}
-
-					return UseGuardPage ? result + Memory.DefaultPageSize : result;
+					else {
+						return result;
+					}
 				}
 
 				internal void FreeStack( bool guardPage, void* stack, int length ) {
@@ -362,7 +361,7 @@ namespace System.IO {
 					var allocationLength = length;
 
 					if( guardPage ) {
-						ptr -= Memory.DefaultPageSize;
+						if( Memory.StackGrowsDown ) ptr -= Memory.DefaultPageSize;
 						allocationLength += Memory.DefaultPageSize;
 					}
 
@@ -576,7 +575,6 @@ namespace System.IO {
 				}
 
 				// Called from thread pool
-				// internal static void _AsyncCompletionRoutine( TaskEntry* task ) { AsyncCompletionRoutine( ( AsyncCompletionRegion* ) task ); }
 				internal static void AsyncCompletionRoutine( AsyncCompletionRegionInfo* context ) { // called from TP
 					//
 					// after BeginAsyncCompletion()
@@ -604,8 +602,8 @@ namespace System.IO {
 					// after EndAsyncCompletion()
 					//
 
-					context->CurrentManager->ReadyAsync( completionFiber );
 					completionFiber->IsCancellable = context->IsCancellable;
+					context->CurrentManager->ReadyAsync( completionFiber );
 				}
 
 				public static void EndAsyncCompletion( AsyncCompletionRegionInfo* context ) { // called from TP

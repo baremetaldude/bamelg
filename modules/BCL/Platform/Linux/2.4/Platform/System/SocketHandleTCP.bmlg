@@ -33,7 +33,7 @@ namespace Platform.Kernel {
 			if( nonBlocking ) IsNonBlocking = true;
 			return SystemError.None;
 		}
-		
+
 		public SystemError Connect( IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
 			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );

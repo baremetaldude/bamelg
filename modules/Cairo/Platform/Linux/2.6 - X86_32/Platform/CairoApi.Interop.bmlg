@@ -10,7 +10,7 @@ using System.Runtime.InteropServices;
 using Platform.X;
 
 namespace Platform.Cairo {
-	[ExternLibrary( Image = "/usr/lib/libcairo.so" )]
+	[ExternLibrary( Image = "/usr/lib/libcairo.so.2" )]
 	public static partial struct CairoApi {
 		public extern static void cairo_append_path( cairo_t* cr, cairo_path* path );
 		public extern static void cairo_arc( cairo_t* cr, double xc, double yc, double radius, double angle1, double angle2 );
@@ -66,12 +66,14 @@ namespace Platform.Cairo {
 		public extern static cairo_hint_metrics_t cairo_font_options_get_hint_metrics( cairo_font_options_t* options );
 		public extern static cairo_hint_style_t cairo_font_options_get_hint_style( cairo_font_options_t* options );
 		public extern static cairo_subpixel_order_t cairo_font_options_get_subpixel_order( cairo_font_options_t* options );
+		public extern static sbyte* cairo_font_options_get_variations( cairo_font_options_t* options );
 		public extern static uintptr cairo_font_options_hash( cairo_font_options_t* options );
 		public extern static void cairo_font_options_merge( cairo_font_options_t* options, cairo_font_options_t* other );
 		public extern static void cairo_font_options_set_antialias( cairo_font_options_t* options, cairo_antialias_t antialias );
 		public extern static void cairo_font_options_set_hint_metrics( cairo_font_options_t* options, cairo_hint_metrics_t hintMetrics );
 		public extern static void cairo_font_options_set_hint_style( cairo_font_options_t* options, cairo_hint_style_t hintStyle );
 		public extern static void cairo_font_options_set_subpixel_order( cairo_font_options_t* options, cairo_subpixel_order_t subpixelOrder );
+		public extern static void cairo_font_options_set_variations( cairo_font_options_t* options, sbyte* variations );
 		public extern static cairo_status_t cairo_font_options_status( cairo_font_options_t* options );
 		public extern static int cairo_format_stride_for_width( cairo_format_t format, int width );
 		public extern static cairo_antialias_t cairo_get_antialias( cairo_t* cr );
@@ -316,6 +318,8 @@ namespace Platform.Cairo {
 		public extern static void cairo_surface_unmap_image( cairo_surface_t* surface, cairo_surface_t* image );
 		public extern static cairo_status_t cairo_surface_write_to_png( cairo_surface_t* surface, CUtf8String filename );
 		public extern static cairo_status_t cairo_surface_write_to_png_stream( cairo_surface_t* surface, Functors.Func<void*, byte*, uint, cairo_status_t> writeFunc, void* closure );
+		public extern static void cairo_tag_begin( cairo_t* cr, CUtf8String tagName, sbyte* attributes );
+		public extern static void cairo_tag_end( cairo_t* cr, CUtf8String tagName );
 		public extern static cairo_text_cluster_t* cairo_text_cluster_allocate( int numClusters );
 		public extern static void cairo_text_cluster_free( cairo_text_cluster_t* clusters );
 		public extern static void cairo_text_extents( cairo_t* cr, CUtf8String utf8, cairo_text_extents_t& extents );
@@ -353,16 +357,22 @@ namespace Platform.Cairo {
 		public extern static void cairo_ps_surface_set_size( cairo_surface_t* surface, double widthInPoints, double heightInPoints );
 
 		public extern static void cairo_pdf_get_versions( cairo_pdf_version_t** versions, int* numVersions );
+		public extern static int cairo_pdf_surface_add_outline( cairo_surface_t* surface, int parentId, sbyte* utf8, sbyte* linkAttribs, cairo_pdf_outline_flags_t flags );
 		public extern static cairo_surface_t* cairo_pdf_surface_create( CUtf8String filename, double widthInPoints, double heightInPoints );
 		public extern static cairo_surface_t* cairo_pdf_surface_create_for_stream( Functors.Func<void*, byte*, uint, cairo_status_t> writeFunc, void* closure, double widthInPoints, double heightInPoints );
 		public extern static void cairo_pdf_surface_restrict_to_version( cairo_surface_t* surface, cairo_pdf_version_t version );
+		public extern static void cairo_pdf_surface_set_metadata( cairo_surface_t* surface, cairo_pdf_metadata_t metadata, sbyte* utf8 );
+		public extern static void cairo_pdf_surface_set_page_label( cairo_surface_t* surface, sbyte* utf8 );
 		public extern static void cairo_pdf_surface_set_size( cairo_surface_t* surface, double widthInPoints, double heightInPoints );
+		public extern static void cairo_pdf_surface_set_thumbnail_size( cairo_surface_t* surface, int width, int height );
 		public extern static sbyte* cairo_pdf_version_to_string( cairo_pdf_version_t version );
 
 		public extern static void cairo_svg_get_versions( cairo_svg_version_t*& versions, int& numVersions );
 		public extern static cairo_surface_t* cairo_svg_surface_create( CUtf8String filename, double widthInPoints, double heightInPoints );
 		public extern static cairo_surface_t* cairo_svg_surface_create_for_stream( Functors.Func<void*, byte*, uint, cairo_status_t> writeFunc, void* closure, double widthInPoints, double heightInPoints );
+		public extern static cairo_svg_unit_t cairo_svg_surface_get_document_unit( cairo_surface_t* surface );
 		public extern static void cairo_svg_surface_restrict_to_version( cairo_surface_t* surface, cairo_svg_version_t version );
+		public extern static void cairo_svg_surface_set_document_unit( cairo_surface_t* surface, cairo_svg_unit_t unit );
 		public extern static CUtf8String cairo_svg_version_to_string( cairo_svg_version_t version );
 
 		public extern static void cairo_xlib_device_debug_cap_xrender_version( cairo_device_t* device, int majorVersion, int minorVersion );
@@ -518,6 +528,22 @@ namespace Platform.Cairo {
 		CAIRO_PATTERN_TYPE_MESH =          4,
 		CAIRO_PATTERN_TYPE_RASTER_SOURCE = 5,
 	}
+	public enum cairo_pdf_metadata_t : uint {
+		CAIRO_PDF_METADATA_TITLE =       0,
+		CAIRO_PDF_METADATA_AUTHOR =      1,
+		CAIRO_PDF_METADATA_SUBJECT =     2,
+		CAIRO_PDF_METADATA_KEYWORDS =    3,
+		CAIRO_PDF_METADATA_CREATOR =     4,
+		CAIRO_PDF_METADATA_CREATE_DATE = 5,
+		CAIRO_PDF_METADATA_MOD_DATE =    6,
+	}
+	[Flags]
+	public enum cairo_pdf_outline_flags_t : uint {
+		None =                          0,
+		CAIRO_PDF_OUTLINE_FLAG_OPEN =   1,
+		CAIRO_PDF_OUTLINE_FLAG_BOLD =   2,
+		CAIRO_PDF_OUTLINE_FLAG_ITALIC = 4,
+	}
 	public enum cairo_pdf_version_t : uint {
 		CAIRO_PDF_VERSION_1_4 = 0,
 		CAIRO_PDF_VERSION_1_5 = 1,
@@ -571,7 +597,11 @@ namespace Platform.Cairo {
 		CAIRO_STATUS_INVALID_MESH_CONSTRUCTION = 36,
 		CAIRO_STATUS_DEVICE_FINISHED =           37,
 		CAIRO_STATUS_JBIG2_GLOBAL_MISSING =      38,
-		CAIRO_STATUS_LAST_STATUS =               39,
+		CAIRO_STATUS_PNG_ERROR =                 39,
+		CAIRO_STATUS_FREETYPE_ERROR =            40,
+		CAIRO_STATUS_WIN32_GDI_ERROR =           41,
+		CAIRO_STATUS_TAG_ERROR =                 42,
+		CAIRO_STATUS_LAST_STATUS =               43,
 	}
 	public enum cairo_subpixel_order_t : uint {
 		CAIRO_SUBPIXEL_ORDER_DEFAULT = 0,
@@ -610,6 +640,18 @@ namespace Platform.Cairo {
 		CAIRO_SURFACE_TYPE_SKIA =           22,
 		CAIRO_SURFACE_TYPE_SUBSURFACE =     23,
 		CAIRO_SURFACE_TYPE_COGL =           24,
+	}
+	public enum cairo_svg_unit_t : uint {
+		CAIRO_SVG_UNIT_USER =    0,
+		CAIRO_SVG_UNIT_EM =      1,
+		CAIRO_SVG_UNIT_EX =      2,
+		CAIRO_SVG_UNIT_PX =      3,
+		CAIRO_SVG_UNIT_IN =      4,
+		CAIRO_SVG_UNIT_CM =      5,
+		CAIRO_SVG_UNIT_MM =      6,
+		CAIRO_SVG_UNIT_PT =      7,
+		CAIRO_SVG_UNIT_PC =      8,
+		CAIRO_SVG_UNIT_PERCENT = 9,
 	}
 	public enum cairo_svg_version_t : uint {
 		CAIRO_SVG_VERSION_1_1 = 0,
@@ -680,9 +722,9 @@ namespace Platform.Cairo {
 	[Alignment( Boundary = 4 )]
 	public partial struct cairo_path_data_t {
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_850701E9 header;
+		public UnnamedStruct_2245AC81 header;
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_85084E85 point;
+		public UnnamedStruct_2245AC05 point;
 	}
 	public partial struct cairo_pattern_t {
 	}
@@ -758,20 +800,20 @@ namespace Platform.Cairo {
 		[ExplicitOffset( Offset = 0 )]
 		public int unused;
 	}
-	[ExplicitSize( Size = 8 )]
-	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_850701E9 {
-		[ExplicitOffset( Offset = 0 )]
-		public cairo_path_data_type_t type;
-		[ExplicitOffset( Offset = 4 )]
-		public int length;
-	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_85084E85 {
+	public partial struct UnnamedStruct_2245AC05 {
 		[ExplicitOffset( Offset = 0 )]
 		public double x;
 		[ExplicitOffset( Offset = 8 )]
 		public double y;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_2245AC81 {
+		[ExplicitOffset( Offset = 0 )]
+		public cairo_path_data_type_t type;
+		[ExplicitOffset( Offset = 4 )]
+		public int length;
 	}
 }

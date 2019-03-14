@@ -13,13 +13,20 @@ namespace System.Globalization {
 		public DateTimeFormatInfo DateTimeFormat;
 		public NumberFormatInfo NumberFormat;
 
+		internal static CultureInfo* _global = &EN;
+
 		[FiberStatic]
-		internal static CultureInfo* _current = &EN;
+		internal static CultureInfo* _current = _global;
 
 		// Usage: System.Globalization.CultureInfo.Current = System.Globalization.CultureInfo.EN;
 		public static CultureInfo& Current {
 			get { return *_current; }
 			set { _current = &value; }
+		}
+
+		public static CultureInfo& Default {
+			get { return *_global; }
+			set { _global = &value; }
 		}
 	}
 }

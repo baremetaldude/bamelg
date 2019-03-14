@@ -177,8 +177,11 @@ namespace System.Text {
 				return result; // ASCII
 			}
 
-			// if( result < 0xC0 )
-			//	throw new ArgumentException( #buffer );
+			// error input
+			if( result < 0xC0 ) {
+				codeUnits = 1;
+				return 0x20; // space
+			}
 
 			if( result < 0xE0 ) {
 				codeUnits = 2;

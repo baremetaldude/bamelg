@@ -87,7 +87,7 @@ namespace System.Runtime {
 			TrackAddReference();
 			EnsureObjectAlive();
 
-			if( IsReferenceCounterAtomic ) atomic( ++_sharedReferenceCount );
+			if( IsReferenceCounterAtomic ) atomic( ++_sharedReferenceCount, Relaxed );
 			else ++_sharedReferenceCount;
 		}
 
@@ -97,7 +97,7 @@ namespace System.Runtime {
 			TrackAddWeakReference();
 			EnsureObjectAliveWeak();
 
-			if( IsReferenceCounterAtomic ) atomic( ++_weakReferenceCount );
+			if( IsReferenceCounterAtomic ) atomic( ++_weakReferenceCount, Relaxed );
 			else ++_weakReferenceCount;
 		}
 
@@ -108,12 +108,14 @@ namespace System.Runtime {
 
 			// decrease refcount
 			// Valgrind.Drd.HappensBefore( &_sharedReferenceCount );
-			var finalSharedRefcount = IsReferenceCounterAtomic ? atomic( --_sharedReferenceCount ) - 1 : --_sharedReferenceCount;
+			var finalSharedRefcount = IsReferenceCounterAtomic ? atomic( --_sharedReferenceCount, Release ) - 1 : --_sharedReferenceCount;
 			// if( !Assert.IsTrue( finalSharedRefcount >= 0 ) ) Console.WriteConcatLine( "TYPE: ", GetType() );
 			Assert.IsTrue( finalSharedRefcount >= 0 );
 
 			if( finalSharedRefcount == 0 ) {
+				Memory.Fence( Memory.FenceOrdering.Acquire );
 				// Valgrind.Drd.HappensAfter( &_sharedReferenceCount );
+
 				var& type = GetType();
 
 				if( type.Destructor != null ) {
