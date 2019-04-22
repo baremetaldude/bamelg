@@ -25,6 +25,17 @@ namespace Platform.Libc {
 		public extern static CString* backtrace_symbols( void** array, int size );
 		public extern static void backtrace_symbols_fd( void** array, int size, IOHandle fd );
 
+		public extern static int prlimit( int pid, __rlimit_resource resource, rlimit* newLimit, rlimit* oldLimit );
+		public extern static int prlimit64( int pid, __rlimit_resource resource, rlimit64* newLimit, rlimit64* oldLimit );
+
+		public extern static int getpriority( int which, uint who );
+		public extern static int getrlimit( int resource, rlimit* rlimits );
+		public extern static int getrlimit64( int resource, rlimit64* rlimits );
+		public extern static int getrusage( int who, rusage* usage );
+		public extern static int setpriority( int which, uint who, int prio );
+		public extern static int setrlimit( int resource, rlimit* rlimits );
+		public extern static int setrlimit64( int resource, rlimit64* rlimits );
+
 		public extern static int poll( pollfd* fds, uintptr nfds, int timeout );
 		public extern static int ppoll( pollfd* fds, uintptr nfds, timespec* timeout, sigset_t* ss );
 
@@ -1424,6 +1435,37 @@ namespace Platform.Libc {
 		F_OWNER_PGRP = 2,
 		F_OWNER_GID =  2,
 	}
+	public enum __priority_which : uint {
+		PRIO_PROCESS = 0,
+		PRIO_PGRP =    1,
+		PRIO_USER =    2,
+	}
+	public enum __rlimit_resource : uint {
+		RLIMIT_CPU =           0,
+		RLIMIT_FSIZE =         1,
+		RLIMIT_DATA =          2,
+		RLIMIT_STACK =         3,
+		RLIMIT_CORE =          4,
+		__RLIMIT_RSS =         5,
+		RLIMIT_NOFILE =        7,
+		__RLIMIT_OFILE =       7,
+		RLIMIT_AS =            9,
+		__RLIMIT_NPROC =       6,
+		__RLIMIT_MEMLOCK =     8,
+		__RLIMIT_LOCKS =      10,
+		__RLIMIT_SIGPENDING = 11,
+		__RLIMIT_MSGQUEUE =   12,
+		__RLIMIT_NICE =       13,
+		__RLIMIT_RTPRIO =     14,
+		__RLIMIT_RTTIME =     15,
+		__RLIMIT_NLIMITS =    16,
+		__RLIM_NLIMITS =      16,
+	}
+	public enum __rusage_who : int {
+		RUSAGE_SELF =      0,
+		RUSAGE_CHILDREN = -1,
+		RUSAGE_THREAD =    1,
+	}
 	public enum __socket_type : uint {
 		SOCK_STREAM =       1,
 		SOCK_DGRAM =        2,
@@ -1452,6 +1494,42 @@ namespace Platform.Libc {
 		SIG_BLOCK =   0,
 		SIG_UNBLOCK = 1,
 		SIG_SETMASK = 2,
+	}
+	public enum AuxVectorKind : int {
+		AT_NULL =            0,
+		AT_IGNORE =          1,
+		AT_EXECFD =          2,
+		AT_PHDR =            3,
+		AT_PHENT =           4,
+		AT_PHNUM =           5,
+		AT_PAGESZ =          6,
+		AT_BASE =            7,
+		AT_FLAGS =           8,
+		AT_ENTRY =           9,
+		AT_NOTELF =         10,
+		AT_UID =            11,
+		AT_EUID =           12,
+		AT_GID =            13,
+		AT_EGID =           14,
+		AT_PLATFORM =       15,
+		AT_HWCAP =          16,
+		AT_CLKTCK =         17,
+		AT_FPUCW =          18,
+		AT_DCACHEBSIZE =    19,
+		AT_ICACHEBSIZE =    20,
+		AT_UCACHEBSIZE =    21,
+		AT_IGNOREPPC =      22,
+		AT_SECURE =         23,
+		AT_BASE_PLATFORM =  24,
+		AT_RANDOM =         25,
+		AT_HWCAP2 =         26,
+		AT_EXECFN =         31,
+		AT_SYSINFO =        32,
+		AT_SYSINFO_EHDR =   33,
+		AT_L1I_CACHESHAPE = 34,
+		AT_L1D_CACHESHAPE = 35,
+		AT_L2_CACHESHAPE =  36,
+		AT_L3_CACHESHAPE =  37,
 	}
 	public enum cap_flag_t : uint {
 		CAP_EFFECTIVE =   0,
@@ -2370,6 +2448,32 @@ namespace Platform.Libc {
 		PTHREAD_RWLOCK_PREFER_WRITER_NP =              1,
 		PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP = 2,
 		PTHREAD_RWLOCK_DEFAULT_NP =                    0,
+	}
+	public enum ResourceLimit : int {
+		RLIMIT_CPU =         0,
+		RLIMIT_FSIZE =       1,
+		RLIMIT_DATA =        2,
+		RLIMIT_STACK =       3,
+		RLIMIT_CORE =        4,
+		RLIMIT_RSS =         5,
+		RLIMIT_NPROC =       6,
+		RLIMIT_NOFILE =      7,
+		RLIMIT_OFILE =       7,
+		RLIMIT_MEMLOCK =     8,
+		RLIMIT_AS =          9,
+		RLIMIT_LOCKS =      10,
+		RLIMIT_SIGPENDING = 11,
+		RLIMIT_MSGQUEUE =   12,
+		RLIMIT_NICE =       13,
+		RLIMIT_RTPRIO =     14,
+		RLIMIT_RTTIME =     15,
+		RLIMIT_NLIMITS =    16,
+	}
+	public enum ResourceUsageKind : int {
+		RUSAGE_CHILDREN = -1,
+		RUSAGE_SELF =      0,
+		RUSAGE_LWP =       1,
+		RUSAGE_THREAD =    1,
 	}
 	public enum Sched : uint {
 		PTHREAD_INHERIT_SCHED =  0,
@@ -4689,6 +4793,22 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 24 )]
 		public int* end_ptr;
 	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct rlimit {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr rlim_cur;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr rlim_max;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct rlimit64 {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong rlim_cur;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong rlim_max;
+	}
 	[ExplicitSize( Size = 5 )]
 	public partial struct rose_address {
 		[ExplicitOffset( Offset = 0 )]
@@ -4753,7 +4873,69 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 8 )]
 		public int r_number;
 	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
 	public partial struct rusage {
+		[ExplicitOffset( Offset = 0 )]
+		public timeval ru_utime;
+		[ExplicitOffset( Offset = 8 )]
+		public timeval ru_stime;
+		[Overlapped( Offset = 16 )]
+		public intptr ru_maxrss;
+		[Overlapped( Offset = 16 )]
+		public intptr __ru_maxrss_word;
+		[Overlapped( Offset = 20 )]
+		public intptr ru_ixrss;
+		[Overlapped( Offset = 20 )]
+		public intptr __ru_ixrss_word;
+		[Overlapped( Offset = 24 )]
+		public intptr ru_idrss;
+		[Overlapped( Offset = 24 )]
+		public intptr __ru_idrss_word;
+		[Overlapped( Offset = 28 )]
+		public intptr ru_isrss;
+		[Overlapped( Offset = 28 )]
+		public intptr __ru_isrss_word;
+		[Overlapped( Offset = 32 )]
+		public intptr ru_minflt;
+		[Overlapped( Offset = 32 )]
+		public intptr __ru_minflt_word;
+		[Overlapped( Offset = 36 )]
+		public intptr ru_majflt;
+		[Overlapped( Offset = 36 )]
+		public intptr __ru_majflt_word;
+		[Overlapped( Offset = 40 )]
+		public intptr ru_nswap;
+		[Overlapped( Offset = 40 )]
+		public intptr __ru_nswap_word;
+		[Overlapped( Offset = 44 )]
+		public intptr ru_inblock;
+		[Overlapped( Offset = 44 )]
+		public intptr __ru_inblock_word;
+		[Overlapped( Offset = 48 )]
+		public intptr ru_oublock;
+		[Overlapped( Offset = 48 )]
+		public intptr __ru_oublock_word;
+		[Overlapped( Offset = 52 )]
+		public intptr ru_msgsnd;
+		[Overlapped( Offset = 52 )]
+		public intptr __ru_msgsnd_word;
+		[Overlapped( Offset = 56 )]
+		public intptr ru_msgrcv;
+		[Overlapped( Offset = 56 )]
+		public intptr __ru_msgrcv_word;
+		[Overlapped( Offset = 60 )]
+		public intptr ru_nsignals;
+		[Overlapped( Offset = 60 )]
+		public intptr __ru_nsignals_word;
+		[Overlapped( Offset = 64 )]
+		public intptr ru_nvcsw;
+		[Overlapped( Offset = 64 )]
+		public intptr __ru_nvcsw_word;
+		[Overlapped( Offset = 68 )]
+		public intptr ru_nivcsw;
+		[Overlapped( Offset = 68 )]
+		public intptr __ru_nivcsw_word;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
