@@ -11,9 +11,7 @@ using System.Runtime.InteropServices;
 namespace System.Runtime {
 	public static partial class Backend {
 		/// \return 'value' in power of 'power'
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__powidf2" )]
-		private static double __powidf2( double value, int power ) {
+		private static double powidf2( double value, int power ) {
 			var reciprocal = power < 0;
 			var r = 1.0;
 
@@ -32,106 +30,8 @@ namespace System.Runtime {
 			return reciprocal ? 1 / r : r;
 		}
 
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_add_8" )]
-		private static ulong __sync_fetch_and_add_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, result + value ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_sub_8" )]
-		private static ulong __sync_fetch_and_sub_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, result - value ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_and_8" )]
-		private static ulong __sync_fetch_and_and_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, result & value ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_xor_8" )]
-		private static ulong __sync_fetch_and_xor_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, result ^ value ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_nand_8" )]
-		private static ulong __sync_fetch_and_nand_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, ~( result & value ) ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_fetch_and_or_8" )]
-		private static ulong __sync_fetch_and_or_8( ulong* target, ulong value ) {
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, result | value ) )
-				result = *target;
-
-			return result;
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_lock_test_and_set_1" )]
-		private static byte __sync_lock_test_and_set_1( byte* target, byte value ) {
-			return AtomicOperations.Exchange( target, value );
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_lock_test_and_set_2" )]
-		private static ushort __sync_lock_test_and_set_2( ushort* target, ushort value ) {
-			return AtomicOperations.Exchange( target, value );
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_lock_test_and_set_4" )]
-		private static uint __sync_lock_test_and_set_4( uint* target, uint value ) {
-			return AtomicOperations.Exchange( target, value );
-		}
-
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__sync_lock_test_and_set_8" )]
-		private static ulong __sync_lock_test_and_set_8( ulong* target, ulong value ) {
-			//			return AtomicOperations.Exchange( target, value ); this calls __sync_lock_test_and_set_8 recursively on x86
-			var result = *target;
-
-			while( !AtomicOperations.TryCompareExchange( target, result, value ) )
-				result = *target;
-
-			return result;
-		}
-
 		/// \return 'value' in power of 'power'
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__powisf2" )]
-		private static float __powisf2( float value, int power ) {
+		private static float powisf2( float value, int power ) {
 			var recip = power < 0;
 			var r = 1f;
 
@@ -152,9 +52,7 @@ namespace System.Runtime {
 
 		/// '( float value ) => ( ulong ) value'
 		/// Rounding toward zero, e.g. Math.Floor( value )
-		[BackendHintWeak]
-		[BackendSymbol( Name = "__fixunssfdi" )]
-		private static ulong __fixunssfdi( float value ) {
+		private static ulong fixunssfdi( float value ) {
 			var bits = bitcast<int>( value );
 			if( bits < 0 ) return 0;
 
@@ -173,9 +71,7 @@ namespace System.Runtime {
 
 		/// '( double value ) => ( ulong ) value'
 		/// Rounding toward zero, e.g. Math.Floor( value )
-		[BackendHintWeak]
-		[BackendSymbol( Name = "__fixunsdfdi" )]
-		private static ulong __fixunsdfdi( double value ) {
+		private static ulong fixunsdfdi( double value ) {
 			var bits = bitcast<long>( value );
 			if( bits < 0 ) return 0;
 
@@ -195,9 +91,7 @@ namespace System.Runtime {
 		}
 
 		/// '( long a, long b ) => { long r; overflow = checkwrap( r = a * b ); return r; }'
-		[BackendHintKeep]
-		[BackendSymbol( Name = "__mulodi4" )]
-		private static long __mulodi4( long a, long b, Boolean32& overflow ) {
+		private static long mulodi4( long a, long b, Boolean32& overflow ) {
 			var bits = sizeof( long ) * 8;
 			var result = a * b;
 
@@ -230,23 +124,23 @@ namespace System.Runtime {
 
 		[UnitTest]
 		private static void UnitTest() {
-			Assert.AreEqual( 64.0, __powidf2( 4.0, 3 ) );
-			Assert.AreEqual( 64f, __powisf2( 4f, 3 ) );
+			Assert.AreEqual( 64.0, powidf2( 4.0, 3 ) );
+			Assert.AreEqual( 64f, powisf2( 4f, 3 ) );
 
-			Assert.AreEqual( 1UL, __fixunssfdi( 1f ) );
-			Assert.AreEqual( 1UL, __fixunsdfdi( 1.0 ) );
+			Assert.AreEqual( 1UL, fixunssfdi( 1f ) );
+			Assert.AreEqual( 1UL, fixunsdfdi( 1.0 ) );
 
-			Assert.AreEqual( 1UL, __fixunssfdi( 1.5f ) );
-			Assert.AreEqual( 1UL, __fixunsdfdi( 1.5 ) );
+			Assert.AreEqual( 1UL, fixunssfdi( 1.5f ) );
+			Assert.AreEqual( 1UL, fixunsdfdi( 1.5 ) );
 
-			Assert.AreEqual( 1UL, __fixunssfdi( 1.9f ) );
-			Assert.AreEqual( 1UL, __fixunsdfdi( 1.9 ) );
+			Assert.AreEqual( 1UL, fixunssfdi( 1.9f ) );
+			Assert.AreEqual( 1UL, fixunsdfdi( 1.9 ) );
 
-			Assert.AreEqual( 64UL, __fixunssfdi( 64.999f ) );
-			Assert.AreEqual( 64UL, __fixunsdfdi( 64.999 ) );
+			Assert.AreEqual( 64UL, fixunssfdi( 64.999f ) );
+			Assert.AreEqual( 64UL, fixunsdfdi( 64.999 ) );
 
-			Assert.AreEqual( 0UL, __fixunssfdi( -64.9999f ) );
-			Assert.AreEqual( 0UL, __fixunsdfdi( -64.9999 ) );
+			Assert.AreEqual( 0UL, fixunssfdi( -64.9999f ) );
+			Assert.AreEqual( 0UL, fixunsdfdi( -64.9999 ) );
 		}
 	}
 }
