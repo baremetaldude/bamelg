@@ -1,0 +1,119 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <NativeTargetPlatform>Windows</NativeTargetPlatform>
+    <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
+    <RootNamespace>Example</RootNamespace>
+    <SbcsStringCodepage>866</SbcsStringCodepage>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{E25C41BB-A263-429c-A364-D6F07D9BF919}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AssemblyName>CompilerInfo</AssemblyName>
+    <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
+    <BuildType>Debug</BuildType>
+  </PropertyGroup>
+  <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Validate|AnyCPU' ">
+    <GenerateCode>false</GenerateCode>
+    <DebugSymbols>false</DebugSymbols>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">false</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <StartProgram>
+    </StartProgram>
+    <RemoteDebugMachine>
+    </RemoteDebugMachine>
+    <CmdArgs>
+    </CmdArgs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <DebugSymbols>true</DebugSymbols>
+    <RunUnitTests>true</RunUnitTests>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <OptimizationLevel>0</OptimizationLevel>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <CmdArgs>
+    </CmdArgs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <BuildType>Release</BuildType>
+    <RunUnitTests>false</RunUnitTests>
+    <OptimizationLevel>1</OptimizationLevel>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>false</DebugSymbols>
+    <CmdArgs>
+    </CmdArgs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
+    <BuildType>Distribution</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>4</OptimizationLevel>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>false</DebugSymbols>
+    <CmdArgs>
+    </CmdArgs>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="App.Config\App.Config.bmlg" />
+    <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
+    <Compile Include="App\**\*.bmlg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="%24%28ModulesFolder%29\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\IO\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7 - X86_32\System\Runtime\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\Platform\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\Platform\IO\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\Diagnostics\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\IO\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\Net\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\Runtime\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\Platform\Windows\7\System\Threading\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Collections\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\ComponentModel\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Diagnostics\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Globalization\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Hash\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\IO\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Net\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Net\Mime\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Numerics\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Random\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Reflection\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Runtime\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Runtime\CompilerServices\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Runtime\InteropServices\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Runtime\X86_32\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Security\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Security\Cryptography\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Serialization\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Text\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Threading\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Web\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Xml\" />
+    <Folder Include="%24%28ModulesFolder%29\BCL\System\Xml\Serialization\" />
+    <Folder Include="App.Config\" />
+    <Folder Include="App\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
+  <!--Target Name="BeforeBuild"> ... </Target-->
+  <!--Target Name="AfterBuild"> ... </Target-->
+</Project>

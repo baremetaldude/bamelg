@@ -272,15 +272,11 @@ namespace System.IO {
 		}
 
 		// Must be used within single OS thread by multiple fibers.
+		// All blocked fibers will be resumed by Signal()
 		public struct Event {
-			public bool IsSignalled { get; private set; }
-			public bool IsAutoReset { get; private set; }
-
 			private FiberInfo* _firstWaiter = null;
 
-			public Event( bool initialState = false, bool autoReset = false ) {
-				IsSignalled = initialState;
-				IsAutoReset = autoReset;
+			public Event() {
 			}
 
 			~Event() {
@@ -292,11 +288,6 @@ namespace System.IO {
 
 				var currentFiber = FiberManager.CurrentFiber;
 				Debug.Assert( currentFiber->WaitNext == null );
-
-				if( IsSignalled ) {
-					if( IsAutoReset ) IsSignalled = false;
-					return;
-				}
 
 				currentFiber->WaitNext = _firstWaiter;
 				_firstWaiter = currentFiber;
@@ -311,9 +302,6 @@ namespace System.IO {
 
 			public void Signal() {
 				// Debug.Assert( Fiber.IsFiberExecuting ); signal can occur in main fiber too
-
-				if( IsSignalled ) return;
-				if( !IsAutoReset ) IsSignalled = true;
 
 				for( var ready = _firstWaiter; ready != null; ) {
 					var next = ready->WaitNext; ready->WaitNext = null;
