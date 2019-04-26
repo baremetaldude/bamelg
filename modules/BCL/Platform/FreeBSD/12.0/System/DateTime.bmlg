@@ -13,7 +13,7 @@ namespace System {
 		public static DateTime UtcNow { get { return new DateTime( timespec.UtcNow.DateTimeTicks, DateTimeKind.Utc ); } }
 		public static DateTime UnbiasedNow { get { return new DateTime( timespec.MonotonicTime.TimeSpanTicks, DateTimeKind.Unbiased ); } }
 
-		public TimeSpan UtcUnbiasedOffset {
+		public static TimeSpan UtcUnbiasedOffset {
 			get {
 				var span1 = DateTime.UtcNow.Ticks - DateTime.UnbiasedNow.Ticks; // HACK: there is no way to get both timers atomically ( writing a new kernel syscall is not an option :) )
 				var span2 = DateTime.UtcNow.Ticks - DateTime.UnbiasedNow.Ticks;

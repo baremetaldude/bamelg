@@ -19,10 +19,14 @@ namespace System.Threading {
 
 		#region thread-safe API
 
-		#region unbiased alarms
+		#region unbiased alarms, unaffected by system clock changes
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action action ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
+		}
+		
+		public AlarmUnbiased* BeginAlarmUnbiasedUtcAligned( TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUnbiased( new TimeSpan( 10000000 - ( DateTime.UtcNow % interval ).Ticks ), interval, action );
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action ) {
@@ -352,7 +356,7 @@ namespace System.Threading {
 
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Append( &this );
-				builder.AppendFormat( @"( ""{0}"",""{1}"", {2} )", new DateTime( Expiration ), Period, TrackingIndex );
+				builder.AppendFormat( @"( ""{0:yyyy.MM.dd HH:mm:ss.fff}"",""{1}"", {2} )", new DateTime( Expiration ), Period, TrackingIndex );
 			}
 		}
 
@@ -387,11 +391,15 @@ namespace System.Threading {
 
 				switch( kind ) {
 					case AlarmKind.Unbiased:
+						Debug.Assert( initialExpiration.Kind == DateTimeKind.Unbiased );
+
 						alarm->TrackingIndex = _unbiasedAlarms.Enqueue( alarm );
 						if( _unbiasedAlarms.Top == alarm ) NotifyNewDispatcherTasks();
 						break;
 
 					case AlarmKind.Utc:
+						Debug.Assert( initialExpiration.Kind == DateTimeKind.Utc );
+
 						alarm->TrackingIndex = _utcAlarms.Enqueue( alarm );
 						if( _utcAlarms.Top == alarm ) NotifyNewDispatcherTasks();
 						break;

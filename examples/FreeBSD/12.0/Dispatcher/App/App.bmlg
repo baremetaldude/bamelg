@@ -11,25 +11,70 @@ namespace Example {
 	class Test {
 		[EntryPoint]
 		static void Main() {
-			using( var eventLoop = new EventLoop() { Tracing = true } ) {
+			using( var eventLoop = new EventLoop() {
+				// Tracing = true,
+				// TracingAlarmQueue = true
+			} ) {
 				eventLoop.CatchExitSignals(); // convert signals to events
 
 				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
-				eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from same thread" ) );
+				eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from same thread" ) );
 
 				eventLoop.BeginInvoke( () => {
 					new pthread_t( () => { // captured 'eventLoop' alive while 'eventLoop.Dispatch()' running
 						eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from another thread" ) );
-						eventLoop.BeginInvoke( () => Console.WriteLine( "deffered 'Invoke()' from another thread" ) );
+						eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from another thread" ) );
 					} ).Detach();
 				} );
 
-				eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 5 ), TimeSpan.FromSeconds( 1 ), () => {
-					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
+				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
+					Console.WriteLine( "Unseen alarm" );
+				} );
+				
+				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
+					eventLoop.RemoveAlarm( unseen );
 				} );
 
-				eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 10 ), TimeSpan.FromSeconds( 1 ), () => {
-					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
+				using( Console.AttributedRegion( ConsoleColor.White ) )
+					Console.WriteLine( "UTC='{0:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{1:yyyy.MM.dd HH:mm:ss.ffffff}'", DateTime.UtcNow, DateTime.UnbiasedNow );
+
+				var unalignedUnbiasedAlarm = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
+					using( Console.AttributedRegion( ConsoleColor.Yellow ) )
+						Console.WriteLine( "Unaligned       {0} signalled at UTC='{1:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{2:yyyy.MM.dd HH:mm:ss.ffffff}'", "Unbiased alarm", DateTime.UtcNow, DateTime.UnbiasedNow );
+				} );
+
+				var unalignedUtcAlarm = eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 3 ), TimeSpan.FromSeconds( 1 ), () => {
+					using( Console.AttributedRegion( ConsoleColor.DarkYellow ) )
+						Console.WriteLine( "Unaligned       {0} signalled at UTC='{1:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{2:yyyy.MM.dd HH:mm:ss.ffffff}'", "UTC alarm     ", DateTime.UtcNow, DateTime.UnbiasedNow );
+				} );
+
+				var alignedUnbiasedAlarm = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), () => {
+					using( Console.AttributedRegion( ConsoleColor.Green ) )
+						Console.WriteLine( "UnbiasedAligned {0} signalled at UTC='{1:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{2:yyyy.MM.dd HH:mm:ss.ffffff}'", "Unbiased alarm", DateTime.UtcNow, DateTime.UnbiasedNow );
+				} );
+
+				var alignedToUtcUnbiasedAlarm = eventLoop.BeginAlarmUnbiasedUtcAligned( TimeSpan.FromSeconds( 1 ), () => {
+					using( Console.AttributedRegion( ConsoleColor.Magenta ) )
+						Console.WriteLine( "UtcAligned      {0} signalled at UTC='{1:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{2:yyyy.MM.dd HH:mm:ss.ffffff}'", "Unbiased alarm", DateTime.UtcNow, DateTime.UnbiasedNow );
+				} );
+
+				var alignedUtcAlarm = eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 1 ), () => {
+					using( Console.AttributedRegion( ConsoleColor.Blue ) )
+						Console.WriteLine( "Aligned         {0} signalled at UTC='{1:yyyy.MM.dd HH:mm:ss.fff}' Unbiased='{2:yyyy.MM.dd HH:mm:ss.ffffff}'", "UTC alarm     ", DateTime.UtcNow, DateTime.UnbiasedNow );
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 6 ), () => {
+					Console.WriteLine( "Remove alarms" );
+					eventLoop.RemoveAlarm( unalignedUtcAlarm );
+					eventLoop.RemoveAlarm( unalignedUnbiasedAlarm );
+					eventLoop.RemoveAlarm( alignedUtcAlarm );
+					eventLoop.RemoveAlarm( alignedToUtcUnbiasedAlarm );
+					eventLoop.RemoveAlarm( alignedUnbiasedAlarm );
+					eventLoop.RequestExit();
+				} );
+
+				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {
+					eventLoop.RequestExit();
 				} );
 
 				eventLoop.Dispatch(); // wait until RequestExit

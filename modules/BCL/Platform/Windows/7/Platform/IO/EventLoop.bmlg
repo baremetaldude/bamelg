@@ -158,8 +158,17 @@ namespace Platform.IO {
 				uint waitTimeout = Kernel32Api.INFINITE;
 
 				var timeout = GetWaitTime();
-				if( timeout != TimeSpan.MaxValue )
-					waitTimeout = ( uint ) timeout.TotalMilliseconds;
+				if( timeout != TimeSpan.MaxValue ) {
+					var newTimeout = ( ulong ) timeout.TotalMilliseconds;
+					uint newTimeout32;
+					if( newTimeout >= int.MaxValue ) newTimeout32 = uint.MaxValue - 1; // wait finite amount of time
+					else {
+						newTimeout32 = ( uint ) newTimeout;
+						++newTimeout32; // delay alarms, prevent early wakeups
+					}
+
+					waitTimeout = newTimeout32;
+				}
 
 				TraceBeginWait( _waitEvents.Count, waitTimeout );
 				var useSleep = _waitEvents.Count == 0;

@@ -133,9 +133,16 @@ namespace Platform.IO {
 
 				var alarmTimeout = GetWaitTime();
 				if( alarmTimeout != TimeSpan.MaxValue ) {
-					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
-					if( pollTimeout < 0 ) pollTimeout = newTimeout;
-					else pollTimeout = Math.Max( 0, Math.Min( pollTimeout, newTimeout ) );
+					var newTimeout = alarmTimeout.TotalMilliseconds;
+					int newTimeout32;
+					if( newTimeout >= int.MaxValue ) newTimeout32 = int.MaxValue; // wait finite amount of time
+					else {
+						newTimeout32 = ( int ) newTimeout;
+						++newTimeout32;
+					}
+
+					if( pollTimeout < 0 ) pollTimeout = newTimeout32;
+					else pollTimeout = Math.Min( pollTimeout, newTimeout32 );
 				}
 
 				// TraceBeginWait( _polledDescriptors.Count, pollTimeout );
@@ -201,8 +208,12 @@ namespace Platform.IO {
 
 				var alarmTimeout = GetWaitTime();
 				if( alarmTimeout != TimeSpan.MaxValue ) {
-					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
-					pollTimeout = newTimeout;
+					var newTimeout = alarmTimeout.TotalMilliseconds;
+					if( newTimeout >= int.MaxValue ) pollTimeout = int.MaxValue; // wait finite amount of time
+					else {
+						pollTimeout = ( int ) newTimeout;
+						++pollTimeout; // delay alarms, prevent early wakeups
+					}
 				}
 
 				atomic( ++PollId, Relaxed );
@@ -481,7 +492,7 @@ namespace Platform.IO {
 			CatchExitSignals( _exitSignalSet );
 		}
 
-		public void BlockExitSignals() {
+		public static void BlockExitSignals() {
 			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
 			LibcApi.AssertErrno( LibcApi.sigprocmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
 		}
