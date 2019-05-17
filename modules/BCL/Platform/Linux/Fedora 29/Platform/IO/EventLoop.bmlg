@@ -24,9 +24,6 @@ namespace Platform.IO {
 		public bool EnableFibers = true;
 		#endregion
 
-		[ThreadStatic]
-		public static thistype Instance;
-
 		protected bool _quitRequest;
 		protected bool _fiberDispatch;
 
@@ -41,7 +38,6 @@ namespace Platform.IO {
 		public EventLoop() {
 			_notificationEmitter.Register();
 			// InitDispatcher();
-			Instance = this;
 		}
 
 		public override void Dispose() {
@@ -66,23 +62,23 @@ namespace Platform.IO {
 		public int EventSinkCount { get { return _eventSinks.Count; } }
 
 		/// @{ Dispatching
-		public Utf8String ThreadName;
 		public Platform.Libc.pthread_t DispatchThread = pthread_t.CurrentThread;
 
-		public void BeginDispatch() {
+		public void BeginDispatch( Utf8String threadName = null ) {
 			var started = new Semaphore();
 
-			var dispatchInfo = new Tuple<EventLoop, Semaphore*> {
+			var dispatchInfo = new Tuple<EventLoop, Semaphore*, Utf8String> {
 				Item1 = this,
-				Item2 = &started
+				Item2 = &started,
+				Item3 = threadName
 			};
 
 			new pthread_t( sender => {
-				var info = ( Tuple<EventLoop, Semaphore*>* ) sender;
+				var info = ( Tuple<EventLoop, Semaphore*, Utf8String>* ) sender;
 
 				var @this = info->Item1;
 
-				pthread_t.Name = @this.ThreadName;
+				if( info->Item3 != null ) pthread_t.Name = info->Item3;
 				@this.DispatchThread = pthread_t.CurrentThread;
 				info->Item2->Post(); // info dies now
 
@@ -188,7 +184,6 @@ namespace Platform.IO {
 		public void Dispatch() {
 			TraceDispatchStarted();
 			Debug.Assert( DispatchThread.IsCurrent );
-			Instance = this;
 
 			if( EnableFibers && !Fiber.Enabled ) {
 				_fiberDispatch = true;
@@ -231,7 +226,6 @@ namespace Platform.IO {
 
 			TraceDispatchFinished();
 			Dispose();
-			Instance = null;
 		}
 
 		public void OnEvent() {
@@ -475,7 +469,11 @@ namespace Platform.IO {
 			public abstract void OnNotified();
 		}
 
-		public sealed class ExitSignalEventSink : SignalEventSink {
+		public class ExitSignalEventSink : SignalEventSink {
+			public ExitSignalEventSink( EventLoop parent )
+				: base( parent, _exitSignalSet ) {
+			}
+
 			public ExitSignalEventSink( EventLoop parent, sigset_t& signalSet )
 				: base( parent, signalSet ) {
 			}
@@ -494,7 +492,7 @@ namespace Platform.IO {
 
 		public static void BlockExitSignals() {
 			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
-			LibcApi.AssertErrno( LibcApi.sigprocmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
+			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
 		}
 
 		public void CatchExitSignals( sigset_t& signalSet ) {

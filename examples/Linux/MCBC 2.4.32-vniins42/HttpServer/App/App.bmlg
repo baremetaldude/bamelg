@@ -142,8 +142,8 @@ namespace Example {
 		[EntryPoint]
 		private static void Main() {
 			// Memory.MultithreadedEnvironment = false; // do not use atomic ops
-			var eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 32 };
-			eventLoop.CatchExitSignals();
+			_eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 32 };
+			_eventLoop.CatchExitSignals();
 
 			utsname value;
 			LibcApi.uname( value );
@@ -156,16 +156,19 @@ namespace Example {
 			Console.WriteLine( "@}" );
 			Console.WriteLine();
 
-			eventLoop.BeginInvoke( Worker ); // create fibers only inside eventLoop.Dispatch()
+			_eventLoop.BeginInvoke( Worker ); // create fibers only inside eventLoop.Dispatch()
 
-			eventLoop.Dispatch();
+			_eventLoop.Dispatch();
 		}
 
+		static EventLoop _eventLoop;
 		static CustomHttpServer _server;
 
 		static void Worker() {
 			_server = new CustomHttpServer();
-			_server.MaxSessions = EventLoop.Instance.FiberStackallocPages / ( _server.ClientFiberStackPages + 1 );
+			_server.MaxSessions = _eventLoop.FiberStackallocPages / ( _server.ClientFiberStackPages + 1 );
+			
+			_server.Attach( Fiber.FiberManager.CurrentEventLoop );
 
 			Fiber.Start( 2, () => {
 				var tcpListen = false;

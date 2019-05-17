@@ -139,6 +139,18 @@ namespace System {
 		public void Append( CString value ) { if( value.IsNullOrEmpty ) return; AppendSBCS( Environment.DefaultCodePage, value.GetChars(), ( int ) value.Length ); }
 		public void Append( CStringSpan value ) { if( value.IsNullOrEmpty ) return; AppendSBCS( Environment.DefaultCodePage, value.GetChars(), ( int ) value.Length ); }
 
+		// Valid until next resize/Append
+		public char* ProvideAppendLocation( int length ) {
+			if( length <= 0 ) return null;
+
+			EnsureCapacity( length );
+
+			var result = &_text[_length];
+			_length += length;
+
+			return result;
+		}
+
 		public void Append( Utf8String value ) {
 			if( value.IsNullOrEmpty ) return;
 			EnsureCapacity( ( int ) value.Length );
@@ -435,16 +447,7 @@ namespace System {
 						else if( ref.Type.IsEnum ) {
 							var& enumType = *( EnumType* ) &ref.Type;
 
-							switch( enumType.InstanceSize ) {
-								case 1: Append( enumType.ToString( *cast<byte*>( ref.Address ) ) ); break;
-								case 2: Append( enumType.ToString( *cast<ushort*>( ref.Address ) ) ); break;
-								case 4: Append( enumType.ToString( *cast<uint*>( ref.Address ) ) ); break;
-								case 8: Append( enumType.ToString( *cast<ulong*>( ref.Address ) ) ); break;
-
-								default:
-									Assert.Unreachable();
-									break;
-							}
+							enumType.ToString( this, ref.Address );
 						}
 						else if( ref.Type.IsUserType | ref.Type.IsInterface ) {
 							var formattable = ref.QueryInterface<IFormattable>();

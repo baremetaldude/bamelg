@@ -13,8 +13,8 @@ namespace System.IO {
 		void Write( [In] void* buffer, int count ); // available if capability 'Write' is set
 
 		/// @{ Scatter-Gather
-		int Read( vararg MemorySegment segments ); // available if capability 'VectoredIO' is set
-		void Write( vararg MemorySegment segments ); // available if capability 'VectoredIO' is set
+		int Read( vararg MemorySegment segments ); // available if capability 'Read | VectoredIO' is set
+		void Write( vararg MemorySegment segments ); // available if capability 'Write | VectoredIO' is set
 		/// @}
 
 		void Flush( FlushKind flushKind ); // write all buffered data or fill buffers with readen data
@@ -22,10 +22,22 @@ namespace System.IO {
 		StreamingBufferInfo* BufferInfo { get; }
 		StreamCapabilities Capabilities { get; }
 
-		TimeSpan Timeout { get; set; } // available if capability 'Timeout' is set
+		TimeSpan ReadTimeout { get; set; } // available if capability 'Timeout' is set
+		TimeSpan WriteTimeout { get; set; } // available if capability 'Timeout' is set
 
 		long Position { get; }
 		long Seek( long offset, SeekOrigin origin );
+
+		MemoryMappedView CreateReadView( intptr offset, intptr length );
+		MemoryMappedView CreateWriteView( intptr offset, intptr length );
+	}
+
+	public class MemoryMappedView : IDisposable {
+		public void* Start;
+		public intptr DataLength;
+		public intptr MappingLength { get { return ( DataLength + System.Runtime.Memory.DefaultPageSize - 1 ) & ~( System.Runtime.Memory.DefaultPageSize - 1 ); } }
+
+		public MemoryMappedView() { }
 	}
 
 	public enum FlushKind {

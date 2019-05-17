@@ -60,7 +60,11 @@ namespace System.IO {
 			_stream.Flush( flushKind );
 		}
 
-		TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+		
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 
 		long IStream.Position { get { return _stream.Position; } }
 

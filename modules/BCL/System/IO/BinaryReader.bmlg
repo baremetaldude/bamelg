@@ -16,6 +16,7 @@ namespace System.IO {
 		public IStream BaseStream;
 		public uint MaxPrimitiveLength = uint.MaxValue;
 
+		public bool IsStreamBroken { get; set; }
 		protected StreamingBufferInfo* _bufferInfo;
 
 		public BinaryReader( IStream stream ) {
@@ -43,6 +44,7 @@ namespace System.IO {
 		private T ReadPrimitive<T>() {
 			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
 				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
 				return default( T );
 			}
 
@@ -54,6 +56,7 @@ namespace System.IO {
 		private T PeekPrimitive<T>() {
 			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
 				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
 				return default( T );
 			}
 
@@ -160,6 +163,7 @@ namespace System.IO {
 		public Guid ReadGuid() {
 			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
 				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
 				return default( Guid );
 			}
 
@@ -182,6 +186,7 @@ namespace System.IO {
 			if( length == uint.MaxValue ) return null;
 			if( length > MaxPrimitiveLength ) {
 				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
 				BaseStream.Drain( ( int ) length );
 				return null;
 			}
@@ -201,6 +206,7 @@ namespace System.IO {
 
 			if( length > MaxPrimitiveLength ) {
 				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
 				BaseStream.Drain( ( int ) length );
 				return null;
 			}
@@ -290,7 +296,7 @@ namespace System.IO {
 		public void ReadCompact( int_bigendian& value ) { value = ReadCompactInt32(); }
 		public void ReadCompact( uint_bigendian& value ) { value = ReadCompactUInt32(); }
 
-		public IEventHandler EventHandler = EventHandlerAbort.Instance;
+		public IEventHandler EventHandler = EventHandlerConsole.Instance;
 
 		public interface IEventHandler {
 			void EndOfStream( BinaryReader context );

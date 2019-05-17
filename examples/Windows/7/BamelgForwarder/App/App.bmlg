@@ -44,7 +44,7 @@ namespace BamelgForwarder {
 		};
 
 		private static SERVICE_STATUS_HANDLE* _statusHandle;
-		private static EventLoop _eventLoop;
+		internal static EventLoop _eventLoop;
 
 		[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 		public static void ServiceMain( uint argc, CUtf16String* argv ) {
@@ -132,13 +132,14 @@ namespace BamelgForwarder {
 				Advapi32Api.StartServiceCtrlDispatcher( ServiceTable );
 			}
 			else {
-				var eventLoop = new EventLoop();
-				// eventLoop.Tracing = true;
-				eventLoop.CatchConsoleQuit();
+				_eventLoop = new EventLoop();
+				// _eventLoop.Tracing = true;
+				_eventLoop.CatchConsoleQuit();
 
 				var setupServer = new HttpApiServer() {
 					ClientFiberStackPages = 16
 				};
+				setupServer.Attach( _eventLoop );
 
 				var setupEndpoint = new IPv4Endpoint( IPv4Address.Loopback, 4015 );
 
@@ -153,7 +154,7 @@ namespace BamelgForwarder {
 					}
 				}
 
-				eventLoop.Dispatch();
+				_eventLoop.Dispatch();
 			}
 		}
 
@@ -349,7 +350,7 @@ namespace BamelgForwarder {
 
 		public void Run() {
 			PrepareEndpoints();
-			EventLoop.Instance.BeginInvoke( StartFibers );
+			App._eventLoop.BeginInvoke( StartFibers );
 		}
 
 		public void Restart() {

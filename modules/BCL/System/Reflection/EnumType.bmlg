@@ -43,160 +43,72 @@ namespace System.Reflection {
 		public int AttributeCount;
 		public int ElementCount;
 
-		private T GetValueImpl<T>( int index ) {
-			if( index < 0 | index >= ElementCount ) return default( T );
-			return ( ( T* ) Values )[index];
-		}
-
-		private int GetIndexImpl<T>( T value ) {
-			// if( ElementType.InstanceSize != sizeof( value ) ) return -1;
-			return CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ElementCount, value );
-		}
-
 		public const string FlagEnumElementsSeparator = " | ";
-
-		private string ToStringImpl<T>( T value ) {
-			// if( ElementType.InstanceSize != sizeof( value ) ) return null;
-			var values = ( T* ) Values;
-			if( values == null || Names == null )
-				return "<!enum info stripped!>";
-
-			if( IsDefined( typeof( FlagsAttribute ) ) ) {
-				if( value == 0 ) {
-					if( ElementCount > 0 && values[0] == 0 ) return ( string ) Names[0];
-					return "0";
-				}
-
-				var indices = stackalloc int[sizeof( T ) * 8];
-				var indicesCount = 0;
-
-				for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
-					if( values[i] == 0 ) break;
-
-					if( BitOperations.MaskTest( value, values[i] ) ) {
-						indices[indicesCount++] = i;
-						value ^= values[i];
-					}
-				}
-
-				using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
-					for( var i = indicesCount - 1; i >= 0; --i ) {
-						if( builder.Value.Length > 0 )
-							builder.Value.Append( FlagEnumElementsSeparator );
-
-						builder.Value.Append( Names[indices[i]] );
-					}
-
-					if( value != 0 ) {
-						if( builder.Value.Length > 0 )
-							builder.Value.Append( FlagEnumElementsSeparator );
-
-						builder.Value.Append( value.ToString() );
-					}
-
-					return builder.Value.ToString();
-				}
-			}
-
-			var index = GetIndexImpl<T>( value );
-			if( index < 0 ) return value.ToString();
-
-			return ( string ) Names[index];
-		}
-
-		private bool IsValidImpl<T>( T value ) {
-			// if( ElementType.InstanceSize != sizeof( value ) ) return false;
-
-			if( value != 0 && IsDefined( typeof( FlagsAttribute ) ) ) {
-				var values = ( T* ) Values;
-
-				for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
-					if( values[i] == 0 ) continue;
-					if( ( value & values[i] ) == values[i] ) {
-						value ^= values[i];
-						i = -1;
-					}
-				}
-
-				return value == 0;
-			}
-
-			return GetIndexImpl<T>( value ) != -1;
-		}
 
 		public byte GetUInt8Value( int index ) { return GetValueImpl<byte>( index ); }
 		public ushort GetUInt16Value( int index ) { return GetValueImpl<ushort>( index ); }
 		public uint GetUInt32Value( int index ) { return GetValueImpl<uint>( index ); }
 		public ulong GetUInt64Value( int index ) { return GetValueImpl<ulong>( index ); }
 
-		public bool IsValid( byte value ) { return IsValidImpl<byte>( value ); }
-		public bool IsValid( ushort value ) { return IsValidImpl<ushort>( value ); }
-		public bool IsValid( uint value ) { return IsValidImpl<uint>( value ); }
-		public bool IsValid( ulong value ) { return IsValidImpl<ulong>( value ); }
+		public bool IsValid( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( value ) : GetIndex( value ) != -1; }
+		public bool IsValid( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( value ) : GetIndex( value ) != -1; }
+		public bool IsValid( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( value ) : GetIndex( value ) != -1; }
+		public bool IsValid( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( value ) : GetIndex( value ) != -1; }
+
+		public bool IsValid( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( ( byte ) value ) : GetIndex( value ) != -1; }
+		public bool IsValid( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( ( ushort ) value ) : GetIndex( value ) != -1; }
+		public bool IsValid( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( ( uint ) value ) : GetIndex( value ) != -1; }
+		public bool IsValid( long value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( ( ulong ) value ) : GetIndex( value ) != -1; }
 
 		public int GetIndex( byte value ) { return GetIndexImpl<byte>( value ); }
 		public int GetIndex( ushort value ) { return GetIndexImpl<ushort>( value ); }
 		public int GetIndex( uint value ) { return GetIndexImpl<uint>( value ); }
 		public int GetIndex( ulong value ) { return GetIndexImpl<ulong>( value ); }
 
-		public string ToString( byte value ) { return ToStringImpl<byte>( value ); }
-		public string ToString( ushort value ) { return ToStringImpl<ushort>( value ); }
-		public string ToString( uint value ) { return ToStringImpl<uint>( value ); }
-		public string ToString( ulong value ) { return ToStringImpl<ulong>( value ); }
+		public int GetIndex( sbyte value ) { return GetIndexImpl<sbyte>( value ); }
+		public int GetIndex( short value ) { return GetIndexImpl<short>( value ); }
+		public int GetIndex( int value ) { return GetIndexImpl<int>( value ); }
+		public int GetIndex( long value ) { return GetIndexImpl<long>( value ); }
 
-		private int BinarySearch( CStringSpan value ) {
-			if( ElementCount <= 255 ) {
-				var remapping = ( byte* ) SortedIndices;
-				var start = 0;
-				var end = ElementCount - 1;
+		public SbcsString ToSbcsString( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<byte>( value ) : ToSbcsStringNonFlagsImpl<byte>( value ); }
+		public SbcsString ToSbcsString( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ushort>( value ) : ToSbcsStringNonFlagsImpl<ushort>( value ); }
+		public SbcsString ToSbcsString( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<uint>( value ) : ToSbcsStringNonFlagsImpl<uint>( value ); }
+		public SbcsString ToSbcsString( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ulong>( value ) : ToSbcsStringNonFlagsImpl<ulong>( value ); }
+			   				
+		public SbcsString ToSbcsString( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<byte>( ( byte ) value ) : ToSbcsStringNonFlagsImpl<sbyte>( value ); }
+		public SbcsString ToSbcsString( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ushort>( ( ushort ) value ) : ToSbcsStringNonFlagsImpl<short>( value ); }
+		public SbcsString ToSbcsString( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<uint>( ( uint ) value ) : ToSbcsStringNonFlagsImpl<int>( value ); }
+		public SbcsString ToSbcsString( long value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ulong>( ( ulong ) value ) : ToSbcsStringNonFlagsImpl<long>( value ); }
 
-				while( start <= end ) {
-					var median = ( start + end ) >> 1;
-					var compareResult = Names[remapping[median]].CompareTo( value );
+		public string ToString( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<byte>( value ) : ToStringNonFlagsImpl<byte>( value ); }
+		public string ToString( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<ushort>( value ) : ToStringNonFlagsImpl<ushort>( value ); }
+		public string ToString( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<uint>( value ) : ToStringNonFlagsImpl<uint>( value ); }
+		public string ToString( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<ulong>( value ) : ToStringNonFlagsImpl<ulong>( value ); }
 
-					if( compareResult == 0 ) return remapping[median];
+		public string ToString( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<byte>( ( byte ) value ) : ToStringNonFlagsImpl<sbyte>( value ); }
+		public string ToString( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<ushort>( ( ushort ) value ) : ToStringNonFlagsImpl<short>( value ); }
+		public string ToString( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<uint>( ( uint ) value ) : ToStringNonFlagsImpl<int>( value ); }
+		public string ToString( long value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToStringFlagsImpl<ulong>( ( ulong ) value ) : ToStringNonFlagsImpl<long>( value ); }
 
-					if( compareResult < 0 ) start = median + 1;
-					else end = median - 1;
-				}
+		public Utf8String ToUtf8String( byte value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<byte>( builder.Value, value ); else ToStringNonFlagsImpl<byte>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( ushort value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ushort>( builder.Value, value ); else ToStringNonFlagsImpl<ushort>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( uint value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<uint>( builder.Value, value ); else ToStringNonFlagsImpl<uint>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( ulong value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ulong>( builder.Value, value ); else ToStringNonFlagsImpl<ulong>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
 
-				return -1;
-			}
-			else if( ElementCount <= 65535 ) {
-				var remapping = ( ushort* ) SortedIndices;
-				var start = 0;
-				var end = ElementCount - 1;
+		public Utf8String ToUtf8String( sbyte value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<byte>( builder.Value, ( byte ) value ); else ToStringNonFlagsImpl<sbyte>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( short value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ushort>( builder.Value, ( ushort ) value ); else ToStringNonFlagsImpl<short>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( int value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<uint>( builder.Value, ( uint ) value ); else ToStringNonFlagsImpl<int>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
+		public Utf8String ToUtf8String( long value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ulong>( builder.Value, ( ulong ) value ); else ToStringNonFlagsImpl<long>( builder.Value, value ); return builder.Value.ToUtf8String(); } }
 
-				while( start <= end ) {
-					var median = ( start + end ) >> 1;
-					var compareResult = Names[remapping[median]].CompareTo( value );
-					if( compareResult == 0 ) return remapping[median];
+		public Utf32String ToUtf32String( byte value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<byte>( builder.Value, value ); else ToStringNonFlagsImpl<byte>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( ushort value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ushort>( builder.Value, value ); else ToStringNonFlagsImpl<ushort>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( uint value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<uint>( builder.Value, value ); else ToStringNonFlagsImpl<uint>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( ulong value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ulong>( builder.Value, value ); else ToStringNonFlagsImpl<ulong>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
 
-					if( compareResult < 0 ) start = median + 1;
-					else end = median - 1;
-				}
-
-				return -1;
-			}
-			else {
-				var remapping = ( int* ) SortedIndices;
-				var start = 0;
-				var end = ElementCount - 1;
-
-				while( start <= end ) {
-					var median = ( start + end ) >> 1;
-					var compareResult = Names[remapping[median]].CompareTo( value );
-					if( compareResult == 0 ) return remapping[median];
-
-					if( compareResult < 0 ) start = median + 1;
-					else end = median - 1;
-				}
-
-				return -1;
-			}
-
-			return -1;
-		}
+		public Utf32String ToUtf32String( sbyte value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<byte>( builder.Value, ( byte ) value ); else ToStringNonFlagsImpl<sbyte>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( short value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ushort>( builder.Value, ( ushort ) value ); else ToStringNonFlagsImpl<short>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( int value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<uint>( builder.Value, ( uint ) value ); else ToStringNonFlagsImpl<int>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
+		public Utf32String ToUtf32String( long value ) { using( var builder = StringBuilder.CachedBuilders.PopScoped() ) { if( IsDefined( typeof( FlagsAttribute ) ) ) ToStringFlagsImpl<ulong>( builder.Value, ( ulong ) value ); else ToStringNonFlagsImpl<long>( builder.Value, value ); return builder.Value.ToUtf32String(); } }
 
 		public bool TryParse( CStringSpan name, void* result ) {
 			var index = BinarySearch( name );

@@ -14,6 +14,9 @@ using Platform;
 
 namespace Platform.IO {
 	public class FileStream : IStream {
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+		
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerAbort.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
@@ -172,7 +175,7 @@ namespace Platform.IO {
 
 		restart_ReadFile:
 			int readen;
-			var error = _handle.Read( _timeout, Offset, buffer, count, readen );
+			var error = _handle.Read( ReadTimeout, Offset, buffer, count, readen );
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 				return readen;
@@ -187,7 +190,7 @@ namespace Platform.IO {
 
 		restart_WriteFile:
 			int written;
-			var error = _handle.Write( _timeout, Offset, buffer, count, written );
+			var error = _handle.Write( WriteTimeout, Offset, buffer, count, written );
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 				return;
@@ -216,8 +219,8 @@ namespace Platform.IO {
 
 		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
 		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
-
-		private TimeSpan _timeout = TimeSpan.Zero;
-		public TimeSpan Timeout { get { return _timeout; } set { _timeout = value; } }
+		
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 	}
 }

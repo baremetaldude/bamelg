@@ -334,15 +334,6 @@ namespace Platform.Glib {
 
 	public partial struct GMainContext {
 		public static GMainContext* Default { get { return GlibApi.g_main_context_default(); } }
-
-		public void EventLoopSubscribe() {
-			GlibApi.g_main_context_set_poll_func( &this, poll_handler );
-		}
-
-		private static int poll_handler( GPollFD* passedHandles, uint count, int timeout ) {
-			if( Platform.IO.EventLoop.Instance != null ) return Platform.IO.EventLoop.Instance.Poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
-			return Platform.Libc.LibcApi.poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
-		}
 	}
 
 	public partial struct GSource {

@@ -11,6 +11,7 @@ using System.Serialization;
 namespace System.Net {
 	public abstract partial class NetworkServer {
 		// @{ config
+		public string ClientFiberName = null;
 		public int ClientFiberStackPages = 2;
 		public int MaxClientRequestLength = 16384;
 		public int ResponseBufferLength = 16384;
@@ -76,7 +77,7 @@ namespace System.Net {
 
 					--@this.Server.ActiveSessionCount;
 					@this.ReleaseReference();
-				}, bitcast<void*>( this ) );
+				}, bitcast<void*>( this ), Server.ClientFiberName );
 
 				if( worker.IsValid ) {
 					++Server.TotalAcceptedClientCount;

@@ -119,10 +119,14 @@ namespace Platform.IO {
 			void IStream.Write( void* buffer, int length ) { Assert.Unreachable(); }
 			void IStream.Write( vararg MemorySegment segments ) { Assert.Unreachable(); }
 
-			TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
+			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+		
+			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 		}
 
 		private sealed class WriteStream : ZlibStream, IStream {
@@ -183,10 +187,14 @@ namespace Platform.IO {
 			int IStream.Read( void* buffer, int length ) { Assert.Unreachable(); return 0; }
 			int IStream.Read( vararg MemorySegment segments ) { Assert.Unreachable(); return 0; }
 
-			TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
+			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+			
+			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 
 			public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
 				if( _stream == null ) return;

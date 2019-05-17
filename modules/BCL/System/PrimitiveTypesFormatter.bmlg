@@ -918,11 +918,11 @@ namespace System {
 					// case 'P': return FormatPercent( _precision );
 					case 'X': FormatHexadecimal(); break;
 					case 'B': FormatBinary(); break;
-					
+
 					default:
-						// if( _isCustomFormat )
-						//	return FormatCustom( format );
-						
+					// if( _isCustomFormat )
+					//	return FormatCustom( format );
+
 						Assert.Fail( "The specified format '" + format + "' is invalid" );
 						break;
 				}
@@ -2021,13 +2021,20 @@ namespace System {
 
 						case 'y': builder.Append( year, "D3" ); i += skip; continue;
 						case 'z': { // offset from UTC, "+04:00"
-								var offset = DateTime.GetLocalFromUtcOffset( value );
-								if( offset >= TimeSpan.Zero ) builder.Append( '+' );
-								builder.Append( offset.Hours, "D2" );
-								builder.Append( ':' );
-								builder.Append( offset.Minutes, "D2" );
-								i += skip;
-								continue;
+								if( value.Kind == DateTimeKind.Unbiased ) {
+									builder.Append( "+00:00" );
+									i += skip;
+									continue;
+								}
+								else {
+									var offset = DateTime.GetLocalFromUtcOffset( value );
+									if( offset >= TimeSpan.Zero ) builder.Append( '+' );
+									builder.Append( offset.Hours, "D2" );
+									builder.Append( ':' );
+									builder.Append( offset.Minutes, "D2" );
+									i += skip;
+									continue;
+								}
 							}
 					}
 				}

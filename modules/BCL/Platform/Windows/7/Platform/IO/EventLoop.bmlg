@@ -36,14 +36,9 @@ namespace Platform.IO {
 			_eventPlaceholder.Dispose();
 		}
 
-		[ThreadStatic]
-		public static thistype Instance;
-
 		public EventLoop() {
 			_dispatchThread = Thread.CurrentThread;
 			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
-
-			if( Instance == null ) Instance = this;
 		}
 
 		~EventLoop() {
@@ -137,7 +132,6 @@ namespace Platform.IO {
 
 		public void Dispatch() {
 			TraceDispatchStarted();
-			Instance = this;
 			_dispatching = true;
 
 			if( EnableFibers ) {
@@ -213,7 +207,6 @@ namespace Platform.IO {
 
 			TraceDispatchFinished();
 			Dispose();
-			Instance = null;
 		}
 
 		// No more than MAXIMUM_WAIT_OBJECTS == 64 event sinks in single event loop

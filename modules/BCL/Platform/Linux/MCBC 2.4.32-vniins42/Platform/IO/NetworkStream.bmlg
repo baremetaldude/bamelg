@@ -14,6 +14,10 @@ using Platform.Libc;
 namespace Platform.IO {
 	// Must be used with non-blocking sockets inside Fibers or with blocking sockets(in ST/MT environment)
 	public class NetworkStream : IStream {
+		public TimeSpan ConnectTimeout { get; set; }
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
@@ -37,6 +41,16 @@ namespace Platform.IO {
 
 		public bool CloseHandle { get; set; } = true;
 
+		private bool _immediateDeliveryTCP { get; set; } = true;
+
+		public bool ImmediateDeliveryTCP {
+			get { return _immediateDeliveryTCP; }
+			set {
+				if( _handle != IOHandleNonBlocking.Invalid ) bitcast<SocketHandleTCP>( _handle ).ImmediateDelivery = value;
+				_immediateDeliveryTCP = value;
+			}
+		}
+
 		public bool KernelBufferingTCP { get; set; }
 		private bool _cork { get; set; }
 
@@ -47,7 +61,7 @@ namespace Platform.IO {
 
 		public NetworkStream( IOHandleNonBlocking handle )
 			: this() {
-			Handle = handle;
+			_handle = handle;
 		}
 
 		~NetworkStream() { Close(); }
@@ -65,13 +79,13 @@ namespace Platform.IO {
 			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET ) );
 
 		restart_Connect:
-			var status = socket.Connect( endpoint );
+			var status = socket.Connect( ConnectTimeout, endpoint );
 			if( !status ) {
 				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
 				return false;
 			}
 
-			socket.ImmediateDelivery = true;
+			if( _immediateDeliveryTCP ) socket.ImmediateDelivery = true;
 			return true;
 		}
 
@@ -79,13 +93,13 @@ namespace Platform.IO {
 			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET6 ) );
 
 		restart_Connect:
-			var status = socket.Connect( endpoint );
+			var status = socket.Connect( ConnectTimeout, endpoint );
 			if( !status ) {
 				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
 				return false;
 			}
 
-			socket.ImmediateDelivery = true;
+			if( _immediateDeliveryTCP ) socket.ImmediateDelivery = true;
 			return true;
 		}
 
@@ -126,7 +140,7 @@ namespace Platform.IO {
 
 			var transmitted = 0;
 		restart_Receive:
-			var error = _handle.Read( _timeout, data, count, transmitted );
+			var error = _handle.Read( ReadTimeout, data, count, transmitted );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return transmitted;
@@ -143,7 +157,7 @@ namespace Platform.IO {
 			}
 
 		restart_Send:
-			var error = _handle.Write( _timeout, buffer, count );
+			var error = _handle.Write( WriteTimeout, buffer, count );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
 				return;
@@ -155,7 +169,7 @@ namespace Platform.IO {
 			int totalReaden;
 
 		restart_Receive:
-			var error = _handle.Read( _timeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return totalReaden;
@@ -172,7 +186,7 @@ namespace Platform.IO {
 			}
 
 		restart_Send:
-			var error = _handle.Write( _timeout, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
 				return;
@@ -191,14 +205,10 @@ namespace Platform.IO {
 			}
 		}
 
-		private TimeSpan _timeout = TimeSpan.Zero;
-
-		public TimeSpan Timeout {
-			get { return _timeout; }
-			set { _timeout = value; }
-		}
-
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+		
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 	}
 }

@@ -3,14 +3,621 @@
 //
 // See license at http://bamelg.com/license.txt
 //
+// Reference: https://github.com/aklomp/base64
+//
+
+using System.IO;
+using System.Runtime;
 
 namespace System.Text {
-	public static struct Base64 {
-		// private static string EncodeTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-		// private static byte[256] DecodeTable = "\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0>\0\0\0?456789:;<=\0\0\0@\0\0\0\0\x0001\x0002\x0003\x0004\x0005\x0006\a\b\t\n\v\f\r\x000E\x000F\x0010\x0011\x0012\x0013\x0014\x0015\x0016\x0017\x0018\x0019\0\0\0\0\0\0\x001A\x001B\x001C\x001D\x001E\x001F !\"#$%&'()*+,-./0123\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0";
+	public struct Base64 {
+		private static CString EncodeTable = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
-		// [UnitTest]
-		// private static void UnitTest() {
-		// }
+		public static int GetSourceSize( int destinationLength ) {
+			if( destinationLength < 0 ) return 0;
+
+			return destinationLength / 4 * 3;
+		}
+
+
+		public static int GetEncodedSize( int sourceSize ) {
+			if( sourceSize < 0 ) return 0;
+
+			return ( sourceSize + 2 ) / 3 * 4;
+		}
+
+		public static int Encode( byte* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < GetEncodedSize( sourceLength ) )
+				return -1;
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return charsWritten + charsFooter;
+		}
+
+		public static int Encode( char* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < GetEncodedSize( sourceLength ) )
+				return -1;
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return charsWritten + charsFooter;
+		}
+
+		public static int Encode( uint* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < GetEncodedSize( sourceLength ) )
+				return -1;
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return charsWritten + charsFooter;
+		}
+
+		public static yield<MemorySegment<byte>> StreamEncode( byte* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < 4 ) yield break;
+
+			var maxSourceFetch = GetSourceSize( destinationLength );
+
+			while( sourceLength > 0 ) {
+				var charsToConvert = Math.Min( sourceLength, maxSourceFetch );
+
+				var charsWritten = Encode( destination, destinationLength, source, charsToConvert );
+				yield return new MemorySegment<byte>( ( byte* ) destination, ( uint ) charsWritten );
+
+				source = ( byte* ) source + charsToConvert;
+				if( checkwrap( sourceLength -= charsToConvert ) ) break;
+			}
+		}
+
+		public static yield<MemorySegment<char>> StreamEncode( char* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < 4 ) yield break;
+
+			var maxSourceFetch = destinationLength / 4 * 3;
+
+			while( sourceLength > 0 ) {
+				var charsToConvert = Math.Min( sourceLength, maxSourceFetch );
+
+				var charsWritten = Encode( destination, destinationLength, source, charsToConvert );
+				yield return new MemorySegment<char>( ( char* ) destination, ( uint ) charsWritten );
+
+				source = ( byte* ) source + charsToConvert;
+				if( checkwrap( sourceLength -= charsToConvert ) ) break;
+			}
+		}
+
+		public static yield<MemorySegment<uint>> StreamEncode( uint* destination, int destinationLength, void* source, int sourceLength ) {
+			if( destinationLength < 4 ) yield break;
+
+			var maxSourceFetch = destinationLength / 4 * 3;
+
+			while( sourceLength > 0 ) {
+				var charsToConvert = Math.Min( sourceLength, maxSourceFetch );
+
+				var charsWritten = Encode( destination, destinationLength, source, charsToConvert );
+				yield return new MemorySegment<uint>( ( uint* ) destination, ( uint ) charsWritten );
+
+				source = ( byte* ) source + charsToConvert;
+				if( checkwrap( sourceLength -= charsToConvert ) ) break;
+			}
+		}
+
+		public static int Encode( StringBuilder builder, void* source, int sourceLength ) {
+			var destinationLength = GetEncodedSize( sourceLength );
+			var destination = builder.ProvideAppendLocation( destinationLength );
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return charsWritten + charsFooter;
+		}
+
+		public static int Encode( StringBuilder builder, CStringSpan& text ) { return Encode( builder, text.Location, ( int ) text.Length ); }
+		public static int Encode( StringBuilder builder, CUtf8StringSpan& text ) { return Encode( builder, text.Location, ( int ) text.ByteLength ); }
+
+		public static int Encode( System.IO.StreamWriter writer, void* memory, int length ) {
+			if( length == 0 ) return 0;
+			int charsWritten = 0;
+
+			using( var page = System.Runtime.Memory.CachedPages.PopScoped() ) {
+				var buffer = ( char* ) page.Value;
+				var bufferLength = ( int ) System.Runtime.Memory.DefaultPageSize / sizeof( *buffer );
+
+				foreach( var segment in StreamEncode( buffer, bufferLength, memory, length ) ) {
+					writer.Write( new CUtf16StringSpan( segment.Start, ( uint ) segment.Count ) );
+					charsWritten += ( int ) segment.Count;
+				}
+			}
+
+			return charsWritten;
+		}
+
+		public static int Encode( System.IO.StreamWriter writer, CStringSpan& text ) { return Encode( writer, text.Location, ( int ) text.Length ); }
+		public static int Encode( System.IO.StreamWriter writer, CUtf8StringSpan& text ) { return Encode( writer, text.Location, ( int ) text.ByteLength ); }
+
+		public static int Encode( StreamWriter writer, IStream reader, int bufferSize = BufferedStream.DefaultBufferSize ) {
+			if( reader == null ) return 0;
+			int charsWritten = 0;
+
+			StreamingBufferInfo* readBuffer;
+			var readStream = reader.GetBufferedReadStream( readBuffer, bufferSize );
+
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var writeBuffer = ( char* ) page.Value;
+				var writeBufferLength = ( int ) System.Runtime.Memory.DefaultPageSize / sizeof( *writeBuffer );
+
+				var maxSourceFetch = GetSourceSize( writeBufferLength );
+
+				for( ; ; ) {
+					if( readBuffer->AvailableToRead < readBuffer->Capacity / 2 ) readStream.Flush( FlushKind.Read );
+					if( readBuffer->AvailableToRead == 0 ) break;
+
+					var toRead = Math.Min( maxSourceFetch, readBuffer->AvailableToRead );
+					var written = Encode( writeBuffer, writeBufferLength, readBuffer->ReadBufferStart, toRead );
+					writer.Write( new CUtf16StringSpan( writeBuffer, ( uint ) written ) );
+					readBuffer->OnReadPerformed( toRead );
+
+					charsWritten += written;
+				}
+			}
+
+			return charsWritten;
+		}
+
+		public static int Encode( IStream destination, void* memory, int length, int bufferSize = BufferedStream.DefaultBufferSize ) {
+			if( length == 0 ) return 0;
+			int charsWritten = 0;
+
+			StreamingBufferInfo* writeBuffer;
+			var writeStream = destination.GetBufferedWriteStream( writeBuffer, bufferSize );
+
+			var sourceMemory = ( byte* ) memory;
+			var maxSourceFetch = GetSourceSize( writeBuffer->AvailableToWrite );
+			while( length > 0 ) {
+				var toRead = Math.Min( length, maxSourceFetch );
+
+				var written = Encode( writeBuffer->WriteBufferStart, writeBuffer->AvailableToWrite, sourceMemory, toRead );
+				writeBuffer->OnWritePerformed( charsWritten );
+				writeStream.Flush( FlushKind.Write );
+
+				sourceMemory += toRead;
+				length -= toRead;
+				charsWritten += written;
+			}
+
+			return charsWritten;
+		}
+
+		public static void Encode( IStream destination, IStream source, int bufferSize = BufferedStream.DefaultBufferSize ) {
+			if( !Assert.IsTrue( source != null ) ) return;
+			if( !Assert.IsTrue( destination != null ) ) return;
+
+			StreamingBufferInfo* readBuffer;
+			var readStream = source.GetBufferedReadStream( readBuffer, GetSourceSize( bufferSize ) );
+
+			StreamingBufferInfo* writeBuffer;
+			var writeStream = destination.GetBufferedWriteStream( writeBuffer, bufferSize );
+
+			for( ; ; ) {
+				if( readBuffer->AvailableToRead < readBuffer->Capacity / 2 ) readStream.Flush( FlushKind.Read );
+				if( readBuffer->AvailableToRead == 0 ) break;
+
+				var maxToRead = GetSourceSize( writeBuffer->AvailableToWrite );
+				var toRead = Math.Min( maxToRead, readBuffer->AvailableToRead );
+
+				var charsWritten = Encode( writeBuffer->WriteBufferStart, writeBuffer->AvailableToWrite, readBuffer->ReadBufferStart, toRead );
+				readBuffer->OnReadPerformed( toRead );
+				writeBuffer->OnWritePerformed( charsWritten );
+
+				writeStream.Flush( FlushKind.Write );
+			}
+		}
+
+		public static SbcsString EncodeToSbcsString( void* source, int sourceLength ) {
+			var destinationLength = GetEncodedSize( sourceLength );
+
+			var result = new SbcsString.Builder( ( uint ) destinationLength );
+			var destination = result.GetChars();
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return result.Detach();
+		}
+
+		public static SbcsString EncodeToSbcsString( CStringSpan& text ) { return EncodeToSbcsString( text.Location, ( int ) text.Length ); }
+		public static SbcsString EncodeToSbcsString( CUtf8StringSpan& text ) { return EncodeToSbcsString( text.Location, ( int ) text.ByteLength ); }
+
+		public static Utf8String EncodeToUtf8String( void* source, int sourceLength ) {
+			var destinationLength = GetEncodedSize( sourceLength );
+
+			var result = new Utf8String.Builder( ( uint ) destinationLength );
+			var destination = result.GetChars();
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return result.Detach();
+		}
+
+		public static Utf8String EncodeToUtf8String( CStringSpan& text ) { return EncodeToUtf8String( text.Location, ( int ) text.Length ); }
+		public static Utf8String EncodeToUtf8String( CUtf8StringSpan& text ) { return EncodeToUtf8String( text.Location, ( int ) text.ByteLength ); }
+
+		public static Utf16String EncodeToUtf16String( void* source, int sourceLength ) {
+			var destinationLength = GetEncodedSize( sourceLength );
+
+			var result = new Utf16String.Builder( ( uint ) destinationLength );
+			var destination = result.GetChars();
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return result.Detach();
+		}
+
+		public static Utf16String EncodeToUtf16String( CStringSpan& text ) { return EncodeToUtf16String( text.Location, ( int ) text.Length ); }
+		public static Utf16String EncodeToUtf16String( CUtf8StringSpan& text ) { return EncodeToUtf16String( text.Location, ( int ) text.ByteLength ); }
+
+		public static Utf32String EncodeToUtf32String( void* source, int sourceLength ) {
+			var destinationLength = GetEncodedSize( sourceLength );
+
+			var result = new Utf32String.Builder( ( uint ) destinationLength );
+			var destination = result.GetChars();
+
+			var encoder = new Encoder();
+			var charsWritten = encoder.Process( destination, destinationLength, source, sourceLength );
+			var charsFooter = encoder.Finish( destination + charsWritten );
+
+			return result.Detach();
+		}
+
+		public static Utf16String EncodeToUtf32String( CStringSpan& text ) { return EncodeToUtf16String( text.Location, ( int ) text.Length ); }
+		public static Utf16String EncodeToUtf32String( CUtf8StringSpan& text ) { return EncodeToUtf16String( text.Location, ( int ) text.ByteLength ); }
+
+		public struct Encoder {
+			private int _eof;
+			private int _bytes;
+			private byte _carry;
+
+			public Encoder() {
+				ResetState();
+			}
+
+			private void ResetState() {
+				_eof = 0;
+				_bytes = 0;
+				_carry = 0;
+			}
+
+			/// \return number of characters written
+			public int Process( byte* destination, int destinationLength, void* source, int sourceLength ) {
+				var src = ( byte* ) source;
+				var out = destination;
+
+				int written = 0;
+				var bytes = _bytes;
+				var carry = _carry;
+
+				switch( _bytes ) {
+					case 0: break;
+					case 1: goto carry1;
+					case 2: goto carry2;
+				}
+
+				for( ; ; ) {
+					{
+						var writePackStart = out;
+
+						switch( System.Runtime.CompilerServices.CompilerInfo.MemoryToRegisterTransferWidth ) {
+							case 4:
+								while( sourceLength >= 4 ) {
+									uint str = unaligned( *( uint_bigendian* ) src );
+
+									*out++ = EncodeTable[cast<byte>( str >> 26 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 20 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 14 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 8 ) & 0x3F];
+
+									src += 3;
+									sourceLength -= 3;
+								}
+
+								break;
+
+							case 8:
+								while( sourceLength >= 8 ) {
+									ulong str = unaligned( *( ulong_bigendian* ) src );
+
+									*out++ = EncodeTable[cast<byte>( str >> 58 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 52 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 46 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 40 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 34 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 28 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 22 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 16 ) & 0x3F];
+
+									src += 6;
+									sourceLength -= 6;
+								}
+
+								break;
+						}
+
+						written += ( int )( out - writePackStart );
+					}
+
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[*src >> 2];
+					carry = ( *src++ << 4 ) & 0x30;
+					bytes++;
+					written += 1;
+
+				carry1:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[carry | ( *src >> 4 )];
+					carry = ( *src++ << 2 ) & 0x3C;
+					bytes++;
+					written += 1;
+
+				carry2:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[carry | ( *src >> 6 )];
+					*out++ = EncodeTable[*src++ & 0x3F];
+					bytes = 0;
+					written += 2;
+				}
+
+				_bytes = bytes;
+				_carry = carry;
+
+				return written;
+			}
+
+			/// \return number of characters written
+			public int Process( char* destination, int destinationLength, void* source, int sourceLength ) {
+				var src = ( byte* ) source;
+				var out = destination;
+
+				int written = 0;
+				var bytes = _bytes;
+				var carry = _carry;
+
+				switch( _bytes ) {
+					case 0: break;
+					case 1: goto carry1;
+					case 2: goto carry2;
+				}
+
+				for( ; ; ) {
+					{
+						var writePackStart = out;
+
+						switch( System.Runtime.CompilerServices.CompilerInfo.MemoryToRegisterTransferWidth ) {
+							case 4:
+								while( sourceLength >= 4 ) {
+									uint str = unaligned( *( uint_bigendian* ) src );
+
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 26 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 20 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 14 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 8 ) & 0x3F];
+
+									src += 3;
+									sourceLength -= 3;
+								}
+
+								break;
+
+							case 8:
+								while( sourceLength >= 8 ) {
+									ulong str = unaligned( *( ulong_bigendian* ) src );
+
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 58 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 52 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 46 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 40 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 34 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 28 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 22 ) & 0x3F];
+									*out++ = ( char ) EncodeTable[cast<byte>( str >> 16 ) & 0x3F];
+
+									src += 6;
+									sourceLength -= 6;
+								}
+
+								break;
+						}
+
+						written += ( int )( out - writePackStart );
+					}
+
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = ( char ) EncodeTable[*src >> 2];
+					carry = ( *src++ << 4 ) & 0x30;
+					bytes++;
+					written += 1;
+
+				carry1:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = ( char ) EncodeTable[carry | ( *src >> 4 )];
+					carry = ( *src++ << 2 ) & 0x3C;
+					bytes++;
+					written += 1;
+
+				carry2:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = ( char ) EncodeTable[carry | ( *src >> 6 )];
+					*out++ = ( char ) EncodeTable[*src++ & 0x3F];
+					bytes = 0;
+					written += 2;
+				}
+
+				_bytes = bytes;
+				_carry = carry;
+
+				return written;
+			}
+
+			/// \return number of characters written
+			public int Process( uint* destination, int destinationLength, void* source, int sourceLength ) {
+				var src = ( byte* ) source;
+				var out = destination;
+
+				int written = 0;
+				var bytes = _bytes;
+				var carry = _carry;
+
+				switch( _bytes ) {
+					case 0: break;
+					case 1: goto carry1;
+					case 2: goto carry2;
+				}
+
+				for( ; ; ) {
+					{
+						var writePackStart = out;
+
+						switch( System.Runtime.CompilerServices.CompilerInfo.MemoryToRegisterTransferWidth ) {
+							case 4:
+								while( sourceLength >= 4 ) {
+									uint str = unaligned( *( uint_bigendian* ) src );
+
+									*out++ = EncodeTable[cast<byte>( str >> 26 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 20 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 14 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 8 ) & 0x3F];
+
+									src += 3;
+									sourceLength -= 3;
+								}
+
+								break;
+
+							case 8:
+								while( sourceLength >= 8 ) {
+									ulong str = unaligned( *( ulong_bigendian* ) src );
+
+									*out++ = EncodeTable[cast<byte>( str >> 58 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 52 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 46 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 40 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 34 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 28 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 22 ) & 0x3F];
+									*out++ = EncodeTable[cast<byte>( str >> 16 ) & 0x3F];
+
+									src += 6;
+									sourceLength -= 6;
+								}
+
+								break;
+						}
+
+						written += ( int )( out - writePackStart );
+					}
+
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[*src >> 2];
+					carry = ( *src++ << 4 ) & 0x30;
+					bytes++;
+					written += 1;
+
+				carry1:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[carry | ( *src >> 4 )];
+					carry = ( *src++ << 2 ) & 0x3C;
+					bytes++;
+					written += 1;
+
+				carry2:
+					if( sourceLength-- == 0 ) break;
+
+					*out++ = EncodeTable[carry | ( *src >> 6 )];
+					*out++ = EncodeTable[*src++ & 0x3F];
+					bytes = 0;
+					written += 2;
+				}
+
+				_bytes = bytes;
+				_carry = carry;
+
+				return written;
+			}
+
+			public int Finish( byte* destination ) {
+				if( _bytes == 1 ) {
+					*destination++ = EncodeTable[_carry];
+					*destination++ = '=';
+					*destination++ = '=';
+
+					return 3;
+				}
+
+				if( _bytes == 2 ) {
+					*destination++ = EncodeTable[_carry];
+					*destination++ = '=';
+
+					return 2;
+				}
+
+				return 0;
+			}
+
+			public int Finish( char* destination ) {
+				if( _bytes == 1 ) {
+					*destination++ = ( char ) EncodeTable[_carry];
+					*destination++ = '=';
+					*destination++ = '=';
+
+					return 3;
+				}
+
+				if( _bytes == 2 ) {
+					*destination++ = ( char ) EncodeTable[_carry];
+					*destination++ = '=';
+
+					return 2;
+				}
+
+				return 0;
+			}
+
+			public int Finish( uint* destination ) {
+				if( _bytes == 1 ) {
+					*destination++ = EncodeTable[_carry];
+					*destination++ = '=';
+					*destination++ = '=';
+
+					return 3;
+				}
+
+				if( _bytes == 2 ) {
+					*destination++ = EncodeTable[_carry];
+					*destination++ = '=';
+
+					return 2;
+				}
+
+				return 0;
+			}
+		}
 	}
 }

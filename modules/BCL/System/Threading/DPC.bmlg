@@ -46,7 +46,7 @@ namespace System.Threading {
 				OnActionDispose = data => {
 					var passedTask = ( DPC<Functors.Action>* ) data;
 					passedTask->P0();
-					heapfree ( DPC<Functors.Action>* ) data;
+					heapfree passedTask;
 				},
 				OnDispose = data => {
 					heapfree ( DPC<Functors.Action>* ) data;
@@ -65,10 +65,30 @@ namespace System.Threading {
 				OnActionDispose = data => {
 					var passedTask = ( DPC<Functors.Action<T0>, T0>* ) data;
 					passedTask->P0( passedTask->P1 );
-					heapfree ( DPC<Functors.Action<T0>, T0>* ) data;
+					heapfree passedTask;
 				},
 				OnDispose = data => {
 					heapfree ( DPC<Functors.Action<T0>, T0>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1>( Functors.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			return heapalloc DPC<Functors.Action<T0, T1>, T0, T1> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action<T0, T1>, T0, T1>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Functors.Action<T0, T1>, T0, T1>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Functors.Action<T0, T1>, T0, T1>* ) data;
 				}
 			};
 		}
@@ -102,10 +122,30 @@ namespace System.Threading {
 				OnActionDispose = data => {
 					var passedTask = ( DPC<Delegates.Action<T0>, T0>* ) data;
 					passedTask->P0( passedTask->P1 );
-					heapfree ( DPC<Delegates.Action<T0>, T0>* ) data;
+					heapfree passedTask;
 				},
 				OnDispose = data => {
 					heapfree ( DPC<Delegates.Action<T0>, T0>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1>( Delegates.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			return heapalloc DPC<Delegates.Action<T0, T1>, T0, T1> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action<T0, T1>, T0, T1>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Delegates.Action<T0, T1>, T0, T1>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Delegates.Action<T0, T1>, T0, T1>* ) data;
 				}
 			};
 		}

@@ -24,9 +24,9 @@ namespace System.Threading {
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action action ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
 		}
-		
+
 		public AlarmUnbiased* BeginAlarmUnbiasedUtcAligned( TimeSpan interval, Functors.Action action ) {
-			return BeginAlarmUnbiased( new TimeSpan( 10000000 - ( DateTime.UtcNow % interval ).Ticks ), interval, action );
+			return BeginAlarmUnbiased( new TimeSpan( interval.Ticks - ( DateTime.UtcNow % interval ).Ticks ), interval, action );
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Functors.Action action ) {
@@ -67,6 +67,10 @@ namespace System.Threading {
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Delegates.Action action ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiasedUtcAligned( TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUnbiased( new TimeSpan( interval.Ticks - ( DateTime.UtcNow % interval ).Ticks ), interval, action );
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan initialExpiration, TimeSpan interval, Delegates.Action action ) {
@@ -356,7 +360,7 @@ namespace System.Threading {
 
 			public void ToString( StringBuilder builder, string format ) {
 				builder.Append( &this );
-				builder.AppendFormat( @"( ""{0:yyyy.MM.dd HH:mm:ss.fff}"",""{1}"", {2} )", new DateTime( Expiration ), Period, TrackingIndex );
+				builder.AppendFormat( @"( Expiration = ""{0:yyyy.MM.dd HH:mm:ss.fff}"", Period = ""{1}"", Index = {2} )", new DateTime( Expiration ), Period, TrackingIndex );
 			}
 		}
 
@@ -533,6 +537,8 @@ namespace System.Threading {
 				TraceAlarmReady( alarm );
 
 				if( alarm->IsOneShot ) {
+					TraceAlarmRemoved( alarm );
+
 					alarms.Dequeue();
 
 					if( alarm->Dispose != null ) {
@@ -547,6 +553,7 @@ namespace System.Threading {
 					var expirations = ( ticks - alarm->Expiration ) / alarm->Period.Ticks;
 					alarm->Expiration += alarm->Period.Ticks * ( expirations + 1 ); // heap now invalid
 
+					TraceAlarmRearmed( alarm );
 					alarms.Replace( alarm->TrackingIndex, alarm );
 				}
 			}
@@ -663,11 +670,21 @@ namespace System.Threading {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
+		private void TraceAlarmRearmed( AlarmEntry* alarm ) {
+			if( !Tracing ) return;
+
+			using( Console.AttributedRegion( TraceStyleHigh ) )
+				Console.WriteLine( "Dispatcher: Alarm {0} rearmed", *alarm );
+
+			if( TracingAlarmQueue ) DumpAlarms();
+		}
+
+		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceAlarmReady( AlarmEntry* alarm ) {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "Dispatcher: Alarm {0} ready", alarm );
+				Console.WriteLine( "Dispatcher: Alarm {0} ready", *alarm );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]

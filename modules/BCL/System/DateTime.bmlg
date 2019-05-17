@@ -48,8 +48,8 @@ namespace System {
 		}
 
 		public DateTime( long ticks, DateTimeKind kind ) {
-			if( !Assert.IsFalse( ticks < 0L || ticks > MaxTicks ) )
-				ticks = 0;
+			if( !Assert.IsFalse( ticks < 0L ) ) ticks = 0;
+			if( !Assert.IsFalse( ticks > MaxTicks ) ) ticks = 0;
 
 			_data = ( ulong )( ticks | ( ( ( long ) kind ) << 62 ) );
 		}

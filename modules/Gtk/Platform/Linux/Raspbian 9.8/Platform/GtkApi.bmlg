@@ -311,6 +311,10 @@ namespace Platform.Gtk {
 			set { GtkApi.gtk_label_set_line_wrap_mode( &this, value ); }
 		}
 
+		public CUtf8String Markup {
+			set { GtkApi.gtk_label_set_markup( &this, value != CUtf8String.Null ? value : ( CUtf8String ) "" ); }
+		}
+
 		public CUtf8String RawText {
 			get { return GtkApi.gtk_label_get_label( &this ); }
 			set { GtkApi.gtk_label_set_label( &this, value != CUtf8String.Null ? value : ( CUtf8String ) "" ); }
@@ -332,6 +336,13 @@ namespace Platform.Gtk {
 
 		public static thistype* Create( Utf8String text ) {
 			var result = GtkApi.gtk_label_new( text );
+			result->IsVisible = true;
+			return result;
+		}
+
+		public static thistype* CreateWithMarkup( Utf8String text ) {
+			var result = GtkApi.gtk_label_new( "" );
+			result->Markup = text;
 			result->IsVisible = true;
 			return result;
 		}

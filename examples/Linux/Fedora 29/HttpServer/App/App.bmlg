@@ -87,7 +87,7 @@ namespace Example {
 							Response.WriteLine();
 
 							Response.Write( "id: " );
-							Response.Write( @Fiber.UtcNow.Ticks );
+							Response.Write( Fiber.UtcNow.Ticks );
 							Response.WriteLine();
 
 							Flush();
@@ -103,7 +103,7 @@ namespace Example {
 					base.AddCustomHeaders();
 
 					// for debug purpose
-					HttpFormatter.HeaderAccessControl( Headers, "allow" ); 
+					HttpFormatter.HeaderAccessControl( Headers, "allow" );
 					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
 				}
 			}
@@ -161,7 +161,7 @@ namespace Example {
 			}
 
 			if( Options.MaxThreads <= 0 ) Options.MaxThreads = Environment.ProcessorCount;
-			
+
 			Memory.MultithreadedEnvironment = Options.MaxThreads > 0;
 			Fiber.UseGuardPage = Options.FiberUseGuardPage;
 
@@ -234,6 +234,8 @@ namespace Example {
 				MaxSessions = Options.MaxSessions,
 				ReusePort = Options.MaxThreads > 1
 			};
+
+			server.Attach( eventLoop );
 
 			eventLoop.BeginInvoke( () => {
 				Fiber.Start( 16, () => {

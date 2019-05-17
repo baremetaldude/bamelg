@@ -12,7 +12,10 @@ using Platform.Libc;
 
 namespace Platform.IO {
 	public class FileStream : IStream {
-		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerAbort.Instance;
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+
+		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
 		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.VectoredIO | StreamCapabilities.Timeout | StreamCapabilities.Seek; } }
@@ -49,7 +52,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; length > 0; ) {
 			restart_Read:
-				var error = _handle.Read( _timeout, data, length, transmitted );
+				var error = _handle.Read( ReadTimeout, data, length, transmitted );
 				if( error != SystemError.None ) {
 					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
 					break;
@@ -70,7 +73,7 @@ namespace Platform.IO {
 
 			int totalReaden;
 		restart_Read:
-			var error = _handle.Read( _timeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
 				return totalReaden;
@@ -83,7 +86,7 @@ namespace Platform.IO {
 			if( !_handle.IsValid || length == 0 || buffer == null ) return;
 
 		restart_Write:
-			var error = _handle.Write( _timeout, buffer, length );
+			var error = _handle.Write( WriteTimeout, buffer, length );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
 				return;
@@ -95,7 +98,7 @@ namespace Platform.IO {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
 
 		restart_Write:
-			var error = _handle.Write( _timeout, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
 				return;
@@ -115,6 +118,7 @@ namespace Platform.IO {
 
 		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); result.OpenRead( name ); return result; }
 		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenWrite( name, permission ); return result; }
+		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenReadWrite( name, permission ); return result; }
 		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenAppend( name, permission ); return result; }
 
 		public bool OpenRead( CUtf8String name ) {
@@ -143,6 +147,25 @@ namespace Platform.IO {
 			IOHandle handle;
 		restart_Open:
 			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_TRUNC, permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FctlValue.O_CREAT | FctlValue.O_RDWR | FctlValue.O_TRUNC, permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -193,11 +216,89 @@ namespace Platform.IO {
 
 		public long Position { get { return LibcApi.lseek64( _handle, 0, FileSeekOrigin.SEEK_CUR ); } }
 
-		private TimeSpan _timeout = TimeSpan.Zero;
+		public stat GetStat() {
+			stat result;
 
-		public TimeSpan Timeout {
-			get { return _timeout; }
-			set { _timeout = value; }
+		restart_Stat:
+			if( NonSharedApi.fstat( _handle, &result ) < 0 ) {
+				var lastError = LibcApi.LastError;
+
+				if( OnLastError( "GetStat", lastError ) == PlatformErrorAction.Restart ) goto restart_Stat;
+			}
+
+			return result;
+		}
+
+		public class MemoryMappedReadView : MemoryMappedView {
+			public MemoryMappedReadView() {
+			}
+
+			~MemoryMappedReadView() {
+				LibcApi.AssertErrno( LibcApi.munmap( Start, ( uint ) MappingLength ) );
+			}
+		}
+
+		public class MemoryMappedWriteView : MemoryMappedView {
+			public MemoryMappedWriteView() {
+			}
+
+			~MemoryMappedWriteView() {
+				// LibcApi.AssertErrno( LibcApi.msync( Start, MappingLength, MS_SYNC ) );
+				LibcApi.AssertErrno( LibcApi.munmap( Start, ( uint ) MappingLength ) );
+			}
+		}
+
+		public MemoryMappedView CreateReadView( intptr offset, intptr length ) {
+			if( length <= 0 ) return null;
+
+			var pagesize = System.Runtime.Memory.DefaultPageSize;
+
+			var fileLength = ( intptr ) length;
+			var mappingLength = ( uint ) fileLength;
+			mappingLength += pagesize - 1; mappingLength &= ~( pagesize - 1 );
+
+			var mapFlags = MemoryMapFlags.MAP_FILE | MemoryMapFlags.MAP_PRIVATE;
+			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ, mapFlags, _handle, offset );
+
+			if( ( intptr ) mmapResult < 0 ) {
+				var lastError = LibcApi.LastError;
+				OnLastError( "CreateReadView", lastError );
+				return null;
+			}
+
+			return new MemoryMappedReadView() {
+				Start = mmapResult,
+				DataLength = fileLength
+			};
+		}
+
+		public MemoryMappedView CreateWriteView( intptr offset, intptr length ) {
+			if( length <= 0 ) return null;
+
+			var pagesize = System.Runtime.Memory.DefaultPageSize;
+
+			var fileLength = ( intptr ) length;
+			var mappingLength = ( uint ) fileLength;
+			mappingLength += pagesize - 1; mappingLength &= ~( pagesize - 1 );
+
+			var mapFlags = MemoryMapFlags.MAP_FILE | MemoryMapFlags.MAP_SHARED;
+			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ | MemoryMapProtection.PROT_WRITE, mapFlags, _handle, offset );
+
+			if( ( intptr ) mmapResult < 0 ) {
+				var lastError = LibcApi.LastError;
+				OnLastError( "CreateWriteView", lastError );
+				return null;
+			}
+
+			var position = Seek( 0, SeekOrigin.Current );
+			Seek( offset + length - 1, SeekOrigin.Begin );
+			Write( Utf8String.Empty.GetChars(), 1 );
+			Seek( position, SeekOrigin.Begin );
+
+			return new MemoryMappedReadView() {
+				Start = mmapResult,
+				DataLength = fileLength
+			};
 		}
 	}
 }

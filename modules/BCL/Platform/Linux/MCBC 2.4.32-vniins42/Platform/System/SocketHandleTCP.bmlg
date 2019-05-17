@@ -44,6 +44,16 @@ namespace Platform.Kernel {
 			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
+		public SystemError Connect( TimeSpan& timeout, IPv4Endpoint& endpoint ) {
+			var nativeEndpoint = ( sockaddr_in ) endpoint;
+			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+		}
+
+		public SystemError Connect( TimeSpan& timeout, IPv6Endpoint& endpoint ) {
+			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
+			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+		}
+
 		public bool BindIPv4( ushort port ) { return Bind( new IPv4Endpoint( IPv4Address.AllInterfaces, port ) ); }
 		public bool Bind( IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;

@@ -218,9 +218,11 @@ namespace System.Collections {
 
 		public T this[int trackingIndex] {
 			get {
-				if( !Assert.IsTrue( trackingIndex >= 0 && trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
+				if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
+				if( !Assert.IsTrue( trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
 				var heapIndex = _trackingKeyToHeapMapping[trackingIndex];
-				if( !Assert.IsTrue( heapIndex >= 0 && heapIndex < _heap.Length ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
+				if( !Assert.IsTrue( heapIndex >= 0 ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
+				if( !Assert.IsTrue( heapIndex < _heap.Length ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
 				return _heap[heapIndex];
 			}
 		}
@@ -276,6 +278,11 @@ namespace System.Collections {
 
 				if( Comparer( _heap[i], _heap[parentIndex] ) > 0 )
 					return false;
+
+				var trackingKey = _heapToTrackingKeyMapping[i];
+				if( trackingKey < 0 || trackingKey >= _count ) return false;
+
+				if( _trackingKeyToHeapMapping[trackingKey] != i ) return false;
 			}
 
 			return true;
@@ -300,7 +307,7 @@ namespace System.Collections {
 			}
 
 			_heap[i] = value;
-			_heapToTrackingKeyMapping[i] = trackingIndex; _trackingKeyToHeapMapping[trackingIndex] = i;
+			_trackingKeyToHeapMapping[trackingIndex] = i; _heapToTrackingKeyMapping[i] = trackingIndex;
 			++_count;
 
 			return trackingIndex;
@@ -323,10 +330,7 @@ namespace System.Collections {
 			if( !Assert.IsTrue( heapIndex >= 0 ) ) return default( T );
 			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
 
-			_trackingManager.Deallocate( trackingIndex );
-
 			var result = _heap[heapIndex];
-			_trackingKeyToHeapMapping[trackingIndex] = -1;
 
 			if( _count > 1 ) {
 				var i = heapIndex;
@@ -360,6 +364,8 @@ namespace System.Collections {
 			}
 
 			_heapToTrackingKeyMapping[_count - 1] = -1;
+			_trackingKeyToHeapMapping[trackingIndex] = -1;
+			_trackingManager.Deallocate( trackingIndex );
 			--_count;
 			return result;
 		}
@@ -409,10 +415,10 @@ namespace System.Collections {
 				var trackingKeyToHeapMapping = new[newCount] int;
 
 				CommonCollectionOperations.Copy<T>( &heap[0], &_heap[0], _count );
-				CommonCollectionOperations.Copy<int>( &heapToTrackingKeyMapping[0], &_heapToTrackingKeyMapping[0], _count );
-				CommonCollectionOperations.Copy<int>( &trackingKeyToHeapMapping[0], &_trackingKeyToHeapMapping[0], _count );
+				CommonCollectionOperations.Copy<int>( &heapToTrackingKeyMapping[0], &_heapToTrackingKeyMapping[0], _heapToTrackingKeyMapping.Length );
+				CommonCollectionOperations.Copy<int>( &trackingKeyToHeapMapping[0], &_trackingKeyToHeapMapping[0], _trackingKeyToHeapMapping.Length );
 
-				for( int i = _count; i < newCount; i++ ) {
+				for( int i = _heapToTrackingKeyMapping.Length; i < newCount; i++ ) {
 					heapToTrackingKeyMapping[i] = -1;
 					trackingKeyToHeapMapping[i] = -1;
 				}

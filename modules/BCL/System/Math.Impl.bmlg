@@ -24,403 +24,311 @@ namespace System {
 			return checkwrap( result = a - b ) ? ( a >= 0 ? T.MaxValue : T.MinValue ) : result;
 		}
 
-		private static float _0_5f = 0.5f;
-		private static float _m0_5f = -0.5f;
+		private static partial struct Impl {
+			private static float _0_5f = 0.5f;
+			private static float _m0_5f = -0.5f;
 
-		private static double _0_5 = 0.5;
-		private static double _m0_5 = -0.5;
+			private static double _0_5 = 0.5;
+			private static double _m0_5 = -0.5;
 
-		public static long RoundHalfToEvenInt64( double value ) asm {
-			X86_32 {
-				fld qword ptr [esp + 4]
-				fistp qword ptr [esp + 4]
+			public static long RoundHalfToEvenInt64( double value ) asm {
+				X86_32 {
+					fld qword ptr [esp + 4]
+					fistp qword ptr [esp + 4]
 
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
 
-				retn
+					retn
+				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttsd2si rax, xmm1
+
+						retn
+					}
+					default {
+						movq qword ptr [rsp - 8], xmm0
+						fld qword ptr [rsp - 8]
+						fistp qword ptr [rsp - 8]
+						mov rax, qword ptr [rsp - 8]
+
+						retn
+					}
+				}
+				default {
+					return Fallback.RoundHalfToEvenInt64( value );
+				}
 			}
-			X86_64 {
-				feature( SSE4_1 ) {
-					roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
-					cvttsd2si rax, xmm1
+
+			public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) asm {
+				X86_32 {
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fadd dword ptr [[_0_5f]]
+
+					fistp qword ptr [esp + 4]
+
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					sar edx, 1
+					rcr eax, 1
 
 					retn
 				}
 				default {
-					movq qword ptr [rsp - 8], xmm0
-					fld qword ptr [rsp - 8]
-					fistp qword ptr [rsp - 8]
-					mov rax, qword ptr [rsp - 8]
+					return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value + 0.5 ), 1 );
+				}
+			}
+
+			public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) asm {
+				X86_32 {
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fsubr dword ptr [[_0_5f]]
+
+					fistp qword ptr [esp + 4]
+
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					sar edx, 1
+					rcr eax, 1
+
+					not eax
+					not edx
+
+					add eax, 1
+					adc edx, 0
 
 					retn
 				}
+				default {
+					return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( 0.5 - value - value ), 1 );
+				}
 			}
-			default {
-				return 0;
+
+			public static long RoundHalfAwayFromZeroToInt64( double value ) asm {
+				X86_32 {
+					// xor eax, eax
+					// mov edx, dword ptr [esp + 8]
+
+					// and edx, 0x7FFFFFFF
+					// cmp edx, 0x000FFFFF
+					// setg al
+
+					add dword ptr [esp + 4], 1
+					adc dword ptr [esp + 8], 0
+
+					fld qword ptr [esp + 4]
+					fistp qword ptr [esp + 4]
+
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					retn
+				}
+				default {
+					return RoundHalfToEvenInt64( bitcast<double>( bitcast<ulong>( value ) + 1 ) );
+				}
 			}
-		}
 
-		public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) asm {
-			X86_32 {
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fadd dword ptr [[_0_5f]]
+			public static long RoundHalfTowardsZeroToInt64( double value ) asm {
+				X86_32 {
+					xor eax, eax
+					mov edx, dword ptr [esp + 8]
 
-				fistp qword ptr [esp + 4]
+					and edx, 0x7FFFFFFF
+					cmp edx, 0x000FFFFF
+					setg al
 
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
+					sub dword ptr [esp + 4], eax
+					sbb dword ptr [esp + 8], 0
 
-				sar edx, 1
-				rcr eax, 1
+					fld qword ptr [esp + 4]
+					fistp qword ptr [esp + 4]
 
-				retn
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					retn
+				}
+				default {
+					return RoundHalfToEvenInt64( value.IsDenormalizedOrZero ? value : bitcast<double>( bitcast<ulong>( value ) - 1 ) );
+				}
 			}
-			default {
-				return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value + 0.5 ), 1 );
+
+			// aka 'floor'/'round down'
+			public static long RoundTowardsMinusInfinityInt64( double value ) asm {
+				X86_32 {
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fsub dword ptr [[_0_5f]]
+
+					fistp qword ptr [esp + 4]
+
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					sar edx, 1
+					rcr eax, 1
+
+					retn
+				}
+				default {
+					return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value - 0.5 ), 1 );
+				}
 			}
-		}
 
-		public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) asm {
-			X86_32 {
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fsubr dword ptr [[_0_5f]]
+			// aka 'ceil'/'round up'
+			public static long RoundTowardsPlusInfinityInt64( double value ) asm {
+				X86_32 {
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fsubr dword ptr [[_m0_5f]]
 
-				fistp qword ptr [esp + 4]
+					fistp qword ptr [esp + 4]
 
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
 
-				sar edx, 1
-				rcr eax, 1
+					sar edx, 1
+					rcr eax, 1
 
-				not eax
-				not edx
+					not eax
+					not edx
 
-				add eax, 1
-				adc edx, 0
+					add eax, 1
+					adc edx, 0
 
-				retn
+					retn
+				}
+				default {
+					return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( -0.5 - value - value ), 1 );
+				}
 			}
-			default {
-				return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( 0.5 - value - value ), 1 );
+
+			public static long TruncateToInt64( float value ) { return TruncateToInt64( ( double ) value ); }
+
+			// 'ceil' for negative numbers
+			// 'floor' for positive numbers
+			public static long TruncateToInt64( double value ) asm {
+				// X86_32 {
+				// 	test byte ptr [esp + 11], 0x80
+				// 	jnz negative
+
+				// 	fld qword ptr [esp + 4]
+				// 	fadd st0, st0
+				// 	fsub dword ptr [[_0_5f]]
+
+				// 	fistp qword ptr [esp + 4]
+
+				// 	mov eax, dword ptr [esp + 4]
+				// 	mov edx, dword ptr [esp + 8]
+
+				// 	sar edx, 1
+				// 	rcr eax, 1
+
+				// 	retn
+
+				// negative:
+				// 	fld qword ptr [esp + 4]
+				// 	fadd st0, st0
+				// 	fsubr dword ptr [[_m0_5f]]
+
+				// 	fistp qword ptr [esp + 4]
+
+				// 	mov eax, dword ptr [esp + 4]
+				// 	mov edx, dword ptr [esp + 8]
+
+				// 	sar edx, 1
+				// 	rcr eax, 1
+
+				// 	not eax
+				// 	not edx
+
+				// 	add eax, 1
+				// 	adc edx, 0
+
+				// 	retn
+				// }
+				// X86_64 {
+				// 	cvttsd2si rax, xmm0
+
+				// 	retn
+				// }
+				default {
+					return ( long ) value;
+				}
 			}
-		}
 
-		public static long RoundHalfAwayFromZeroToInt64( double value ) asm {
-			X86_32 {
-				// xor eax, eax
-				// mov edx, dword ptr [esp + 8]
+			public static long RoundAwayFromZeroToInt64( float value ) { return RoundAwayFromZeroToInt64( ( double ) value ); }
 
-				// and edx, 0x7FFFFFFF
-				// cmp edx, 0x000FFFFF
-				// setg al
+			// 'floor' for negative numbers
+			// 'ceil' for positive numbers
+			public static long RoundAwayFromZeroToInt64( double value ) asm {
+				X86_32 {
+					test byte ptr [esp + 11], 0x80
+					jnz negative
 
-				add dword ptr [esp + 4], 1
-				adc dword ptr [esp + 8], 0
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fsubr dword ptr [[_m0_5f]]
 
-				fld qword ptr [esp + 4]
-				fistp qword ptr [esp + 4]
+					fistp qword ptr [esp + 4]
 
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
 
-				retn
-			}
-			default {
-				return RoundHalfToEvenInt64( bitcast<double>( bitcast<ulong>( value ) + 1 ) );
-			}
-		}
+					sar edx, 1
+					rcr eax, 1
 
-		public static long RoundHalfTowardsZeroToInt64( double value ) asm {
-			X86_32 {
-				xor eax, eax
-				mov edx, dword ptr [esp + 8]
+					not eax
+					not edx
 
-				and edx, 0x7FFFFFFF
-				cmp edx, 0x000FFFFF
-				setg al
+					add eax, 1
+					adc edx, 0
 
-				sub dword ptr [esp + 4], eax
-				sbb dword ptr [esp + 8], 0
-
-				fld qword ptr [esp + 4]
-				fistp qword ptr [esp + 4]
-
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
-
-				retn
-			}
-			default {
-				return RoundHalfToEvenInt64( value.IsDenormalizedOrZero ? value : bitcast<double>( bitcast<ulong>( value ) - 1 ) );
-			}
-		}
-
-		// aka 'floor'/'round down'
-		public static long RoundTowardsMinusInfinityInt64( double value ) asm {
-			X86_32 {
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fsub dword ptr [[_0_5f]]
-
-				fistp qword ptr [esp + 4]
-
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
-
-				sar edx, 1
-				rcr eax, 1
-
-				retn
-			}
-			default {
-				return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value - 0.5 ), 1 );
-			}
-		}
-
-		// aka 'ceil'/'round up'
-		public static long RoundTowardsPlusInfinityInt64( double value ) asm {
-			X86_32 {
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fsubr dword ptr [[_m0_5f]]
-
-				fistp qword ptr [esp + 4]
-
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
-
-				sar edx, 1
-				rcr eax, 1
-
-				not eax
-				not edx
-
-				add eax, 1
-				adc edx, 0
-
-				retn
-			}
-			default {
-				return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( -0.5 - value - value ), 1 );
-			}
-		}
-
-		public static long TruncateToInt64( float value ) { return TruncateToInt64( ( double ) value ); }
-
-		// 'ceil' for negative numbers
-		// 'floor' for positive numbers
-		public static long TruncateToInt64( double value ) asm {
-			// X86_32 {
-			// 	test byte ptr [esp + 11], 0x80
-			// 	jnz negative
-
-			// 	fld qword ptr [esp + 4]
-			// 	fadd st0, st0
-			// 	fsub dword ptr [[_0_5f]]
-
-			// 	fistp qword ptr [esp + 4]
-
-			// 	mov eax, dword ptr [esp + 4]
-			// 	mov edx, dword ptr [esp + 8]
-
-			// 	sar edx, 1
-			// 	rcr eax, 1
-
-			// 	retn
-
-			// negative:
-			// 	fld qword ptr [esp + 4]
-			// 	fadd st0, st0
-			// 	fsubr dword ptr [[_m0_5f]]
-
-			// 	fistp qword ptr [esp + 4]
-
-			// 	mov eax, dword ptr [esp + 4]
-			// 	mov edx, dword ptr [esp + 8]
-
-			// 	sar edx, 1
-			// 	rcr eax, 1
-
-			// 	not eax
-			// 	not edx
-
-			// 	add eax, 1
-			// 	adc edx, 0
-
-			// 	retn
-			// }
-			// X86_64 {
-			// 	cvttsd2si rax, xmm0
-
-			// 	retn
-			// }
-			default {
-				return ( long ) value;
-			}
-		}
-
-		public static long CoverToInt64( float value ) { return CoverToInt64( ( double ) value ); }
-
-		// 'floor' for negative numbers
-		// 'ceil' for positive numbers
-		public static long CoverToInt64( double value ) asm {
-			X86_32 {
-				test byte ptr [esp + 11], 0x80
-				jnz negative
-
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fsubr dword ptr [[_m0_5f]]
-
-				fistp qword ptr [esp + 4]
-
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
-
-				sar edx, 1
-				rcr eax, 1
-
-				not eax
-				not edx
-
-				add eax, 1
-				adc edx, 0
-
-				retn
-
-			negative:
-				fld qword ptr [esp + 4]
-				fadd st0, st0
-				fsub dword ptr [[_0_5f]]
-
-				fistp qword ptr [esp + 4]
-
-				mov eax, dword ptr [esp + 4]
-				mov edx, dword ptr [esp + 8]
-
-				sar edx, 1
-				rcr eax, 1
-
-				retn
-			}
-			X86_64 {
-				feature( SSE4_1 ) {
-					xorpd xmm1, xmm1
-
-					comisd xmm0, xmm1
-					jb negative
-
-					roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundUp )
-					cvttsd2si rax, xmm1
 					retn
 
 				negative:
-					roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundDown )
-					cvttsd2si rax, xmm1
+					fld qword ptr [esp + 4]
+					fadd st0, st0
+					fsub dword ptr [[_0_5f]]
+
+					fistp qword ptr [esp + 4]
+
+					mov eax, dword ptr [esp + 4]
+					mov edx, dword ptr [esp + 8]
+
+					sar edx, 1
+					rcr eax, 1
+
 					retn
 				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						xorpd xmm1, xmm1
+
+						comisd xmm0, xmm1
+						jb negative
+
+						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundUp )
+						cvttsd2si rax, xmm1
+						retn
+
+					negative:
+						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundDown )
+						cvttsd2si rax, xmm1
+						retn
+					}
+				}
+				default {
+					return value < 0 ? RoundTowardsMinusInfinityInt64( value ) : RoundTowardsPlusInfinityInt64( value );
+				}
 			}
-			default {
-				return value < 0 ? RoundTowardsMinusInfinityInt64( value ) : RoundTowardsPlusInfinityInt64( value );
-			}
-		}
-
-		// [UnitTest]
-		private static void UnitTest() {
-			var x = FloatPi;
-			var y = Pi;
-
-			var c1 = 18.87;
-			var c2 = 18.87f;
-
-			// compile time test
-			Assert.AreEqual( 18, ( int ) 18.87 );
-			Assert.AreEqual( 18L, FloorToInt64( 18.87 ) );
-			Assert.AreEqual( 19L, CeilingToInt64( 18.87 ) );
-			Assert.AreEqual( 18, FloorToInt32( 18.87 ) );
-			Assert.AreEqual( 19, CeilingToInt32( 18.87 ) );
-			Assert.AreEqual( 18.0, Floor( 18.87 ) );
-			Assert.AreEqual( 19.0, Ceiling( 18.87 ) );
-
-			Assert.AreEqual( -18, ( int ) -18.87 );
-			Assert.AreEqual( -19L, FloorToInt64( -18.87 ) );
-			Assert.AreEqual( -18L, CeilingToInt64( -18.87 ) );
-			Assert.AreEqual( -19, FloorToInt32( -18.87 ) );
-			Assert.AreEqual( -18, CeilingToInt32( -18.87 ) );
-			Assert.AreEqual( -19.0, Floor( -18.87 ) );
-			Assert.AreEqual( -18.0, Ceiling( -18.87 ) );
-
-			Assert.AreEqual( 18, ( int ) 18.87f );
-			Assert.AreEqual( 18L, FloorToInt64( 18.87f ) );
-			Assert.AreEqual( 19L, CeilingToInt64( 18.87f ) );
-			Assert.AreEqual( 18, FloorToInt32( 18.87f ) );
-			Assert.AreEqual( 19, CeilingToInt32( 18.87f ) );
-			Assert.AreEqual( 18f, Floor( 18.87f ) );
-			Assert.AreEqual( 19f, Ceiling( 18.87f ) );
-
-			Assert.AreEqual( -18, ( int ) -18.87f );
-			Assert.AreEqual( -19L, FloorToInt64( -18.87f ) );
-			Assert.AreEqual( -18L, CeilingToInt64( -18.87f ) );
-			Assert.AreEqual( -19, FloorToInt32( -18.87f ) );
-			Assert.AreEqual( -18, CeilingToInt32( -18.87f ) );
-			Assert.AreEqual( -19f, Floor( -18.87f ) );
-			Assert.AreEqual( -18f, Ceiling( -18.87f ) );
-
-			// run-time test
-			Assert.AreEqual( 18, ( int ) c1 );
-			Assert.AreEqual( 18L, FloorToInt64( c1 ) );
-			Assert.AreEqual( 19L, CeilingToInt64( c1 ) );
-			Assert.AreEqual( 18, FloorToInt32( c1 ) );
-			Assert.AreEqual( 19, CeilingToInt32( c1 ) );
-			Assert.AreEqual( 18.0, Floor( c1 ) );
-			Assert.AreEqual( 19.0, Ceiling( c1 ) );
-
-			Assert.AreEqual( -18, ( int ) -c1 );
-			Assert.AreEqual( -19L, FloorToInt64( -c1 ) );
-			Assert.AreEqual( -18L, CeilingToInt64( -c1 ) );
-			Assert.AreEqual( -19, FloorToInt32( -c1 ) );
-			Assert.AreEqual( -18, CeilingToInt32( -c1 ) );
-			Assert.AreEqual( -19.0, Floor( -c1 ) );
-			Assert.AreEqual( -18.0, Ceiling( -c1 ) );
-
-			Assert.AreEqual( 18, ( int ) c2 );
-			Assert.AreEqual( 18L, FloorToInt64( c2 ) );
-			Assert.AreEqual( 19L, CeilingToInt64( c2 ) );
-			Assert.AreEqual( 18, FloorToInt32( c2 ) );
-			Assert.AreEqual( 19, CeilingToInt32( c2 ) );
-			Assert.AreEqual( 18.0, Floor( c2 ) );
-			Assert.AreEqual( 19.0, Ceiling( c2 ) );
-
-			Assert.AreEqual( -18, ( int ) -c2 );
-			Assert.AreEqual( -19L, FloorToInt64( -c2 ) );
-			Assert.AreEqual( -18L, CeilingToInt64( -c2 ) );
-			Assert.AreEqual( -19, FloorToInt32( -c2 ) );
-			Assert.AreEqual( -18, CeilingToInt32( -c2 ) );
-			Assert.AreEqual( -19f, Floor( -c2 ) );
-			Assert.AreEqual( -18f, Ceiling( -c2 ) );
-
-			Sin( x ); Sin( y );
-			Cos( x ); Cos( y );
-			Sqrt( x ); Sqrt( y );
-			Pow( x, 1 ); Pow( y, 1 );
-			Pow( x, 1f ); Pow( y, 1.0 );
-
-			Assert.AreEqual( ( sbyte ) 17, Abs( ( sbyte ) -17 ) );
-			Assert.AreEqual( ( short ) 17, Abs( ( short ) -17 ) );
-			Assert.AreEqual( ( int ) 17, Abs( ( int ) -17 ) );
-			Assert.AreEqual( ( long ) 17, Abs( ( long ) -17 ) );
-
-			Assert.IsTrue( 15.0 == Min( 15.0, 17.0 ) );
-			Assert.IsTrue( -17.0 == Min( -15.0, -17.0 ) );
-
-			Assert.AreEqual( 15, Min( 15, 17 ) );
-			Assert.AreEqual( 15, Min( 17, 15 ) );
-			Assert.AreEqual( -17, Min( -15, -17 ) );
-			Assert.AreEqual( -17, Min( -17, -15 ) );
 		}
 	}
 }

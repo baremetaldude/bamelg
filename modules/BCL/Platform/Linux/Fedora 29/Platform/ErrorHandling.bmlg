@@ -63,7 +63,9 @@ namespace Platform {
 	}
 
 	public struct PlatformErrorHandlerStatus : IPlatformErrorHandler {
-		public bool ErrorOccured = false;
+		public bool ErrorOccured { get { return ErrorCode != 0; } }
+
+		public SystemError ErrorCode;
 
 		public PlatformErrorHandlerStatus() {
 		}
@@ -71,7 +73,7 @@ namespace Platform {
 		#region IPlatformErrorHandler Members
 
 		public PlatformErrorAction OnError( string operation, IFormattable context, SystemError errorCode ) {
-			ErrorOccured = true;
+			ErrorCode = errorCode;
 			return PlatformErrorAction.Default;
 		}
 

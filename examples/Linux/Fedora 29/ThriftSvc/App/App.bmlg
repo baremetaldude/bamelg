@@ -23,6 +23,7 @@ namespace Example {
 
 			var serverHandler = new ThriftServerImpl();
 			var server = new ThriftServer( new Svc2.RequestHandler( serverHandler ) );
+			server.Attach( eventLoop );
 
 			eventLoop.BeginInvoke( () => {
 				Fiber.Start( 16, () => {

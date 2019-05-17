@@ -151,7 +151,7 @@ namespace Platform.Libc {
 		public extern static void psiginfo( siginfo_t* pinfo, sbyte* s );
 		public extern static void psignal( int sig, sbyte* s );
 		public extern static int raise( int sig );
-		public extern static int sigaction( int sig, sigaction* act, sigaction* oact );
+		public extern static int sigaction( SignalCode sig, sigaction* act, sigaction* oact );
 		public extern static int sigaddset( sigset_t* set, SignalCode signo );
 		public extern static int sigaltstack( stack_t* ss, stack_t* oss );
 		public extern static int sigandset( sigset_t* set, sigset_t* left, sigset_t* right );
@@ -1814,7 +1814,7 @@ namespace Platform.Libc {
 	[ExternLibrary( Image = "/usr/lib64/libpthread.so.0" )]
 	public static partial struct PthreadsApi {
 		public extern static int pthread_kill( pthread_t threadid, SignalCode signo );
-		public extern static int pthread_sigmask( int how, sigset_t* newmask, sigset_t* oldmask );
+		public extern static int pthread_sigmask( ApplySignalCommand how, sigset_t* newmask, sigset_t* oldmask );
 		public extern static int pthread_sigqueue( pthread_t threadid, SignalCode signo, void* value );
 
 		public extern static void __pthread_register_cancel( __pthread_unwind_buf_t* buf );

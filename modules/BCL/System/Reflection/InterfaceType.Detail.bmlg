@@ -1,0 +1,37 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+
+namespace System.Reflection {
+	public partial struct InterfaceType : IFormattable {
+		public MemoryEnumerator<UserType.Property> Properties { get { return new MemoryEnumerator<UserType.Property>( PropertiesStart, PropertyCount ); } }
+		public MemoryEnumerator<UserType.IndexedProperty> IndexedProperties { get { return new MemoryEnumerator<UserType.IndexedProperty>( IndexedPropertiesStart, IndexedPropertyCount ); } }
+		public MemoryEnumerator<UserType.Event> Events { get { return new MemoryEnumerator<UserType.Event>( EventsStart, EventCount ); } }
+		public MemoryEnumerator<UserType.Method> Methods { get { return new MemoryEnumerator<UserType.Method>( MethodsStart, MethodCount ); } }
+
+		public new void ToString( StringBuilder builder, string format ) {
+			var& declaringType = DeclaringType;
+			var declaringNamespace = DeclaringNamespace;
+
+			if( declaringType != nullref ) declaringType.ToString( builder, format );
+			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
+			else builder.Append( "<stripped>" );
+
+			builder.Append( '.' );
+			builder.Append( Name );
+
+			if( TemplateTypeDefinition != nullref ) {
+				builder.Append( '<' );
+				for( var i = 0; i < TemplateTypeDefinition.ParameterCount; ++i ) {
+					if( i > 0 ) builder.Append( ',' );
+					TemplateParameters[i]->ToString( builder, format );
+				}
+				builder.Append( '>' );
+			}
+		}
+	}
+}

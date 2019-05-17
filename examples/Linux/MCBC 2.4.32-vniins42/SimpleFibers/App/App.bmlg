@@ -16,17 +16,19 @@ namespace Example {
 		[FiberStatic]
 		static int FiberLocalData = 123;
 
+		static EventLoop _eventLoop;
+
 		// Press CTRL+C to exit
 		[EntryPoint]
 		private static void Main() {
-			var eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 128 };
+			_eventLoop = new EventLoop() { Tracing = true, FiberStackallocPages = 128 };
 			System.Threading.ThreadPool.Initialize();
 
-			eventLoop.CatchExitSignals();
+			_eventLoop.CatchExitSignals();
 
-			eventLoop.BeginInvoke( Worker ); // dont create fibers until event loop started
+			_eventLoop.BeginInvoke( Worker ); // dont create fibers until event loop started
 
-			eventLoop.Dispatch(); // wait until RequestExit
+			_eventLoop.Dispatch(); // wait until RequestExit
 		}
 
 		static Fiber.Barrier _barrier = new Fiber.Barrier( 2 ); // NOTE: '_barrier' would be destroyed if declared in 'Worker()'
@@ -77,7 +79,7 @@ namespace Example {
 				Fiber.Sleep( 1000 );
 				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, pthread_t.CurrentThread, DateTime.UtcNow );
 
-				EventLoop.Instance.RequestExit();
+				_eventLoop.RequestExit();
 			}, "slp0" );
 
 			Fiber.Start( Pages, () => {

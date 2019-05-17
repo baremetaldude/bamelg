@@ -382,21 +382,29 @@ namespace System.IO {
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIONotify( FiberInfo* fiber, epoll_event& @event ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Trace.Write( "Fiber: Event for fiber [{0}]: {1}", *fiber, @event );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceSocketConnect( SocketHandle socket, SystemError errno ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Trace.Write( "Fiber: [{0:D2}] Socket {1} connect: errno={2}", *CurrentFiber, socket.ID, errno );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceNonBlockingWrite( IOHandle socket, SystemError errno, int written, int count, int bytesSended ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Trace.Write( "Fiber: [{0:D2}] Handle {1} write: errno={2} written={3} count={4} total={5}", *CurrentFiber, socket.ID, errno, written, count, bytesSended );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceNonBlockingRead( IOHandle socket, SystemError errno, int readen, int count, int bytesReceived ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
 				}
 

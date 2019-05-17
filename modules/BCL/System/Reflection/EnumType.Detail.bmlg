@@ -1,0 +1,307 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+
+namespace System.Reflection {
+	public partial struct EnumType : IFormattable {
+		public new void ToString( StringBuilder builder, string format ) {
+			var& declaringType = DeclaringType;
+			var declaringNamespace = DeclaringNamespace;
+
+			if( declaringType != nullref ) declaringType.ToString( builder, format );
+			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
+			else builder.Append( "<stripped>" );
+
+			builder.Append( '.' );
+			builder.Append( Name );
+		}
+
+		public void ToString( StringBuilder builder, void* value ) {
+			if( IsDefined( typeof( FlagsAttribute ) ) )
+				switch( ElementType ) {
+					case typeof( sbyte ):
+					case typeof( byte ): ToStringFlagsImpl<byte>( builder, *cast<byte*>( value ) ); break;
+
+					case typeof( short_littleendian ):
+					case typeof( ushort_littleendian ): ToStringFlagsImpl<ushort>( builder, *cast<ushort_littleendian*>( value ) ); break;
+
+					case typeof( short_bigendian ):
+					case typeof( ushort_bigendian ): ToStringFlagsImpl<ushort>( builder, *cast<ushort_bigendian*>( value ) ); break;
+
+					case typeof( int_littleendian ):
+					case typeof( uint_littleendian ): ToStringFlagsImpl<uint>( builder, *cast<uint_littleendian*>( value ) ); break;
+
+					case typeof( int_bigendian ):
+					case typeof( uint_bigendian ): ToStringFlagsImpl<uint>( builder, *cast<uint_bigendian*>( value ) ); break;
+
+					case typeof( long_littleendian ):
+					case typeof( ulong_littleendian ): ToStringFlagsImpl<ulong>( builder, *cast<ulong_littleendian*>( value ) ); break;
+
+					case typeof( long_bigendian ):
+					case typeof( ulong_bigendian ): ToStringFlagsImpl<ulong>( builder, *cast<ulong_bigendian*>( value ) ); break;
+
+					default:
+						Assert.Unreachable();
+						break;
+				}
+			else
+				switch( ElementType ) {
+					case typeof( sbyte ): ToStringNonFlagsImpl<sbyte>( builder, *cast<sbyte*>( value ) ); break;
+					case typeof( byte ): ToStringNonFlagsImpl<byte>( builder, *cast<byte*>( value ) ); break;
+
+					case typeof( short_littleendian ): ToStringNonFlagsImpl<short>( builder, *cast<short_littleendian*>( value ) ); break;
+					case typeof( ushort_littleendian ): ToStringNonFlagsImpl<ushort>( builder, *cast<ushort_littleendian*>( value ) ); break;
+
+					case typeof( short_bigendian ): ToStringNonFlagsImpl<short>( builder, *cast<short_bigendian*>( value ) ); break;
+					case typeof( ushort_bigendian ): ToStringNonFlagsImpl<ushort>( builder, *cast<ushort_bigendian*>( value ) ); break;
+
+					case typeof( int_littleendian ): ToStringNonFlagsImpl<int>( builder, *cast<int_littleendian*>( value ) ); break;
+					case typeof( uint_littleendian ): ToStringNonFlagsImpl<uint>( builder, *cast<uint_littleendian*>( value ) ); break;
+
+					case typeof( int_bigendian ): ToStringNonFlagsImpl<int>( builder, *cast<int_bigendian*>( value ) ); break;
+					case typeof( uint_bigendian ): ToStringNonFlagsImpl<uint>( builder, *cast<uint_bigendian*>( value ) ); break;
+
+					case typeof( long_littleendian ): ToStringNonFlagsImpl<long>( builder, *cast<long_littleendian*>( value ) ); break;
+					case typeof( ulong_littleendian ): ToStringNonFlagsImpl<ulong>( builder, *cast<ulong_littleendian*>( value ) ); break;
+
+					case typeof( long_bigendian ): ToStringNonFlagsImpl<long>( builder, *cast<long_bigendian*>( value ) ); break;
+					case typeof( ulong_bigendian ): ToStringNonFlagsImpl<ulong>( builder, *cast<ulong_bigendian*>( value ) ); break;
+
+					default:
+						Assert.Unreachable();
+						break;
+				}
+		}
+
+		private SbcsString ToSbcsStringNonFlagsImpl<T>( T value ) {
+			var index = GetIndexImpl<T>( value );
+			if( index < 0 ) return value.ToSbcsString();
+
+			return Names[index];
+		}
+
+		private SbcsString ToSbcsStringFlagsImpl<T>( T value ) {
+			var values = ( T* ) Values;
+			if( values == null || Names == null )
+				return "<!enum info stripped!>";
+
+			if( value == 0 ) {
+				if( ElementCount > 0 && values[0] == 0 ) return Names[0];
+				return "0";
+			}
+
+			var indices = stackalloc int[sizeof( T ) * 8];
+			var indicesCount = 0;
+
+			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+				if( values[i] == 0 ) break;
+
+				if( BitOperations.MaskTest( value, values[i] ) ) {
+					indices[indicesCount++] = i;
+					value ^= values[i];
+				}
+			}
+
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				for( var i = indicesCount - 1; i >= 0; --i ) {
+					if( builder.Value.Length > 0 )
+						builder.Value.Append( FlagEnumElementsSeparator );
+
+					builder.Value.Append( Names[indices[i]] );
+				}
+
+				if( value != 0 ) {
+					if( builder.Value.Length > 0 )
+						builder.Value.Append( FlagEnumElementsSeparator );
+
+					builder.Value.Append( value );
+				}
+
+				return builder.Value.ToSbcsString();
+			}
+		}
+
+		private string ToStringNonFlagsImpl<T>( T value ) {
+			var index = GetIndexImpl<T>( value );
+			if( index < 0 ) return value.ToString();
+
+			return ( string ) Names[index];
+		}
+
+		private string ToStringFlagsImpl<T>( T value ) {
+			var values = ( T* ) Values;
+			if( values == null || Names == null )
+				return "<!enum info stripped!>";
+
+			if( value == 0 ) {
+				if( ElementCount > 0 && values[0] == 0 ) return ( string ) Names[0];
+				return "0";
+			}
+
+			var indices = stackalloc int[sizeof( T ) * 8];
+			var indicesCount = 0;
+
+			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+				if( values[i] == 0 ) break;
+
+				if( BitOperations.MaskTest( value, values[i] ) ) {
+					indices[indicesCount++] = i;
+					value ^= values[i];
+				}
+			}
+
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				for( var i = indicesCount - 1; i >= 0; --i ) {
+					if( builder.Value.Length > 0 )
+						builder.Value.Append( FlagEnumElementsSeparator );
+
+					builder.Value.Append( Names[indices[i]] );
+				}
+
+				if( value != 0 ) {
+					if( builder.Value.Length > 0 )
+						builder.Value.Append( FlagEnumElementsSeparator );
+
+					builder.Value.Append( value );
+				}
+
+				return builder.Value.ToString();
+			}
+		}
+
+		private void ToStringNonFlagsImpl<T>( StringBuilder builder, T value ) {
+			var index = GetIndexImpl<T>( value );
+			if( index < 0 ) builder.Append( value );
+			else builder.Append( Names[index] );
+		}
+
+		private void ToStringFlagsImpl<T>( StringBuilder builder, T value ) {
+			var values = ( T* ) Values;
+			if( values == null || Names == null ) {
+				builder.Append( "<!enum info stripped!>" );
+				return;
+			}
+
+			if( value == 0 ) {
+				if( ElementCount > 0 && values[0] == 0 ) builder.Append( Names[0] );
+				else builder.Append( '0' );
+
+				return;
+			}
+
+			var indices = stackalloc int[sizeof( T ) * 8];
+			var indicesCount = 0;
+
+			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+				if( values[i] == 0 ) break;
+
+				if( BitOperations.MaskTest( value, values[i] ) ) {
+					indices[indicesCount++] = i;
+					value ^= values[i];
+				}
+			}
+
+			var needSeparator = false;
+			for( var i = indicesCount - 1; i >= 0; --i ) {
+				if( needSeparator )
+					builder.Append( FlagEnumElementsSeparator );
+
+				builder.Append( Names[indices[i]] );
+				needSeparator = true;
+			}
+
+			if( value != 0 ) {
+				if( builder.Length > 0 )
+					builder.Append( FlagEnumElementsSeparator );
+
+				builder.Append( value );
+			}
+		}
+
+		private int BinarySearch( CStringSpan value ) {
+			if( ElementCount <= 255 ) {
+				var remapping = ( byte* ) SortedIndices;
+				var start = 0;
+				var end = ElementCount - 1;
+
+				while( start <= end ) {
+					var median = ( start + end ) >> 1;
+					var compareResult = Names[remapping[median]].CompareTo( value );
+
+					if( compareResult == 0 ) return remapping[median];
+
+					if( compareResult < 0 ) start = median + 1;
+					else end = median - 1;
+				}
+
+				return -1;
+			}
+			else if( ElementCount <= 65535 ) {
+				var remapping = ( ushort* ) SortedIndices;
+				var start = 0;
+				var end = ElementCount - 1;
+
+				while( start <= end ) {
+					var median = ( start + end ) >> 1;
+					var compareResult = Names[remapping[median]].CompareTo( value );
+					if( compareResult == 0 ) return remapping[median];
+
+					if( compareResult < 0 ) start = median + 1;
+					else end = median - 1;
+				}
+
+				return -1;
+			}
+			else {
+				var remapping = ( int* ) SortedIndices;
+				var start = 0;
+				var end = ElementCount - 1;
+
+				while( start <= end ) {
+					var median = ( start + end ) >> 1;
+					var compareResult = Names[remapping[median]].CompareTo( value );
+					if( compareResult == 0 ) return remapping[median];
+
+					if( compareResult < 0 ) start = median + 1;
+					else end = median - 1;
+				}
+
+				return -1;
+			}
+
+			return -1;
+		}
+
+		private T GetValueImpl<T>( int index ) {
+			if( index < 0 | index >= ElementCount ) return default( T );
+			return ( ( T* ) Values )[index];
+		}
+
+		private int GetIndexImpl<T>( T value ) {
+			return CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ElementCount, value );
+		}
+
+		private bool IsValidFlagsImpl<T>( T value ) {
+			if( value != 0 && IsDefined( typeof( FlagsAttribute ) ) ) {
+				var values = ( T* ) Values;
+
+				for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+					if( values[i] == 0 ) continue;
+					if( ( value & values[i] ) == values[i] ) {
+						value ^= values[i];
+						i = -1;
+					}
+				}
+
+				return value == 0;
+			}
+
+			return GetIndexImpl<T>( value ) != -1;
+		}
+	}
+}

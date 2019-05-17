@@ -52,14 +52,10 @@ namespace Example {
 					return !isExiting;
 				}, null );
 
-				var eventLoop = new EventLoop() { Tracing = true };
-				eventLoop.PollHandlerPrepare = GdkApi.gdk_threads_enter;
-				eventLoop.PollHandlerFinish = GdkApi.gdk_threads_leave;
+				_eventLoop = new EventLoop() { Tracing = true };
+				EventLoopSubscribe();
 
-				Platform.IO.EventLoop.Instance = eventLoop;
-				GMainContext.Default->EventLoopSubscribe();
-
-				eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 1 ), () => {
+				_eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 1 ), () => {
 					window->Title = Utf8String.Format( "Test app {0}", DateTime.Now );
 				} );
 
@@ -67,8 +63,22 @@ namespace Example {
 
 				GtkApi.gtk_main();
 
-				eventLoop.Dispose();
+				_eventLoop.Dispose();
 			}
+		}
+
+		static EventLoop _eventLoop;
+
+		public static void EventLoopSubscribe() {
+			_eventLoop.PollHandlerPrepare = GdkApi.gdk_threads_enter;
+			_eventLoop.PollHandlerFinish = GdkApi.gdk_threads_leave;
+
+			GlibApi.g_main_context_set_poll_func( GMainContext.Default, poll_handler );
+		}
+
+		private static int poll_handler( GPollFD* passedHandles, uint count, int timeout ) {
+			if( _eventLoop != null ) return _eventLoop.Poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
+			return Platform.Libc.LibcApi.poll( ( Platform.Libc.pollfd* ) passedHandles, count, timeout );
 		}
 
 		public static bool ConfirmExit( GtkWindow* parent ) {

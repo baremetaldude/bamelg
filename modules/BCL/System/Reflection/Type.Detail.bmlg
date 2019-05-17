@@ -1,0 +1,40 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+
+namespace System.Reflection {
+	public partial struct Type : IFormattable {
+		public new void ToString( StringBuilder builder, string format ) {
+			var& fixedArray = AsFixedArray;
+			if( fixedArray != nullref ) { fixedArray.ToString( builder, format ); return; }
+
+			var& dynamicArray = AsDynamicArray;
+			if( dynamicArray != nullref ) { dynamicArray.ToString( builder, format ); return; }
+
+			var& pointer = AsPointer;
+			if( pointer != nullref ) { pointer.ToString( builder, format ); return; }
+
+			var& reference = AsReference;
+			if( reference != nullref ) { reference.ToString( builder, format ); return; }
+
+			var& userType = AsUserType;
+			if( userType != nullref ) { userType.ToString( builder, format ); return; }
+
+			var& enumType = AsEnum;
+			if( enumType != nullref ) { enumType.ToString( builder, format ); return; }
+
+			var& functorType = AsFunctor;
+			if( functorType != nullref ) { functorType.ToString( builder, format ); return; }
+
+			var& delegateType = AsDelegate;
+			if( delegateType != nullref ) { delegateType.ToString( builder, format ); return; }
+
+			var& interfaceType = AsInterface;
+			if( interfaceType != nullref ) { interfaceType.ToString( builder, format ); return; }
+		}
+	}
+}

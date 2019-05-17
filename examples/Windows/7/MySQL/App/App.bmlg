@@ -13,12 +13,13 @@ using Platform.IO;
 namespace Example {
 	public class Test {
 		private static WinsockInitializer _winsockInitializer = new WinsockInitializer();
+		private static EventLoop _eventLoop;
 
 		[EntryPoint]
 		static void Main() {
 			System.Threading.ThreadPool.Initialize();
 
-			var _eventLoop = new EventLoop() { Tracing = true };
+			_eventLoop = new EventLoop() { Tracing = true };
 			_eventLoop.CatchConsoleQuit();
 
 			_eventLoop.BeginInvoke( () => {
@@ -29,7 +30,7 @@ namespace Example {
 		}
 
 		static void Worker() {
-			finally { EventLoop.Instance.RequestExit(); }
+			finally { _eventLoop.RequestExit(); }
 
 			var connection = new MySQLConnection() {
 				Trace = true,

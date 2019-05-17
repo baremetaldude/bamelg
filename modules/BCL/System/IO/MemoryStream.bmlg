@@ -150,7 +150,7 @@ namespace System.IO {
 
 			if( !Assert.IsTrue( newPosition >= 0 && newPosition <= _bufferInfo.Capacity ) ) return 0;
 
-			if( bufferedReadEnd >= newPosition )
+			if( newPosition <= bufferedReadEnd )
 				_bufferInfo.AvailableToRead = bufferedReadEnd - newPosition;
 			else
 				_bufferInfo.AvailableToRead = 0;
@@ -213,7 +213,11 @@ namespace System.IO {
 			}
 		}
 
-		TimeSpan IStream.Timeout { get { return TimeSpan.Zero; } set { } }
+		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+			
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 
 		// Usage: 'using( new TraceScope( this, thismethod ) ) {'
 		private struct TraceScope {

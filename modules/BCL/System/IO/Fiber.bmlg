@@ -241,6 +241,8 @@ namespace System.IO {
 				// Some old Linux platforms have glibc threading bugs which prevents coroutines to work on memory not belonging to current thread stack
 				public MemoryPageManager PageManager;
 
+				public bool Tracing { get; set; }
+
 				public Manager() {
 					Assert.IsTrue( FiberManager == null );
 					FiberManager = this;
@@ -624,6 +626,8 @@ namespace System.IO {
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceSwitch( FiberInfo* current, FiberInfo* next ) {
+					if( !FiberManager?.Tracing ) return;
+
 					var now = DateTime.UnbiasedNow;
 					var elapsed = now - _lastSwitch;
 					current->RunTime += elapsed;
@@ -641,52 +645,72 @@ namespace System.IO {
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReady( FiberInfo* current ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Ready [{0}]", *current );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsyncStart() {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Ready fibers async batch begin" );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsyncEnd() {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Ready fibers async batch end" );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyAsync( FiberInfo* current ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Ready async [{0}]", *current );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceReadyFibers( int readyCount ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Ready to dispatch: {0}", readyCount );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIOEvents( int polledHandles ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: IO events count = {0}", polledHandles );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceWait( FiberInfo* fiber, System.Reflection.UserType.Method& method, TimeSpan& timeout ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: Suspend [{0}] in '{1}' timeout={2}", *fiber, method, timeout );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceTPTaskCompleted( FiberInfo* fiber ) {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: TP task for [{0}] completed", *fiber );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceCreateFiber( FiberInfo* fiber ) {
+					if( !FiberManager?.Tracing ) return;
+
 					fiber->CreatedTime = DateTime.UnbiasedNow;
 					Console.WriteLine( "Fiber: Created [{0}] ( total: {1} ) Stack={2}-{3}({4}) ValgrindStackID: {5} at {6:HH:mm:ss.ffffff}", *fiber, FiberManager.FiberCount, fiber->_stack, ( byte* ) fiber->_stack + fiber->_stackSize, fiber->_stackSize, fiber->ValgrindStackID, DateTime.UnbiasedNow );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
 				internal static void TraceFinalize( FiberInfo* fiber ) {
+					if( !FiberManager?.Tracing ) return;
+
 					var now = DateTime.UnbiasedNow;
 					var elapsed = now - FiberManager._lastSwitch;
 					fiber->RunTime += elapsed;
@@ -700,6 +724,8 @@ namespace System.IO {
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceCancelAllFibers() {
+					if( !FiberManager?.Tracing ) return;
+
 					using( Console.AttributedRegion( new Console.OutputAttributes() {
 						BackgroundColor = RgbColor.Red,
 						Bold = true
@@ -709,6 +735,8 @@ namespace System.IO {
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private void TraceUsageStats() {
+					if( !FiberManager?.Tracing ) return;
+
 					Console.WriteLine( "Fiber: ContextSwitches = {0}", TracedContextSwitches );
 				}
 

@@ -1,0 +1,414 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Collections;
+
+namespace System.Net.Mail {
+	public partial class SmtpClient : System.Net.NetworkClient {
+		public bool Trace = true;
+
+		public struct ConnectionParameters {
+			public Utf8String User, Password;
+		}
+
+		public interface IEventListener {
+			void ServerResponse( SmtpStatusCode code, string message );
+			void UnbleToParseReponse( string message );
+		}
+
+		public struct NullListener : IEventListener {
+			public static NullListener Instance;
+
+			public void ServerResponse( SmtpStatusCode code, string message ) { }
+			public void UnbleToParseReponse( string message ) { }
+		}
+
+		public struct ConsoleListener : IEventListener {
+			public static ConsoleListener Instance;
+
+			public void ServerResponse( SmtpStatusCode code, string message ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkYellow ) )
+					Console.WriteLine( "[{0}]: {1}", code, message );
+			}
+
+			public void UnbleToParseReponse( string message ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkRed ) )
+					Console.WriteLine( message );
+			}
+		}
+
+		public IEventListener EventListener = NullListener.Instance;
+
+		public ConnectionParameters Parameters = default( ConnectionParameters );
+
+		protected StreamReader _reader;
+		protected StreamWriter _writer;
+
+		public struct SmtpCapabilities {
+			public bool Pipelining { get; set; }
+
+			public bool ByteMIME { get; set; } // 8BITMIME
+			public bool UTF8 { get; set; }
+
+			public bool AuthPlain { get; set; }
+			public bool AuthLogin { get; set; }
+			public bool AuthMD5 { get; set; }
+			public bool AuthNTLM { get; set; }
+			public bool AuthWDigest { get; set; }
+			public bool AuthGSSAPI { get; set; }
+
+			public bool SlowLogin { get; set; }
+		}
+
+		public SmtpCapabilities Capabilities = default( SmtpCapabilities );
+
+		public SmtpClient() {
+		}
+
+		public SmtpClient( bool trace ) {
+			if( trace ) {
+				Trace = true;
+				EventListener = ConsoleListener.Instance;
+			}
+		}
+
+		protected SmtpStatusCode WaitResponse() {
+			var line = _reader.ReadLine();
+			if( line == null ) return SmtpStatusCode.Invalid;
+
+			int code;
+			uint remaining = ( uint ) line.Length;
+			var start = line.GetChars();
+
+			if( !int.TryFetch( start, remaining, code, true, false ) ) {
+				EventListener.UnbleToParseReponse( line );
+				return LastError = SmtpStatusCode.Invalid;
+			}
+
+			if( *start != ' ' ) {
+				EventListener.UnbleToParseReponse( line );
+				return LastError = SmtpStatusCode.Invalid;
+			}
+
+			EventListener.ServerResponse( ( SmtpStatusCode ) code, line );
+
+			return LastError = ( SmtpStatusCode ) code;
+		}
+
+		protected override bool OnConnected() {
+			Capabilities = default( SmtpCapabilities );
+
+			_reader = new StreamReader( _stream ) {
+			};
+
+			_writer = new StreamWriter( _stream ) {
+				UseAutoFlush = false,
+				NewLine = "\r\n"
+			};
+
+			var code = WaitResponse();
+
+			return code == SmtpStatusCode.ServiceReady;
+		}
+
+		protected int FlushCommand() {
+			_writer.WriteLine();
+
+			if( BatchMode ) {
+				_commands.Add( 0 );
+				var transactionId = _commands.Count - 1;
+
+				if( !Capabilities.Pipelining ) {
+					if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
+					_writer.Flush( FlushKind.Write );
+
+					_commands[transactionId] = ( int ) WaitResponse();
+				}
+
+				return transactionId;
+			}
+			else {
+				if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
+				_writer.Flush( FlushKind.Write );
+
+				return -1;
+			}
+		}
+
+		public SmtpStatusCode LastError { get; private set; }
+
+		protected bool BatchMode { get; set; }
+
+		protected List<int> _commands = new List<int>();
+
+		public void BeginPipeline() {
+			System.Diagnostics.Debug.Assert( !BatchMode );
+			BatchMode = true;
+
+			_commands.Clear();
+		}
+
+		public void FlushPipeline() {
+			System.Diagnostics.Debug.Assert( BatchMode );
+
+			if( BatchMode ) {
+				if( Capabilities.Pipelining ) {
+					if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
+					_writer.Flush( FlushKind.Write );
+
+					for( var i = 0; i < _commands.Count; ++i ) {
+						_commands[i] = ( int ) WaitResponse();
+					}
+				}
+				else {
+					// each command already flushed
+				}
+			}
+
+			BatchMode = false;
+		}
+
+		// Get status codes for last batch
+		public SmtpStatusCode GetStatus( int transactionId ) {
+			if( transactionId < 0 || transactionId >= _commands.Count ) return SmtpStatusCode.Invalid;
+			return ( SmtpStatusCode ) _commands[transactionId];
+		}
+
+		protected SmtpStatusCode WaitResponse( int transactionId ) {
+			if( BatchMode & Capabilities.Pipelining ) return SmtpStatusCode.Pipelined;
+			if( !BatchMode ) return WaitResponse();
+			return GetStatus( transactionId );
+		}
+
+		public SmtpStatusCode Helo( string host ) {
+			_writer.Write( "HELO " );
+			_writer.Write( host );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Ehlo( string host ) {
+			_writer.Write( "EHLO " );
+			_writer.Write( host );
+
+			FlushCommand();
+
+			bool returnCaptured = false;
+			int returnCode;
+
+			_stream.Flush( FlushKind.Read );
+
+			for( ; ; ) {
+				var line = _reader.ReadLine();
+				if( line == null ) break;
+
+				int code;
+				uint remaining = ( uint ) line.Length;
+				var start = line.GetChars();
+
+				if( !int.TryFetch( start, remaining, code, true, false ) ) {
+					EventListener.UnbleToParseReponse( line );
+					return SmtpStatusCode.Invalid;
+				}
+
+				if( !returnCaptured ) {
+					returnCode = code;
+					returnCaptured = true;
+				}
+
+				if( *start == '-' ) {
+					++start; --remaining;
+
+					EventListener.ServerResponse( ( SmtpStatusCode ) code, line );
+
+					var caps = new CUtf16StringSpan( start, remaining );
+					caps.MakeUpper();
+
+					switch( caps ) {
+						case "PIPELINING": Capabilities.Pipelining = true; break;
+						case "8BITMIME": Capabilities.ByteMIME = true; break;
+						case "SMTPUTF8": Capabilities.UTF8 = true; break;
+
+						default:
+							{
+								var fetcher = new StringScanner( caps );
+								var firstWord = fetcher.NextSpaceSeparatedSequence();
+
+								switch( firstWord ) {
+									case "AUTH": {
+											for( ; ; ) {
+												var authType = fetcher.NextSpaceSeparatedSequence();
+												if( authType == CUtf16StringSpan.Null ) break;
+
+												switch( authType ) {
+													case "PLAIN": Capabilities.AuthPlain = true; break;
+													case "LOGIN": Capabilities.AuthLogin = true; break;
+													case "NTLM": Capabilities.AuthNTLM = true; break;
+													case "GSSAPI": Capabilities.AuthGSSAPI = true; break;
+													case "WDIGST": Capabilities.AuthWDigest = true; break;
+													case "CRAM-MD5": Capabilities.AuthMD5 = true; break;
+												}
+											}
+										} break;
+								}
+							} break;
+					}
+
+					continue;
+				}
+
+				if( *start == ' ' ) {
+					EventListener.ServerResponse( ( SmtpStatusCode ) code, line );
+					return ( SmtpStatusCode ) returnCode;
+				}
+
+				EventListener.UnbleToParseReponse( line );
+				return SmtpStatusCode.Invalid;
+			}
+
+			return SmtpStatusCode.OK;
+		}
+
+		public SmtpStatusCode AuthAuthLogin( string login, string password ) {
+			if( Capabilities.SlowLogin ) {
+				_writer.Write( "AUTH LOGIN" );
+				FlushCommand();
+
+				var result = WaitResponse();
+				if( result != SmtpStatusCode.ContinueAuthentication ) return result;
+
+				System.Text.Base64.Encode( _writer, ( Utf8String ) login );
+
+				FlushCommand();
+
+				result = WaitResponse();
+				if( result != SmtpStatusCode.ContinueAuthentication ) return result;
+			}
+			else {
+				_writer.Write( "AUTH LOGIN " );
+				System.Text.Base64.Encode( _writer, ( Utf8String ) login );
+				FlushCommand();
+
+				var result = WaitResponse();
+				if( result != SmtpStatusCode.ContinueAuthentication ) return result;
+			}
+
+			System.Text.Base64.Encode( _writer, ( Utf8String ) password );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode AuthPlain( string login, string password ) {
+			var transactionId = BatchAuthPlain( login, password );
+
+			return WaitResponse( transactionId );
+		}
+
+		public int BatchAuthPlain( string login, string password ) {
+			_writer.Write( "AUTH PLAIN " );
+
+			var logpass = ( "\0" + login + "\0" + password ).ToUtf8String();
+			System.Text.Base64.Encode( _writer, logpass );
+
+			return FlushCommand();
+		}
+
+		public SmtpStatusCode MailFrom( string source ) {
+			var transactionId = BatchMailFrom( source );
+
+			return WaitResponse( transactionId );
+		}
+
+		public int BatchMailFrom( string source ) {
+			_writer.Write( "MAIL FROM: " );
+			_writer.Write( source );
+
+			return FlushCommand();
+		}
+
+		public SmtpStatusCode RecipientTo( string recipient ) {
+			var transactionId = BatchRecipientTo( recipient );
+
+			return WaitResponse( transactionId );
+		}
+
+		public int BatchRecipientTo( string recipient ) {
+			_writer.Write( "RCPT TO: " );
+			_writer.Write( recipient );
+
+			return FlushCommand();
+		}
+
+		public SmtpStatusCode BeginData() {
+			var transactionId = BatchBeginData();
+
+			return WaitResponse( transactionId );
+		}
+
+		public int BatchBeginData() {
+			_writer.Write( "DATA" );
+
+			return FlushCommand();
+		}
+
+		public StreamWriter GetDataBuilder() {
+			return _writer;
+		}
+
+		public SmtpStatusCode EndData() {
+			_writer.Write( "\r\n." );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Reset() {
+			_writer.Write( "RSET" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Verify( string address ) {
+			_writer.Write( "VRFY " );
+			_writer.Write( address );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Noop() {
+			_writer.Write( "NOOP" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Quit() {
+			_writer.Write( "QUIT" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public SmtpStatusCode Help() {
+			_writer.Write( "HELP" );
+			FlushCommand();
+
+			return WaitResponse();
+		}
+	}
+}

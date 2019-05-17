@@ -26,7 +26,7 @@ namespace Platform.IO {
 		#endregion
 
 		[ThreadStatic]
-		public static EventLoop Instance;
+		private static NotificationEmitter _signalNotificationEmitter;
 
 		protected bool _quitRequest = false;
 
@@ -41,8 +41,6 @@ namespace Platform.IO {
 
 		public EventLoop() {
 			_notificationEmitter.Register();
-
-			if( Instance == null ) Instance = this;
 		}
 
 		public override void Dispose() {
@@ -67,10 +65,13 @@ namespace Platform.IO {
 		}
 
 		private static void QuitSignalHandler( int signal ) {
-			Instance.RequestExit();
+			_signalNotificationEmitter.RequestExit();
 		}
 
 		private static sigset_t _exitSignalSet = new sigset_t( SignalCode.SIGINT, SignalCode.SIGQUIT, SignalCode.SIGTERM, SignalCode.SIGHUP, SignalCode.SIGABRT );
+
+		// public bool UseUnblockSignalSet = false;
+		// public static sigset_t UnblockSignalSet = new sigset_t();
 
 		public void CatchExitSignals() {
 			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
@@ -78,8 +79,14 @@ namespace Platform.IO {
 		}
 
 		public void CatchExitSignals( sigset_t& signalSet ) {
+			_signalNotificationEmitter = _notificationEmitter;
+
 			foreach( var signal in _exitSignalSet )
 				LibcApi.signal( signal, QuitSignalHandler );
+
+			// UseUnblockSignalSet = true;
+			// UnblockSignalSet = _exitSignalSet;
+			// LibcApi.sigprocmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null );
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
@@ -133,7 +140,6 @@ namespace Platform.IO {
 		public void Dispatch() {
 			TraceDispatchStarted();
 			Debug.Assert( DispatchThread.IsCurrent );
-			Instance = this;
 
 			if( EnableFibers ) {
 				_fiberDispatch = true;
@@ -166,7 +172,13 @@ namespace Platform.IO {
 				TraceBeginWait( _polledDescriptors.Count, pollTimeout );
 
 				var eventBuffer = _polledDescriptors.GetBuffer();
+
+				// sigset_t oldSignalSet;
+				// if( UseUnblockSignalSet ) LibcApi.sigprocmask( ApplySignalCommand.SIG_UNBLOCK, &UnblockSignalSet, &oldSignalSet );
+				// <- get SIGQUIT between sigprocmask and poll then waits until pollTimeout or next signal, so we need pipe insead of _quitRequest setting in QuitSignalHandler
 				var polledDescriptors = LibcApi.poll( eventBuffer, _polledDescriptors.Count.ToUnsigned(), pollTimeout );
+				// if( UseUnblockSignalSet ) LibcApi.sigprocmask( ApplySignalCommand.SIG_SETMASK, &oldSignalSet, null );
+
 				TraceEventsArrived( polledDescriptors );
 
 				if( polledDescriptors < 0 ) {
@@ -208,7 +220,6 @@ namespace Platform.IO {
 			TraceDispatchFinished();
 
 			Dispose();
-			Instance = null;
 		}
 
 		public Functors.Action PollHandlerPrepare = null;

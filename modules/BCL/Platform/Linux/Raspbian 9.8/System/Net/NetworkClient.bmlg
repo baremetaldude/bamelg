@@ -15,15 +15,26 @@ using Platform.Libc;
 
 namespace System.Net {
 	public partial class NetworkClient {
-		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
-			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
+		private NetworkStream _platformStream;
 
+		private void _implInitialize() {
+			_platformStream = new NetworkStream() { 
+				ErrorHandler = ErrorHandler
+			};
+		}
+
+		private TimeSpan _implConnectTimeout { get { return _platformStream.ConnectTimeout; } set { _platformStream.ConnectTimeout = value; } }
+		private TimeSpan _implReadTimeout { get { return _platformStream.ReadTimeout; } set { _platformStream.ReadTimeout = value; } }
+		private TimeSpan _implWriteTimeout { get { return _platformStream.WriteTimeout; } set { _platformStream.WriteTimeout = value; } }
+		private bool _implImmediateDelivery { get { return _platformStream.ImmediateDeliveryTCP; } set { _platformStream.ImmediateDeliveryTCP = value; } }
+
+		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
 			if( @interface != IPv4Address.AllInterfaces ) {
-				if( !stream.Bind( new IPv4Endpoint( @interface, 0 ) ) ) return false;
+				if( !_platformStream.Bind( new IPv4Endpoint( @interface, 0 ) ) ) return false;
 			}
 
-			if( stream.Connect( endpoint ) ) {
-				_stream = stream;
+			if( _platformStream.Connect( endpoint ) ) {
+				_stream = _platformStream;
 				return OnConnected();
 			}
 
@@ -31,14 +42,12 @@ namespace System.Net {
 		}
 
 		private bool _implConnect( IPv6Endpoint endpoint, IPv6Address @interface ) {
-			var stream = new NetworkStream() { ErrorHandler = ErrorHandler };
-
 			if( @interface != IPv6Address.AllInterfaces ) {
-				if( !stream.Bind( new IPv6Endpoint( @interface, 0 ) ) ) return false;
+				if( !_platformStream.Bind( new IPv6Endpoint( @interface, 0 ) ) ) return false;
 			}
 
-			if( stream.Connect( endpoint ) ) {
-				_stream = stream;
+			if( _platformStream.Connect( endpoint ) ) {
+				_stream = _platformStream;
 				return OnConnected();
 			}
 

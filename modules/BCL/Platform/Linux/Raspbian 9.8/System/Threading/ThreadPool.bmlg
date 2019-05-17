@@ -27,7 +27,7 @@ namespace System.Threading {
 			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
 
 			var signalSet = new sigset_t( SignalCode.SIGINT, SignalCode.SIGQUIT, SignalCode.SIGTERM, SignalCode.SIGHUP, SignalCode.SIGABRT );
-			LibcApi.AssertErrno( LibcApi.sigprocmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );
+			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );
 		}
 	}
 }

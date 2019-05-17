@@ -18,12 +18,16 @@ namespace System.Net {
 		protected EventLoop _eventLoop;
 
 		protected NetworkServer() {
-			Assert.IsTrue( EventLoop.Instance.EnableFibers );
+		}
 
-			_eventLoop = EventLoop.Instance;
+		public void Attach( EventLoop eventLoop ) {
+			Debug.Assert( _eventLoop == null );
+			_eventLoop = eventLoop;
 		}
 
 		public void Listen( SocketHandle acceptSocket ) {
+			Debug.Assert( _eventLoop != null );
+
 			var acceptEntry = new AcceptSocketEventSink( this, acceptSocket );
 			acceptEntry.Register();
 		}
@@ -33,6 +37,8 @@ namespace System.Net {
 		}
 
 		private bool _implListen( IPv4Endpoint endpoint ) {
+			Debug.Assert( _eventLoop != null );
+
 			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET, true ) ) {
 				if( !acceptSocket.IsValid ) return false;
 
@@ -52,6 +58,8 @@ namespace System.Net {
 		}
 
 		private bool _implListen( IPv6Endpoint endpoint ) {
+			Debug.Assert( _eventLoop != null );
+
 			using( var acceptSocket = new SocketHandleTCP( ProtocolFamily.PF_INET6, true ) ) {
 				if( !acceptSocket.IsValid ) return false;
 
@@ -70,6 +78,8 @@ namespace System.Net {
 		}
 
 		private bool _implListen( Utf8String path ) {
+			Debug.Assert( _eventLoop != null );
+
 			using( var acceptSocket = new SocketHandleLocal( SocketType.SOCK_STREAM, true ) ) {
 				if( !acceptSocket.IsValid ) return false;
 

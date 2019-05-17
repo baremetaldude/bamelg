@@ -10,7 +10,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System.IO {
-	public class StreamWriter : ITextWriter {
+	public class StreamWriter : ITextWriter, IFormattable {
 		public enum ByteOrderMarkHeader {
 			Auto,
 			Force,
@@ -30,7 +30,7 @@ namespace System.IO {
 			var writeByteOrderMark = false;
 			switch( headerStyle ) {
 				case ByteOrderMarkHeader.Auto: {
-						writeByteOrderMark = ( stream.Capabilities & StreamCapabilities.Seek ) == 0 || stream.Seek( 0, SeekOrigin.Current ) == 0;
+						writeByteOrderMark = ( stream.Capabilities & StreamCapabilities.Seek ) != 0 && stream.Seek( 0, SeekOrigin.Current ) == 0;
 					} break;
 
 				case ByteOrderMarkHeader.Force: writeByteOrderMark = true; break;
@@ -262,6 +262,11 @@ namespace System.IO {
 					}
 					break;
 			}
+		}
+
+		// writes all buffered data
+		public void ToString( StringBuilder builder, string format ) { 
+			builder.Append( _buffer );
 		}
 	}
 }

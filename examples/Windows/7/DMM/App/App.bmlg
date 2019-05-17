@@ -112,7 +112,7 @@ namespace Dmm {
 
 		#region event buffer
 
-		public Fiber.Event NewMesageEvent = new Fiber.Event( false, true );
+		public Fiber.Event NewMesageEvent = new Fiber.Event();
 
 		public void AddEvent( string text ) {
 			Events.Add( DateTime.UtcNow, text );
@@ -253,7 +253,7 @@ namespace Dmm {
 				var shortName = SerialPortPath;
 				if( shortName.StartsWith( @"\\.\" ) ) shortName = shortName.Substring( 4 );
 
-				fs.Timeout = TimeSpan.FromSeconds( 3 );
+				fs.ReadTimeout = TimeSpan.FromSeconds( 3 );
 
 				var dcb = new DCB() {
 					// fBinary = true,

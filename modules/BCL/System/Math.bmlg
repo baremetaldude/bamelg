@@ -56,82 +56,72 @@ namespace System {
 		public const float FloatPi = bitcast<float>( 0x40490FDB );
 		public const double Pi = bitcast<double>( 0x400921FB54442D18 );
 
-		// Table with results of various rounding modes:
-		// Truncate() == round towards zero
-		// Floor() == round towards -inf
-		// Ceiling() == round towards +inf
-		// Cover() == round away from zero
-		// RoundTowardsZero() == round half towards zero
-		// RoundAwayFromZero() == round half away from zero
-		// RoundToEven() == round half away to even
-		// RoundToNegInf() == round half towards -inf
-		// RoundToPosInf() == round half towards +inf
+		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
+		//  -3.0                               -3                               -3              -3                    -3                   -3    -3      -3       -3                -3  -3.0
+		//  -2.9                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.9
+		//  -2.8                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.8
+		//  -2.7                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.7
+		//  -2.6                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.6
+		//  -2.5                               -2                               -3              -2                    -3                   -2    -3      -2       -2                -3  -2.5
+		//  -2.4                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.4
+		//  -2.3                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.3
+		//  -2.2                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.2
+		//  -2.1                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.1
+		//  -2.0                               -2                               -2              -2                    -2                   -2    -2      -2       -2                -2  -2.0
+		//  -1.9                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.9
+		//  -1.8                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.8
+		//  -1.7                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.7
+		//  -1.6                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.6
+		//  -1.5                               -1                               -2              -2                    -2                   -1    -2      -1       -1                -2  -1.5
+		//  -1.4                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.4
+		//  -1.3                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.3
+		//  -1.2                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.2
+		//  -1.1                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.1
+		//  -1.0                               -1                               -1              -1                    -1                   -1    -1      -1       -1                -1  -1.0
+		//  -0.9                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.9
+		//  -0.8                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.8
+		//  -0.7                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.7
+		//  -0.6                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.6
+		//  -0.5                                0                               -1               0                    -1                    0    -1       0        0                -1  -0.5
+		//  -0.4                                0                                0               0                     0                    0    -1       0        0                -1  -0.4
+		//  -0.3                                0                                0               0                     0                    0    -1       0        0                -1  -0.3
+		//  -0.2                                0                                0               0                     0                    0    -1       0        0                -1  -0.2
+		//  -0.1                                0                                0               0                     0                    0    -1       0        0                -1  -0.1
+		//  -0.0                                0                                0               0                     0                    0     0       0        0                 0  -0.0
+		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
+		//   0.0                                0                                0               0                     0                    0     0       0        0                 0   0.0
+		//   0.1                                0                                0               0                     0                    0     0       1        0                 1   0.1
+		//   0.2                                0                                0               0                     0                    0     0       1        0                 1   0.2
+		//   0.3                                0                                0               0                     0                    0     0       1        0                 1   0.3
+		//   0.4                                0                                0               0                     0                    0     0       1        0                 1   0.4
+		//   0.5                                1                                0               0                     1                    0     0       1        0                 1   0.5
+		//   0.6                                1                                1               1                     1                    1     0       1        0                 1   0.6
+		//   0.7                                1                                1               1                     1                    1     0       1        0                 1   0.7
+		//   0.8                                1                                1               1                     1                    1     0       1        0                 1   0.8
+		//   0.9                                1                                1               1                     1                    1     0       1        0                 1   0.9
+		//   1.0                                1                                1               1                     1                    1     1       1        1                 1   1.0
+		//   1.1                                1                                1               1                     1                    1     1       2        1                 2   1.1
+		//   1.2                                1                                1               1                     1                    1     1       2        1                 2   1.2
+		//   1.3                                1                                1               1                     1                    1     1       2        1                 2   1.3
+		//   1.4                                1                                1               1                     1                    1     1       2        1                 2   1.4
+		//   1.5                                2                                1               2                     2                    1     1       2        1                 2   1.5
+		//   1.6                                2                                2               2                     2                    2     1       2        1                 2   1.6
+		//   1.7                                2                                2               2                     2                    2     1       2        1                 2   1.7
+		//   1.8                                2                                2               2                     2                    2     1       2        1                 2   1.8
+		//   1.9                                2                                2               2                     2                    2     1       2        1                 2   1.9
+		//   2.0                                2                                2               2                     2                    2     2       2        2                 2   2.0
+		//   2.1                                2                                2               2                     2                    2     2       3        2                 3   2.1
+		//   2.2                                2                                2               2                     2                    2     2       3        2                 3   2.2
+		//   2.3                                2                                2               2                     2                    2     2       3        2                 3   2.3
+		//   2.4                                2                                2               2                     2                    2     2       3        2                 3   2.4
+		//   2.5                                3                                2               2                     3                    2     2       3        2                 3   2.5
+		//   2.6                                3                                3               3                     3                    3     2       3        2                 3   2.6
+		//   2.7                                3                                3               3                     3                    3     2       3        2                 3   2.7
+		//   2.8                                3                                3               3                     3                    3     2       3        2                 3   2.8
+		//   2.9                                3                                3               3                     3                    3     2       3        2                 3   2.9
+		//   3.0                                3                                3               3                     3                    3     3       3        3                 3   3.0
+		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
 
-		// Value HalfToPosInf HalfToNegInf HalfToEven HalfAwayFromZero HalfTowardsZero Floor Ceiling Truncate Cover
-		//  -3.0           -3           -3         -3               -3              -3    -3      -3       -3    -3
-		//  -2.9           -3           -3         -3               -3              -3    -3      -2       -2    -3
-		//  -2.8           -3           -3         -3               -3              -3    -3      -2       -2    -3
-		//  -2.7           -3           -3         -3               -3              -3    -3      -2       -2    -3
-		//  -2.6           -3           -3         -3               -3              -3    -3      -2       -2    -3
-		//  -2.5           -2           -3         -2               -3              -2    -3      -2       -2    -3
-		//  -2.4           -2           -2         -2               -2              -2    -3      -2       -2    -3
-		//  -2.3           -2           -2         -2               -2              -2    -3      -2       -2    -3
-		//  -2.2           -2           -2         -2               -2              -2    -3      -2       -2    -3
-		//  -2.1           -2           -2         -2               -2              -2    -3      -2       -2    -3
-		//  -2.0           -2           -2         -2               -2              -2    -2      -2       -2    -2
-		//  -1.9           -2           -2         -2               -2              -2    -2      -1       -1    -2
-		//  -1.8           -2           -2         -2               -2              -2    -2      -1       -1    -2
-		//  -1.7           -2           -2         -2               -2              -2    -2      -1       -1    -2
-		//  -1.6           -2           -2         -2               -2              -2    -2      -1       -1    -2
-		//  -1.5           -1           -2         -2               -2              -1    -2      -1       -1    -2
-		//  -1.4           -1           -1         -1               -1              -1    -2      -1       -1    -2
-		//  -1.3           -1           -1         -1               -1              -1    -2      -1       -1    -2
-		//  -1.2           -1           -1         -1               -1              -1    -2      -1       -1    -2
-		//  -1.1           -1           -1         -1               -1              -1    -2      -1       -1    -2
-		//  -1.0           -1           -1         -1               -1              -1    -1      -1       -1    -1
-		//  -0.9           -1           -1         -1               -1              -1    -1       0        0    -1
-		//  -0.8           -1           -1         -1               -1              -1    -1       0        0    -1
-		//  -0.7           -1           -1         -1               -1              -1    -1       0        0    -1
-		//  -0.6           -1           -1         -1               -1              -1    -1       0        0    -1
-		//  -0.5            0           -1          0               -1               0    -1       0        0    -1
-		//  -0.4            0            0          0                0               0    -1       0        0    -1
-		//  -0.3            0            0          0                0               0    -1       0        0    -1
-		//  -0.2            0            0          0                0               0    -1       0        0    -1
-		//  -0.1            0            0          0                0               0    -1       0        0    -1
-		//  -0.0            0            0          0                0               0     0       0        0     0
-		// Value HalfToPosInf HalfToNegInf HalfToEven HalfAwayFromZero HalfTowardsZero Floor Ceiling Truncate Cover
-		//   0.0            0            0          0                0               0     0       0        0     0
-		//   0.1            0            0          0                0               0     0       1        0     1
-		//   0.2            0            0          0                0               0     0       1        0     1
-		//   0.3            0            0          0                0               0     0       1        0     1
-		//   0.4            0            0          0                0               0     0       1        0     1
-		//   0.5            1            0          0                1               0     0       1        0     1
-		//   0.6            1            1          1                1               1     0       1        0     1
-		//   0.7            1            1          1                1               1     0       1        0     1
-		//   0.8            1            1          1                1               1     0       1        0     1
-		//   0.9            1            1          1                1               1     0       1        0     1
-		//   1.0            1            1          1                1               1     1       1        1     1
-		//   1.1            1            1          1                1               1     1       2        1     2
-		//   1.2            1            1          1                1               1     1       2        1     2
-		//   1.3            1            1          1                1               1     1       2        1     2
-		//   1.4            1            1          1                1               1     1       2        1     2
-		//   1.5            2            1          2                2               1     1       2        1     2
-		//   1.6            2            2          2                2               2     1       2        1     2
-		//   1.7            2            2          2                2               2     1       2        1     2
-		//   1.8            2            2          2                2               2     1       2        1     2
-		//   1.9            2            2          2                2               2     1       2        1     2
-		//   2.0            2            2          2                2               2     2       2        2     2
-		//   2.1            2            2          2                2               2     2       3        2     3
-		//   2.2            2            2          2                2               2     2       3        2     3
-		//   2.3            2            2          2                2               2     2       3        2     3
-		//   2.4            2            2          2                2               2     2       3        2     3
-		//   2.5            3            2          2                3               2     2       3        2     3
-		//   2.6            3            3          3                3               3     2       3        2     3
-		//   2.7            3            3          3                3               3     2       3        2     3
-		//   2.8            3            3          3                3               3     2       3        2     3
-		//   2.9            3            3          3                3               3     2       3        2     3
-		//   3.0            3            3          3                3               3     3       3        3     3
-		// Value HalfToPosInf HalfToNegInf HalfToEven HalfAwayFromZero HalfTowardsZero Floor Ceiling Truncate Cover
 
 		/// @{ Default hardware-assisted rounding for current processor architecture. Use it if you dont care about midpoint rounding.
 		[ForceInline] public static float Round( float value ) { return RoundToInt64( value ); }
@@ -142,102 +132,121 @@ namespace System {
 
 		/// x86, x64: round half to even
 		/// Note: In MS .NET 'Math.Round(double)' uses round to even on x86/x64
-		[ForceInline] public static long RoundToInt64( float value ) { return RoundToEvenInt64( value ); }
-		[ForceInline] public static long RoundToInt64( double value ) { return RoundToEvenInt64( value ); }
+		[ForceInline] public static long RoundToInt64( float value ) { return Impl.RoundHalfToEvenInt64( value ); }
+		[ForceInline] public static long RoundToInt64( double value ) { return Impl.RoundHalfToEvenInt64( value ); }
 		/// @}
 
 		/// @{ Round half to positive infinity
-		[ForceInline] public static float RoundTowardsPositiveInfinity( float value ) { return RoundTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static double RoundTowardsPositiveInfinity( double value ) { return RoundTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static float RoundHalfTowardsPositiveInfinity( float value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static double RoundHalfTowardsPositiveInfinity( double value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
 
-		[ForceInline] public static int RoundTowardsPositiveInfinityToInt32( float value ) { return ( int ) RoundTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static int RoundTowardsPositiveInfinityToInt32( double value ) { return ( int ) RoundTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsPositiveInfinityToInt32( float value ) { return ( int ) RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsPositiveInfinityToInt32( double value ) { return ( int ) RoundHalfTowardsPositiveInfinityToInt64( value ); }
 
-		[ForceInline] public static long RoundTowardsPositiveInfinityToInt64( float value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static long RoundTowardsPositiveInfinityToInt64( double value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsPositiveInfinityToInt64( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
 		/// @}
 
 		/// @{ Round half to negative infinity
-		[ForceInline] public static float RoundTowardsNegativeInfinity( float value ) { return RoundTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static double RoundTowardsNegativeInfinity( double value ) { return RoundTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static float RoundHalfTowardsNegativeInfinity( float value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static double RoundHalfTowardsNegativeInfinity( double value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
 
-		[ForceInline] public static int RoundTowardsNegativeInfinityToInt32( float value ) { return ( int ) RoundTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static int RoundTowardsNegativeInfinityToInt32( double value ) { return ( int ) RoundTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsNegativeInfinityToInt32( float value ) { return ( int ) RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsNegativeInfinityToInt32( double value ) { return ( int ) RoundHalfTowardsNegativeInfinityToInt64( value ); }
 
-		[ForceInline] public static long RoundTowardsNegativeInfinityToInt64( float value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static long RoundTowardsNegativeInfinityToInt64( double value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsNegativeInfinityToInt64( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
 		/// @}
 
 		/// @{ Round half to closest even integer
 		// default cpu rounding mode for most OS'es on X86
-		[ForceInline] public static float RoundToEven( float value ) { return RoundToEvenInt64( value ); }
-		[ForceInline] public static double RoundToEven( double value ) { return RoundToEvenInt64( value ); }
+		
+		// CRuntime.rintf
+		[ForceInline] public static float RoundHalfToEven( float value ) { return RoundHalfToEvenInt64( value ); }
+		// CRuntime.rint
+		[ForceInline] public static double RoundHalfToEven( double value ) { return RoundHalfToEvenInt64( value ); }
 
-		[ForceInline] public static int RoundToEvenInt32( float value ) { return ( int ) RoundToEvenInt64( value ); }
-		[ForceInline] public static int RoundToEvenInt32( double value ) { return ( int ) RoundToEvenInt64( value ); }
+		// CRuntime.lrintf
+		[ForceInline] public static int RoundHalfToEvenInt32( float value ) { return ( int ) RoundHalfToEvenInt64( value ); }
+		// CRuntime.lrint
+		[ForceInline] public static int RoundHalfToEvenInt32( double value ) { return ( int ) RoundHalfToEvenInt64( value ); }
 
-		[ForceInline] public static long RoundToEvenInt64( float value ) { return RoundHalfToEvenInt64( value ); }
-		[ForceInline] public static long RoundToEvenInt64( double value ) { return RoundHalfToEvenInt64( value ); }
+		// CRuntime.lrintf
+		[ForceInline] public static long RoundHalfToEvenInt64( float value ) { return Impl.RoundHalfToEvenInt64( value ); }
+		// CRuntime.lrint
+		[ForceInline] public static long RoundHalfToEvenInt64( double value ) { return Impl.RoundHalfToEvenInt64( value ); }
+		
 		/// @}
 
-		/// @{ Round half away from zero
-		[ForceInline] public static float RoundAwayFromZero( float value ) { return RoundAwayFromZeroToInt64( value ); }
-		[ForceInline] public static double RoundAwayFromZero( double value ) { return RoundAwayFromZeroToInt64( value ); }
+		/// @{ Round half away from zero / llround
+		[ForceInline] public static float RoundHalfAwayFromZero( float value ) { return RoundHalfAwayFromZeroToInt64( value ); }
+		[ForceInline] public static double RoundHalfAwayFromZero( double value ) { return RoundHalfAwayFromZeroToInt64( value ); }
 
-		[ForceInline] public static int RoundAwayFromZeroToInt32( float value ) { return ( int ) RoundAwayFromZeroToInt64( value ); }
-		[ForceInline] public static int RoundAwayFromZeroToInt32( double value ) { return ( int ) RoundAwayFromZeroToInt64( value ); }
+		// CRuntime.lroundf
+		[ForceInline] public static int RoundHalfAwayFromZeroToInt32( float value ) { return ( int ) RoundHalfAwayFromZeroToInt64( value ); }
+		// CRuntime.lround
+		[ForceInline] public static int RoundHalfAwayFromZeroToInt32( double value ) { return ( int ) RoundHalfAwayFromZeroToInt64( value ); }
 
-		[ForceInline] public static long RoundAwayFromZeroToInt64( float value ) { return RoundHalfAwayFromZeroToInt64( value ); }
-		[ForceInline] public static long RoundAwayFromZeroToInt64( double value ) { return RoundHalfAwayFromZeroToInt64( value ); }
+		// CRuntime.llroundf
+		[ForceInline] public static long RoundHalfAwayFromZeroToInt64( float value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
+		// CRuntime.llround
+		[ForceInline] public static long RoundHalfAwayFromZeroToInt64( double value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
+		
 		/// @}
 
 		/// @{ Round half towards zero
-		[ForceInline] public static float RoundTowardsZero( float value ) { return RoundTowardsZeroToInt64( value ); }
-		[ForceInline] public static double RoundTowardsZero( double value ) { return RoundTowardsZeroToInt64( value ); }
+		[ForceInline] public static float RoundHalfTowardsZero( float value ) { return RoundHalfTowardsZeroToInt64( value ); }
+		[ForceInline] public static double RoundHalfTowardsZero( double value ) { return RoundHalfTowardsZeroToInt64( value ); }
 
-		[ForceInline] public static int RoundTowardsZeroToInt32( float value ) { return ( int ) RoundTowardsZeroToInt64( value ); }
-		[ForceInline] public static int RoundTowardsZeroToInt32( double value ) { return ( int ) RoundTowardsZeroToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsZeroToInt32( float value ) { return ( int ) RoundHalfTowardsZeroToInt64( value ); }
+		[ForceInline] public static int RoundHalfTowardsZeroToInt32( double value ) { return ( int ) RoundHalfTowardsZeroToInt64( value ); }
 
-		[ForceInline] public static long RoundTowardsZeroToInt64( float value ) { return RoundHalfTowardsZeroToInt64( value ); }
-		[ForceInline] public static long RoundTowardsZeroToInt64( double value ) { return RoundHalfTowardsZeroToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsZeroToInt64( float value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
+		[ForceInline] public static long RoundHalfTowardsZeroToInt64( double value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
 		/// @}
 
-		/// @{ Round towards minus infinity
+		/// @{ Rounding down / Round towards minus infinity
 		[ForceInline] public static float Floor( float value ) { return FloorToInt64( value ); }
 		[ForceInline] public static double Floor( double value ) { return FloorToInt64( value ); }
 
 		[ForceInline] public static int FloorToInt32( float value ) { return ( int ) FloorToInt64( value ); }
 		[ForceInline] public static int FloorToInt32( double value ) { return ( int ) FloorToInt64( value ); }
 
-		[ForceInline] public static long FloorToInt64( float value ) { return RoundTowardsMinusInfinityInt64( value ); }
-		[ForceInline] public static long FloorToInt64( double value ) { return RoundTowardsMinusInfinityInt64( value ); }
+		[ForceInline] public static long FloorToInt64( float value ) { return Impl.RoundTowardsMinusInfinityInt64( value ); }
+		[ForceInline] public static long FloorToInt64( double value ) { return Impl.RoundTowardsMinusInfinityInt64( value ); }
 		/// @}
 
-		/// @{ Round towards positive infinity
+		/// @{ Rounding up / Round towards positive infinity
 		[ForceInline] public static float Ceiling( float value ) { return CeilingToInt64( value ); }
 		[ForceInline] public static double Ceiling( double value ) { return CeilingToInt64( value ); }
 
 		[ForceInline] public static int CeilingToInt32( float value ) { return ( int ) CeilingToInt64( value ); }
 		[ForceInline] public static int CeilingToInt32( double value ) { return ( int ) CeilingToInt64( value ); }
 
-		[ForceInline] public static long CeilingToInt64( float value ) { return RoundTowardsPlusInfinityInt64( value ); }
-		[ForceInline] public static long CeilingToInt64( double value ) { return RoundTowardsPlusInfinityInt64( value ); }
+		[ForceInline] public static long CeilingToInt64( float value ) { return Impl.RoundTowardsPlusInfinityInt64( value ); }
+		[ForceInline] public static long CeilingToInt64( double value ) { return Impl.RoundTowardsPlusInfinityInt64( value ); }
 		/// @}
 
-		/// @{ Round away from zero
-		[ForceInline] public static float Cover( float value ) { return CoverToInt64( value ); }
-		[ForceInline] public static double Cover( double value ) { return CoverToInt64( value ); }
+		/// @{ Round away from zero / round towards infinity
+		[ForceInline] public static float RoundAwayFromZero( float value ) { return RoundAwayFromZeroToInt64( value ); }
+		[ForceInline] public static double RoundAwayFromZero( double value ) { return RoundAwayFromZeroToInt64( value ); }
 
-		[ForceInline] public static int CoverToInt32( float value ) { return ( int ) CoverToInt64( value ); }
-		[ForceInline] public static int CoverToInt32( double value ) { return ( int ) CoverToInt64( value ); }
+		[ForceInline] public static int RoundAwayFromZeroToInt32( float value ) { return ( int ) Impl.RoundAwayFromZeroToInt64( value ); }
+		[ForceInline] public static int RoundAwayFromZeroToInt32( double value ) { return ( int ) Impl.RoundAwayFromZeroToInt64( value ); }
+
+		[ForceInline] public static long RoundAwayFromZeroToInt64( float value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
+		[ForceInline] public static long RoundAwayFromZeroToInt64( double value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
 		/// @}
 
 		/// @{ Round towards zero. Default mode for expressions like 'someInt = ( int ) someFloat'
 		[ForceInline] public static float Truncate( float value ) { return TruncateToInt64( value ); }
 		[ForceInline] public static double Truncate( double value ) { return TruncateToInt64( value ); }
 
-		[ForceInline] public static int TruncateToInt32( float value ) { return ( int ) TruncateToInt64( value ); }
-		[ForceInline] public static int TruncateToInt32( double value ) { return ( int ) TruncateToInt64( value ); }
+		[ForceInline] public static int TruncateToInt32( float value ) { return ( int ) Impl.TruncateToInt64( value ); }
+		[ForceInline] public static int TruncateToInt32( double value ) { return ( int ) Impl.TruncateToInt64( value ); }
+
+		[ForceInline] public static long TruncateToInt64( float value ) { return Impl.TruncateToInt64( value ); }
+		[ForceInline] public static long TruncateToInt64( double value ) { return Impl.TruncateToInt64( value ); }
 		/// @}
 
 		[ForceInline]

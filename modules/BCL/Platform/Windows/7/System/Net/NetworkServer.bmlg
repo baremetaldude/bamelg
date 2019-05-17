@@ -19,9 +19,11 @@ namespace System.Net {
 		protected EventLoop _eventLoop;
 
 		protected NetworkServer() {
-			Assert.IsTrue( EventLoop.Instance.EnableFibers );
+		}
 
-			_eventLoop = EventLoop.Instance;
+		public void Attach( EventLoop eventLoop ) {
+			Debug.Assert( _eventLoop == null );
+			_eventLoop = eventLoop;
 		}
 
 		private bool _implListen( ushort port ) {
@@ -30,6 +32,8 @@ namespace System.Net {
 		}
 
 		private bool _implListen( IPv4Endpoint endpoint ) {
+			Debug.Assert( _eventLoop != null );
+
 			var localAddress = ( sockaddr_in ) endpoint;
 
 			using( var acceptSocket = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET ) ) {
@@ -47,6 +51,8 @@ namespace System.Net {
 		}
 
 		private bool _implListen( IPv6Endpoint endpoint ) {
+			Debug.Assert( _eventLoop != null );
+
 			var localAddress = ( sockaddr_in6 ) endpoint;
 
 			using( var acceptSocket = new SocketHandleTCP( ADDRESS_FAMILY.AF_INET6 ) ) {

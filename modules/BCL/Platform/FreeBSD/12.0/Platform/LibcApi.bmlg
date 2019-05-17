@@ -644,7 +644,7 @@ namespace Platform.Libc {
 			// LibcApi.signal( SignalCode.SIGALRM, AlarmSignalHandler );
 			var sa = default( sigaction );
 			var& handler = sa.__sigaction_u.__sa_handler; *&handler = AlarmSignalHandler;
-			LibcApi.sigaction( ( int ) SignalCode.SIGALRM, &sa, null );
+			LibcApi.sigaction( SignalCode.SIGALRM, &sa, null );
 
 			var @new = new itimerval { it_interval = default( timeval ), it_value = new timeval( timeout ) };
 			LibcApi.setitimer( 0, &@new, null );

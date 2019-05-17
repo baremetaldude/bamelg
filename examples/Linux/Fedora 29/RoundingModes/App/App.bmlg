@@ -9,23 +9,44 @@ namespace Example {
 	public partial class App {
 		[EntryPoint]
 		private static void Main() {
-			using( var fileStream = System.IO.File.OpenWrite( "/tmp/RoundingModes.txt" ) )
-			using( var writer = new StreamWriter( fileStream ) ) {
-				writer.WriteLine( "Value HalfToPosInf HalfToNegInf HalfToEven HalfAwayFromZero HalfTowardsZero Floor Ceiling Truncate Cover" );
+			WriteTable( "RoundingModes_To32.txt", WriteRow_ToInt32 );
+			WriteTable( "RoundingModes_To64.txt", WriteRow_ToInt64 );
+			WriteTable( "RoundingModes_ToDouble.txt", WriteRow_ToDouble );
+		}
+
+		private static void WriteTable( Utf8String fileName, Functors.Action<StreamWriter, double> writeRow ) {
+			using( var writer = new StreamWriter( System.IO.File.OpenWrite( fileName ) ) ) {
+				WriteHeader( writer );
 
 				for( var i = -30; i <= 30; ++i ) {
-					var value = i * 0.1;
-
-					if( i == 0 ) value = -0.0;
-
-					writer.WriteLine( "{0," + "Value".Length + ":@F1} {1," + "HalfToPosInf".Length + "} {2," + "HalfToNegInf".Length + "} {3," + "HalfToEven".Length + "} {4," + "HalfAwayFromZero".Length + "} {5," + "HalfTowardsZero".Length + "} {6," + "Floor".Length + "} {7," + "Ceiling".Length + "} {8," + "Truncate".Length + "} {9," + "Cover".Length + "}", value, Math.RoundTowardsPositiveInfinityToInt64( value ), Math.RoundTowardsNegativeInfinityToInt64( value ), Math.RoundToEvenInt64( value ), Math.RoundAwayFromZeroToInt64( value ), Math.RoundTowardsZeroToInt64( value ), Math.FloorToInt64( value ), Math.CeilingToInt64( value ), Math.TruncateToInt64( value ), Math.CoverToInt64( value ) );
-
 					if( i == 0 ) {
-						value = 0.0;
-						writer.WriteLine( "{0," + "Value".Length + ":@F1} {1," + "HalfToPosInf".Length + "} {2," + "HalfToNegInf".Length + "} {3," + "HalfToEven".Length + "} {4," + "HalfAwayFromZero".Length + "} {5," + "HalfTowardsZero".Length + "} {6," + "Floor".Length + "} {7," + "Ceiling".Length + "} {8," + "Truncate".Length + "} {9," + "Cover".Length + "}", value, Math.RoundTowardsPositiveInfinityToInt64( value ), Math.RoundTowardsNegativeInfinityToInt64( value ), Math.RoundToEvenInt64( value ), Math.RoundAwayFromZeroToInt64( value ), Math.RoundTowardsZeroToInt64( value ), Math.FloorToInt64( value ), Math.CeilingToInt64( value ), Math.TruncateToInt64( value ), Math.CoverToInt64( value ) );
+						writeRow( writer, -0.0 );
+						WriteHeader( writer );
+						writeRow( writer, 0.0 );
+					}
+					else {
+						writeRow( writer, i * 0.1 );
 					}
 				}
+
+				WriteHeader( writer );
 			}
+		}
+
+		private static void WriteHeader( StreamWriter writer ) {
+			writer.WriteLine( "Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value" );
+		}
+
+		private static void WriteRow_ToInt32( StreamWriter writer, double value ) {
+			writer.WriteLine( "{0," + "Value".Length + ":@F1} {1," + "RoundHalfTowardsPositiveInfinity".Length + "} {2," + "RoundHalfTowardsNegativeInfinity".Length + "} {3," + "RoundHalfToEven".Length + "} {4," + "RoundHalfAwayFromZero".Length + "} {5," + "RoundHalfTowardsZero".Length + "} {6," + "Floor".Length + "} {7," + "Ceiling".Length + "} {8," + "Truncate".Length + "} {9," + "RoundAwayFromZero".Length + "} {0," + "Value".Length + ":@F1}", value, Math.RoundHalfTowardsPositiveInfinityToInt32( value ), Math.RoundHalfTowardsNegativeInfinityToInt32( value ), Math.RoundHalfToEvenInt32( value ), Math.RoundHalfAwayFromZeroToInt32( value ), Math.RoundHalfTowardsZeroToInt32( value ), Math.FloorToInt32( value ), Math.CeilingToInt32( value ), Math.TruncateToInt32( value ), Math.RoundAwayFromZeroToInt32( value ) );
+		}
+
+		private static void WriteRow_ToInt64( StreamWriter writer, double value ) {
+			writer.WriteLine( "{0," + "Value".Length + ":@F1} {1," + "RoundHalfTowardsPositiveInfinity".Length + "} {2," + "RoundHalfTowardsNegativeInfinity".Length + "} {3," + "RoundHalfToEven".Length + "} {4," + "RoundHalfAwayFromZero".Length + "} {5," + "RoundHalfTowardsZero".Length + "} {6," + "Floor".Length + "} {7," + "Ceiling".Length + "} {8," + "Truncate".Length + "} {9," + "RoundAwayFromZero".Length + "} {0," + "Value".Length + ":@F1}", value, Math.RoundHalfTowardsPositiveInfinityToInt64( value ), Math.RoundHalfTowardsNegativeInfinityToInt64( value ), Math.RoundHalfToEvenInt64( value ), Math.RoundHalfAwayFromZeroToInt64( value ), Math.RoundHalfTowardsZeroToInt64( value ), Math.FloorToInt64( value ), Math.CeilingToInt64( value ), Math.TruncateToInt64( value ), Math.RoundAwayFromZeroToInt64( value ) );
+		}
+
+		private static void WriteRow_ToDouble( StreamWriter writer, double value ) {
+			writer.WriteLine( "{0," + "Value".Length + ":@F1} {1," + "RoundHalfTowardsPositiveInfinity".Length + "} {2," + "RoundHalfTowardsNegativeInfinity".Length + "} {3," + "RoundHalfToEven".Length + "} {4," + "RoundHalfAwayFromZero".Length + "} {5," + "RoundHalfTowardsZero".Length + "} {6," + "Floor".Length + "} {7," + "Ceiling".Length + "} {8," + "Truncate".Length + "} {9," + "RoundAwayFromZero".Length + "} {0," + "Value".Length + ":@F1}", value, Math.RoundHalfTowardsPositiveInfinity( value ), Math.RoundHalfTowardsNegativeInfinity( value ), Math.RoundHalfToEvenInt64( value ), Math.RoundHalfAwayFromZero( value ), Math.RoundHalfTowardsZero( value ), Math.Floor( value ), Math.Ceiling( value ), Math.Truncate( value ), Math.RoundAwayFromZero( value ) );
 		}
 	}
 }

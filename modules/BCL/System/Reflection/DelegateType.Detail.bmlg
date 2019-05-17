@@ -1,0 +1,32 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+
+namespace System.Reflection {
+	public partial struct DelegateType : IFormattable {
+		public new void ToString( StringBuilder builder, string format ) {
+			var& declaringType = DeclaringType;
+			var declaringNamespace = DeclaringNamespace;
+
+			if( declaringType != nullref ) declaringType.ToString( builder, format );
+			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
+			else builder.Append( "<stripped>" );
+
+			builder.Append( '.' );
+			builder.Append( Name );
+
+			if( TemplateTypeDefinition != nullref ) {
+				builder.Append( '<' );
+				for( var i = 0; i < TemplateTypeDefinition.ParameterCount; ++i ) {
+					if( i > 0 ) builder.Append( ',' );
+					TemplateParameters[i]->ToString( builder, format );
+				}
+				builder.Append( '>' );
+			}
+		}
+	}
+}

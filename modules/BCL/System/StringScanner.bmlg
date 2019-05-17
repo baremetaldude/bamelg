@@ -1,0 +1,40 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System {
+	public struct StringScanner {
+		public CUtf16StringSpan TextSpan;
+
+		public StringScanner( CUtf16StringSpan textSpan ) {
+			TextSpan = textSpan;
+		}
+
+		public CUtf16StringSpan NextSpaceSeparatedSequence() {
+			if( TextSpan == null || TextSpan.Length == 0 ) return TextSpan;
+
+			for( uint i = 0; i < TextSpan.Length; ++i ) {
+				if( !TextSpan.Location[i].IsWhiteSpace ) {
+					for( uint j = i + 1; j < TextSpan.Length; ++j ) {
+						if( TextSpan.Location[j].IsWhiteSpace ) {
+							var result = new CUtf16StringSpan( TextSpan.Location + i, j - i );
+							TextSpan.Location += j;
+							TextSpan.Length -= j;
+							return result;
+						}
+					}
+
+					{
+						var result = new CUtf16StringSpan( TextSpan.Location + i, TextSpan.Length - i );
+						TextSpan = CUtf16StringSpan.Null;
+						return result;
+					}
+				}
+			}
+
+			return CUtf16StringSpan.Null;
+		}
+	}
+}

@@ -10,9 +10,14 @@ using System.Serialization;
 
 namespace System.Net {
 	public abstract partial class NetworkClient {
+		public TimeSpan ConnectTimeout { get { return _implConnectTimeout; } set { _implConnectTimeout = value; } }
+		public TimeSpan ReadTimeout { get { return _implReadTimeout; } set { _implReadTimeout = value; } }
+		public TimeSpan WriteTimeout { get { return _implWriteTimeout; } set { _implWriteTimeout = value; } }
+		public bool ImmediateDelivery { get { return _implImmediateDelivery; } set { _implImmediateDelivery = value; } }
+
 		protected IStream _stream;
 
-		protected NetworkClient() { }
+		protected NetworkClient() { _implInitialize(); }
 
 		/// @{ Connect to TCP server
 		public bool Connect( IPv4Endpoint endpoint ) { return _implConnect( endpoint, IPv4Address.AllInterfaces ); }

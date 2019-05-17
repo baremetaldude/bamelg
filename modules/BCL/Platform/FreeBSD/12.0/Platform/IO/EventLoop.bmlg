@@ -24,9 +24,6 @@ namespace Platform.IO {
 		public bool EnableFibers = true;
 		#endregion
 
-		[ThreadStatic]
-		public static thistype Instance;
-
 		protected bool _quitRequest;
 
 		/// @{ Events
@@ -41,8 +38,6 @@ namespace Platform.IO {
 
 		public EventLoop() {
 			_notificationEmitter.Register();
-
-			if( Instance == null ) Instance = this;
 
 			FlushEvents();
 		}
@@ -163,7 +158,6 @@ namespace Platform.IO {
 		public void Dispatch() {
 			TraceDispatchStarted();
 			Debug.Assert( DispatchThread.IsCurrent );
-			Instance = this;
 
 			if( EnableFibers ) {
 				_fiberDispatch = true;
@@ -230,7 +224,6 @@ namespace Platform.IO {
 
 			TraceDispatchFinished();
 			Dispose();
-			Instance = null;
 		}
 
 		/// @}

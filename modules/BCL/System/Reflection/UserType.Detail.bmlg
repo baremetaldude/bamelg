@@ -1,4 +1,4 @@
-﻿//
+//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -7,37 +7,6 @@
 using System.Collections;
 
 namespace System.Reflection {
-	public partial struct Type : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			var& fixedArray = AsFixedArray;
-			if( fixedArray != nullref ) { fixedArray.ToString( builder, format ); return; }
-
-			var& dynamicArray = AsDynamicArray;
-			if( dynamicArray != nullref ) { dynamicArray.ToString( builder, format ); return; }
-
-			var& pointer = AsPointer;
-			if( pointer != nullref ) { pointer.ToString( builder, format ); return; }
-
-			var& reference = AsReference;
-			if( reference != nullref ) { reference.ToString( builder, format ); return; }
-
-			var& userType = AsUserType;
-			if( userType != nullref ) { userType.ToString( builder, format ); return; }
-
-			var& enumType = AsEnum;
-			if( enumType != nullref ) { enumType.ToString( builder, format ); return; }
-
-			var& functorType = AsFunctor;
-			if( functorType != nullref ) { functorType.ToString( builder, format ); return; }
-
-			var& delegateType = AsDelegate;
-			if( delegateType != nullref ) { delegateType.ToString( builder, format ); return; }
-
-			var& interfaceType = AsInterface;
-			if( interfaceType != nullref ) { interfaceType.ToString( builder, format ); return; }
-		}
-	}
-
 	public partial struct UserType : IFormattable {
 		public MemoryEnumerator<Constant> Constants { get { return new MemoryEnumerator<Constant>( ConstantsStart, ConstantCount ); } }
 		public MemoryEnumerator<Field> Fields { get { return new MemoryEnumerator<Field>( FieldsStart, FieldCount ); } }
@@ -215,135 +184,6 @@ namespace System.Reflection {
 					builder.Append( ']' );
 				}
 			}
-		}
-	}
-
-	public partial struct InterfaceType : IFormattable {
-		public MemoryEnumerator<UserType.Property> Properties { get { return new MemoryEnumerator<UserType.Property>( PropertiesStart, PropertyCount ); } }
-		public MemoryEnumerator<UserType.IndexedProperty> IndexedProperties { get { return new MemoryEnumerator<UserType.IndexedProperty>( IndexedPropertiesStart, IndexedPropertyCount ); } }
-		public MemoryEnumerator<UserType.Event> Events { get { return new MemoryEnumerator<UserType.Event>( EventsStart, EventCount ); } }
-		public MemoryEnumerator<UserType.Method> Methods { get { return new MemoryEnumerator<UserType.Method>( MethodsStart, MethodCount ); } }
-
-		public new void ToString( StringBuilder builder, string format ) {
-			var& declaringType = DeclaringType;
-			var declaringNamespace = DeclaringNamespace;
-
-			if( declaringType != nullref ) declaringType.ToString( builder, format );
-			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
-			else builder.Append( "<stripped>" );
-
-			builder.Append( '.' );
-			builder.Append( Name );
-
-			if( TemplateTypeDefinition != nullref ) {
-				builder.Append( '<' );
-				for( var i = 0; i < TemplateTypeDefinition.ParameterCount; ++i ) {
-					if( i > 0 ) builder.Append( ',' );
-					TemplateParameters[i]->ToString( builder, format );
-				}
-				builder.Append( '>' );
-			}
-		}
-	}
-
-	public partial struct EnumType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			var& declaringType = DeclaringType;
-			var declaringNamespace = DeclaringNamespace;
-
-			if( declaringType != nullref ) declaringType.ToString( builder, format );
-			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
-			else builder.Append( "<stripped>" );
-
-			builder.Append( '.' );
-			builder.Append( Name );
-		}
-	}
-
-	public partial struct FunctorType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			var& declaringType = DeclaringType;
-			var declaringNamespace = DeclaringNamespace;
-
-			if( declaringType != nullref ) declaringType.ToString( builder, format );
-			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
-			else builder.Append( "<stripped>" );
-
-			builder.Append( '.' );
-			builder.Append( Name );
-
-			if( TemplateTypeDefinition != nullref ) {
-				builder.Append( '<' );
-				for( var i = 0; i < TemplateTypeDefinition.ParameterCount; ++i ) {
-					if( i > 0 ) builder.Append( ',' );
-					TemplateParameters[i]->ToString( builder, format );
-				}
-				builder.Append( '>' );
-			}
-		}
-	}
-
-	public partial struct DelegateType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			var& declaringType = DeclaringType;
-			var declaringNamespace = DeclaringNamespace;
-
-			if( declaringType != nullref ) declaringType.ToString( builder, format );
-			else if( declaringNamespace != null ) builder.Append( declaringNamespace );
-			else builder.Append( "<stripped>" );
-
-			builder.Append( '.' );
-			builder.Append( Name );
-
-			if( TemplateTypeDefinition != nullref ) {
-				builder.Append( '<' );
-				for( var i = 0; i < TemplateTypeDefinition.ParameterCount; ++i ) {
-					if( i > 0 ) builder.Append( ',' );
-					TemplateParameters[i]->ToString( builder, format );
-				}
-				builder.Append( '>' );
-			}
-		}
-	}
-
-	public partial struct FixedArrayType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			ElementType.ToString( builder, format );
-			builder.Append( '[' );
-			{
-				for( var i = 0; i < Dimensions; ++i ) {
-					if( i > 0 ) builder.Append( ',' );
-					builder.Append( Lengths[i] );
-				}
-			}
-			builder.Append( ']' );
-		}
-	}
-
-	public partial struct DynamicArrayType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			ElementType.ToString( builder, format );
-
-			builder.Append( '[' );
-			{
-				for( var i = 1; i < Dimensions; ++i )
-					builder.Append( ',' );
-			}
-			builder.Append( ']' );
-		}
-	}
-
-	public partial struct PointerType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			Pointee.ToString( builder, format );
-			builder.Append( '*' );
-		}
-	}
-
-	public partial struct ReferenceType : IFormattable {
-		public new void ToString( StringBuilder builder, string format ) {
-			Referentee.ToString( builder, format );
-			builder.Append( '&' );
 		}
 	}
 }

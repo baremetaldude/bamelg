@@ -33,6 +33,15 @@ namespace Platform.Kernel {
 			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
+		public SystemError Connect( TimeSpan& timeout, Utf8String path ) {
+			var endpoint = new sockaddr_un( path );
+			return ConnectNonBlocking( timeout, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+		}
+
+		public SystemError Connect( TimeSpan& timeout, sockaddr_un& endpoint ) {
+			return ConnectNonBlocking( timeout, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+		}
+
 		public bool Bind( Utf8String path ) {
 			var nativeEndpoint = new sockaddr_un( path );
 			return LibcApi.bind( this, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) ) == 0;

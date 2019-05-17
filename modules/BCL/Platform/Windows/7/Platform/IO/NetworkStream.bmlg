@@ -11,6 +11,10 @@ using System.Net;
 namespace Platform.IO {
 	// Должен использоваться с неблокирующими сокетами в Fiber'ах либо с блокирующими в тредах
 	public class NetworkStream : IStream {
+		public TimeSpan ConnectTimeout { get; set; }
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
@@ -35,6 +39,16 @@ namespace Platform.IO {
 
 		~NetworkStream() { Close(); }
 		public override void Dispose() { Close(); base.Dispose(); }
+
+		private bool _immediateDeliveryTCP { get; set; } = true;
+
+		public bool ImmediateDeliveryTCP {
+			get { return _immediateDeliveryTCP; }
+			set {
+				if( _handle != SocketHandle.Invalid ) bitcast<SocketHandleTCP>( _handle ).NoDelay = value;
+				_immediateDeliveryTCP = value;
+			}
+		}
 
 		private void Close() {
 			if( CloseHandle ) _handle.Close();
@@ -78,7 +92,7 @@ namespace Platform.IO {
 				return false;
 			}
 
-			socket.NoDelay = true;
+			if( _immediateDeliveryTCP ) socket.NoDelay = true;
 			return true;
 		}
 
@@ -92,7 +106,7 @@ namespace Platform.IO {
 				return false;
 			}
 
-			socket.NoDelay = true;
+			if( _immediateDeliveryTCP ) socket.NoDelay = true;
 			return true;
 		}
 
@@ -135,7 +149,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; count > 0; ) {
 			restart_ReadFile:
-				var error = _handle.Read( _timeout, 0, data, count, transmitted );
+				var error = _handle.Read( ReadTimeout, 0, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 					break;
@@ -158,7 +172,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
-				var error = _handle.Write( _timeout, 0, data, count, transmitted );
+				var error = _handle.Write( WriteTimeout, 0, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 					break;
@@ -175,11 +189,11 @@ namespace Platform.IO {
 		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
 		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
 
-		protected TimeSpan _timeout = TimeSpan.Zero;
-		public TimeSpan Timeout { get { return _timeout; } set { _timeout = value; } }
-
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 	}
 
 	public class UdpStream : NetworkStream, IStream {
@@ -198,7 +212,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
-				var error = _handle.SendTo( _timeout, &WriteEndpoint.Address, WriteEndpoint.Length, data, count, transmitted );
+				var error = _handle.SendTo( WriteTimeout, &WriteEndpoint.Address, WriteEndpoint.Length, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "SendTo", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 					break;
@@ -217,7 +231,7 @@ namespace Platform.IO {
 			var transmitted = 0;
 			for( ; count > 0; ) {
 			restart_ReadFile:
-				var error = _handle.ReceiveFrom( _timeout, &LastReceiveFrom.Address, LastReceiveFrom.Length, data, count, transmitted );
+				var error = _handle.ReceiveFrom( ReadTimeout, &LastReceiveFrom.Address, LastReceiveFrom.Length, data, count, transmitted );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "ReceiveFrom", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 					break;
@@ -237,5 +251,8 @@ namespace Platform.IO {
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 	}
 }
