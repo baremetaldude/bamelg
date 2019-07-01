@@ -41,9 +41,9 @@ namespace Platform.IO {
 		public FileStream( IPlatformErrorHandler errorHandler ) { ErrorHandler = errorHandler; }
 		public FileStream( string name, FileAccessRights fDesiredAccess ) { Open( name, fDesiredAccess ); }
 
-		public static FileStream CreateReadStream( string name ) { var result = new FileStream(); result.OpenRead( name ); return result; }
-		public static FileStream CreateWriteStream( string name ) { var result = new FileStream(); result.OpenWrite( name ); return result; }
-		public static FileStream CreateAppendStream( string name ) { var result = new FileStream(); result.OpenAppend( name ); return result; }
+		public static FileStream CreateReadStream( string name ) { var result = new FileStream(); if( !result.OpenRead( name ) ) return null; return result; }
+		public static FileStream CreateWriteStream( string name ) { var result = new FileStream(); if( !result.OpenWrite( name ) ) return null; return result; }
+		public static FileStream CreateAppendStream( string name ) { var result = new FileStream(); if( !result.OpenAppend( name ) ) return null; return result; }
 		// @}
 
 		~FileStream() { Close(); }

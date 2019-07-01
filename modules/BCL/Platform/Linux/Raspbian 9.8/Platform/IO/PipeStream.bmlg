@@ -1,0 +1,157 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Net;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.IO {
+	// Must be used with non-blocking sockets inside Fibers or with blocking sockets(in ST/MT environment)
+	public class PipeStream : IStream {
+		public TimeSpan ConnectTimeout { get; set; }
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+
+		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
+		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
+
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.VectoredIO | StreamCapabilities.Timeout; } }
+		public StreamingBufferInfo* BufferInfo { get { return null; } }
+
+		private PipeHandle _readHandle = PipeHandle.Invalid;
+		public PipeHandle ReadHandle {
+			get { return _readHandle; }
+			set {
+				if( _readHandle == value ) return;
+
+				Close();
+				_readHandle = value;
+			}
+		}
+
+		private PipeHandle _writeHandle = PipeHandle.Invalid;
+		public PipeHandle WriteHandle {
+			get { return _writeHandle; }
+			set {
+				if( _writeHandle == value ) return;
+
+				Close();
+				_writeHandle = value;
+			}
+		}
+
+		public bool CloseReadHandle { get; set; } = true;
+		public bool CloseWriteHandle { get; set; } = true;
+
+		public string Context;
+
+		public PipeStream() {
+		}
+
+		public static PipeStream[2] CreatePair() {
+			PipeHandle[2] pair1;
+			PipeHandle[2] pair2;
+
+			LibcApi.pipe( pair1 );
+			LibcApi.pipe( pair2 );
+
+			return new PipeStream[2] {
+				new PipeStream( pair1[PipeHandle.ReadEnd], pair2[PipeHandle.WriteEnd] ),
+				new PipeStream( pair2[PipeHandle.ReadEnd], pair1[PipeHandle.WriteEnd] )
+			};
+		}
+
+		public PipeStream( PipeHandle readHandle, PipeHandle writeHandle )
+			: this() {
+			_readHandle = readHandle;
+			_writeHandle = writeHandle;
+		}
+
+		~PipeStream() { Close(); }
+		public override void Dispose() { Close(); base.Dispose(); }
+
+		private void Close() {
+			closeReadHandle();
+			closeWriteHandle();
+		}
+
+		private void closeReadHandle() {
+			if( CloseReadHandle ) _readHandle.Close();
+			else _readHandle = PipeHandle.Invalid;
+		}
+
+		private void closeWriteHandle() {
+			if( CloseWriteHandle ) _writeHandle.Close();
+			else _writeHandle = PipeHandle.Invalid;
+		}
+
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
+
+		public int Read( void* buffer, int count ) {
+			if( !_readHandle.IsValid || count == 0 || buffer == null ) return 0;
+
+			var data = ( byte* ) buffer;
+
+			var transmitted = 0;
+		restart_Receive:
+			var error = _readHandle.Read( ReadTimeout, data, count, transmitted );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return transmitted;
+			}
+
+			return transmitted;
+		}
+
+		public void Write( void* buffer, int count ) {
+			if( !_writeHandle.IsValid || count == 0 || buffer == null ) return;
+
+		restart_Send:
+			var error = _writeHandle.Write( WriteTimeout, buffer, count );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return;
+			}
+		}
+
+		public int Read( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+			int totalReaden;
+
+		restart_Receive:
+			var error = _readHandle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return totalReaden;
+			}
+
+			return totalReaden;
+		}
+
+		public void Write( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+
+		restart_Send:
+			var error = _writeHandle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return;
+			}
+		}
+
+		void IStream.Flush( FlushKind flushKind ) { }
+
+		long IStream.Position { get { return 0; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+	}
+}

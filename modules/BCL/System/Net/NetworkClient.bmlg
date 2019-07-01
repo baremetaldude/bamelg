@@ -40,6 +40,13 @@ namespace System.Net {
 		public bool AcceptLocal( Utf8String endpoint ) { return _implAcceptLocal( endpoint ); }
 		/// @}
 
+		/// @{ Use existing stream (for example PipeStream)
+		public bool Connect( IStream stream ) {
+			_stream = stream;
+			return OnConnected();
+		}
+		/// @}
+
 		protected virtual bool OnConnected() { return true; }
 	}
 }
