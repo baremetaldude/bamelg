@@ -116,10 +116,10 @@ namespace Platform.IO {
 			}
 		}
 
-		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); result.OpenRead( name ); return result; }
-		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenWrite( name, permission ); return result; }
-		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenReadWrite( name, permission ); return result; }
-		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenAppend( name, permission ); return result; }
+		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); if( !result.OpenRead( name ) ) return null; return result; }
+		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenWrite( name, permission ) ) return null; return result; }
+		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenReadWrite( name, permission ) ) return null; return result; }
+		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenAppend( name, permission ) ) return null; return result; }
 
 		public bool OpenRead( CUtf8String name ) {
 			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;

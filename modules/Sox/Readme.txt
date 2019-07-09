@@ -1,0 +1,1 @@
+Even in 2019 version 14.4.2 still leaks, do not use this library

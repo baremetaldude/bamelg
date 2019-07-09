@@ -51,7 +51,7 @@ namespace System.IO {
 		}
 
 		public static bool Enabled { get { return FiberManager != null; } }
-		public static bool IsFiberExecuting { get { var& fm = FiberManager; return fm != null && &fm.MainFiber != fm.CurrentFiber; } }
+		public static bool IsFiberExecuting { get { return FiberManager.IsFiberExecuting; } }
 
 		void IFormattable.ToString( StringBuilder result, string format ) {
 			if( IsValid ) result.Append( *_impl );
@@ -237,6 +237,11 @@ namespace System.IO {
 				private List<DPC*> _pendingThreadPoolTasks = new List<DPC*>();
 
 				public int FiberCount { get { return _fibers.Count; } }
+				public bool IsFiberExecuting { get { return this != null && CurrentFiber != &MainFiber; } }
+
+				// false - transfer blocking operations to ThreadPool
+				// true - block all running fibers by blocking operation performing in same thread (may be useful when thread running with specific credentials)
+				public bool AllowBlockingOperations { get; set; }
 
 				// Some old Linux platforms have glibc threading bugs which prevents coroutines to work on memory not belonging to current thread stack
 				public MemoryPageManager PageManager;
@@ -556,7 +561,7 @@ namespace System.IO {
 					context->OnDispose = null;
 					context->CurrentManager = &FiberManager;
 
-					if( !IsFiberExecuting ) {
+					if( !context->CurrentManager->IsFiberExecuting || context->CurrentManager->AllowBlockingOperations ) {
 						context->CompletionFiber = null;
 						return;
 					}

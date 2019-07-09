@@ -194,6 +194,11 @@ namespace Platform.Libc {
 		public extern static int umount( CUtf8String specialFile );
 		public extern static int umount2( CUtf8String specialFile, UnmountFlags flags );
 
+		public extern static int fstatfs( int fildes, statfs* buf );
+		public extern static int fstatfs64( int fildes, statfs64* buf );
+		public extern static int statfs( sbyte* file, statfs* buf );
+		public extern static int statfs64( sbyte* file, statfs64* buf );
+
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
 
 		public extern static SocketHandle accept( IOHandle fd, void* addr, int& addrLen );
@@ -3594,11 +3599,11 @@ namespace Platform.Libc {
 		[Overlapped( Offset = 0 )]
 		public ulong __wseq;
 		[Overlapped( Offset = 0 )]
-		public UnnamedStruct_C7B465F9 __wseq32;
+		public UnnamedStruct_C7B4699D __wseq32;
 		[Overlapped( Offset = 8 )]
 		public ulong __g1_start;
 		[Overlapped( Offset = 8 )]
-		public UnnamedStruct_C7B466E6 __g1_start32;
+		public UnnamedStruct_C7B46A7A __g1_start32;
 		[ExplicitOffset( Offset = 16 )]
 		public uint[2] __g_refs;
 		[ExplicitOffset( Offset = 24 )]
@@ -5872,6 +5877,62 @@ namespace Platform.Libc {
 		[ExplicitOffset( Offset = 120 )]
 		public intptr[3] __glibc_reserved;
 	}
+	[ExplicitSize( Size = 120 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct statfs {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr f_type;
+		[ExplicitOffset( Offset = 8 )]
+		public intptr f_bsize;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr f_blocks;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr f_bfree;
+		[ExplicitOffset( Offset = 32 )]
+		public uintptr f_bavail;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr f_files;
+		[ExplicitOffset( Offset = 48 )]
+		public uintptr f_ffree;
+		[ExplicitOffset( Offset = 56 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 64 )]
+		public intptr f_namelen;
+		[ExplicitOffset( Offset = 72 )]
+		public intptr f_frsize;
+		[ExplicitOffset( Offset = 80 )]
+		public intptr f_flags;
+		[ExplicitOffset( Offset = 88 )]
+		public intptr[4] f_spare;
+	}
+	[ExplicitSize( Size = 120 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct statfs64 {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr f_type;
+		[ExplicitOffset( Offset = 8 )]
+		public intptr f_bsize;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr f_blocks;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr f_bfree;
+		[ExplicitOffset( Offset = 32 )]
+		public uintptr f_bavail;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr f_files;
+		[ExplicitOffset( Offset = 48 )]
+		public uintptr f_ffree;
+		[ExplicitOffset( Offset = 56 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 64 )]
+		public intptr f_namelen;
+		[ExplicitOffset( Offset = 72 )]
+		public intptr f_frsize;
+		[ExplicitOffset( Offset = 80 )]
+		public intptr f_flags;
+		[ExplicitOffset( Offset = 88 )]
+		public intptr[4] f_spare;
+	}
 	[ExplicitSize( Size = 256 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct statx {
@@ -6417,7 +6478,7 @@ namespace Platform.Libc {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_C7B465F9 {
+	public partial struct UnnamedStruct_C7B4699D {
 		[ExplicitOffset( Offset = 0 )]
 		public uint __low;
 		[ExplicitOffset( Offset = 4 )]
@@ -6425,7 +6486,7 @@ namespace Platform.Libc {
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
-	public partial struct UnnamedStruct_C7B466E6 {
+	public partial struct UnnamedStruct_C7B46A7A {
 		[ExplicitOffset( Offset = 0 )]
 		public uint __low;
 		[ExplicitOffset( Offset = 4 )]

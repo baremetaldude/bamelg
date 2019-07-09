@@ -192,6 +192,11 @@ namespace Platform.Libc {
 		public extern static int umount( CUtf8String specialFile );
 		public extern static int umount2( CUtf8String specialFile, UnmountFlags flags );
 
+		public extern static int fstatfs( int fildes, statfs* buf );
+		public extern static int fstatfs64( int fildes, statfs64* buf );
+		public extern static int statfs( sbyte* file, statfs* buf );
+		public extern static int statfs64( sbyte* file, statfs64* buf );
+
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
 
 		public extern static SocketHandle accept( IOHandle fd, void* addr, int& addrLen );
@@ -5833,6 +5838,62 @@ namespace Platform.Libc {
 		public timespec st_ctim;
 		[ExplicitOffset( Offset = 88 )]
 		public ulong st_ino;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct statfs {
+		[ExplicitOffset( Offset = 0 )]
+		public int f_type;
+		[ExplicitOffset( Offset = 4 )]
+		public int f_bsize;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr f_blocks;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr f_bfree;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr f_bavail;
+		[ExplicitOffset( Offset = 20 )]
+		public uintptr f_files;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr f_ffree;
+		[ExplicitOffset( Offset = 28 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 36 )]
+		public int f_namelen;
+		[ExplicitOffset( Offset = 40 )]
+		public int f_frsize;
+		[ExplicitOffset( Offset = 44 )]
+		public int f_flags;
+		[ExplicitOffset( Offset = 48 )]
+		public int[4] f_spare;
+	}
+	[ExplicitSize( Size = 84 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct statfs64 {
+		[ExplicitOffset( Offset = 0 )]
+		public int f_type;
+		[ExplicitOffset( Offset = 4 )]
+		public int f_bsize;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong f_blocks;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong f_bfree;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong f_bavail;
+		[ExplicitOffset( Offset = 32 )]
+		public ulong f_files;
+		[ExplicitOffset( Offset = 40 )]
+		public ulong f_ffree;
+		[ExplicitOffset( Offset = 48 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 56 )]
+		public int f_namelen;
+		[ExplicitOffset( Offset = 60 )]
+		public int f_frsize;
+		[ExplicitOffset( Offset = 64 )]
+		public int f_flags;
+		[ExplicitOffset( Offset = 68 )]
+		public int[4] f_spare;
 	}
 	[ExplicitSize( Size = 256 )]
 	[Alignment( Boundary = 4 )]
