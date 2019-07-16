@@ -54,11 +54,11 @@ namespace Platform.IO {
 		public IOHandle Handle = IOHandle.Invalid;
 
 		public Directory( Entry& directory ) {
-			Handle = SystemApi.openat( directory.ParentHandle, directory.Name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 );
+			Handle = SystemApi.openat( directory.ParentHandle, directory.Name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 );
 		}
 
 		public Directory( CUtf8String path ) {
-			Handle = SystemApi.open( path, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 );
+			Handle = SystemApi.open( path, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 );
 		}
 
 		~Directory() {
@@ -68,7 +68,7 @@ namespace Platform.IO {
 		public static yield<Entry> GetContents( CUtf8String path ) {
 			byte[BufferLength] buffer;
 
-			using( var handle = SystemApi.open( path, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ) ) {
+			using( var handle = SystemApi.open( path, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 ) ) {
 				var entry = new Entry { ParentHandle = handle };
 
 				for( var readen = SystemApi.getdents( handle, ( dirent* ) &buffer[0], buffer.Length ); readen > 0; readen = SystemApi.getdents( handle, ( dirent* ) &buffer[0], buffer.Length ) ) {
@@ -95,7 +95,7 @@ namespace Platform.IO {
 		public static yield<Entry> GetContents( Entry& directory ) {
 			byte[BufferLength] buffer;
 
-			using( var handle = SystemApi.openat( directory.ParentHandle, directory.Name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ) ) {
+			using( var handle = SystemApi.openat( directory.ParentHandle, directory.Name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 ) ) {
 				var entry = new Entry { ParentHandle = handle };
 
 				for( var readen = SystemApi.getdents( handle, ( dirent* ) &buffer[0], buffer.Length ); readen > 0; readen = SystemApi.getdents( handle, ( dirent* ) &buffer[0], buffer.Length ) ) {

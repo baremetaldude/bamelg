@@ -215,8 +215,8 @@ namespace Platform.Syscalls {
 		public extern static int fchmod( IOHandle handle, Permission permission );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=open
-		public extern static IOHandle open( CUtf8String name, FctlValue flags, int permissions );
-		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlValue flags, SymlinkFollowOption option );
+		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlFlags flags, SymlinkFollowOption option );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=close
 		public extern static int close( IOHandle handle );
@@ -243,7 +243,7 @@ namespace Platform.Syscalls {
 		public extern static int ioctl( IOHandle handle, Ioctls option, void* result );
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=fcntl
 		// public extern static int fcntl( IOHandle handle, FctlCommand option );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlValue value );
+		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=kqueue
 		public extern static KQueueHandle kqueue();
@@ -575,18 +575,18 @@ namespace Platform.Syscalls {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlValue options;
-				if( !Assert.Syscall( options = ( FctlValue ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FctlFlags options;
+				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
 					return false;
 
-				return ( options & FctlValue.FD_CLOEXEC ) != 0;
+				return ( options & FctlFlags.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlValue options;
-				if( !Assert.Syscall( options = ( FctlValue ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FctlFlags options;
+				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FctlValue.FD_CLOEXEC.Value(), value );
+				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.FD_CLOEXEC.Value(), value );
 
 				Assert.Syscall( SystemApi.fcntl( this, FctlCommand.F_SETFD, options ) );
 			}
@@ -594,18 +594,18 @@ namespace Platform.Syscalls {
 
 		public bool IsNonBlocking {
 			get {
-				FctlValue options;
-				if( !Assert.Syscall( options = ( FctlValue ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FctlFlags options;
+				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlValue.O_NONBLOCK ) != 0;
+				return ( options & FctlFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlValue options;
-				if( !Assert.Syscall( options = ( FctlValue ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FctlFlags options;
+				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FctlValue.O_NONBLOCK.Value(), value );
+				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
 
 				Assert.Syscall( SystemApi.fcntl( this, FctlCommand.F_SETFL, options ) );
 			}
@@ -715,7 +715,7 @@ namespace Platform.Syscalls {
 	public struct FileHandle : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public FileHandle( CUtf8String name, FctlValue flags, int permissions ) {
+		public FileHandle( CUtf8String name, FctlFlags flags, int permissions ) {
 			Assert.Syscall( this = bitcast<FileHandle>( SystemApi.open( name, flags, permissions ) ) );
 		}
 

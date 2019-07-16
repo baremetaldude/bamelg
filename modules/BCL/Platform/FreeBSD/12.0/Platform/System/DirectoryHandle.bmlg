@@ -13,8 +13,8 @@ namespace Platform.Libc {
 	public struct DirectoryHandle : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public DirectoryHandle( CUtf8String name ) { OpenBlocking( name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ); }
-		public DirectoryHandle( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { OpenAtBlocking( parent, name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, symlinkFollowOption ); }
+		public DirectoryHandle( CUtf8String name ) { OpenBlocking( name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 ); }
+		public DirectoryHandle( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { OpenAtBlocking( parent, name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, symlinkFollowOption ); }
 
 		internal SystemError getdents( dirent* buffer, int length, int& readen ) {
 			var result = SystemError.None;

@@ -20,7 +20,7 @@ namespace Platform.Libc {
 			this = bitcast<IOHandle>( handle );
 		}
 
-		public static SystemError Open( IOHandle& result, CUtf8String name, FctlValue flags, int permissions ) {
+		public static SystemError Open( IOHandle& result, CUtf8String name, FctlFlags flags, int permissions ) {
 			var resultCode = result.OpenBlocking( name, flags, permissions );
 			if( !result.IsValid ) return resultCode;
 			return SystemError.None;
@@ -169,7 +169,7 @@ namespace Platform.Libc {
 			}
 		}
 
-		protected SystemError OpenBlocking( CUtf8String name, FctlValue flags, int permissions ) {
+		protected SystemError OpenBlocking( CUtf8String name, FctlFlags flags, int permissions ) {
 			var result = SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() ) {
@@ -291,7 +291,7 @@ namespace Platform.Libc {
 				return RawRead( buffer, bufferLength, transmitted, fullBlock );
 		}
 
-		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlValue flags, SymlinkFollowOption symlinkFollowOption ) {
+		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlFlags flags, SymlinkFollowOption symlinkFollowOption ) {
 			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.openat( parent, name, flags, symlinkFollowOption ) );
 				if( !IsValid ) return LibcApi.LastError;
@@ -301,18 +301,18 @@ namespace Platform.Libc {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlValue options;
-				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FctlFlags options;
+				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
 					return false;
 
 				return ( options & FileDescriptorFlag.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlValue options;
-				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FctlFlags options;
+				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FileDescriptorFlag.FD_CLOEXEC.Value(), value );
+				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FileDescriptorFlag.FD_CLOEXEC.Value(), value );
 
 				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFD, options ) );
 			}
@@ -320,18 +320,18 @@ namespace Platform.Libc {
 
 		public bool IsNonBlocking {
 			get {
-				FctlValue options;
-				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FctlFlags options;
+				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlValue.O_NONBLOCK ) != 0;
+				return ( options & FctlFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlValue options;
-				if( !LibcApi.AssertErrno( options = ( FctlValue ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FctlFlags options;
+				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlValue ) BitOperations.MaskSet( options.Value(), FctlValue.O_NONBLOCK.Value(), value );
+				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
 
 				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
 			}

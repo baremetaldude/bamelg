@@ -17,7 +17,7 @@ namespace Platform.Kernel {
 		public DirectoryHandle() { }
 		public DirectoryHandle( CUtf8String name ) { LibcApi.Assert( Open( name ) ); }
 
-		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FctlValue.O_RDONLY | FctlValue.O_DIRECTORY, 0 ); }
+		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 ); }
 
 		internal SystemError getdents64( dirent64* buffer, intptr length, int& readen ) {
 			using( Fiber.AsyncCompletionRegion() )

@@ -33,14 +33,14 @@ namespace Platform.Libc {
 		public extern static CUtf8String* environ;
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=open
-		public extern static IOHandle open( CUtf8String name, FctlValue flags, int permissions );
-		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlValue flags, SymlinkFollowOption option );
+		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlFlags flags, SymlinkFollowOption option );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=ioctl
 		public extern static int ioctl( IOHandle handle, IoctlCommand option, void* result );
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=fcntl
 		// public extern static int fcntl( IOHandle handle, FctlCommand option );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlValue value );
+		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
 
 		/// http://linux.die.net/man/3/makecontext
 		public extern static void makecontext( ucontext_t* ucp, Functors.Action<Functors.Action<void*>, void*> nonTerminatingMethod, int argc, Functors.Action<void*> method, void* parameter );

@@ -38,12 +38,12 @@ namespace Platform.Libc {
 		public extern static int prctl( ProcessControlActions action, uint arg2 = 0, uint arg3 = 0, uint arg4 = 0, uint arg5 = 0 );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/open.2.html
-		public extern static IOHandle open( CUtf8String name, FctlValue flags, int permissions );
+		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl.2.html
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl_list.2.html
 		public extern static int ioctl( IOHandle handle, IoctlCommand option, void* result );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlValue value );
+		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
 
 		public static bool Assert( int code, [In] CallerContext& callercontext = nullref ) {
 			if( code != 0 ) {

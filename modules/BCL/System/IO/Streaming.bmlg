@@ -235,6 +235,42 @@ namespace System.IO {
 			}
 		}
 
+		public static void Write( this IStream destination, IStream source, int length, int bufferSize = BufferedStream.DefaultBufferSize ) {
+			if( !Assert.IsTrue( source != null ) ) return;
+			if( !Assert.IsTrue( destination != null ) ) return;
+
+			var bufferInfo = source.BufferInfo;
+			if( bufferInfo == null ) {
+				using( var page = Memory.CachedPages.PopScoped() ) {
+					var buffer = ( byte* ) page.Value;
+					var bufferLength = ( int ) Memory.DefaultPageSize;
+
+					for( ; ; ) {
+						var toRead = Math.Min( bufferLength, length );
+						var readen = source.Read( buffer, toRead );
+						if( readen == 0 ) break;
+						destination.Write( buffer, readen );
+
+						length -= readen;
+						if( length <= 0 ) break;
+					}
+				}
+			}
+			else {
+				for( ; bufferInfo->AvailableToRead > 0; ) {
+					var toRead = Math.Min( bufferInfo->AvailableToRead, length );
+
+					destination.Write( bufferInfo->ReadBufferStart, toRead );
+					length -= toRead;
+					bufferInfo->OnReadPerformed( toRead );
+
+					if( length <= 0 ) break;
+
+					source.Flush( FlushKind.Read );
+				}
+			}
+		}
+
 		public static void DrainToEnd( this IStream stream ) {
 			if( !Assert.IsTrue( stream != null ) ) return;
 

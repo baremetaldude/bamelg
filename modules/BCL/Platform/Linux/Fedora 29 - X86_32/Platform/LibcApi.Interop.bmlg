@@ -197,6 +197,9 @@ namespace Platform.Libc {
 		public extern static int statfs( sbyte* file, statfs* buf );
 		public extern static int statfs64( sbyte* file, statfs64* buf );
 
+		public extern static int sendfile( int outFd, int inFd, intptr* offset, uint count );
+		public extern static int sendfile64( int outFd, int inFd, long* offset, uint count );
+
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
 
 		public extern static SocketHandle accept( IOHandle fd, void* addr, int& addrLen );
@@ -479,7 +482,7 @@ namespace Platform.Libc {
 		public extern static int name_to_handle_at( int dfd, CUtf8String name, file_handle* handle, int* mntId, int flags );
 		public extern static int open_by_handle_at( int mountdirfd, file_handle* handle, int flags );
 		public extern static int readahead( int fd, long offset, uint count );
-		public extern static int splice( IOHandle fdin, long* offin, IOHandle fdout, long* offout, uint len, uint flags );
+		public extern static int splice( IOHandle fdin, long* offin, IOHandle fdout, long* offout, uint len, SpliceFlags flags );
 		public extern static int sync_file_range( int fd, long offset, long count, uint flags );
 		public extern static int tee( int fdin, int fdout, uint len, uint flags );
 		public extern static int vmsplice( int fdout, iovec* iov, uint count, uint flags );
@@ -2527,24 +2530,29 @@ namespace Platform.Libc {
 		EFD_NONBLOCK =  2048,
 	}
 	public enum FctlCommand : uint {
-		F_DUPFD =     0,
-		F_GETFD =     1,
-		F_SETFD =     2,
-		F_GETFL =     3,
-		F_SETFL =     4,
-		F_GETLK =     5,
-		F_SETLK =     6,
-		F_SETLKW =    7,
-		F_SETOWN =    8,
-		F_GETOWN =    9,
-		F_SETSIG =   10,
-		F_GETSIG =   11,
-		F_GETLK64 =  12,
-		F_SETLK64 =  13,
-		F_SETLKW64 = 14,
+		F_DUPFD =            0,
+		F_GETFD =            1,
+		F_SETFD =            2,
+		F_GETFL =            3,
+		F_SETFL =            4,
+		F_GETLK =            5,
+		F_SETLK =            6,
+		F_SETLKW =           7,
+		F_SETOWN =           8,
+		F_GETOWN =           9,
+		F_SETSIG =          10,
+		F_GETSIG =          11,
+		F_GETLK64 =         12,
+		F_SETLK64 =         13,
+		F_SETLKW64 =        14,
+		F_NOTIFY =        1026,
+		F_DUPFD_CLOEXEC = 1030,
+		F_SETPIPE_SZ =    1031,
+		F_GETPIPE_SZ =    1032,
+		F_GET_SEALS =     1034,
 	}
 	[Flags]
-	public enum FctlValue : int {
+	public enum FctlFlags : int {
 		O_RDONLY =        0,
 		FD_CLOEXEC =      1,
 		O_WRONLY =        1,
@@ -3079,6 +3087,14 @@ namespace Platform.Libc {
 		SHUT_RD =   0,
 		SHUT_WR =   1,
 		SHUT_RDWR = 2,
+	}
+	[Flags]
+	public enum SpliceFlags : uint {
+		None =              0,
+		SPLICE_F_MOVE =     1,
+		SPLICE_F_NONBLOCK = 2,
+		SPLICE_F_MORE =     4,
+		SPLICE_F_GIFT =     8,
 	}
 	public enum SS_ONSTACK : uint {
 		SS_ONSTACK = 1,

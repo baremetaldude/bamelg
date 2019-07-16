@@ -39,7 +39,7 @@ namespace System {
 			byte[50] buffer;
 
 			IOHandle uptimeHandle;
-			var error = IOHandle.RawOpen( uptimeHandle, "/proc/uptime", FctlValue.O_RDONLY, 0 );
+			var error = IOHandle.RawOpen( uptimeHandle, "/proc/uptime", FctlFlags.O_RDONLY, 0 );
 			if( error != SystemError.None ) return false;
 
 			using( uptimeHandle ) {

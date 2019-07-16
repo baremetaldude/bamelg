@@ -460,6 +460,17 @@ namespace System.Runtime {
 				*dest++ = *src++;
 		}
 
+		public static bool IsCleared( void* source, uint count ) {
+			var ptr = ( byte* ) source;
+			
+			while( count-- != 0 ) {
+				if( *ptr++ != 0 )
+					return false;
+			}
+
+			return true;
+		}
+		
 		public functor void MemoryAction( void* object );
 
 		public static void PerformFunctorOnStructArray( void* arrayStart, int elementSize, int elementsCount, MemoryAction @functor ) {

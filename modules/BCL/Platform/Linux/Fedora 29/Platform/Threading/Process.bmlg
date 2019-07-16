@@ -93,7 +93,7 @@ namespace System.Diagnostics {
 					LibcApi.close( LibcApi.StdErr );
 				}
 
-				var devNull = LibcApi.open( "/dev/null", FctlValue.O_RDWR, 0 );
+				var devNull = LibcApi.open( "/dev/null", FctlFlags.O_RDWR, 0 );
 
 				if( info.StdIn.IsValid ) LibcApi.dup2( info.StdIn, LibcApi.StdIn );
 				else if( info.DetachIO ) LibcApi.dup2( devNull, LibcApi.StdIn );

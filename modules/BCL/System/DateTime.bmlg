@@ -342,7 +342,7 @@ namespace System {
 		private static TextParsingStatus TryParse<TElement>( TElement* parsePosition, uint remaining, thistype& parsedResult ) {
 			parsedResult = default( thistype );
 
-			uint[6] values;
+			uint[7] values;
 			int year, month, day;
 
 			if( !uint.TryFetch( parsePosition, remaining, values[0] ) || remaining == 0 ) return TextParsingStatus.Format;
@@ -408,6 +408,23 @@ namespace System {
 			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03'
 				parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], ( int ) values[5] );
 				return TextParsingStatus.OK;
+			}
+
+			if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
+			var remainingDigits = remaining;
+			parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], ( int ) values[5] );
+
+			if( !uint.TryFetch( parsePosition, remaining, values[6], false, false ) ) return TextParsingStatus.Format;
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03.1234'
+				switch( remainingDigits ) {
+					case 1: parsedResult = new DateTime( parsedResult.Ticks + 1000000 * values[6] ); return TextParsingStatus.OK;
+					case 2: parsedResult = new DateTime( parsedResult.Ticks + 100000 * values[6] ); return TextParsingStatus.OK;
+					case 3: parsedResult = new DateTime( parsedResult.Ticks + 10000 * values[6] ); return TextParsingStatus.OK;
+					case 4: parsedResult = new DateTime( parsedResult.Ticks + 1000 * values[6] ); return TextParsingStatus.OK;
+					case 5: parsedResult = new DateTime( parsedResult.Ticks + 100 * values[6] ); return TextParsingStatus.OK;
+					case 6: parsedResult = new DateTime( parsedResult.Ticks + 10 * values[6] ); return TextParsingStatus.OK;
+					case 7: parsedResult = new DateTime( parsedResult.Ticks + values[6] ); return TextParsingStatus.OK;
+				}
 			}
 
 			return TextParsingStatus.Format;

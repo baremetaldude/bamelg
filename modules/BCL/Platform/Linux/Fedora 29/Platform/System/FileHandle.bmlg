@@ -12,14 +12,14 @@ using Platform.Libc;
 
 namespace Platform.Kernel {
 	// Usage:
-	// using( var handle = new FileHandle( "/path/file", FctlValue.O_RDWR ) ) {
+	// using( var handle = new FileHandle( "/path/file", FctlFlags.O_RDWR ) ) {
 	//	...
 	// }
 	public struct FileHandle : IOHandleBlocking {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public FileHandle( CUtf8String name, FctlValue flags, int permissions = 0 ) { OpenBlocking( name, flags, permissions ); }
-		public FileHandle( IOHandle parent, CUtf8String name, FctlValue flags, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { OpenAtBlocking( parent, name, flags, symlinkFollowOption ); }
+		public FileHandle( CUtf8String name, FctlFlags flags, int permissions = 0 ) { OpenBlocking( name, flags, permissions ); }
+		public FileHandle( IOHandle parent, CUtf8String name, FctlFlags flags, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { OpenAtBlocking( parent, name, flags, symlinkFollowOption ); }
 
 		public static bool Delete( CUtf8String path ) {
 			return LibcApi.unlink( path ) == 0;

@@ -118,7 +118,7 @@ namespace Platform.IO {
 
 		public static ReadStream OpenRead( CUtf8String name ) {
 			IOHandle handle;
-			if( !Assert.Syscall( handle = SystemApi.open( name, FctlValue.O_RDONLY, 0 ), "Unable to open '{0}'", name ) ) return null;
+			if( !Assert.Syscall( handle = SystemApi.open( name, FctlFlags.O_RDONLY, 0 ), "Unable to open '{0}'", name ) ) return null;
 
 			return new ReadStream( handle );
 		}
@@ -127,7 +127,7 @@ namespace Platform.IO {
 			var exists = File.Exists( name );
 
 			IOHandle handle;
-			if( !Assert.Syscall( handle = SystemApi.open( name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_TRUNC, permission ), "Unable to open '{0}'", name ) ) return null;
+			if( !Assert.Syscall( handle = SystemApi.open( name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_TRUNC, permission ), "Unable to open '{0}'", name ) ) return null;
 
 			if( !exists ) SystemApi.fchmod( handle, permission ); // override umask
 
@@ -137,7 +137,7 @@ namespace Platform.IO {
 		public static WriteStream OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
 			var exists = File.Exists( name );
 
-			var handle = SystemApi.open( name, FctlValue.O_CREAT | FctlValue.O_WRONLY | FctlValue.O_APPEND, permission );
+			var handle = SystemApi.open( name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_APPEND, permission );
 			if( !Assert.Syscall( handle, "Unable to open '{0}'", name ) ) return null;
 			Assert.Syscall( SystemApi.lseek( handle, 0, FileSeekOrigin.SEEK_END ) );
 
