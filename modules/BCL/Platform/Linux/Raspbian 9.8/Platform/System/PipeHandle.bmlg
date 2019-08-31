@@ -18,5 +18,17 @@ namespace Platform.Kernel {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
 		public void WriteByte( byte value ) { Write( &value, sizeof( value ) ); }
+
+		public int PipeSize {
+			get {
+				int result;
+				LibcApi.AssertErrno( result = LibcApi.fcntl( this, FctlCommand.F_GETPIPE_SZ, 0 ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETPIPE_SZ, ( FctlFlags ) value ) );
+			}
+		}
+
 	}
 }

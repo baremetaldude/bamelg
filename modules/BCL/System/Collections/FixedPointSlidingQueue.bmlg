@@ -9,12 +9,15 @@ using System.Diagnostics;
 namespace System.Collections {
 	public class FixedPointSlidingQueue {
 		private int _scale = 100;
-		private double _invScale = 1.0 / _scale;
+
+		private float _invScale32 = 1f / _scale;
+		private double _invScale64 = 1.0 / _scale;
 
 		public FixedPointSlidingQueue( TimeSpan timeframe, int scale = 100 ) {
 			Timeframe = timeframe;
 			_scale = scale;
-			_invScale = 1.0 / scale;
+			_invScale32 = 1f / scale;
+			_invScale64 = 1.0 / scale;
 		}
 
 		public struct ValueInfo {
@@ -22,8 +25,11 @@ namespace System.Collections {
 			public int Value;
 		}
 
+		public int ToFixed( float value ) { return Math.RoundToInt32( value * _scale ); }
 		public int ToFixed( double value ) { return Math.RoundToInt32( value * _scale ); }
-		public double ToFloating( int value ) { return value * _invScale; }
+
+		public float ToFloating32( int value ) { return value * _invScale32; }
+		public double ToFloating( int value ) { return value * _invScale64; }
 
 		public PagedQueue<ValueInfo> _values = new PagedQueue<ValueInfo>();
 		public readonly TimeSpan Timeframe;
@@ -91,18 +97,21 @@ namespace System.Collections {
 			return dropped;
 		}
 
-		public void Add( DateTime time, double value ) {
+		public void AddRaw( DateTime time, int value ) {
 			Update( time );
 
 			var ptr = _values.Enqueue();
 			ptr->Date = time;
-			ptr->Value = ToFixed( value );
+			ptr->Value = value;
 
 			foreach( var view in Views ) {
 				if( view.FrameStart == null ) view.FrameStart = ptr;
 				view.OnValueAdded( this, ptr );
 			}
 		}
+
+		public void Add( DateTime time, float value ) { AddRaw( time, ToFixed( value ) ); }
+		public void Add( DateTime time, double value ) { AddRaw( time, ToFixed( value ) ); }
 
 		public List<SlidingView> Views = new List<SlidingView>();
 
@@ -160,6 +169,41 @@ namespace System.Collections {
 			}
 		}
 
+		public class AverageViewRaw : SlidingView {
+			private int _sum = 0;
+
+			public int Count { get; private set; }
+			public int RawValue { get; private set; }
+
+			public AverageViewRaw( declaringtype parent, TimeSpan timeframe )
+				: base( parent, timeframe ) {
+				Count = 0;
+				RawValue = 0;
+			}
+
+			public AverageViewRaw( declaringtype parent )
+				: this( parent, parent.Timeframe ) {
+			}
+
+			private void UpdateValue( declaringtype parent ) {
+				RawValue = Count > 0 ? _sum / Count : 0;
+			}
+
+			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+				++Count;
+				_sum += value->Value;
+
+				UpdateValue( parent );
+			}
+
+			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+				--Count;
+				_sum -= value->Value;
+
+				UpdateValue( parent );
+			}
+		}
+
 		public class MaxView : SlidingView {
 			private TrackablePriorityQueue<int> _maxValues = new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) );
 			private Queue<int> _indices = new Queue<int>();
@@ -192,6 +236,38 @@ namespace System.Collections {
 			}
 		}
 
+		public class MaxViewRaw : SlidingView {
+			private TrackablePriorityQueue<int> _maxValues = new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) );
+			private Queue<int> _indices = new Queue<int>();
+
+			public int RawValue { get; private set; }
+
+			public MaxViewRaw( declaringtype parent, TimeSpan timeframe )
+				: base( parent, timeframe ) {
+				RawValue = int.MinValue;
+			}
+
+			public MaxViewRaw( declaringtype parent )
+				: this( parent, parent.Timeframe ) {
+			}
+
+			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+				var trackingIndex = _maxValues.Enqueue( value->Value );
+				_indices.Enqueue( trackingIndex );
+
+				RawValue = _maxValues.Top;
+			}
+
+			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+				var trackingIndex = _indices.Dequeue();
+
+				Debug.Assert( value->Value == _maxValues[trackingIndex] );
+				_maxValues.Remove( trackingIndex );
+
+				RawValue = _maxValues.Count > 0 ? _maxValues.Top : int.MinValue;
+			}
+		}
+
 		public class MinView : SlidingView {
 			private TrackablePriorityQueue<int> _minValues = new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) );
 			private Queue<int> _indices = new Queue<int>();
@@ -221,6 +297,38 @@ namespace System.Collections {
 				_minValues.Remove( trackingIndex );
 
 				Value = _minValues.Count > 0 ? parent.ToFloating( _minValues.Top ) : double.MaxValue;
+			}
+		}
+
+		public class MinViewRaw : SlidingView {
+			private TrackablePriorityQueue<int> _minValues = new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) );
+			private Queue<int> _indices = new Queue<int>();
+
+			public int RawValue { get; private set; }
+
+			public MinViewRaw( declaringtype parent, TimeSpan timeframe )
+				: base( parent, timeframe ) {
+				RawValue = int.MaxValue;
+			}
+
+			public MinViewRaw( declaringtype parent )
+				: this( parent, parent.Timeframe ) {
+			}
+
+			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+				var trackingIndex = _minValues.Enqueue( value->Value );
+				_indices.Enqueue( trackingIndex );
+
+				RawValue = _minValues.Top;
+			}
+
+			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+				var trackingIndex = _indices.Dequeue();
+
+				Debug.Assert( value->Value == _minValues[trackingIndex] );
+				_minValues.Remove( trackingIndex );
+
+				RawValue = _minValues.Count > 0 ? _minValues.Top : int.MaxValue;
 			}
 		}
 	}

@@ -101,6 +101,74 @@ namespace Platform.Kernel {
 			}
 		}
 
+		public SystemError ReceiveFile( TimeSpan timeout, IOHandleBlocking destination, intptr offset, intptr length, intptr& transferred ) {
+			if( Fiber.IsFiberExecuting ) {
+				using( Fiber.AsyncCompletionRegion() ) {
+					// @{ IsNonBlocking = false;
+					FctlFlags options;
+					if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+						return LibcApi.LastError;
+
+					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), false );
+					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+					// @}
+
+					var result = ReceiveFile( timeout, destination, offset, length, transferred );
+
+					// @{ IsNonBlocking = true;
+					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), true );
+					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+					// @}
+
+					return result;
+				}
+			}
+			else {
+				using( new AlarmRegion( timeout ) ) {
+					transferred = 0;
+
+					PipeHandle[2] pipes;
+					LibcApi.pipe( pipes );
+
+					finally {
+						pipes[PipeHandle.ReadEnd].Close();
+						pipes[PipeHandle.WriteEnd].Close();
+					}
+
+					int prevRcvLowWatermark = 0;
+
+					// SO_RCVLOWAT didnt work with splice
+					// var isTcpSocket = LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) == 0;
+					// finally {
+					//	if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) );
+					// }
+
+					var pipeSize = pipes[PipeHandle.WriteEnd].PipeSize;
+
+					for( ; ; ) {
+						var fillPipeSize = ( int ) Math.Min( length - transferred, pipeSize );
+						// if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &fillPipeSize, sizeof( fillPipeSize ) ) );
+						var flags = SpliceFlags.SPLICE_F_MOVE;
+						if( transferred + fillPipeSize > length ) flags |= SpliceFlags.SPLICE_F_MORE;
+
+						var fillPipeResult = LibcApi.splice( this, null, pipes[PipeHandle.WriteEnd], null, ( uint ) fillPipeSize, flags );
+						if( fillPipeResult <= 0 ) return LibcApi.LastError;
+						var readen = fillPipeResult;
+
+						long offset2 = offset;
+						var drainPipeResult = LibcApi.splice( pipes[PipeHandle.ReadEnd], null, destination, &offset2, ( uint ) readen, flags );
+						if( drainPipeResult <= 0 ) return LibcApi.LastError;
+						var written = drainPipeResult;
+
+						Assert.AreEqual( readen, written );
+						transferred += written;
+
+						if( transferred >= length ) return SystemError.None;
+					}
+				}
+			}
+		}
+
 		protected SystemError WriteNonBlocking( TimeSpan timeout, vararg iovec data ) {
 			if( data.Length == 0 ) return SystemError.None;
 

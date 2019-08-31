@@ -204,6 +204,14 @@ namespace Platform.Libc {
 		public extern static int umount( CUtf8String specialFile );
 		public extern static int umount2( CUtf8String specialFile, UnmountFlags flags );
 
+		public extern static int fstatfs( int fildes, statfs* buf );
+		public extern static int fstatfs64( int fildes, statfs64* buf );
+		public extern static int statfs( CUtf8String file, statfs* buf );
+		public extern static int statfs64( CUtf8String file, statfs64* buf );
+
+		public extern static intptr sendfile( IOHandle outFd, IOHandle inFd, intptr* offset, uintptr count );
+		public extern static intptr sendfile64( IOHandle outFd, IOHandle inFd, long* offset, uintptr count );
+
 		public extern static int process_vm_readv( int pid, iovec* lvec, uintptr liovcnt, iovec* rvec, uintptr riovcnt, uintptr flags );
 		public extern static int process_vm_writev( int pid, iovec* lvec, uintptr liovcnt, iovec* rvec, uintptr riovcnt, uintptr flags );
 
@@ -481,7 +489,7 @@ namespace Platform.Libc {
 		public extern static int name_to_handle_at( int dfd, CUtf8String name, file_handle* handle, int* mntId, int flags );
 		public extern static int open_by_handle_at( int mountdirfd, file_handle* handle, int flags );
 		public extern static int readahead( int fd, long offset, uint count );
-		public extern static int splice( IOHandle fdin, long* offin, IOHandle fdout, long* offout, uint len, uint flags );
+		public extern static int splice( IOHandle fdin, long* offin, IOHandle fdout, long* offout, uint len, SpliceFlags flags );
 		public extern static int sync_file_range( int fd, long offset, long count, uint flags );
 		public extern static int tee( int fdin, int fdout, uint len, uint flags );
 		public extern static int vmsplice( int fdout, iovec* iov, uint count, uint flags );
@@ -2053,21 +2061,25 @@ namespace Platform.Libc {
 		EFD_NONBLOCK =  2048,
 	}
 	public enum FctlCommand : uint {
-		F_DUPFD =     0,
-		F_GETFD =     1,
-		F_SETFD =     2,
-		F_GETFL =     3,
-		F_SETFL =     4,
-		F_GETLK =     5,
-		F_SETLK =     6,
-		F_SETLKW =    7,
-		F_SETOWN =    8,
-		F_GETOWN =    9,
-		F_SETSIG =   10,
-		F_GETSIG =   11,
-		F_GETLK64 =  12,
-		F_SETLK64 =  13,
-		F_SETLKW64 = 14,
+		F_DUPFD =            0,
+		F_GETFD =            1,
+		F_SETFD =            2,
+		F_GETFL =            3,
+		F_SETFL =            4,
+		F_GETLK =            5,
+		F_SETLK =            6,
+		F_SETLKW =           7,
+		F_SETOWN =           8,
+		F_GETOWN =           9,
+		F_SETSIG =          10,
+		F_GETSIG =          11,
+		F_GETLK64 =         12,
+		F_SETLK64 =         13,
+		F_SETLKW64 =        14,
+		F_NOTIFY =        1026,
+		F_DUPFD_CLOEXEC = 1030,
+		F_SETPIPE_SZ =    1031,
+		F_GETPIPE_SZ =    1032,
 	}
 	[Flags]
 	public enum FctlFlags : int {
@@ -2612,6 +2624,14 @@ namespace Platform.Libc {
 		SHUT_RD =   0,
 		SHUT_WR =   1,
 		SHUT_RDWR = 2,
+	}
+	[Flags]
+	public enum SpliceFlags : uint {
+		None =              0,
+		SPLICE_F_MOVE =     1,
+		SPLICE_F_NONBLOCK = 2,
+		SPLICE_F_MORE =     4,
+		SPLICE_F_GIFT =     8,
 	}
 	public enum SS_ONSTACK : uint {
 		SS_ONSTACK = 1,
@@ -5234,6 +5254,62 @@ namespace Platform.Libc {
 		public timespec st_ctim;
 		[ExplicitOffset( Offset = 96 )]
 		public ulong st_ino;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct statfs {
+		[ExplicitOffset( Offset = 0 )]
+		public int f_type;
+		[ExplicitOffset( Offset = 4 )]
+		public int f_bsize;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr f_blocks;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr f_bfree;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr f_bavail;
+		[ExplicitOffset( Offset = 20 )]
+		public uintptr f_files;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr f_ffree;
+		[ExplicitOffset( Offset = 28 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 36 )]
+		public int f_namelen;
+		[ExplicitOffset( Offset = 40 )]
+		public int f_frsize;
+		[ExplicitOffset( Offset = 44 )]
+		public int f_flags;
+		[ExplicitOffset( Offset = 48 )]
+		public int[4] f_spare;
+	}
+	[ExplicitSize( Size = 88 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct statfs64 {
+		[ExplicitOffset( Offset = 0 )]
+		public int f_type;
+		[ExplicitOffset( Offset = 4 )]
+		public int f_bsize;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong f_blocks;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong f_bfree;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong f_bavail;
+		[ExplicitOffset( Offset = 32 )]
+		public ulong f_files;
+		[ExplicitOffset( Offset = 40 )]
+		public ulong f_ffree;
+		[ExplicitOffset( Offset = 48 )]
+		public fsid_t f_fsid;
+		[ExplicitOffset( Offset = 56 )]
+		public int f_namelen;
+		[ExplicitOffset( Offset = 60 )]
+		public int f_frsize;
+		[ExplicitOffset( Offset = 64 )]
+		public int f_flags;
+		[ExplicitOffset( Offset = 68 )]
+		public int[4] f_spare;
 	}
 	[ExplicitSize( Size = 544 )]
 	[Alignment( Boundary = 2 )]
