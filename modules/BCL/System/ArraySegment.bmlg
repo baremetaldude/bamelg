@@ -18,7 +18,7 @@ namespace System {
 	}
 
 	// Unsafe counterpart
-	public struct MemorySegment<T> {
+	public struct MemorySegment<T> : IFormattable {
 		public MemorySegment( T[] array )
 			: this( &array[0], ( uint ) array.Length ) {
 		}
@@ -38,6 +38,19 @@ namespace System {
 
 		public static explicit operator MemorySegment( MemorySegment<T>& @this ) {
 			return new MemorySegment( @this.Start, @this.ByteCount );
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			if( format == "B" ) {
+				var byteCount = ByteCount;
+				if( byteCount <= 64 )
+					PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, Start, ( uint ) ByteCount, true );
+				else 
+					PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, Start, 64, true );
+			}
+			else {
+				builder.Concat( "Start='", Start, "' Count='", Count, '\'' );
+			}
 		}
 	}
 
