@@ -2,7 +2,7 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <NativeTargetPlatform>Linux</NativeTargetPlatform>
-    <NativeTargetPlatformVersion>Raspbian 9.8</NativeTargetPlatformVersion>
+    <NativeTargetPlatformVersion>Raspbian 10</NativeTargetPlatformVersion>
     <RootNamespace>Example</RootNamespace>
     <SbcsStringCodepage>20866</SbcsStringCodepage>
   </PropertyGroup>
@@ -12,7 +12,7 @@
     <ProjectGuid>{E25C41BB-A263-429c-A364-D6F07D9BF919}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>SimpleFibers</AssemblyName>
+    <AssemblyName>HttpServer</AssemblyName>
     <TargetCpu Condition="'$(TargetCpu)' == ''">ARM_32</TargetCpu>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
@@ -36,58 +36,58 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - memcheck|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_NETWORK_SERVER;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - gdb|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_NETWORK_SERVER;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <StartProgram>gdb -ex=run --args "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - helgrind|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_NETWORK_SERVER;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
-    <ModularBuild Condition="'$(ModularBuild)' == ''">false</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_FIBER</DefineConstants>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_NETWORK_SERVER;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - drd|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>false</RunUnitTests>
+    <RunUnitTests>true</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_NETWORK_SERVER;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --show-stack-usage=yes --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
     <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>1</OptimizationLevel>
-    <DefineConstants>TRACE;TRACE_FIBER</DefineConstants>
+    <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
@@ -104,6 +104,7 @@
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
+    <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
   <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->
