@@ -2020,7 +2020,7 @@ namespace System {
 							continue;
 
 						case 'y': builder.Append( year, "D3" ); i += skip; continue;
-						case 'z': { // offset from UTC, "+04:00"
+						case 'z': { // {0:zzz}, offset from UTC, "+04:00"
 								if( value.Kind == DateTimeKind.Unbiased ) {
 									builder.Append( "+00:00" );
 									i += skip;
@@ -2052,7 +2052,7 @@ namespace System {
 						case 'M': builder.Append( month, "D2" ); i += skip; continue;
 						case 's': builder.Append( second, "D2" ); i += skip; continue;
 						case 'y': builder.Append( year % 100, "D2" ); i += skip; continue;
-						case 'z': { // hour offset from UTC, "+04"
+						case 'z': { // {0:zz}, hour offset from UTC, "+04"
 								var offset = DateTime.GetLocalFromUtcOffset( value );
 								if( offset.Hours >= 0 ) builder.Append( '+' );
 								builder.Append( offset.Hours, "D2" );
@@ -2076,7 +2076,7 @@ namespace System {
 						case 'M': builder.Append( month ); i += skip; continue;
 						case 's': builder.Append( second ); i += skip; continue;
 						case 'y': builder.Append( year % 100 ); i += skip; continue;
-						case 'z': { // hour offset from UTC, "+4"
+						case 'z': { // {0:z}, hour offset from UTC, "+4"
 								var offset = DateTime.GetLocalFromUtcOffset( value );
 								if( offset.Hours >= 0 ) builder.Append( '+' );
 								builder.Append( offset.Hours );

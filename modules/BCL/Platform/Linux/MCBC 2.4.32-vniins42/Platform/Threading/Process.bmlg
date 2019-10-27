@@ -4,6 +4,8 @@
 // See license at http://bamelg.com/license.txt
 //
 
+using System.Collections;
+
 using Platform.Kernel;
 using Platform.Libc;
 
@@ -38,6 +40,8 @@ namespace System.Diagnostics {
 		public Utf8String FileName;
 		public Utf8String[] Parameters;
 		public Utf8String WorkingDirectory;
+
+		public EnvironmentVariableUTF8[] EnvironmentVariables;
 
 		internal PipeHandle[2] _pipe = new PipeHandle[2] default( PipeHandle.Invalid );
 	}
@@ -115,6 +119,9 @@ namespace System.Diagnostics {
 							LibcApi.close( handle );
 					}
 				}
+
+				foreach( var item in info.EnvironmentVariables )
+					Environment.SetEnvironmentVariable( item.Name, item.Value );
 
 				LibcApi.execve( info.FileName, parameters, LibcApi.environ );
 

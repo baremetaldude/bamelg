@@ -1,0 +1,45 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime.CompilerServices;
+
+namespace System.Diagnostics {
+	// Linux, BSD
+	public struct EnvironmentVariableUTF8 {
+		public Utf8String Name, Value;
+
+		public EnvironmentVariableUTF8() { }
+
+		public EnvironmentVariableUTF8( Utf8String name, Utf8String value ) {
+			Name = name;
+			Value = value;
+		}
+		
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( Name );
+			builder.Append( '=' );
+			builder.Append( Value );
+		}
+	}
+	
+	// for Windows
+	public struct EnvironmentVariableUTF16 {
+		public string Name, Value;
+
+		public EnvironmentVariableUTF16() { }
+
+		public EnvironmentVariableUTF16( string name, string value ) {
+			Name = name;
+			Value = value;
+		}
+		
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( Name );
+			builder.Append( '=' );
+			builder.Append( Value );
+		}
+	}	
+}
