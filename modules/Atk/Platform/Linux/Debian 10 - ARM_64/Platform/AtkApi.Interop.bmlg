@@ -1,0 +1,1341 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Glib;
+
+namespace Platform.Atk {
+	[ExternLibrary( Image = "/usr/lib/aarch64-linux-gnu/libatk-1.0.so.0" )]
+	public static partial struct AtkApi {
+		[BackendHintReadNone]
+		public extern static uint atk_get_binary_age();
+		[BackendHintReadNone]
+		public extern static uint atk_get_interface_age();
+		[BackendHintReadNone]
+		public extern static uint atk_get_major_version();
+		[BackendHintReadNone]
+		public extern static uint atk_get_micro_version();
+		[BackendHintReadNone]
+		public extern static uint atk_get_minor_version();
+
+		public extern static AtkStateType atk_state_type_for_name( CUtf8String name );
+		public extern static sbyte* atk_state_type_get_name( AtkStateType type );
+		public extern static AtkStateType atk_state_type_register( CUtf8String name );
+
+		public extern static uintptr atk_implementor_get_type();
+		public extern static AtkObject* atk_implementor_ref_accessible( AtkImplementor* implementor );
+		public extern static Boolean32 atk_object_add_relationship( AtkObject* object, AtkRelationType relationship, AtkObject* target );
+		public extern static uint atk_object_connect_property_change_handler( AtkObject* accessible, Functors.Action<AtkObject*, AtkPropertyValues*>* handler );
+		public extern static GSList* atk_object_get_attributes( AtkObject* accessible );
+		public extern static sbyte* atk_object_get_description( AtkObject* accessible );
+		public extern static int atk_object_get_index_in_parent( AtkObject* accessible );
+		public extern static AtkLayer atk_object_get_layer( AtkObject* accessible );
+		public extern static int atk_object_get_mdi_zorder( AtkObject* accessible );
+		public extern static int atk_object_get_n_accessible_children( AtkObject* accessible );
+		public extern static sbyte* atk_object_get_name( AtkObject* accessible );
+		public extern static sbyte* atk_object_get_object_locale( AtkObject* accessible );
+		public extern static AtkObject* atk_object_get_parent( AtkObject* accessible );
+		public extern static AtkRole atk_object_get_role( AtkObject* accessible );
+		public extern static uintptr atk_object_get_type();
+		public extern static void atk_object_initialize( AtkObject* accessible, void* data );
+		public extern static void atk_object_notify_state_change( AtkObject* accessible, ulong state, Boolean32 value );
+		public extern static AtkObject* atk_object_peek_parent( AtkObject* accessible );
+		public extern static AtkObject* atk_object_ref_accessible_child( AtkObject* accessible, int i );
+		public extern static AtkRelationSet* atk_object_ref_relation_set( AtkObject* accessible );
+		public extern static AtkStateSet* atk_object_ref_state_set( AtkObject* accessible );
+		public extern static void atk_object_remove_property_change_handler( AtkObject* accessible, uint handlerId );
+		public extern static Boolean32 atk_object_remove_relationship( AtkObject* object, AtkRelationType relationship, AtkObject* target );
+		public extern static void atk_object_set_description( AtkObject* accessible, CUtf8String description );
+		public extern static void atk_object_set_name( AtkObject* accessible, CUtf8String name );
+		public extern static void atk_object_set_parent( AtkObject* accessible, AtkObject* parent );
+		public extern static void atk_object_set_role( AtkObject* accessible, AtkRole role );
+		public extern static AtkRole atk_role_for_name( CUtf8String name );
+		public extern static sbyte* atk_role_get_localized_name( AtkRole role );
+		public extern static sbyte* atk_role_get_name( AtkRole role );
+		public extern static AtkRole atk_role_register( CUtf8String name );
+
+		public extern static Boolean32 atk_action_do_action( AtkAction* action, int i );
+		public extern static sbyte* atk_action_get_description( AtkAction* action, int i );
+		public extern static sbyte* atk_action_get_keybinding( AtkAction* action, int i );
+		public extern static sbyte* atk_action_get_localized_name( AtkAction* action, int i );
+		public extern static int atk_action_get_n_actions( AtkAction* action );
+		public extern static sbyte* atk_action_get_name( AtkAction* action, int i );
+		public extern static uintptr atk_action_get_type();
+		public extern static Boolean32 atk_action_set_description( AtkAction* action, int i, sbyte* desc );
+
+		public extern static uint atk_add_focus_tracker( Functors.Action<AtkObject*> focusTracker );
+		public extern static uint atk_add_global_event_listener( Functors.Func<GSignalInvocationHint*, uint, GValue*, void*, Boolean32> listener, sbyte* eventType );
+		public extern static uint atk_add_key_event_listener( Functors.Func<AtkKeyEventStruct*, void*, int> listener, void* data );
+		public extern static void atk_focus_tracker_init( Functors.Action init );
+		public extern static void atk_focus_tracker_notify( AtkObject* object );
+		public extern static AtkObject* atk_get_focus_object();
+		public extern static AtkObject* atk_get_root();
+		public extern static sbyte* atk_get_toolkit_name();
+		public extern static sbyte* atk_get_toolkit_version();
+		public extern static sbyte* atk_get_version();
+		public extern static void atk_remove_focus_tracker( uint trackerId );
+		public extern static void atk_remove_global_event_listener( uint listenerId );
+		public extern static void atk_remove_key_event_listener( uint listenerId );
+		public extern static uintptr atk_util_get_type();
+
+		public extern static uint atk_component_add_focus_handler( AtkComponent* component, Functors.Action<AtkObject*, Boolean32> handler );
+		public extern static Boolean32 atk_component_contains( AtkComponent* component, int x, int y, AtkCoordType coordType );
+		public extern static double atk_component_get_alpha( AtkComponent* component );
+		public extern static void atk_component_get_extents( AtkComponent* component, int* x, int* y, int* width, int* height, AtkCoordType coordType );
+		public extern static AtkLayer atk_component_get_layer( AtkComponent* component );
+		public extern static int atk_component_get_mdi_zorder( AtkComponent* component );
+		public extern static void atk_component_get_position( AtkComponent* component, int* x, int* y, AtkCoordType coordType );
+		public extern static void atk_component_get_size( AtkComponent* component, int* width, int* height );
+		public extern static uintptr atk_component_get_type();
+		public extern static Boolean32 atk_component_grab_focus( AtkComponent* component );
+		public extern static AtkObject* atk_component_ref_accessible_at_point( AtkComponent* component, int x, int y, AtkCoordType coordType );
+		public extern static void atk_component_remove_focus_handler( AtkComponent* component, uint handlerId );
+		public extern static Boolean32 atk_component_scroll_to( AtkComponent* component, AtkScrollType type );
+		public extern static Boolean32 atk_component_scroll_to_point( AtkComponent* component, AtkCoordType coords, int x, int y );
+		public extern static Boolean32 atk_component_set_extents( AtkComponent* component, int x, int y, int width, int height, AtkCoordType coordType );
+		public extern static Boolean32 atk_component_set_position( AtkComponent* component, int x, int y, AtkCoordType coordType );
+		public extern static Boolean32 atk_component_set_size( AtkComponent* component, int width, int height );
+		public extern static uintptr atk_rectangle_get_type();
+
+		public extern static sbyte* atk_document_get_attribute_value( AtkDocument* document, CUtf8String attributeName );
+		public extern static GSList* atk_document_get_attributes( AtkDocument* document );
+		public extern static int atk_document_get_current_page_number( AtkDocument* document );
+		public extern static void* atk_document_get_document( AtkDocument* document );
+		public extern static sbyte* atk_document_get_document_type( AtkDocument* document );
+		public extern static sbyte* atk_document_get_locale( AtkDocument* document );
+		public extern static int atk_document_get_page_count( AtkDocument* document );
+		public extern static uintptr atk_document_get_type();
+		public extern static Boolean32 atk_document_set_attribute_value( AtkDocument* document, CUtf8String attributeName, sbyte* attributeValue );
+
+		public extern static void atk_attribute_set_free( GSList* attribSet );
+		public extern static Boolean32 atk_text_add_selection( AtkText* text, int startOffset, int endOffset );
+		public extern static AtkTextAttribute atk_text_attribute_for_name( CUtf8String name );
+		public extern static sbyte* atk_text_attribute_get_name( AtkTextAttribute attr );
+		public extern static sbyte* atk_text_attribute_get_value( AtkTextAttribute attr, int index_ );
+		public extern static AtkTextAttribute atk_text_attribute_register( CUtf8String name );
+		public extern static void atk_text_free_ranges( AtkTextRange** ranges );
+		public extern static AtkTextRange** atk_text_get_bounded_ranges( AtkText* text, AtkTextRectangle* rect, AtkCoordType coordType, AtkTextClipType xClipType, AtkTextClipType yClipType );
+		public extern static int atk_text_get_caret_offset( AtkText* text );
+		public extern static uint atk_text_get_character_at_offset( AtkText* text, int offset );
+		public extern static int atk_text_get_character_count( AtkText* text );
+		public extern static void atk_text_get_character_extents( AtkText* text, int offset, int* x, int* y, int* width, int* height, AtkCoordType coords );
+		public extern static GSList* atk_text_get_default_attributes( AtkText* text );
+		public extern static int atk_text_get_n_selections( AtkText* text );
+		public extern static int atk_text_get_offset_at_point( AtkText* text, int x, int y, AtkCoordType coords );
+		public extern static void atk_text_get_range_extents( AtkText* text, int startOffset, int endOffset, AtkCoordType coordType, AtkTextRectangle* rect );
+		public extern static GSList* atk_text_get_run_attributes( AtkText* text, int offset, int* startOffset, int* endOffset );
+		public extern static sbyte* atk_text_get_selection( AtkText* text, int selectionNum, int* startOffset, int* endOffset );
+		public extern static sbyte* atk_text_get_string_at_offset( AtkText* text, int offset, AtkTextGranularity granularity, int* startOffset, int* endOffset );
+		public extern static sbyte* atk_text_get_text( AtkText* text, int startOffset, int endOffset );
+		public extern static sbyte* atk_text_get_text_after_offset( AtkText* text, int offset, AtkTextBoundary boundaryType, int* startOffset, int* endOffset );
+		public extern static sbyte* atk_text_get_text_at_offset( AtkText* text, int offset, AtkTextBoundary boundaryType, int* startOffset, int* endOffset );
+		public extern static sbyte* atk_text_get_text_before_offset( AtkText* text, int offset, AtkTextBoundary boundaryType, int* startOffset, int* endOffset );
+		public extern static uintptr atk_text_get_type();
+		public extern static uintptr atk_text_range_get_type();
+		public extern static Boolean32 atk_text_remove_selection( AtkText* text, int selectionNum );
+		public extern static Boolean32 atk_text_set_caret_offset( AtkText* text, int offset );
+		public extern static Boolean32 atk_text_set_selection( AtkText* text, int selectionNum, int startOffset, int endOffset );
+
+		public extern static void atk_editable_text_copy_text( AtkEditableText* text, int startPos, int endPos );
+		public extern static void atk_editable_text_cut_text( AtkEditableText* text, int startPos, int endPos );
+		public extern static void atk_editable_text_delete_text( AtkEditableText* text, int startPos, int endPos );
+		public extern static uintptr atk_editable_text_get_type();
+		public extern static void atk_editable_text_insert_text( AtkEditableText* text, sbyte* @string, int length, int* position );
+		public extern static void atk_editable_text_paste_text( AtkEditableText* text, int position );
+		public extern static Boolean32 atk_editable_text_set_run_attributes( AtkEditableText* text, GSList* attribSet, int startOffset, int endOffset );
+		public extern static void atk_editable_text_set_text_contents( AtkEditableText* text, sbyte* @string );
+
+		public extern static uintptr atk_coord_type_get_type();
+		public extern static uintptr atk_hyperlink_state_flags_get_type();
+		public extern static uintptr atk_key_event_type_get_type();
+		public extern static uintptr atk_layer_get_type();
+		public extern static uintptr atk_relation_type_get_type();
+		public extern static uintptr atk_role_get_type();
+		public extern static uintptr atk_scroll_type_get_type();
+		public extern static uintptr atk_state_type_get_type();
+		public extern static uintptr atk_text_attribute_get_type();
+		public extern static uintptr atk_text_boundary_get_type();
+		public extern static uintptr atk_text_clip_type_get_type();
+		public extern static uintptr atk_text_granularity_get_type();
+		public extern static uintptr atk_value_type_get_type();
+
+		public extern static AtkObject* atk_gobject_accessible_for_object( GObject* obj );
+		public extern static GObject* atk_gobject_accessible_get_object( AtkGObjectAccessible* obj );
+		public extern static uintptr atk_gobject_accessible_get_type();
+
+		public extern static int atk_hyperlink_get_end_index( AtkHyperlink* link_ );
+		public extern static int atk_hyperlink_get_n_anchors( AtkHyperlink* link_ );
+		public extern static AtkObject* atk_hyperlink_get_object( AtkHyperlink* link_, int i );
+		public extern static int atk_hyperlink_get_start_index( AtkHyperlink* link_ );
+		public extern static uintptr atk_hyperlink_get_type();
+		public extern static sbyte* atk_hyperlink_get_uri( AtkHyperlink* link_, int i );
+		public extern static Boolean32 atk_hyperlink_is_inline( AtkHyperlink* link_ );
+		public extern static Boolean32 atk_hyperlink_is_selected_link( AtkHyperlink* link_ );
+		public extern static Boolean32 atk_hyperlink_is_valid( AtkHyperlink* link_ );
+
+		public extern static AtkHyperlink* atk_hyperlink_impl_get_hyperlink( AtkHyperlinkImpl* obj );
+		public extern static uintptr atk_hyperlink_impl_get_type();
+
+		public extern static AtkHyperlink* atk_hypertext_get_link( AtkHypertext* hypertext, int linkIndex );
+		public extern static int atk_hypertext_get_link_index( AtkHypertext* hypertext, int charIndex );
+		public extern static int atk_hypertext_get_n_links( AtkHypertext* hypertext );
+		public extern static uintptr atk_hypertext_get_type();
+
+		public extern static sbyte* atk_image_get_image_description( AtkImage* image );
+		public extern static sbyte* atk_image_get_image_locale( AtkImage* image );
+		public extern static void atk_image_get_image_position( AtkImage* image, int* x, int* y, AtkCoordType coordType );
+		public extern static void atk_image_get_image_size( AtkImage* image, int* width, int* height );
+		public extern static uintptr atk_image_get_type();
+		public extern static Boolean32 atk_image_set_image_description( AtkImage* image, CUtf8String description );
+
+		public extern static uintptr atk_no_op_object_get_type();
+		public extern static AtkObject* atk_no_op_object_new( GObject* obj );
+
+		public extern static AtkObject* atk_object_factory_create_accessible( AtkObjectFactory* factory, GObject* obj );
+		public extern static uintptr atk_object_factory_get_accessible_type( AtkObjectFactory* factory );
+		public extern static uintptr atk_object_factory_get_type();
+		public extern static void atk_object_factory_invalidate( AtkObjectFactory* factory );
+
+		public extern static uintptr atk_no_op_object_factory_get_type();
+		public extern static AtkObjectFactory* atk_no_op_object_factory_new();
+
+		public extern static sbyte* atk_plug_get_id( AtkPlug* plug );
+		public extern static uintptr atk_plug_get_type();
+		public extern static AtkObject* atk_plug_new();
+
+		public extern static AtkRange* atk_range_copy( AtkRange* src );
+		public extern static void atk_range_free( AtkRange* range );
+		public extern static sbyte* atk_range_get_description( AtkRange* range );
+		public extern static double atk_range_get_lower_limit( AtkRange* range );
+		public extern static uintptr atk_range_get_type();
+		public extern static double atk_range_get_upper_limit( AtkRange* range );
+		public extern static AtkRange* atk_range_new( double lowerLimit, double upperLimit, CUtf8String description );
+
+		public extern static AtkRegistry* atk_get_default_registry();
+		public extern static AtkObjectFactory* atk_registry_get_factory( AtkRegistry* registry, uintptr type );
+		public extern static uintptr atk_registry_get_factory_type( AtkRegistry* registry, uintptr type );
+		public extern static uintptr atk_registry_get_type();
+		public extern static void atk_registry_set_factory_type( AtkRegistry* registry, uintptr type, uintptr factoryType );
+
+		public extern static void atk_relation_add_target( AtkRelation* relation, AtkObject* target );
+		public extern static AtkRelationType atk_relation_get_relation_type( AtkRelation* relation );
+		public extern static GPtrArray* atk_relation_get_target( AtkRelation* relation );
+		public extern static uintptr atk_relation_get_type();
+		public extern static AtkRelation* atk_relation_new( AtkObject** targets, int nTargets, AtkRelationType relationship );
+		public extern static Boolean32 atk_relation_remove_target( AtkRelation* relation, AtkObject* target );
+		public extern static AtkRelationType atk_relation_type_for_name( CUtf8String name );
+		public extern static sbyte* atk_relation_type_get_name( AtkRelationType type );
+		public extern static AtkRelationType atk_relation_type_register( CUtf8String name );
+
+		public extern static void atk_relation_set_add( AtkRelationSet* set, AtkRelation* relation );
+		public extern static void atk_relation_set_add_relation_by_type( AtkRelationSet* set, AtkRelationType relationship, AtkObject* target );
+		public extern static Boolean32 atk_relation_set_contains( AtkRelationSet* set, AtkRelationType relationship );
+		public extern static Boolean32 atk_relation_set_contains_target( AtkRelationSet* set, AtkRelationType relationship, AtkObject* targe );
+		public extern static int atk_relation_set_get_n_relations( AtkRelationSet* set );
+		public extern static AtkRelation* atk_relation_set_get_relation( AtkRelationSet* set, int i );
+		public extern static AtkRelation* atk_relation_set_get_relation_by_type( AtkRelationSet* set, AtkRelationType relationship );
+		public extern static uintptr atk_relation_set_get_type();
+		public extern static AtkRelationSet* atk_relation_set_new();
+		public extern static void atk_relation_set_remove( AtkRelationSet* set, AtkRelation* relation );
+
+		public extern static Boolean32 atk_selection_add_selection( AtkSelection* selection, int i );
+		public extern static Boolean32 atk_selection_clear_selection( AtkSelection* selection );
+		public extern static int atk_selection_get_selection_count( AtkSelection* selection );
+		public extern static uintptr atk_selection_get_type();
+		public extern static Boolean32 atk_selection_is_child_selected( AtkSelection* selection, int i );
+		public extern static AtkObject* atk_selection_ref_selection( AtkSelection* selection, int i );
+		public extern static Boolean32 atk_selection_remove_selection( AtkSelection* selection, int i );
+		public extern static Boolean32 atk_selection_select_all_selection( AtkSelection* selection );
+
+		public extern static void atk_socket_embed( AtkSocket* obj, sbyte* plugId );
+		public extern static uintptr atk_socket_get_type();
+		public extern static Boolean32 atk_socket_is_occupied( AtkSocket* obj );
+		public extern static AtkObject* atk_socket_new();
+
+		public extern static Boolean32 atk_state_set_add_state( AtkStateSet* set, AtkStateType type );
+		public extern static void atk_state_set_add_states( AtkStateSet* set, AtkStateType* types, int nTypes );
+		public extern static AtkStateSet* atk_state_set_and_sets( AtkStateSet* set, AtkStateSet* compareSet );
+		public extern static void atk_state_set_clear_states( AtkStateSet* set );
+		public extern static Boolean32 atk_state_set_contains_state( AtkStateSet* set, AtkStateType type );
+		public extern static Boolean32 atk_state_set_contains_states( AtkStateSet* set, AtkStateType* types, int nTypes );
+		public extern static uintptr atk_state_set_get_type();
+		public extern static Boolean32 atk_state_set_is_empty( AtkStateSet* set );
+		public extern static AtkStateSet* atk_state_set_new();
+		public extern static AtkStateSet* atk_state_set_or_sets( AtkStateSet* set, AtkStateSet* compareSet );
+		public extern static Boolean32 atk_state_set_remove_state( AtkStateSet* set, AtkStateType type );
+		public extern static AtkStateSet* atk_state_set_xor_sets( AtkStateSet* set, AtkStateSet* compareSet );
+
+		public extern static sbyte* atk_streamable_content_get_mime_type( AtkStreamableContent* streamable, int i );
+		public extern static int atk_streamable_content_get_n_mime_types( AtkStreamableContent* streamable );
+		public extern static GIOChannel* atk_streamable_content_get_stream( AtkStreamableContent* streamable, sbyte* mimeType );
+		public extern static uintptr atk_streamable_content_get_type();
+		public extern static sbyte* atk_streamable_content_get_uri( AtkStreamableContent* streamable, sbyte* mimeType );
+
+		public extern static Boolean32 atk_table_add_column_selection( AtkTable* table, int column );
+		public extern static Boolean32 atk_table_add_row_selection( AtkTable* table, int row );
+		public extern static AtkObject* atk_table_get_caption( AtkTable* table );
+		public extern static int atk_table_get_column_at_index( AtkTable* table, int index_ );
+		public extern static sbyte* atk_table_get_column_description( AtkTable* table, int column );
+		public extern static int atk_table_get_column_extent_at( AtkTable* table, int row, int column );
+		public extern static AtkObject* atk_table_get_column_header( AtkTable* table, int column );
+		public extern static int atk_table_get_index_at( AtkTable* table, int row, int column );
+		public extern static int atk_table_get_n_columns( AtkTable* table );
+		public extern static int atk_table_get_n_rows( AtkTable* table );
+		public extern static int atk_table_get_row_at_index( AtkTable* table, int index_ );
+		public extern static sbyte* atk_table_get_row_description( AtkTable* table, int row );
+		public extern static int atk_table_get_row_extent_at( AtkTable* table, int row, int column );
+		public extern static AtkObject* atk_table_get_row_header( AtkTable* table, int row );
+		public extern static int atk_table_get_selected_columns( AtkTable* table, int** selected );
+		public extern static int atk_table_get_selected_rows( AtkTable* table, int** selected );
+		public extern static AtkObject* atk_table_get_summary( AtkTable* table );
+		public extern static uintptr atk_table_get_type();
+		public extern static Boolean32 atk_table_is_column_selected( AtkTable* table, int column );
+		public extern static Boolean32 atk_table_is_row_selected( AtkTable* table, int row );
+		public extern static Boolean32 atk_table_is_selected( AtkTable* table, int row, int column );
+		public extern static AtkObject* atk_table_ref_at( AtkTable* table, int row, int column );
+		public extern static Boolean32 atk_table_remove_column_selection( AtkTable* table, int column );
+		public extern static Boolean32 atk_table_remove_row_selection( AtkTable* table, int row );
+		public extern static void atk_table_set_caption( AtkTable* table, AtkObject* caption );
+		public extern static void atk_table_set_column_description( AtkTable* table, int column, CUtf8String description );
+		public extern static void atk_table_set_column_header( AtkTable* table, int column, AtkObject* header );
+		public extern static void atk_table_set_row_description( AtkTable* table, int row, CUtf8String description );
+		public extern static void atk_table_set_row_header( AtkTable* table, int row, AtkObject* header );
+		public extern static void atk_table_set_summary( AtkTable* table, AtkObject* accessible );
+
+		public extern static GPtrArray* atk_table_cell_get_column_header_cells( AtkTableCell* cell );
+		public extern static int atk_table_cell_get_column_span( AtkTableCell* cell );
+		public extern static Boolean32 atk_table_cell_get_position( AtkTableCell* cell, int* row, int* column );
+		public extern static Boolean32 atk_table_cell_get_row_column_span( AtkTableCell* cell, int* row, int* column, int* rowSpan, int* columnSpan );
+		public extern static GPtrArray* atk_table_cell_get_row_header_cells( AtkTableCell* cell );
+		public extern static int atk_table_cell_get_row_span( AtkTableCell* cell );
+		public extern static AtkObject* atk_table_cell_get_table( AtkTableCell* cell );
+		public extern static uintptr atk_table_cell_get_type();
+
+		public extern static AtkMisc* atk_misc_get_instance();
+		public extern static uintptr atk_misc_get_type();
+		public extern static void atk_misc_threads_enter( AtkMisc* misc );
+		public extern static void atk_misc_threads_leave( AtkMisc* misc );
+
+		public extern static void atk_value_get_current_value( AtkValue* obj, GValue* value );
+		public extern static double atk_value_get_increment( AtkValue* obj );
+		public extern static void atk_value_get_maximum_value( AtkValue* obj, GValue* value );
+		public extern static void atk_value_get_minimum_increment( AtkValue* obj, GValue* value );
+		public extern static void atk_value_get_minimum_value( AtkValue* obj, GValue* value );
+		public extern static AtkRange* atk_value_get_range( AtkValue* obj );
+		public extern static GSList* atk_value_get_sub_ranges( AtkValue* obj );
+		public extern static uintptr atk_value_get_type();
+		public extern static void atk_value_get_value_and_text( AtkValue* obj, double* value, sbyte** text );
+		public extern static Boolean32 atk_value_set_current_value( AtkValue* obj, GValue* value );
+		public extern static void atk_value_set_value( AtkValue* obj, double newValue );
+		public extern static sbyte* atk_value_type_get_localized_name( AtkValueType valueType );
+		public extern static sbyte* atk_value_type_get_name( AtkValueType valueType );
+
+		public extern static uintptr atk_window_get_type();
+	}
+	public enum AtkCoordType : uint {
+		ATK_XY_SCREEN = 0,
+		ATK_XY_WINDOW = 1,
+		ATK_XY_PARENT = 2,
+	}
+	[Flags]
+	public enum AtkHyperlinkStateFlags : uint {
+		None =                    0,
+		ATK_HYPERLINK_IS_INLINE = 1,
+	}
+	public enum AtkKeyEventType : uint {
+		ATK_KEY_EVENT_PRESS =        0,
+		ATK_KEY_EVENT_RELEASE =      1,
+		ATK_KEY_EVENT_LAST_DEFINED = 2,
+	}
+	public enum AtkLayer : uint {
+		ATK_LAYER_INVALID =    0,
+		ATK_LAYER_BACKGROUND = 1,
+		ATK_LAYER_CANVAS =     2,
+		ATK_LAYER_WIDGET =     3,
+		ATK_LAYER_MDI =        4,
+		ATK_LAYER_POPUP =      5,
+		ATK_LAYER_OVERLAY =    6,
+		ATK_LAYER_WINDOW =     7,
+	}
+	public enum AtkRelationType : uint {
+		ATK_RELATION_NULL =              0,
+		ATK_RELATION_CONTROLLED_BY =     1,
+		ATK_RELATION_CONTROLLER_FOR =    2,
+		ATK_RELATION_LABEL_FOR =         3,
+		ATK_RELATION_LABELLED_BY =       4,
+		ATK_RELATION_MEMBER_OF =         5,
+		ATK_RELATION_NODE_CHILD_OF =     6,
+		ATK_RELATION_FLOWS_TO =          7,
+		ATK_RELATION_FLOWS_FROM =        8,
+		ATK_RELATION_SUBWINDOW_OF =      9,
+		ATK_RELATION_EMBEDS =           10,
+		ATK_RELATION_EMBEDDED_BY =      11,
+		ATK_RELATION_POPUP_FOR =        12,
+		ATK_RELATION_PARENT_WINDOW_OF = 13,
+		ATK_RELATION_DESCRIBED_BY =     14,
+		ATK_RELATION_DESCRIPTION_FOR =  15,
+		ATK_RELATION_NODE_PARENT_OF =   16,
+		ATK_RELATION_DETAILS =          17,
+		ATK_RELATION_DETAILS_FOR =      18,
+		ATK_RELATION_ERROR_MESSAGE =    19,
+		ATK_RELATION_ERROR_FOR =        20,
+		ATK_RELATION_LAST_DEFINED =     21,
+	}
+	public enum AtkRole : uint {
+		ATK_ROLE_INVALID =                0,
+		ATK_ROLE_ACCEL_LABEL =            1,
+		ATK_ROLE_ALERT =                  2,
+		ATK_ROLE_ANIMATION =              3,
+		ATK_ROLE_ARROW =                  4,
+		ATK_ROLE_CALENDAR =               5,
+		ATK_ROLE_CANVAS =                 6,
+		ATK_ROLE_CHECK_BOX =              7,
+		ATK_ROLE_CHECK_MENU_ITEM =        8,
+		ATK_ROLE_COLOR_CHOOSER =          9,
+		ATK_ROLE_COLUMN_HEADER =         10,
+		ATK_ROLE_COMBO_BOX =             11,
+		ATK_ROLE_DATE_EDITOR =           12,
+		ATK_ROLE_DESKTOP_ICON =          13,
+		ATK_ROLE_DESKTOP_FRAME =         14,
+		ATK_ROLE_DIAL =                  15,
+		ATK_ROLE_DIALOG =                16,
+		ATK_ROLE_DIRECTORY_PANE =        17,
+		ATK_ROLE_DRAWING_AREA =          18,
+		ATK_ROLE_FILE_CHOOSER =          19,
+		ATK_ROLE_FILLER =                20,
+		ATK_ROLE_FONT_CHOOSER =          21,
+		ATK_ROLE_FRAME =                 22,
+		ATK_ROLE_GLASS_PANE =            23,
+		ATK_ROLE_HTML_CONTAINER =        24,
+		ATK_ROLE_ICON =                  25,
+		ATK_ROLE_IMAGE =                 26,
+		ATK_ROLE_INTERNAL_FRAME =        27,
+		ATK_ROLE_LABEL =                 28,
+		ATK_ROLE_LAYERED_PANE =          29,
+		ATK_ROLE_LIST =                  30,
+		ATK_ROLE_LIST_ITEM =             31,
+		ATK_ROLE_MENU =                  32,
+		ATK_ROLE_MENU_BAR =              33,
+		ATK_ROLE_MENU_ITEM =             34,
+		ATK_ROLE_OPTION_PANE =           35,
+		ATK_ROLE_PAGE_TAB =              36,
+		ATK_ROLE_PAGE_TAB_LIST =         37,
+		ATK_ROLE_PANEL =                 38,
+		ATK_ROLE_PASSWORD_TEXT =         39,
+		ATK_ROLE_POPUP_MENU =            40,
+		ATK_ROLE_PROGRESS_BAR =          41,
+		ATK_ROLE_PUSH_BUTTON =           42,
+		ATK_ROLE_RADIO_BUTTON =          43,
+		ATK_ROLE_RADIO_MENU_ITEM =       44,
+		ATK_ROLE_ROOT_PANE =             45,
+		ATK_ROLE_ROW_HEADER =            46,
+		ATK_ROLE_SCROLL_BAR =            47,
+		ATK_ROLE_SCROLL_PANE =           48,
+		ATK_ROLE_SEPARATOR =             49,
+		ATK_ROLE_SLIDER =                50,
+		ATK_ROLE_SPLIT_PANE =            51,
+		ATK_ROLE_SPIN_BUTTON =           52,
+		ATK_ROLE_STATUSBAR =             53,
+		ATK_ROLE_TABLE =                 54,
+		ATK_ROLE_TABLE_CELL =            55,
+		ATK_ROLE_TABLE_COLUMN_HEADER =   56,
+		ATK_ROLE_TABLE_ROW_HEADER =      57,
+		ATK_ROLE_TEAR_OFF_MENU_ITEM =    58,
+		ATK_ROLE_TERMINAL =              59,
+		ATK_ROLE_TEXT =                  60,
+		ATK_ROLE_TOGGLE_BUTTON =         61,
+		ATK_ROLE_TOOL_BAR =              62,
+		ATK_ROLE_TOOL_TIP =              63,
+		ATK_ROLE_TREE =                  64,
+		ATK_ROLE_TREE_TABLE =            65,
+		ATK_ROLE_UNKNOWN =               66,
+		ATK_ROLE_VIEWPORT =              67,
+		ATK_ROLE_WINDOW =                68,
+		ATK_ROLE_HEADER =                69,
+		ATK_ROLE_FOOTER =                70,
+		ATK_ROLE_PARAGRAPH =             71,
+		ATK_ROLE_RULER =                 72,
+		ATK_ROLE_APPLICATION =           73,
+		ATK_ROLE_AUTOCOMPLETE =          74,
+		ATK_ROLE_EDITBAR =               75,
+		ATK_ROLE_EMBEDDED =              76,
+		ATK_ROLE_ENTRY =                 77,
+		ATK_ROLE_CHART =                 78,
+		ATK_ROLE_CAPTION =               79,
+		ATK_ROLE_DOCUMENT_FRAME =        80,
+		ATK_ROLE_HEADING =               81,
+		ATK_ROLE_PAGE =                  82,
+		ATK_ROLE_SECTION =               83,
+		ATK_ROLE_REDUNDANT_OBJECT =      84,
+		ATK_ROLE_FORM =                  85,
+		ATK_ROLE_LINK =                  86,
+		ATK_ROLE_INPUT_METHOD_WINDOW =   87,
+		ATK_ROLE_TABLE_ROW =             88,
+		ATK_ROLE_TREE_ITEM =             89,
+		ATK_ROLE_DOCUMENT_SPREADSHEET =  90,
+		ATK_ROLE_DOCUMENT_PRESENTATION = 91,
+		ATK_ROLE_DOCUMENT_TEXT =         92,
+		ATK_ROLE_DOCUMENT_WEB =          93,
+		ATK_ROLE_DOCUMENT_EMAIL =        94,
+		ATK_ROLE_COMMENT =               95,
+		ATK_ROLE_LIST_BOX =              96,
+		ATK_ROLE_GROUPING =              97,
+		ATK_ROLE_IMAGE_MAP =             98,
+		ATK_ROLE_NOTIFICATION =          99,
+		ATK_ROLE_INFO_BAR =             100,
+		ATK_ROLE_LEVEL_BAR =            101,
+		ATK_ROLE_TITLE_BAR =            102,
+		ATK_ROLE_BLOCK_QUOTE =          103,
+		ATK_ROLE_AUDIO =                104,
+		ATK_ROLE_VIDEO =                105,
+		ATK_ROLE_DEFINITION =           106,
+		ATK_ROLE_ARTICLE =              107,
+		ATK_ROLE_LANDMARK =             108,
+		ATK_ROLE_LOG =                  109,
+		ATK_ROLE_MARQUEE =              110,
+		ATK_ROLE_MATH =                 111,
+		ATK_ROLE_RATING =               112,
+		ATK_ROLE_TIMER =                113,
+		ATK_ROLE_DESCRIPTION_LIST =     114,
+		ATK_ROLE_DESCRIPTION_TERM =     115,
+		ATK_ROLE_DESCRIPTION_VALUE =    116,
+		ATK_ROLE_STATIC =               117,
+		ATK_ROLE_MATH_FRACTION =        118,
+		ATK_ROLE_MATH_ROOT =            119,
+		ATK_ROLE_SUBSCRIPT =            120,
+		ATK_ROLE_SUPERSCRIPT =          121,
+		ATK_ROLE_FOOTNOTE =             122,
+		ATK_ROLE_LAST_DEFINED =         123,
+	}
+	public enum AtkScrollType : uint {
+		ATK_SCROLL_TOP_LEFT =     0,
+		ATK_SCROLL_BOTTOM_RIGHT = 1,
+		ATK_SCROLL_TOP_EDGE =     2,
+		ATK_SCROLL_BOTTOM_EDGE =  3,
+		ATK_SCROLL_LEFT_EDGE =    4,
+		ATK_SCROLL_RIGHT_EDGE =   5,
+		ATK_SCROLL_ANYWHERE =     6,
+	}
+	public enum AtkStateType : uint {
+		ATK_STATE_INVALID =                  0,
+		ATK_STATE_ACTIVE =                   1,
+		ATK_STATE_ARMED =                    2,
+		ATK_STATE_BUSY =                     3,
+		ATK_STATE_CHECKED =                  4,
+		ATK_STATE_DEFUNCT =                  5,
+		ATK_STATE_EDITABLE =                 6,
+		ATK_STATE_ENABLED =                  7,
+		ATK_STATE_EXPANDABLE =               8,
+		ATK_STATE_EXPANDED =                 9,
+		ATK_STATE_FOCUSABLE =               10,
+		ATK_STATE_FOCUSED =                 11,
+		ATK_STATE_HORIZONTAL =              12,
+		ATK_STATE_ICONIFIED =               13,
+		ATK_STATE_MODAL =                   14,
+		ATK_STATE_MULTI_LINE =              15,
+		ATK_STATE_MULTISELECTABLE =         16,
+		ATK_STATE_OPAQUE =                  17,
+		ATK_STATE_PRESSED =                 18,
+		ATK_STATE_RESIZABLE =               19,
+		ATK_STATE_SELECTABLE =              20,
+		ATK_STATE_SELECTED =                21,
+		ATK_STATE_SENSITIVE =               22,
+		ATK_STATE_SHOWING =                 23,
+		ATK_STATE_SINGLE_LINE =             24,
+		ATK_STATE_STALE =                   25,
+		ATK_STATE_TRANSIENT =               26,
+		ATK_STATE_VERTICAL =                27,
+		ATK_STATE_VISIBLE =                 28,
+		ATK_STATE_MANAGES_DESCENDANTS =     29,
+		ATK_STATE_INDETERMINATE =           30,
+		ATK_STATE_TRUNCATED =               31,
+		ATK_STATE_REQUIRED =                32,
+		ATK_STATE_INVALID_ENTRY =           33,
+		ATK_STATE_SUPPORTS_AUTOCOMPLETION = 34,
+		ATK_STATE_SELECTABLE_TEXT =         35,
+		ATK_STATE_DEFAULT =                 36,
+		ATK_STATE_ANIMATED =                37,
+		ATK_STATE_VISITED =                 38,
+		ATK_STATE_CHECKABLE =               39,
+		ATK_STATE_HAS_POPUP =               40,
+		ATK_STATE_HAS_TOOLTIP =             41,
+		ATK_STATE_READ_ONLY =               42,
+		ATK_STATE_LAST_DEFINED =            43,
+	}
+	public enum AtkTextAttribute : uint {
+		ATK_TEXT_ATTR_INVALID =            0,
+		ATK_TEXT_ATTR_LEFT_MARGIN =        1,
+		ATK_TEXT_ATTR_RIGHT_MARGIN =       2,
+		ATK_TEXT_ATTR_INDENT =             3,
+		ATK_TEXT_ATTR_INVISIBLE =          4,
+		ATK_TEXT_ATTR_EDITABLE =           5,
+		ATK_TEXT_ATTR_PIXELS_ABOVE_LINES = 6,
+		ATK_TEXT_ATTR_PIXELS_BELOW_LINES = 7,
+		ATK_TEXT_ATTR_PIXELS_INSIDE_WRAP = 8,
+		ATK_TEXT_ATTR_BG_FULL_HEIGHT =     9,
+		ATK_TEXT_ATTR_RISE =              10,
+		ATK_TEXT_ATTR_UNDERLINE =         11,
+		ATK_TEXT_ATTR_STRIKETHROUGH =     12,
+		ATK_TEXT_ATTR_SIZE =              13,
+		ATK_TEXT_ATTR_SCALE =             14,
+		ATK_TEXT_ATTR_WEIGHT =            15,
+		ATK_TEXT_ATTR_LANGUAGE =          16,
+		ATK_TEXT_ATTR_FAMILY_NAME =       17,
+		ATK_TEXT_ATTR_BG_COLOR =          18,
+		ATK_TEXT_ATTR_FG_COLOR =          19,
+		ATK_TEXT_ATTR_BG_STIPPLE =        20,
+		ATK_TEXT_ATTR_FG_STIPPLE =        21,
+		ATK_TEXT_ATTR_WRAP_MODE =         22,
+		ATK_TEXT_ATTR_DIRECTION =         23,
+		ATK_TEXT_ATTR_JUSTIFICATION =     24,
+		ATK_TEXT_ATTR_STRETCH =           25,
+		ATK_TEXT_ATTR_VARIANT =           26,
+		ATK_TEXT_ATTR_STYLE =             27,
+		ATK_TEXT_ATTR_LAST_DEFINED =      28,
+	}
+	public enum AtkTextBoundary : uint {
+		ATK_TEXT_BOUNDARY_CHAR =           0,
+		ATK_TEXT_BOUNDARY_WORD_START =     1,
+		ATK_TEXT_BOUNDARY_WORD_END =       2,
+		ATK_TEXT_BOUNDARY_SENTENCE_START = 3,
+		ATK_TEXT_BOUNDARY_SENTENCE_END =   4,
+		ATK_TEXT_BOUNDARY_LINE_START =     5,
+		ATK_TEXT_BOUNDARY_LINE_END =       6,
+	}
+	public enum AtkTextClipType : uint {
+		ATK_TEXT_CLIP_NONE = 0,
+		ATK_TEXT_CLIP_MIN =  1,
+		ATK_TEXT_CLIP_MAX =  2,
+		ATK_TEXT_CLIP_BOTH = 3,
+	}
+	public enum AtkTextGranularity : uint {
+		ATK_TEXT_GRANULARITY_CHAR =      0,
+		ATK_TEXT_GRANULARITY_WORD =      1,
+		ATK_TEXT_GRANULARITY_SENTENCE =  2,
+		ATK_TEXT_GRANULARITY_LINE =      3,
+		ATK_TEXT_GRANULARITY_PARAGRAPH = 4,
+	}
+	public enum AtkValueType : uint {
+		ATK_VALUE_VERY_WEAK =     0,
+		ATK_VALUE_WEAK =          1,
+		ATK_VALUE_ACCEPTABLE =    2,
+		ATK_VALUE_STRONG =        3,
+		ATK_VALUE_VERY_STRONG =   4,
+		ATK_VALUE_VERY_LOW =      5,
+		ATK_VALUE_LOW =           6,
+		ATK_VALUE_MEDIUM =        7,
+		ATK_VALUE_HIGH =          8,
+		ATK_VALUE_VERY_HIGH =     9,
+		ATK_VALUE_VERY_BAD =     10,
+		ATK_VALUE_BAD =          11,
+		ATK_VALUE_GOOD =         12,
+		ATK_VALUE_VERY_GOOD =    13,
+		ATK_VALUE_BEST =         14,
+		ATK_VALUE_LAST_DEFINED = 15,
+	}
+	public partial struct AtkAction {
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkActionIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkAction*, int, Boolean32> do_action;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkAction*, int> get_n_actions;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkAction*, int, sbyte*> get_description;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkAction*, int, sbyte*> get_name;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkAction*, int, sbyte*> get_keybinding;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkAction*, int, sbyte*, Boolean32> set_description;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkAction*, int, sbyte*> get_localized_name;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkAttribute {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String name;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte* value;
+	}
+	public partial struct AtkComponent {
+	}
+	[ExplicitSize( Size = 152 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkComponentIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkComponent*, Functors.Action<AtkObject*, Boolean32>, uint> add_focus_handler;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkComponent*, int, int, AtkCoordType, Boolean32> contains;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkComponent*, int, int, AtkCoordType, AtkObject*> ref_accessible_at_point;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Action<AtkComponent*, int*, int*, int*, int*, AtkCoordType> get_extents;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Action<AtkComponent*, int*, int*, AtkCoordType> get_position;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Action<AtkComponent*, int*, int*> get_size;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkComponent*, Boolean32> grab_focus;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Action<AtkComponent*, uint> remove_focus_handler;
+		[ExplicitOffset( Offset = 80 )]
+		public Functors.Func<AtkComponent*, int, int, int, int, AtkCoordType, Boolean32> set_extents;
+		[ExplicitOffset( Offset = 88 )]
+		public Functors.Func<AtkComponent*, int, int, AtkCoordType, Boolean32> set_position;
+		[ExplicitOffset( Offset = 96 )]
+		public Functors.Func<AtkComponent*, int, int, Boolean32> set_size;
+		[ExplicitOffset( Offset = 104 )]
+		public Functors.Func<AtkComponent*, AtkLayer> get_layer;
+		[ExplicitOffset( Offset = 112 )]
+		public Functors.Func<AtkComponent*, int> get_mdi_zorder;
+		[ExplicitOffset( Offset = 120 )]
+		public Functors.Action<AtkComponent*, AtkRectangle*> bounds_changed;
+		[ExplicitOffset( Offset = 128 )]
+		public Functors.Func<AtkComponent*, double> get_alpha;
+		[ExplicitOffset( Offset = 136 )]
+		public Functors.Func<AtkComponent*, AtkScrollType, Boolean32> scroll_to;
+		[ExplicitOffset( Offset = 144 )]
+		public Functors.Func<AtkComponent*, AtkCoordType, int, int, Boolean32> scroll_to_point;
+	}
+	public partial struct AtkDocument {
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkDocumentIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkDocument*, sbyte*> get_document_type;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkDocument*, void*> get_document;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkDocument*, sbyte*> get_document_locale;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkDocument*, GSList*> get_document_attributes;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkDocument*, sbyte*, sbyte*> get_document_attribute_value;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkDocument*, sbyte*, sbyte*, Boolean32> set_document_attribute;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkDocument*, int> get_current_page_number;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Func<AtkDocument*, int> get_page_count;
+	}
+	public partial struct AtkEditableText {
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkEditableTextIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkEditableText*, GSList*, int, int, Boolean32> set_run_attributes;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Action<AtkEditableText*, sbyte*> set_text_contents;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<AtkEditableText*, sbyte*, int, int*> insert_text;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Action<AtkEditableText*, int, int> copy_text;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Action<AtkEditableText*, int, int> cut_text;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Action<AtkEditableText*, int, int> delete_text;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Action<AtkEditableText*, int> paste_text;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkGObjectAccessible : AtkObject {
+		[ExplicitSize( Size = 368 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 352 )]
+			public new Functors.Func<void*, Boolean32> _pad1;
+			[ExplicitOffset( Offset = 360 )]
+			public Functors.Func<void*, Boolean32> _pad2;
+		}
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkHyperlink : GObject {
+		[ExplicitSize( Size = 216 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<AtkHyperlink*, int, sbyte*> _get_uri;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Func<AtkHyperlink*, int, AtkObject*> _get_object;
+			[ExplicitOffset( Offset = 152 )]
+			public Functors.Func<AtkHyperlink*, int> _get_end_index;
+			[ExplicitOffset( Offset = 160 )]
+			public Functors.Func<AtkHyperlink*, int> _get_start_index;
+			[ExplicitOffset( Offset = 168 )]
+			public Functors.Func<AtkHyperlink*, Boolean32> _is_valid;
+			[ExplicitOffset( Offset = 176 )]
+			public Functors.Func<AtkHyperlink*, int> _get_n_anchors;
+			[ExplicitOffset( Offset = 184 )]
+			public Functors.Func<AtkHyperlink*, uint> _link_state;
+			[ExplicitOffset( Offset = 192 )]
+			public Functors.Func<AtkHyperlink*, Boolean32> _is_selected_link;
+			[ExplicitOffset( Offset = 200 )]
+			public Functors.Action<AtkHyperlink*> _link_activated;
+			[ExplicitOffset( Offset = 208 )]
+			public Functors.Func<void*, Boolean32> _pad1;
+		}
+	}
+	public partial struct AtkHyperlinkImpl {
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkHyperlinkImplIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkHyperlinkImpl*, AtkHyperlink*> get_hyperlink;
+	}
+	public partial struct AtkHypertext {
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkHypertextIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkHypertext*, int, AtkHyperlink*> get_link;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkHypertext*, int> get_n_links;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkHypertext*, int, int> get_link_index;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Action<AtkHypertext*, int> link_selected;
+	}
+	public partial struct AtkImage {
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkImageIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Action<AtkImage*, int*, int*, AtkCoordType> get_image_position;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkImage*, sbyte*> get_image_description;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<AtkImage*, int*, int*> get_image_size;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkImage*, sbyte*, Boolean32> set_image_description;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkImage*, sbyte*> get_image_locale;
+	}
+	public partial struct AtkImplementor {
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkImplementorIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkImplementor*, AtkObject*> ref_accessible;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkKeyEventStruct {
+		[ExplicitOffset( Offset = 0 )]
+		public int type;
+		[ExplicitOffset( Offset = 4 )]
+		public uint state;
+		[ExplicitOffset( Offset = 8 )]
+		public uint keyval;
+		[ExplicitOffset( Offset = 12 )]
+		public int length;
+		[ExplicitOffset( Offset = 16 )]
+		public sbyte* @string;
+		[ExplicitOffset( Offset = 24 )]
+		public ushort keycode;
+		[ExplicitOffset( Offset = 28 )]
+		public uint timestamp;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkMisc : GObject {
+		[ExplicitSize( Size = 408 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Action<AtkMisc*> _threads_enter;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Action<AtkMisc*> _threads_leave;
+			[ExplicitOffset( Offset = 152 )]
+			public void*[32] _vfuncs;
+		}
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkNoOpObject : AtkObject {
+		[ExplicitSize( Size = 352 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+		}
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkNoOpObjectFactory : AtkObjectFactory {
+		[ExplicitSize( Size = 176 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+		}
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkObject : GObject {
+		[ExplicitSize( Size = 352 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<AtkObject*, sbyte*> _get_name;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Func<AtkObject*, sbyte*> _get_description;
+			[ExplicitOffset( Offset = 152 )]
+			public Functors.Func<AtkObject*, AtkObject*> _get_parent;
+			[ExplicitOffset( Offset = 160 )]
+			public Functors.Func<AtkObject*, int> _get_n_children;
+			[ExplicitOffset( Offset = 168 )]
+			public Functors.Func<AtkObject*, int, AtkObject*> _ref_child;
+			[ExplicitOffset( Offset = 176 )]
+			public Functors.Func<AtkObject*, int> _get_index_in_parent;
+			[ExplicitOffset( Offset = 184 )]
+			public Functors.Func<AtkObject*, AtkRelationSet*> _ref_relation_set;
+			[ExplicitOffset( Offset = 192 )]
+			public Functors.Func<AtkObject*, AtkRole> _get_role;
+			[ExplicitOffset( Offset = 200 )]
+			public Functors.Func<AtkObject*, AtkLayer> _get_layer;
+			[ExplicitOffset( Offset = 208 )]
+			public Functors.Func<AtkObject*, int> _get_mdi_zorder;
+			[ExplicitOffset( Offset = 216 )]
+			public Functors.Func<AtkObject*, AtkStateSet*> _ref_state_set;
+			[ExplicitOffset( Offset = 224 )]
+			public Functors.Action<AtkObject*, sbyte*> _set_name;
+			[ExplicitOffset( Offset = 232 )]
+			public Functors.Action<AtkObject*, sbyte*> _set_description;
+			[ExplicitOffset( Offset = 240 )]
+			public Functors.Action<AtkObject*, AtkObject*> _set_parent;
+			[ExplicitOffset( Offset = 248 )]
+			public Functors.Action<AtkObject*, AtkRole> _set_role;
+			[ExplicitOffset( Offset = 256 )]
+			public Functors.Func<AtkObject*, Functors.Action<AtkObject*, AtkPropertyValues*>*, uint> _connect_property_change_handler;
+			[ExplicitOffset( Offset = 264 )]
+			public Functors.Action<AtkObject*, uint> _remove_property_change_handler;
+			[ExplicitOffset( Offset = 272 )]
+			public Functors.Action<AtkObject*, void*> _initialize;
+			[ExplicitOffset( Offset = 280 )]
+			public Functors.Action<AtkObject*, uint, void*> _children_changed;
+			[ExplicitOffset( Offset = 288 )]
+			public Functors.Action<AtkObject*, Boolean32> _focus_event;
+			[ExplicitOffset( Offset = 296 )]
+			public Functors.Action<AtkObject*, AtkPropertyValues*> _property_change;
+			[ExplicitOffset( Offset = 304 )]
+			public Functors.Action<AtkObject*, sbyte*, Boolean32> _state_change;
+			[ExplicitOffset( Offset = 312 )]
+			public Functors.Action<AtkObject*> _visible_data_changed;
+			[ExplicitOffset( Offset = 320 )]
+			public Functors.Action<AtkObject*, void**> _active_descendant_changed;
+			[ExplicitOffset( Offset = 328 )]
+			public Functors.Func<AtkObject*, GSList*> _get_attributes;
+			[ExplicitOffset( Offset = 336 )]
+			public Functors.Func<AtkObject*, sbyte*> _get_object_locale;
+			[ExplicitOffset( Offset = 344 )]
+			public Functors.Func<void*, Boolean32> _pad1;
+		}
+		[ExplicitOffset( Offset = 24 )]
+		public CUtf8String _description;
+		[ExplicitOffset( Offset = 32 )]
+		public CUtf8String _name;
+		[ExplicitOffset( Offset = 40 )]
+		public AtkObject* _accessible_parent;
+		[ExplicitOffset( Offset = 48 )]
+		public AtkRole _role;
+		[ExplicitOffset( Offset = 56 )]
+		public AtkRelationSet* _relation_set;
+		[ExplicitOffset( Offset = 64 )]
+		public AtkLayer _layer;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkObjectFactory : GObject {
+		[ExplicitSize( Size = 176 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<GObject*, AtkObject*> _create_accessible;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Action<AtkObjectFactory*> _invalidate;
+			[ExplicitOffset( Offset = 152 )]
+			public Functors.Func<uintptr> _get_accessible_type;
+			[ExplicitOffset( Offset = 160 )]
+			public Functors.Func<void*, Boolean32> _pad1;
+			[ExplicitOffset( Offset = 168 )]
+			public Functors.Func<void*, Boolean32> _pad2;
+		}
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkPlug : AtkObject {
+		[ExplicitSize( Size = 360 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 352 )]
+			public Functors.Func<AtkPlug*, sbyte*> _get_object_id;
+		}
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkPropertyValues {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String property_name;
+		[ExplicitOffset( Offset = 8 )]
+		public GValue old_value;
+		[ExplicitOffset( Offset = 32 )]
+		public GValue new_value;
+	}
+	public partial struct AtkRange {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct AtkRectangle {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkRegistry : GObject {
+		[ExplicitSize( Size = 136 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 24 )]
+		public GHashTable* _factory_type_registry;
+		[ExplicitOffset( Offset = 32 )]
+		public GHashTable* _factory_singleton_cache;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkRelation : GObject {
+		[ExplicitSize( Size = 136 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 24 )]
+		public GPtrArray* _target;
+		[ExplicitOffset( Offset = 32 )]
+		public AtkRelationType _relationship;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkRelationSet : GObject {
+		[ExplicitSize( Size = 152 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<void*, Boolean32> _pad1;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Func<void*, Boolean32> _pad2;
+		}
+		[ExplicitOffset( Offset = 24 )]
+		public GPtrArray* _relations;
+	}
+	public partial struct AtkSelection {
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkSelectionIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkSelection*, int, Boolean32> add_selection;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkSelection*, Boolean32> clear_selection;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkSelection*, int, AtkObject*> ref_selection;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkSelection*, int> get_selection_count;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkSelection*, int, Boolean32> is_child_selected;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkSelection*, int, Boolean32> remove_selection;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkSelection*, Boolean32> select_all_selection;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Action<AtkSelection*> selection_changed;
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkSocket : AtkObject {
+		[ExplicitSize( Size = 360 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 352 )]
+			public Functors.Action<AtkSocket*, sbyte*> _embed;
+		}
+		[ExplicitOffset( Offset = 72 )]
+		public sbyte* _embedded_plug_id;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkStateSet : GObject {
+		[ExplicitSize( Size = 136 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+		}
+	}
+	public partial struct AtkStreamableContent {
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkStreamableContentIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkStreamableContent*, int> get_n_mime_types;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkStreamableContent*, int, sbyte*> get_mime_type;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkStreamableContent*, sbyte*, GIOChannel*> get_stream;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkStreamableContent*, sbyte*, sbyte*> get_uri;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<void*, Boolean32> pad1;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<void*, Boolean32> pad2;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<void*, Boolean32> pad3;
+	}
+	public partial struct AtkTable {
+	}
+	public partial struct AtkTableCell {
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkTableCellIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkTableCell*, int> get_column_span;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkTableCell*, GPtrArray*> get_column_header_cells;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkTableCell*, int*, int*, Boolean32> get_position;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkTableCell*, int> get_row_span;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkTableCell*, GPtrArray*> get_row_header_cells;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkTableCell*, int*, int*, int*, int*, Boolean32> get_row_column_span;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkTableCell*, AtkObject*> get_table;
+	}
+	[ExplicitSize( Size = 304 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkTableIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkTable*, int, int, AtkObject*> ref_at;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkTable*, int, int, int> get_index_at;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkTable*, int, int> get_column_at_index;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkTable*, int, int> get_row_at_index;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkTable*, int> get_n_columns;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkTable*, int> get_n_rows;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkTable*, int, int, int> get_column_extent_at;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Func<AtkTable*, int, int, int> get_row_extent_at;
+		[ExplicitOffset( Offset = 80 )]
+		public Functors.Func<AtkTable*, AtkObject*> get_caption;
+		[ExplicitOffset( Offset = 88 )]
+		public Functors.Func<AtkTable*, int, sbyte*> get_column_description;
+		[ExplicitOffset( Offset = 96 )]
+		public Functors.Func<AtkTable*, int, AtkObject*> get_column_header;
+		[ExplicitOffset( Offset = 104 )]
+		public Functors.Func<AtkTable*, int, sbyte*> get_row_description;
+		[ExplicitOffset( Offset = 112 )]
+		public Functors.Func<AtkTable*, int, AtkObject*> get_row_header;
+		[ExplicitOffset( Offset = 120 )]
+		public Functors.Func<AtkTable*, AtkObject*> get_summary;
+		[ExplicitOffset( Offset = 128 )]
+		public Functors.Action<AtkTable*, AtkObject*> set_caption;
+		[ExplicitOffset( Offset = 136 )]
+		public Functors.Action<AtkTable*, int, sbyte*> set_column_description;
+		[ExplicitOffset( Offset = 144 )]
+		public Functors.Action<AtkTable*, int, AtkObject*> set_column_header;
+		[ExplicitOffset( Offset = 152 )]
+		public Functors.Action<AtkTable*, int, sbyte*> set_row_description;
+		[ExplicitOffset( Offset = 160 )]
+		public Functors.Action<AtkTable*, int, AtkObject*> set_row_header;
+		[ExplicitOffset( Offset = 168 )]
+		public Functors.Action<AtkTable*, AtkObject*> set_summary;
+		[ExplicitOffset( Offset = 176 )]
+		public Functors.Func<AtkTable*, int**, int> get_selected_columns;
+		[ExplicitOffset( Offset = 184 )]
+		public Functors.Func<AtkTable*, int**, int> get_selected_rows;
+		[ExplicitOffset( Offset = 192 )]
+		public Functors.Func<AtkTable*, int, Boolean32> is_column_selected;
+		[ExplicitOffset( Offset = 200 )]
+		public Functors.Func<AtkTable*, int, Boolean32> is_row_selected;
+		[ExplicitOffset( Offset = 208 )]
+		public Functors.Func<AtkTable*, int, int, Boolean32> is_selected;
+		[ExplicitOffset( Offset = 216 )]
+		public Functors.Func<AtkTable*, int, Boolean32> add_row_selection;
+		[ExplicitOffset( Offset = 224 )]
+		public Functors.Func<AtkTable*, int, Boolean32> remove_row_selection;
+		[ExplicitOffset( Offset = 232 )]
+		public Functors.Func<AtkTable*, int, Boolean32> add_column_selection;
+		[ExplicitOffset( Offset = 240 )]
+		public Functors.Func<AtkTable*, int, Boolean32> remove_column_selection;
+		[ExplicitOffset( Offset = 248 )]
+		public Functors.Action<AtkTable*, int, int> row_inserted;
+		[ExplicitOffset( Offset = 256 )]
+		public Functors.Action<AtkTable*, int, int> column_inserted;
+		[ExplicitOffset( Offset = 264 )]
+		public Functors.Action<AtkTable*, int, int> row_deleted;
+		[ExplicitOffset( Offset = 272 )]
+		public Functors.Action<AtkTable*, int, int> column_deleted;
+		[ExplicitOffset( Offset = 280 )]
+		public Functors.Action<AtkTable*> row_reordered;
+		[ExplicitOffset( Offset = 288 )]
+		public Functors.Action<AtkTable*> column_reordered;
+		[ExplicitOffset( Offset = 296 )]
+		public Functors.Action<AtkTable*> model_changed;
+	}
+	public partial struct AtkText {
+	}
+	[ExplicitSize( Size = 208 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkTextIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<AtkText*, int, int, sbyte*> get_text;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<AtkText*, int, AtkTextBoundary, int*, int*, sbyte*> get_text_after_offset;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<AtkText*, int, AtkTextBoundary, int*, int*, sbyte*> get_text_at_offset;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkText*, int, uint> get_character_at_offset;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<AtkText*, int, AtkTextBoundary, int*, int*, sbyte*> get_text_before_offset;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<AtkText*, int> get_caret_offset;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkText*, int, int*, int*, GSList*> get_run_attributes;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Func<AtkText*, GSList*> get_default_attributes;
+		[ExplicitOffset( Offset = 80 )]
+		public Functors.Action<AtkText*, int, int*, int*, int*, int*, AtkCoordType> get_character_extents;
+		[ExplicitOffset( Offset = 88 )]
+		public Functors.Func<AtkText*, int> get_character_count;
+		[ExplicitOffset( Offset = 96 )]
+		public Functors.Func<AtkText*, int, int, AtkCoordType, int> get_offset_at_point;
+		[ExplicitOffset( Offset = 104 )]
+		public Functors.Func<AtkText*, int> get_n_selections;
+		[ExplicitOffset( Offset = 112 )]
+		public Functors.Func<AtkText*, int, int*, int*, sbyte*> get_selection;
+		[ExplicitOffset( Offset = 120 )]
+		public Functors.Func<AtkText*, int, int, Boolean32> add_selection;
+		[ExplicitOffset( Offset = 128 )]
+		public Functors.Func<AtkText*, int, Boolean32> remove_selection;
+		[ExplicitOffset( Offset = 136 )]
+		public Functors.Func<AtkText*, int, int, int, Boolean32> set_selection;
+		[ExplicitOffset( Offset = 144 )]
+		public Functors.Func<AtkText*, int, Boolean32> set_caret_offset;
+		[ExplicitOffset( Offset = 152 )]
+		public Functors.Action<AtkText*, int, int> text_changed;
+		[ExplicitOffset( Offset = 160 )]
+		public Functors.Action<AtkText*, int> text_caret_moved;
+		[ExplicitOffset( Offset = 168 )]
+		public Functors.Action<AtkText*> text_selection_changed;
+		[ExplicitOffset( Offset = 176 )]
+		public Functors.Action<AtkText*> text_attributes_changed;
+		[ExplicitOffset( Offset = 184 )]
+		public Functors.Action<AtkText*, int, int, AtkCoordType, AtkTextRectangle*> get_range_extents;
+		[ExplicitOffset( Offset = 192 )]
+		public Functors.Func<AtkText*, AtkTextRectangle*, AtkCoordType, AtkTextClipType, AtkTextClipType, AtkTextRange**> get_bounded_ranges;
+		[ExplicitOffset( Offset = 200 )]
+		public Functors.Func<AtkText*, int, AtkTextGranularity, int*, int*, sbyte*> get_string_at_offset;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkTextRange {
+		[ExplicitOffset( Offset = 0 )]
+		public AtkTextRectangle bounds;
+		[ExplicitOffset( Offset = 16 )]
+		public int start_offset;
+		[ExplicitOffset( Offset = 20 )]
+		public int end_offset;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte* content;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct AtkTextRectangle {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkUtil : GObject {
+		[ExplicitSize( Size = 192 )]
+		[Alignment( Boundary = 8 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<Functors.Func<GSignalInvocationHint*, uint, GValue*, void*, Boolean32>, sbyte*, uint> _add_global_event_listener;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Action<uint> _remove_global_event_listener;
+			[ExplicitOffset( Offset = 152 )]
+			public Functors.Func<Functors.Func<AtkKeyEventStruct*, void*, int>, void*, uint> _add_key_event_listener;
+			[ExplicitOffset( Offset = 160 )]
+			public Functors.Action<uint> _remove_key_event_listener;
+			[ExplicitOffset( Offset = 168 )]
+			public Functors.Func<AtkObject*> _get_root;
+			[ExplicitOffset( Offset = 176 )]
+			public Functors.Func<sbyte*> _get_toolkit_name;
+			[ExplicitOffset( Offset = 184 )]
+			public Functors.Func<sbyte*> _get_toolkit_version;
+		}
+	}
+	public partial struct AtkValue {
+	}
+	[ExplicitSize( Size = 96 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkValueIface : GTypeInterface {
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Action<AtkValue*, GValue*> get_current_value;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Action<AtkValue*, GValue*> get_maximum_value;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<AtkValue*, GValue*> get_minimum_value;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<AtkValue*, GValue*, Boolean32> set_current_value;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Action<AtkValue*, GValue*> get_minimum_increment;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Action<AtkValue*, double*, sbyte**> get_value_and_text;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<AtkValue*, AtkRange*> get_range;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Func<AtkValue*, double> get_increment;
+		[ExplicitOffset( Offset = 80 )]
+		public Functors.Func<AtkValue*, GSList*> get_sub_ranges;
+		[ExplicitOffset( Offset = 88 )]
+		public Functors.Action<AtkValue*, double> set_value;
+	}
+	public partial struct AtkWindow {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct AtkWindowIface : GTypeInterface {
+	}
+}

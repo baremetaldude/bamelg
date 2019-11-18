@@ -95,6 +95,8 @@ namespace Platform.Atk {
 		public extern static Boolean32 atk_component_grab_focus( AtkComponent* component );
 		public extern static AtkObject* atk_component_ref_accessible_at_point( AtkComponent* component, int x, int y, AtkCoordType coordType );
 		public extern static void atk_component_remove_focus_handler( AtkComponent* component, uint handlerId );
+		public extern static Boolean32 atk_component_scroll_to( AtkComponent* component, AtkScrollType type );
+		public extern static Boolean32 atk_component_scroll_to_point( AtkComponent* component, AtkCoordType coords, int x, int y );
 		public extern static Boolean32 atk_component_set_extents( AtkComponent* component, int x, int y, int width, int height, AtkCoordType coordType );
 		public extern static Boolean32 atk_component_set_position( AtkComponent* component, int x, int y, AtkCoordType coordType );
 		public extern static Boolean32 atk_component_set_size( AtkComponent* component, int width, int height );
@@ -154,6 +156,7 @@ namespace Platform.Atk {
 		public extern static uintptr atk_layer_get_type();
 		public extern static uintptr atk_relation_type_get_type();
 		public extern static uintptr atk_role_get_type();
+		public extern static uintptr atk_scroll_type_get_type();
 		public extern static uintptr atk_state_type_get_type();
 		public extern static uintptr atk_text_attribute_get_type();
 		public extern static uintptr atk_text_boundary_get_type();
@@ -337,6 +340,7 @@ namespace Platform.Atk {
 	public enum AtkCoordType : uint {
 		ATK_XY_SCREEN = 0,
 		ATK_XY_WINDOW = 1,
+		ATK_XY_PARENT = 2,
 	}
 	[Flags]
 	public enum AtkHyperlinkStateFlags : uint {
@@ -376,7 +380,11 @@ namespace Platform.Atk {
 		ATK_RELATION_DESCRIBED_BY =     14,
 		ATK_RELATION_DESCRIPTION_FOR =  15,
 		ATK_RELATION_NODE_PARENT_OF =   16,
-		ATK_RELATION_LAST_DEFINED =     17,
+		ATK_RELATION_DETAILS =          17,
+		ATK_RELATION_DETAILS_FOR =      18,
+		ATK_RELATION_ERROR_MESSAGE =    19,
+		ATK_RELATION_ERROR_FOR =        20,
+		ATK_RELATION_LAST_DEFINED =     21,
 	}
 	public enum AtkRole : uint {
 		ATK_ROLE_INVALID =                0,
@@ -501,7 +509,17 @@ namespace Platform.Atk {
 		ATK_ROLE_MATH_ROOT =            119,
 		ATK_ROLE_SUBSCRIPT =            120,
 		ATK_ROLE_SUPERSCRIPT =          121,
-		ATK_ROLE_LAST_DEFINED =         122,
+		ATK_ROLE_FOOTNOTE =             122,
+		ATK_ROLE_LAST_DEFINED =         123,
+	}
+	public enum AtkScrollType : uint {
+		ATK_SCROLL_TOP_LEFT =     0,
+		ATK_SCROLL_BOTTOM_RIGHT = 1,
+		ATK_SCROLL_TOP_EDGE =     2,
+		ATK_SCROLL_BOTTOM_EDGE =  3,
+		ATK_SCROLL_LEFT_EDGE =    4,
+		ATK_SCROLL_RIGHT_EDGE =   5,
+		ATK_SCROLL_ANYWHERE =     6,
 	}
 	public enum AtkStateType : uint {
 		ATK_STATE_INVALID =                  0,
@@ -650,7 +668,7 @@ namespace Platform.Atk {
 	}
 	public partial struct AtkComponent {
 	}
-	[ExplicitSize( Size = 68 )]
+	[ExplicitSize( Size = 76 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct AtkComponentIface : GTypeInterface {
 		[ExplicitOffset( Offset = 8 )]
@@ -683,6 +701,10 @@ namespace Platform.Atk {
 		public Functors.Action<AtkComponent*, AtkRectangle*> bounds_changed;
 		[ExplicitOffset( Offset = 64 )]
 		public Functors.Func<AtkComponent*, double> get_alpha;
+		[ExplicitOffset( Offset = 68 )]
+		public Functors.Func<AtkComponent*, AtkScrollType, Boolean32> scroll_to;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Func<AtkComponent*, AtkCoordType, int, int, Boolean32> scroll_to_point;
 	}
 	public partial struct AtkDocument {
 	}

@@ -115,6 +115,8 @@ namespace Platform.Pango {
 		[BackendHintReadOnly]
 		public extern static PangoVariant pango_font_description_get_variant( PangoFontDescription* desc );
 		[BackendHintReadOnly]
+		public extern static sbyte* pango_font_description_get_variations( PangoFontDescription* desc );
+		[BackendHintReadOnly]
 		public extern static PangoWeight pango_font_description_get_weight( PangoFontDescription* desc );
 		[BackendHintReadOnly]
 		public extern static uint pango_font_description_hash( PangoFontDescription* desc );
@@ -129,6 +131,8 @@ namespace Platform.Pango {
 		public extern static void pango_font_description_set_stretch( PangoFontDescription* desc, PangoStretch stretch );
 		public extern static void pango_font_description_set_style( PangoFontDescription* desc, PangoStyle style );
 		public extern static void pango_font_description_set_variant( PangoFontDescription* desc, PangoVariant variant );
+		public extern static void pango_font_description_set_variations( PangoFontDescription* desc, sbyte* settings );
+		public extern static void pango_font_description_set_variations_static( PangoFontDescription* desc, sbyte* settings );
 		public extern static void pango_font_description_set_weight( PangoFontDescription* desc, PangoWeight weight );
 		public extern static sbyte* pango_font_description_to_filename( PangoFontDescription* desc );
 		public extern static sbyte* pango_font_description_to_string( PangoFontDescription* desc );
@@ -623,14 +627,15 @@ namespace Platform.Pango {
 	}
 	[Flags]
 	public enum PangoFontMask : uint {
-		None =                     0,
-		PANGO_FONT_MASK_FAMILY =   1,
-		PANGO_FONT_MASK_STYLE =    2,
-		PANGO_FONT_MASK_VARIANT =  4,
-		PANGO_FONT_MASK_WEIGHT =   8,
-		PANGO_FONT_MASK_STRETCH = 16,
-		PANGO_FONT_MASK_SIZE =    32,
-		PANGO_FONT_MASK_GRAVITY = 64,
+		None =                         0,
+		PANGO_FONT_MASK_FAMILY =       1,
+		PANGO_FONT_MASK_STYLE =        2,
+		PANGO_FONT_MASK_VARIANT =      4,
+		PANGO_FONT_MASK_WEIGHT =       8,
+		PANGO_FONT_MASK_STRETCH =     16,
+		PANGO_FONT_MASK_SIZE =        32,
+		PANGO_FONT_MASK_GRAVITY =     64,
+		PANGO_FONT_MASK_VARIATIONS = 128,
 	}
 	public enum PangoGravity : uint {
 		PANGO_GRAVITY_SOUTH = 0,

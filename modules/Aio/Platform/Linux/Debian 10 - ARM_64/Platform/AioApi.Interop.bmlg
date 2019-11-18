@@ -1,0 +1,121 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Libc;
+
+namespace Platform.Aio {
+	[ExternLibrary( Image = "/usr/lib/aarch64-linux-gnu/libaio.so.1" )]
+	public static partial struct AioApi {
+		public extern static int io_cancel( io_context* ctx, iocb* iocb, io_event* evt );
+		public extern static int io_destroy( io_context* ctx );
+		public extern static int io_getevents( io_context* ctxId, intptr minNr, intptr nr, io_event* events, timespec* timeout );
+		public extern static int io_pgetevents( io_context* ctx, intptr minNr, intptr nr, io_event* events, timespec* timeout, sigset_t* sigmask );
+		public extern static int io_queue_init( int maxevents, io_context** ctxp );
+		public extern static int io_queue_release( io_context* ctx );
+		public extern static int io_queue_run( io_context* ctx );
+		public extern static int io_setup( int maxevents, io_context** ctxp );
+		public extern static int io_submit( io_context* ctx, intptr nr, iocb** ios );
+	}
+	public enum io_iocb_cmd : uint {
+		IO_CMD_PREAD =   0,
+		IO_CMD_PWRITE =  1,
+		IO_CMD_FSYNC =   2,
+		IO_CMD_FDSYNC =  3,
+		IO_CMD_POLL =    5,
+		IO_CMD_NOOP =    6,
+		IO_CMD_PREADV =  7,
+		IO_CMD_PWRITEV = 8,
+	}
+	public partial struct io_context {
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct io_event {
+		[ExplicitOffset( Offset = 0 )]
+		public void* data;
+		[ExplicitOffset( Offset = 8 )]
+		public iocb* obj;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr res;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr res2;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct io_iocb_common {
+		[ExplicitOffset( Offset = 0 )]
+		public void* buf;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr nbytes;
+		[ExplicitOffset( Offset = 16 )]
+		public long offset;
+		[ExplicitOffset( Offset = 24 )]
+		public long __pad3;
+		[ExplicitOffset( Offset = 32 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 36 )]
+		public uint resfd;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct io_iocb_poll {
+		[ExplicitOffset( Offset = 0 )]
+		public int events;
+		[ExplicitOffset( Offset = 4 )]
+		public int __pad1;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct io_iocb_sockaddr {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr* addr;
+		[ExplicitOffset( Offset = 8 )]
+		public int len;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct io_iocb_vector {
+		[ExplicitOffset( Offset = 0 )]
+		public iovec* vec;
+		[ExplicitOffset( Offset = 8 )]
+		public int nr;
+		[ExplicitOffset( Offset = 16 )]
+		public long offset;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct iocb {
+		[ExplicitOffset( Offset = 0 )]
+		public void* data;
+		[ExplicitOffset( Offset = 8 )]
+		public uint key;
+		[ExplicitOffset( Offset = 12 )]
+		public uint aio_rw_flags;
+		[ExplicitOffset( Offset = 16 )]
+		public short aio_lio_opcode;
+		[ExplicitOffset( Offset = 18 )]
+		public short aio_reqprio;
+		[ExplicitOffset( Offset = 20 )]
+		public int aio_fildes;
+		[ExplicitOffset( Offset = 24 )]
+		public UnnamedUnion_3824DE47 u;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_3824DE47 {
+		[Overlapped( Offset = 0 )]
+		public io_iocb_common c;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_vector v;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_poll poll;
+		[Overlapped( Offset = 0 )]
+		public io_iocb_sockaddr saddr;
+	}
+}

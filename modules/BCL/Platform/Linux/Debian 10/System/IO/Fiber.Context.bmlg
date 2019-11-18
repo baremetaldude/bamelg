@@ -1,0 +1,156 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Execution and context-switch related functionality
+//
+
+using System;
+using System.Diagnostics;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System.IO {
+	public partial struct Fiber {
+		internal partial struct FiberInfo {
+			[Alignment( Boundary = 4 )]
+			private struct ProcessorContextX86_32 : ProcessorContext {
+				public uint EIP;
+
+				// public uint EAX; // volatile register
+				public uint EBX;
+				// public uint ECX; // volatile register
+				// public uint EDX; // volatile register
+				public uint EBP;
+				public uint EDI;
+				public uint ESI;
+
+				public uint ESP;
+			}
+
+			[Alignment( Boundary = 8 )]
+			private struct ProcessorContextX86_64 : ProcessorContext {
+				// public ulong RAX; // volatile register
+				public ulong RBX;
+				// public ulong RCX; // volatile register
+				// public ulong RDX; // volatile register
+				public ulong RBP;
+				public ulong RDI; // volatile register, but need to pass parameters
+				// public ulong R8; // volatile register
+				// public ulong R9; // volatile register
+				// public ulong R10; // volatile register
+				// public ulong R11; // volatile register
+				public ulong R12;
+				public ulong R13;
+				public ulong R14;
+				public ulong R15;
+
+				public ulong RIP;
+				public ulong RSP;
+				public ulong RSI; // volatile register, but need to pass parameters
+			}
+
+			private static void PrepareContext( ucontext_t& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+				LibcApi.getcontext( context );
+				context.uc_link = ( ucontext_t* ) &FiberManager.CurrentFiber->Context;
+				context.uc_stack.ss_sp = stack;
+				context.uc_stack.ss_size = ( uint ) stackSize;
+				LibcApi.makecontext( context, FiberFunction, 2, function, parameter );
+			}
+
+			private static void PrepareContext( ProcessorContextX86_32& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+				context.ESP = cast<uint>( cast<byte*>( stack ) + ( ( stackSize - 12 ) & ~0xF ) - sizeof( context.EIP ) );
+				context.EIP = ( uint ) bitcast<uintptr>( memberinfo( FiberFunction ).Address );
+
+				*( uint* )( context.ESP + 0 ) = ( uint ) bitcast<uintptr>( memberinfo( FiberIncorrectExitHandler ).Address );
+				*( uint* )( context.ESP + 4 ) = ( uint ) bitcast<uintptr>( function );
+				*( uint* )( context.ESP + 8 ) = ( uint ) bitcast<uintptr>( parameter );
+			}
+
+			private static void PrepareContext( ProcessorContextX86_64& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+				context.RSP = cast<ulong>( cast<byte*>( stack ) + ( stackSize & ~0xF ) - sizeof( context.RIP ) );
+				context.RIP = cast<uintptr>( memberinfo( FiberFunction ).Address );
+
+				*cast<void**>( context.RSP + 0 ) = memberinfo( FiberIncorrectExitHandler ).Address;
+				context.RDI = bitcast<uintptr>( function );
+				context.RSI = bitcast<uintptr>( parameter );
+			}
+
+			private static void PrepareMainFiberEnvironment( FiberInfo* context ) {
+			}
+
+			private static void PrepareFiberEnvironment( FiberInfo* context ) {
+			}
+
+			private static void SwitchEnvironment( FiberInfo* context, FiberInfo* newContext ) {
+			}
+
+			private static void SwitchCurrentContext( ucontext_t& context, ucontext_t& newContext ) {
+				LibcApi.swapcontext( context, newContext );
+			}
+
+			private static void SwitchCurrentContext( ProcessorContext& context, ProcessorContext& newContext ) asm {
+				X86_32 {
+					mov ecx, [esp]     // return address
+					mov eax, [esp + 4] // context
+					lea edx, [esp + 4] // edx = esp + 4
+
+					mov [eax + const( memberinfo( ProcessorContextX86_32.EIP ).ByteOffset )], ecx
+					mov [eax + const( memberinfo( ProcessorContextX86_32.EBX ).ByteOffset )], ebx
+					mov [eax + const( memberinfo( ProcessorContextX86_32.EBP ).ByteOffset )], ebp
+					mov [eax + const( memberinfo( ProcessorContextX86_32.EDI ).ByteOffset )], edi
+					mov [eax + const( memberinfo( ProcessorContextX86_32.ESI ).ByteOffset )], esi
+					mov [eax + const( memberinfo( ProcessorContextX86_32.ESP ).ByteOffset )], edx
+
+					mov eax, [esp + 8] // newContext
+
+					mov ecx, [eax + const( memberinfo( ProcessorContextX86_32.EIP ).ByteOffset )]
+					mov ebx, [eax + const( memberinfo( ProcessorContextX86_32.EBX ).ByteOffset )]
+					mov ebp, [eax + const( memberinfo( ProcessorContextX86_32.EBP ).ByteOffset )]
+					mov edi, [eax + const( memberinfo( ProcessorContextX86_32.EDI ).ByteOffset )]
+					mov esi, [eax + const( memberinfo( ProcessorContextX86_32.ESI ).ByteOffset )]
+					mov esp, [eax + const( memberinfo( ProcessorContextX86_32.ESP ).ByteOffset )]
+
+					jmp ecx
+				}
+				X86_64 {
+					mov rcx, [rsp]     // return address
+					lea rdx, [rsp + 8] // do not include return address
+
+					// rdi - context
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RBX ).ByteOffset )], rbx
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RBP ).ByteOffset )], rbp
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RDI ).ByteOffset )], rdi
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.R12 ).ByteOffset )], r12
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.R13 ).ByteOffset )], r13
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.R14 ).ByteOffset )], r14
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.R15 ).ByteOffset )], r15
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RIP ).ByteOffset )], rcx
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RSP ).ByteOffset )], rdx
+					mov [rdi + const( memberinfo( ProcessorContextX86_64.RSI ).ByteOffset )], rsi
+
+					// rsi - newContext
+					mov rbx, [rsi + const( memberinfo( ProcessorContextX86_64.RBX ).ByteOffset )]
+					mov rbp, [rsi + const( memberinfo( ProcessorContextX86_64.RBP ).ByteOffset )]
+					mov rdi, [rsi + const( memberinfo( ProcessorContextX86_64.RDI ).ByteOffset )]
+					mov r12, [rsi + const( memberinfo( ProcessorContextX86_64.R12 ).ByteOffset )]
+					mov r13, [rsi + const( memberinfo( ProcessorContextX86_64.R13 ).ByteOffset )]
+					mov r14, [rsi + const( memberinfo( ProcessorContextX86_64.R14 ).ByteOffset )]
+					mov r15, [rsi + const( memberinfo( ProcessorContextX86_64.R15 ).ByteOffset )]
+					mov rax, [rsi + const( memberinfo( ProcessorContextX86_64.RIP ).ByteOffset )]
+					mov rsp, [rsi + const( memberinfo( ProcessorContextX86_64.RSP ).ByteOffset )]
+					mov rsi, [rsi + const( memberinfo( ProcessorContextX86_64.RSI ).ByteOffset )]
+
+					jmp rax
+				}
+				default {
+					Assert.NotImplemented();
+				}
+			}
+		}
+	}
+}

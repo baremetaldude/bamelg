@@ -1,0 +1,103 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Cairo;
+
+namespace Platform.Gdk {
+	public static partial struct GdkApi {
+	}
+
+	public struct GdkThreads {
+		public static SyncronizationScope LockRegion() { return new SyncronizationScope( true ); }
+		public static SyncronizationScope UnlockRegion() { return new SyncronizationScope( false ); }
+
+		public struct SyncronizationScope : IDisposable {
+			private bool _isLock;
+			public SyncronizationScope( bool isLock ) {
+				_isLock = isLock;
+				if( _isLock ) GdkApi.gdk_threads_enter();
+				else GdkApi.gdk_threads_leave();
+			}
+			public void Dispose() {
+				if( _isLock ) GdkApi.gdk_threads_leave();
+				else GdkApi.gdk_threads_enter();
+			}
+		}
+	}
+
+	public struct GdkThreadsLock {
+		public GdkThreadsLock() { GdkApi.gdk_threads_enter(); }
+		~GdkThreadsLock() { GdkApi.gdk_threads_leave(); }
+	}
+
+	public struct GdkThreadsUnlock {
+		public GdkThreadsUnlock() { GdkApi.gdk_threads_leave(); }
+		~GdkThreadsUnlock() { GdkApi.gdk_threads_enter(); }
+	}
+
+	public partial struct GdkColor {
+		public static implicit operator GdkColor( RgbColor value ) {
+			return new GdkColor { red = ( ushort ) value.R << 8, green = ( ushort ) value.G << 8, blue = ( ushort ) value.B << 8 };
+		}
+
+		public static implicit operator GdkColor( RgbFloatingColor value ) {
+			return new GdkColor { red = ( ushort )( value.R * 65535f ), green = ( ushort )( value.G * 65535f ), blue = ( ushort )( value.B * 65535f ) };
+		}
+	}
+
+	public partial struct GdkRegion {
+		public void Resize( int dx, int dy ) { GdkApi.gdk_region_shrink( &this, dx, dy ); }
+
+		public void Offset( int dx, int dy ) { GdkApi.gdk_region_offset( &this, dx, dy ); }
+	}
+
+	public partial struct GdkDrawable {
+		public bool IsKeepBelow { set { GdkApi.gdk_window_set_keep_below( &this, value ); } }
+		public bool IsKeepAbove { set { GdkApi.gdk_window_set_keep_above( &this, value ); } }
+	}
+
+	public partial struct GdkScreen {
+		public bool IsComposited { get { return GdkApi.gdk_screen_is_composited( &this ); } }
+	}
+
+	public partial struct GdkEventButton {
+		public bool IsLeftButton { get { return button == 1; } }
+		public bool IsMiddleButton { get { return button == 2; } }
+		public bool IsRightButton { get { return button == 3; } }
+	}
+
+	public partial struct GdkEventScroll {
+		public int WheelUpDown { get { return direction == GdkScrollDirection.GDK_SCROLL_UP ? 1 : direction == GdkScrollDirection.GDK_SCROLL_DOWN ? -1 : 0; } }
+	}
+
+	public partial struct GdkPixbuf {
+		public static GdkPixbuf* FromSurface( GdkColormap* colormap, cairo_surface_t* image ) {
+			var pixmap = GdkApi.gdk_pixmap_new( null, image->Width, image->Height, 32 );
+			GdkApi.gdk_drawable_set_colormap( pixmap, colormap );
+
+			using( var cr = GdkApi.gdk_cairo_create( pixmap ) ) {
+				cr->Clear();
+
+				cr->Operator = cairo_operator_t.CAIRO_OPERATOR_SOURCE;
+				cr->SetSource( image, 0, 0 );
+				cr->Paint();
+			}
+
+			var icon = GdkApi.gdk_pixbuf_get_from_drawable( null, pixmap, colormap, 0, 0, 0, 0, image->Width, image->Height );
+			var result = GdkPixbufApi.gdk_pixbuf_add_alpha( icon, true, 0, 0, 0 );
+
+			icon->ReleaseReference();
+			pixmap->ReleaseReference();
+
+			return result;
+		}
+
+		public void AddReference() { GdkPixbufApi.gdk_pixbuf_ref( &this ); }
+		public void ReleaseReference() { GdkPixbufApi.gdk_pixbuf_unref( &this ); }
+	}
+}

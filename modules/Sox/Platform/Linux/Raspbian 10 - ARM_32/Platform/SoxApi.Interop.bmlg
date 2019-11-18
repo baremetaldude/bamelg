@@ -10,10 +10,9 @@ using System;
 using System.Runtime.InteropServices;
 
 namespace Platform.Sox {
-	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libsox.so.2" )]
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libsox.so.3.0.0" )]
 	public static partial struct SoxApi {
-		[BackendHintReadOnly]
-		public extern static int lsx_enum_option( int c, sbyte* arg, lsx_enum_item* items );
+		public extern static ulong lsx_filelength( sox_format_t* ft );
 		[BackendHintReadOnly]
 		public extern static lsx_enum_item* lsx_find_enum_text( CUtf8String text, lsx_enum_item* lsxEnumItems, int flags );
 		[BackendHintReadOnly]
@@ -27,10 +26,6 @@ namespace Platform.Sox {
 		public extern static sbyte* lsx_sigfigs3p( double percentage );
 		[BackendHintReadOnly]
 		public extern static int lsx_strcasecmp( sbyte* s1, sbyte* s2 );
-		[BackendHintReadOnly]
-		public extern static sox_bool lsx_strends( sbyte* str, sbyte* end );
-		[BackendHintReadOnly]
-		public extern static int lsx_strncasecmp( sbyte* s1, sbyte* s2, uint n );
 		public extern static int sox_add_effect( sox_effects_chain_t* chain, sox_effect_t* effp, sox_signalinfo_t* in, sox_signalinfo_t* out );
 		public extern static void sox_append_comment( sbyte*** comments, sbyte* item );
 		public extern static void sox_append_comments( sbyte*** comments, sbyte* items );
@@ -109,9 +104,10 @@ namespace Platform.Sox {
 		lsx_option_arg_required = 1,
 		lsx_option_arg_optional = 2,
 	}
-	public enum sox_bool : uint {
-		sox_false = 0,
-		sox_true =  1,
+	public enum sox_bool : int {
+		sox_bool_dummy = -1,
+		sox_false =       0,
+		sox_true =        1,
 	}
 	public enum sox_encoding_t : uint {
 		SOX_ENCODING_UNKNOWN =     0,
@@ -142,7 +138,8 @@ namespace Platform.Sox {
 		SOX_ENCODING_AMR_NB =     25,
 		SOX_ENCODING_CVSD =       26,
 		SOX_ENCODING_LPC10 =      27,
-		SOX_ENCODINGS =           28,
+		SOX_ENCODING_OPUS =       28,
+		SOX_ENCODINGS =           29,
 	}
 	[Flags]
 	public enum sox_encodings_flags_t : uint {
@@ -187,7 +184,7 @@ namespace Platform.Sox {
 		sox_version_have_threads = 4,
 		sox_version_have_memopen = 8,
 	}
-	public enum UnnamedEnum_AB955C53 : uint {
+	public enum UnnamedEnum_AB955B28 : uint {
 		lsx_find_enum_item_none =           0,
 		lsx_find_enum_item_case_sensitive = 1,
 	}
@@ -299,41 +296,39 @@ namespace Platform.Sox {
 		[ExplicitOffset( Offset = 80 )]
 		public sox_effect_handler_t handler;
 		[ExplicitOffset( Offset = 120 )]
-		public int* obuf;
-		[ExplicitOffset( Offset = 124 )]
-		public uint obeg;
-		[ExplicitOffset( Offset = 128 )]
-		public uint oend;
-		[ExplicitOffset( Offset = 132 )]
-		public uint imin;
-		[ExplicitOffset( Offset = 136 )]
 		public ulong clips;
-		[ExplicitOffset( Offset = 144 )]
+		[ExplicitOffset( Offset = 128 )]
 		public uint flows;
-		[ExplicitOffset( Offset = 148 )]
+		[ExplicitOffset( Offset = 132 )]
 		public uint flow;
-		[ExplicitOffset( Offset = 152 )]
+		[ExplicitOffset( Offset = 136 )]
 		public void* priv;
+		[ExplicitOffset( Offset = 140 )]
+		public int* obuf;
+		[ExplicitOffset( Offset = 144 )]
+		public uint obeg;
+		[ExplicitOffset( Offset = 148 )]
+		public uint oend;
+		[ExplicitOffset( Offset = 152 )]
+		public uint imin;
 	}
-	[ExplicitSize( Size = 36 )]
+	[ExplicitSize( Size = 32 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sox_effects_chain_t {
 		[ExplicitOffset( Offset = 0 )]
 		public sox_effect_t** effects;
 		[ExplicitOffset( Offset = 4 )]
-		public uint table_size;
-		[ExplicitOffset( Offset = 8 )]
 		public uint length;
-		[ExplicitOffset( Offset = 12 )]
-		public int** ibufc;
-		[ExplicitOffset( Offset = 16 )]
-		public int** obufc;
-		[ExplicitOffset( Offset = 20 )]
+		[ExplicitOffset( Offset = 8 )]
 		public sox_effects_globals_t global_info;
-		[ExplicitOffset( Offset = 28 )]
+		[ExplicitOffset( Offset = 16 )]
 		public sox_encodinginfo_t* in_enc;
-		[ExplicitOffset( Offset = 32 )]
+		[ExplicitOffset( Offset = 20 )]
 		public sox_encodinginfo_t* out_enc;
+		[ExplicitOffset( Offset = 24 )]
+		public uint table_size;
+		[ExplicitOffset( Offset = 28 )]
+		public int* il_buf;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]
@@ -461,11 +456,13 @@ namespace Platform.Sox {
 		[ExplicitOffset( Offset = 4 )]
 		public Functors.Func<sox_format_handler_t*>* fn;
 	}
-	[ExplicitSize( Size = 48 )]
+	[ExplicitSize( Size = 52 )]
 	[Alignment( Boundary = 4 )]
 	public partial struct sox_globals_t {
 		[ExplicitOffset( Offset = 0 )]
 		public uint verbosity;
+		[ExplicitOffset( Offset = 4 )]
+		public Functors.Action<uint, sbyte*, sbyte*, va_list>* output_message_handler;
 		[ExplicitOffset( Offset = 8 )]
 		public sox_bool repeatable;
 		[ExplicitOffset( Offset = 12 )]
@@ -486,6 +483,8 @@ namespace Platform.Sox {
 		public sox_bool use_magic;
 		[ExplicitOffset( Offset = 44 )]
 		public sox_bool use_threads;
+		[ExplicitOffset( Offset = 48 )]
+		public uint log2_dft_min_size;
 	}
 	[ExplicitSize( Size = 8 )]
 	[Alignment( Boundary = 4 )]

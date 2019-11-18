@@ -1,0 +1,283 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Net;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct SocketHandle : IOHandleNonBlocking, IFormattable {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SystemError Listen( int backlog ) {
+			if( LibcApi.listen( this, backlog ) != 0 ) return LibcApi.LastError;
+			return SystemError.None;
+		}
+
+		public SystemError Bind( void* address, int addressLength ) {
+			if( LibcApi.bind( this, ( sockaddr* ) address, addressLength ) != 0 ) return LibcApi.LastError;
+			return SystemError.None;
+		}
+
+		public SystemError RawPeek( void* buffer, int bufferLength, int& transmitted ) {
+			transmitted = 0;
+			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+
+			var readen = LibcApi.recv( this, ( byte* ) buffer + transmitted, bufferLength, MessageFlags.MSG_PEEK );
+			if( readen < 0 ) return LibcApi.LastError;
+
+			transmitted += readen;
+			return SystemError.None;
+		}
+
+		public SystemError Send( vararg iovec data ) { return WriteNonBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
+
+		// All bytes will be sent or error returned
+		public SystemError Send( void* buffer, int count ) { return WriteNonBlocking( TimeSpan.Zero, buffer, count ); }
+
+		public SystemError Receive( int& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeSpan.Zero, totalReceived, vararg( data, data.Length ) ); }
+
+		// Less than 'count' bytes can be received
+		public SystemError Receive( void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+
+		public TimeSpan ReadTimeout {
+			get {
+				var result = default( timeval );
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVTIMEO, &result, sizeof( result ) ) );
+				return ( TimeSpan ) result;
+			}
+			set {
+				var timeout = new timeval( value );
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVTIMEO, &timeout, sizeof( timeout ) ) );
+			}
+		}
+
+		public TimeSpan WriteTimeout {
+			get {
+				var result = default( timeval );
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDTIMEO, &result, sizeof( result ) ) );
+				return ( TimeSpan ) result;
+			}
+			set {
+				var timeout = new timeval( value );
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDTIMEO, &timeout, sizeof( timeout ) ) );
+			}
+		}
+
+		public bool ReuseAddress {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_REUSEADDR, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_REUSEADDR, &result, sizeof( result ) ) );
+			}
+		}
+
+		public bool IsListening {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_ACCEPTCONN, &result, sizeof( result ) ) );
+				return result;
+			}
+		}
+
+		public bool IsBroadcast {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_BROADCAST, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_BROADCAST, &result, sizeof( result ) ) );
+			}
+		}
+
+		public bool IsDebugged {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_DEBUG, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_DEBUG, &result, sizeof( result ) ) );
+			}
+		}
+
+		public bool IsRouteDisabled {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_DONTROUTE, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_DONTROUTE, &result, sizeof( result ) ) );
+			}
+		}
+
+		public bool IsTimpestampEnabled {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_TIMESTAMP, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_TIMESTAMP, &result, sizeof( result ) ) );
+			}
+		}
+
+		public bool ReusePort {
+			get {
+				Boolean32 result = false;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_REUSEPORT, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				Boolean32 result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_REUSEPORT, &result, sizeof( result ) ) );
+			}
+		}
+
+		public __socket_type SocketType {
+			get {
+				__socket_type result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_TYPE, &result, sizeof( result ) ) );
+				return result;
+			}
+		}
+
+		public IPProtocol Protocol {
+			get {
+				IPProtocol result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_PROTOCOL, &result, sizeof( result ) ) );
+				return result;
+			}
+		}
+
+		public ProtocolFamily Domain {
+			get {
+				ProtocolFamily result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_DOMAIN, &result, sizeof( result ) ) );
+				return result;
+			}
+		}
+
+		public int SendBufferSize {
+			get {
+				int result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUF, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUF, &value, sizeof( value ) ) );
+			}
+		}
+
+		public int ReceiveBufferSize {
+			get {
+				int result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVBUF, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVBUF, &value, sizeof( value ) ) );
+			}
+		}
+
+		// overrides /proc/sys/net/core/wmem_max
+		public int ForceSendBufferSize {
+			get {
+				int result;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUFFORCE, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUFFORCE, &value, sizeof( value ) ) );
+			}
+		}
+
+		// overrides /proc/sys/net/core/rmem_max
+		public int ForceReceiveBufferSize {
+			get {
+				int result;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVBUFFORCE, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVBUFFORCE, &value, sizeof( value ) ) );
+			}
+		}
+
+		public int Priority {
+			get {
+				int result;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_PRIORITY, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_PRIORITY, &value, sizeof( value ) ) );
+			}
+		}
+
+		public SystemError LastError {
+			get {
+				SystemError result;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_ERROR, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_ERROR, &value, sizeof( value ) ) );
+			}
+		}
+
+		public bool AddMulticastMembership( IPv4Address multicast, IPv4Address subscribingInterfaceAddress ) {
+			var mreq = new ip_mreq {
+				imr_multiaddr = new in_addr( multicast ),
+				imr_interface = new in_addr( subscribingInterfaceAddress )
+			};
+
+			return LibcApi.setsockopt( this, SocketPropertyGroup.SOL_IP, 35, &mreq, sizeof( mreq ) ) >= 0; // IP_ADD_MEMBERSHIP
+		}
+
+		protected new void DumpRelevantData( StringBuilder builder ) {
+			base.DumpRelevantData( builder );
+
+			builder.Concat( " IsListening=", IsListening );
+			builder.Concat( " SendBufferSize=", SendBufferSize );
+			builder.Concat( " ReceiveBufferSize=", ReceiveBufferSize );
+			builder.Concat( " IsTimpestampEnabled=", IsTimpestampEnabled );
+			builder.Concat( " IsRouteDisabled=", IsRouteDisabled );
+			builder.Concat( " IsDebugged=", IsDebugged );
+			builder.Concat( " IsBroadcast=", IsBroadcast );
+			builder.Concat( " ReuseAddress=", ReuseAddress );
+			builder.Concat( " ReadTimeout=", ReadTimeout );
+			builder.Concat( " WriteTimeout=", WriteTimeout );
+		}
+
+		protected SystemError ConnectNonBlocking( TimeSpan timeout, sockaddr* address, int addressLength ) {
+			if( Fiber.IsFiberExecuting )
+				return Fiber.FiberManager.ConnectNonBlocking( timeout, this, address, addressLength );
+			else {
+				if( LibcApi.connect( this, address, addressLength ) != 0 ) return LibcApi.LastError;
+				return SystemError.None;
+			}
+		}
+
+		public new void ToString( StringBuilder builder, string format ) {
+			builder.Append( "{" );
+			DumpRelevantData( builder );
+			builder.Append( " }" );
+		}
+	}
+}

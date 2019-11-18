@@ -1,0 +1,42 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Runtime;
+
+using Platform.Libc;
+
+namespace System.IO {
+	public partial struct Fiber {
+		internal partial struct FiberInfo {
+			internal partial class Manager {
+				private void OnInitialize() {
+					TraceInformation();
+					TracePlatformInformation();
+				}
+
+				private void OnFinalize() {
+					Epoll.Close();
+				}
+
+				public void Shutdown() {
+					CurrentEventLoop = null;
+				}
+
+				/// @{ Tracing
+				[Conditional( ConditionString = TraceConditionString )]
+				private static void TracePlatformInformation() {
+					Trace.Write( "Fiber: sizeof( ProcessorContextX86_32 ) = {0}", sizeof( FiberInfo.ProcessorContextX86_32 ) );
+					Trace.Write( "Fiber: sizeof( ProcessorContextX86_64 ) = {0}", sizeof( FiberInfo.ProcessorContextX86_64 ) );
+					Trace.Write( "Fiber: sizeof( ucontext_t ) = {0}", sizeof( ucontext_t ) );
+				}
+				/// @}
+			}
+		}
+	}
+}

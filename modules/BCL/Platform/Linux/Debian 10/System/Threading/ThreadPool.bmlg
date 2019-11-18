@@ -1,0 +1,33 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System.Threading {
+	public static partial struct ThreadPool {
+		private static ReferenceImpl _impl = new ReferenceImpl();
+
+		private static int _implMaxThreads {
+			get { return _impl.MaxThreads; }
+			set { _impl.MaxThreads = value; }
+		}
+
+		private static void _implTerminate() {
+			_impl.Stop();
+		}
+
+		private static void _implEnqueue( DPC* task ) {
+			_impl.Enqueue( task );
+		}
+
+		private static void _implSetThreadProperties() {
+			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
+
+			var signalSet = new sigset_t( SignalCode.SIGINT, SignalCode.SIGQUIT, SignalCode.SIGTERM, SignalCode.SIGHUP, SignalCode.SIGABRT );
+			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );
+		}
+	}
+}

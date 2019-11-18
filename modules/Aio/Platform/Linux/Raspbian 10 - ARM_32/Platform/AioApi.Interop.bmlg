@@ -10,11 +10,12 @@ using System.Runtime.InteropServices;
 using Platform.Libc;
 
 namespace Platform.Aio {
-	[ExternLibrary( Image = "/lib/arm-linux-gnueabihf/libaio.so.1" )]
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libaio.so.1" )]
 	public static partial struct AioApi {
 		public extern static int io_cancel( io_context* ctx, iocb* iocb, io_event* evt );
 		public extern static int io_destroy( io_context* ctx );
 		public extern static int io_getevents( io_context* ctxId, intptr minNr, intptr nr, io_event* events, timespec* timeout );
+		public extern static int io_pgetevents( io_context* ctx, intptr minNr, intptr nr, io_event* events, timespec* timeout, sigset_t* sigmask );
 		public extern static int io_queue_init( int maxevents, io_context** ctxp );
 		public extern static int io_queue_release( io_context* ctx );
 		public extern static int io_queue_run( io_context* ctx );
@@ -109,7 +110,7 @@ namespace Platform.Aio {
 		[ExplicitOffset( Offset = 8 )]
 		public uint key;
 		[ExplicitOffset( Offset = 12 )]
-		public uint __pad2;
+		public uint aio_rw_flags;
 		[ExplicitOffset( Offset = 16 )]
 		public short aio_lio_opcode;
 		[ExplicitOffset( Offset = 18 )]
@@ -117,11 +118,11 @@ namespace Platform.Aio {
 		[ExplicitOffset( Offset = 20 )]
 		public int aio_fildes;
 		[ExplicitOffset( Offset = 24 )]
-		public UnnamedUnion_3824DFD3 u;
+		public UnnamedUnion_3824DE47 u;
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
-	public partial struct UnnamedUnion_3824DFD3 {
+	public partial struct UnnamedUnion_3824DE47 {
 		[Overlapped( Offset = 0 )]
 		public io_iocb_common c;
 		[Overlapped( Offset = 0 )]
