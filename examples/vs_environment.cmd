@@ -1,3 +1,14 @@
+::
+:: Created by Eugeny Grishul
+::
+
+@IF NOT DEFINED INCLUDE GOTO SETENV
+@IF NOT DEFINED LIB GOTO SETENV
+@IF NOT DEFINED LIBPATH GOTO SETENV
+@goto EXIT
+
+:SETENV
+
 @IF EXIST "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat" (
 	pushd .
 	call "%ProgramFiles(x86)%\Microsoft Visual Studio\2017\Enterprise\Common7\Tools\VsDevCmd.bat"

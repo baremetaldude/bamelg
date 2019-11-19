@@ -161,7 +161,7 @@ namespace System.IO {
 		}
 
 		internal partial struct FiberInfo : IFormattable {
-			private void* _stack, _fls;
+			private void* _stack, _suspendedStack, _fls;
 			private int _stackSize;
 			private intptr ValgrindStackID;
 			internal int _version;
@@ -306,18 +306,16 @@ namespace System.IO {
 
 							adjustedStack = result->_stack;
 							adjustedStackSize = ( int )( flsStart - ( byte* ) result->_stack );
-
-							result->_fls = flsStart;
 						}
 						else {
 							adjustedStack = ( byte* ) result->_stack + Loader._flsSnapshotSize;
 							adjustedStackSize = result->_stackSize - Loader._flsSnapshotSize;
-
-							result->_fls = flsStart;
 						}
 
+						result->_fls = flsStart;
+
 						Memory.Copy( flsStart, Loader._flsSnapshotStart, ( uint ) Loader._flsSnapshotSize );
-						PrepareContext( result->Context, adjustedStack, adjustedStackSize, function, parameter );
+						PrepareContext( result, adjustedStack, adjustedStackSize, function, parameter );
 						PrepareFiberEnvironment( result );
 					}
 
@@ -428,7 +426,7 @@ namespace System.IO {
 					Loader.FlsSegment = fiber->_fls;
 
 					SwitchEnvironment( prevFiber, fiber );
-					SwitchCurrentContext( prevFiber->Context, fiber->Context );
+					SwitchCurrentContext( &prevFiber->_suspendedStack, fiber->_suspendedStack );
 				}
 
 				// Switch context to next fiber and remove current
@@ -443,7 +441,7 @@ namespace System.IO {
 
 					Loader.FlsSegment = fiber->_fls;
 					SwitchEnvironment( currentFiber, fiber );
-					SwitchCurrentContext( currentFiber->Context, fiber->Context );
+					SwitchCurrentContext( &currentFiber->_suspendedStack, fiber->_suspendedStack );
 				}
 
 				public void InvokeAsync( Delegates.Action start ) {
@@ -603,7 +601,7 @@ namespace System.IO {
 
 					Loader.FlsSegment = completionFiber->_fls;
 					SwitchEnvironment( &mainFiber, completionFiber );
-					SwitchCurrentContext( mainFiber.Context, completionFiber->Context );
+					SwitchCurrentContext( &mainFiber._suspendedStack, completionFiber->_suspendedStack );
 
 					//
 					// after EndAsyncCompletion()
@@ -622,7 +620,7 @@ namespace System.IO {
 
 					Loader.FlsSegment = mainTPFiber->_fls;
 					SwitchEnvironment( currentFiber, mainTPFiber );
-					SwitchCurrentContext( currentFiber->Context, mainTPFiber->Context );
+					SwitchCurrentContext( &currentFiber->_suspendedStack, mainTPFiber->_suspendedStack );
 				}
 
 				private DateTime _lastSwitch = DateTime.UnbiasedNow;

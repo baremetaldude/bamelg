@@ -1,0 +1,546 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Execution and context-switch related functionality
+//
+
+using System;
+using System.Diagnostics;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace System.IO {
+	public partial struct Fiber {
+		internal partial struct FiberInfo {
+			internal static struct ContextSwitch {
+				internal static struct X86 {
+					internal static struct Linux {
+						public static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+							switch( Environment.CurrentCpu ) {
+								case CpuID.X86_32: {
+										var alignedStackTop = cast<void**>( cast<byte*>( stack ) + ( ( stackSize - 12 ) & ~0xF ) - sizeof( void* ) );
+
+										var stackTop = alignedStackTop - 5;
+										fiber->_suspendedStack = stackTop;
+
+										// stackTop[0] = null; // ESI
+										// stackTop[1] = null; // EDI
+										// stackTop[2] = null; // EBP
+										// stackTop[3] = null; // EBX
+										stackTop[4] = memberinfo( FiberInfo.FiberFunction ).Address;
+										stackTop[5] = memberinfo( FiberInfo.FiberIncorrectExitHandler ).Address;
+										stackTop[6] = bitcast<void*>( function );
+										stackTop[7] = parameter;
+
+									} break;
+
+								case CpuID.X86_64: {
+										var alignedStackTop = cast<void**>( cast<byte*>( stack ) + ( ( stackSize - 12 ) & ~0xF ) - sizeof( void* ) );
+
+										var stackTop = alignedStackTop - 13;
+										fiber->_suspendedStack = stackTop;
+
+										// stackTop[0] = null; // R15
+										// stackTop[1] = null; // R14
+										// stackTop[2] = null; // R13
+										// stackTop[3] = null; // R12
+										// stackTop[4] = null; // RBP
+										// stackTop[5] = null; // RBX
+
+										stackTop[6] = &FiberSwitchSetupX64[0];
+										// stackTop[7] = parameter; // padding
+										stackTop[8] = parameter; // RSI
+										stackTop[9] = bitcast<void*>( function ); // RDI
+										stackTop[10] = memberinfo( FiberInfo.FiberFunction ).Address;
+										stackTop[11] = memberinfo( FiberInfo.FiberIncorrectExitHandler ).Address;
+									} break;
+							}
+						}
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static byte[4] FiberSwitchSetupX64 = new byte[4] {
+							0x58, // pop rax
+							0x5E, // pop rsi
+							0x5F, // pop rdi
+							0xC3  // ret
+						};
+
+						[System.Runtime.InteropServices.CallingConvention( Value = Environment.CurrentCpu == System.Runtime.CompilerServices.CpuID.X86_32 ? System.Runtime.InteropServices.CallingConvention.FastCallX86 : System.Runtime.InteropServices.CallingConvention.Default )]
+						public static void SwitchCurrentContext( void** oldStack, void* newStack ) asm {
+							// volatile registers: EAX, ECX, EDX
+							X86_32 { // ~13 bytes
+								if( thismethod.CallingConvention == System.Runtime.InteropServices.CallingConvention.FastCallX86 ) {
+									// ecx - oldStack
+									// edx - newStack
+								}
+								else {
+									mov ecx, [esp + 4] // oldStack
+									mov edx, [esp + 8] // newStack
+								}
+
+								push ebx
+								push ebp
+								push edi
+								push esi
+
+								mov [ecx], esp
+								mov esp, edx
+
+								pop esi
+								pop edi
+								pop ebp
+								pop ebx
+
+								ret
+							}
+							// volatile registers: RAX, RCX, RDX, R8, R9, R10, R11, [RDI, RSI]
+							X86_64 { // ~26 bytes
+								// rdi - oldStack
+								// rsi - newStack
+								push rbx
+								push rbp
+								push r12
+								push r13
+								push r14
+								push r15
+
+								mov [rdi], rsp
+								mov rsp, rsi
+
+								pop r15
+								pop r14
+								pop r13
+								pop r12
+								pop rbp
+								pop rbx
+
+								ret
+							}
+							default {
+								Assert.NotImplemented();
+							}
+						}
+					}
+
+					internal static struct Windows {
+						public static void PrepareContext_NoSSE( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+						public static void PrepareContext_SSE( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+
+						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool sse ) {
+							switch( Environment.CurrentCpu ) {
+								case CpuID.X86_32: {
+										var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
+
+										var stackTop = alignedStackTop - 9;
+
+										fiber->_suspendedStack = stackTop;
+
+										int index = 0;
+
+										++index; // stackTop[index++] = null; // ESI
+										++index; // stackTop[index++] = null; // EDI
+										++index; // stackTop[index++] = null; // EBP
+										++index; // stackTop[index++] = null; // EBX
+										stackTop[index++] = memberinfo( FiberInfo.FiberFunction ).Address;
+										stackTop[index++] = memberinfo( FiberInfo.FiberIncorrectExitHandler ).Address;
+										stackTop[index++] = bitcast<void*>( function );
+										stackTop[index++] = parameter;
+
+										Debug.Assert( stackTop + index <= alignedStackTop );
+									} break;
+
+								case CpuID.X86_64: {
+										var shadowStackSpace = 32;
+										var sseRegisters = 10;
+
+										var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
+
+										var stackTop = alignedStackTop - 15 - shadowStackSpace / sizeof( void* );
+										if( sse ) stackTop -= sseRegisters * 16 / sizeof( void* );
+
+										fiber->_suspendedStack = stackTop;
+
+										int index = 0;
+
+										++index; // stackTop[index++] = null; // R15
+										if( sse ) index += sseRegisters * 2;
+										++index; // stackTop[index++] = null; // R14
+										++index; // stackTop[index++] = null; // R13
+										++index; // stackTop[index++] = null; // R12
+										++index; // stackTop[index++] = null; // RSI
+										++index; // stackTop[index++] = null; // RDI
+										++index; // stackTop[index++] = null; // RBP
+										++index; // stackTop[index++] = null; // RBX
+
+										stackTop[index++] = &FiberSwitchSetupX64[0];
+										stackTop[index++] = parameter; // RDX
+										stackTop[index++] = bitcast<void*>( function ); // RCX
+										stackTop[index++] = memberinfo( FiberInfo.FiberFunction ).Address;
+										// stackTop[index++] = memberinfo( FiberInfo.FiberIncorrectExitHandler ).Address;
+
+										Debug.Assert( stackTop + index <= alignedStackTop );
+									} break;
+							}
+						}
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static byte[3] FiberSwitchSetupX64 = new byte[3] {
+							0x5A, // pop rdx
+							0x59, // pop rcx
+							0xC3  // ret
+						};
+
+						[System.Runtime.InteropServices.CallingConvention( Value = Environment.CurrentCpu == System.Runtime.CompilerServices.CpuID.X86_32 ? System.Runtime.InteropServices.CallingConvention.FastCallX86 : System.Runtime.InteropServices.CallingConvention.Default )]
+						public static void SwitchCurrentContext_NoSSE( void** oldStack, void* newStack ) asm {
+							// volatile registers: EAX, ECX, EDX
+							// volatile registers: XMM0-XMM7
+							X86_32 {
+								if( thismethod.CallingConvention == System.Runtime.InteropServices.CallingConvention.FastCallX86 ) {
+									// ecx - oldStack
+									// edx - newStack
+								}
+								else {
+									mov ecx, [esp + 4] // oldStack
+									mov edx, [esp + 8] // newStack
+								}
+
+								push ebx
+								push ebp
+								push edi
+								push esi
+
+								mov [ecx], esp
+								mov esp, edx
+
+								pop esi
+								pop edi
+								pop ebp
+								pop ebx
+
+								ret
+							}
+							// volatile registers: {RAX}, (RCX), (RDX), R8, R9, R10, R11
+							// volatile registers: XMM0-XMM5
+							X86_64 {
+								// RCX - oldStack
+								// RDX - newStack
+								push rbx
+								push rbp
+								push rdi
+								push rsi
+								push r12
+								push r13
+								push r14
+								push r15
+
+								mov [rcx], rsp
+								mov rsp, rdx
+
+								pop r15
+								pop r14
+								pop r13
+								pop r12
+								pop rsi
+								pop rdi
+								pop rbp
+								pop rbx
+
+								ret
+							}
+							default {
+								Assert.NotImplemented();
+							}
+						}
+
+						[System.Runtime.InteropServices.CallingConvention( Value = Environment.CurrentCpu == System.Runtime.CompilerServices.CpuID.X86_32 ? System.Runtime.InteropServices.CallingConvention.FastCallX86 : System.Runtime.InteropServices.CallingConvention.Default )]
+						public static void SwitchCurrentContext_SSE( void** oldStack, void* newStack ) asm {
+							// volatile registers: {RAX}, (RCX), (RDX), R8, R9, R10, R11
+							// volatile registers: XMM0-XMM5
+							X86_64 {
+								// RCX - oldStack
+								// RDX - newStack
+								push rbx
+								push rbp
+								push rdi
+								push rsi
+								push r12
+								push r13
+								push r14
+
+								sub rsp, const( 16 * 10 )
+								movdqa [rsp + const( 16 * 0 )], xmm6
+								movdqa [rsp + const( 16 * 1 )], xmm7
+								movdqa [rsp + const( 16 * 2 )], xmm8
+								movdqa [rsp + const( 16 * 3 )], xmm9
+								movdqa [rsp + const( 16 * 4 )], xmm10
+								movdqa [rsp + const( 16 * 5 )], xmm11
+								movdqa [rsp + const( 16 * 6 )], xmm12
+								movdqa [rsp + const( 16 * 7 )], xmm13
+								movdqa [rsp + const( 16 * 8 )], xmm14
+								movdqa [rsp + const( 16 * 9 )], xmm15
+
+								push r15
+
+								mov [rcx], rsp
+								mov rsp, rdx
+
+								pop r15
+
+								movdqa xmm6, [rsp + const( 16 * 0 )]
+								movdqa xmm7, [rsp + const( 16 * 1 )]
+								movdqa xmm8, [rsp + const( 16 * 2 )]
+								movdqa xmm9, [rsp + const( 16 * 3 )]
+								movdqa xmm10, [rsp + const( 16 * 4 )]
+								movdqa xmm11, [rsp + const( 16 * 5 )]
+								movdqa xmm12, [rsp + const( 16 * 6 )]
+								movdqa xmm13, [rsp + const( 16 * 7 )]
+								movdqa xmm14, [rsp + const( 16 * 8 )]
+								movdqa xmm15, [rsp + const( 16 * 9 )]
+								add rsp, const( 16 * 10 )
+
+								pop r14
+								pop r13
+								pop r12
+								pop rsi
+								pop rdi
+								pop rbp
+								pop rbx
+
+								ret
+							}
+							default {
+								SwitchCurrentContext_NoSSE( oldStack, newStack );
+							}
+						}
+					}
+				}
+
+				internal static struct ARM32 {
+					internal static struct Linux {
+						public static void PrepareContext_nofpu( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+						public static void PrepareContext_fpu_d8_d15( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+
+						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool fpu_d8d15 ) {
+							var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
+
+							var sp = alignedStackTop - 13;
+							if( fpu_d8d15 ) sp -= 16;
+
+							fiber->_suspendedStack = sp;
+
+							int index = 0;
+							if( fpu_d8d15 ) {
+								++index; // sp[index++] = 0; // s16
+								++index; // sp[index++] = 0; // s17
+								++index; // sp[index++] = 0; // s18
+								++index; // sp[index++] = 0; // s19
+								++index; // sp[index++] = 0; // s20
+								++index; // sp[index++] = 0; // s21
+								++index; // sp[index++] = 0; // s22
+								++index; // sp[index++] = 0; // s23
+								++index; // sp[index++] = 0; // s24
+								++index; // sp[index++] = 0; // s25
+								++index; // sp[index++] = 0; // s26
+								++index; // sp[index++] = 0; // s27
+								++index; // sp[index++] = 0; // s28
+								++index; // sp[index++] = 0; // s29
+								++index; // sp[index++] = 0; // s30
+								++index; // sp[index++] = 0; // s31
+							}
+
+							++index; // sp[index++] = 0; // r4
+							++index; // sp[index++] = 0; // r5
+							++index; // sp[index++] = 0; // r6
+							++index; // sp[index++] = 0; // r7
+							++index; // sp[index++] = 0; // r8
+							++index; // sp[index++] = 0; // r9
+							++index; // sp[index++] = 0; // r10
+							++index; // sp[index++] = 0; // r11
+
+							sp[index++] = &FiberSwitchSetup[0]; // lr
+
+							sp[index++] = bitcast<void*>( function ); // r0
+							sp[index++] = parameter; // r1
+							sp[index++] = bitcast<void**>( memberinfo( FiberInfo.FiberFunction ).Address ) + 1; // lr
+							sp[index++] = memberinfo( FiberInfo.FiberFunction ).Address; // pc
+						}
+
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[1] FiberSwitchSetup = new uint_bigendian[1] {
+							0x03c0bde8  // pop {r0, r1, lr, pc}
+						};
+
+						/// @{ Without FPU state
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[4] FiberSwitch_nofpu = new uint_bigendian[4] {
+							0xF04F2DE9, // push {r4-r11,r14}
+
+							0x00D080E5, // str r13, [r0]
+							0x01D0A0E1, // mov r13, r1
+
+							0xF08FBDE8  // pop {r4-r11,pc}
+						};
+
+						public static void SwitchCurrentContext_nofpu( void** oldStack, void* newStack ) { bitcast<Functors.Action<void**, void*>>( &FiberSwitch_nofpu[0] )( oldStack, newStack ); }
+
+						/// @}
+
+						/// @{ With FPU state
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[6] FiberSwitch_fpu_d8_d15 = new uint_bigendian[6] {
+							0xF04F2DE9, // push {r4-r11,r14}
+							0x108B2DED, // vpush {d8-d15}
+
+							0x00D080E5, // str r13, [r0]
+							0x01D0A0E1, // mov r13, r1
+
+							0x108BBDEC, // vpop {d8-d15}
+							0xF08FBDE8  // pop {r4-r11,pc}
+						};
+
+						public static void SwitchCurrentContext_fpu_d8_d15( void** oldStack, void* newStack ) { bitcast<Functors.Action<void**, void*>>( &FiberSwitch_fpu_d8_d15[0] )( oldStack, newStack ); }
+
+						/// @}
+					}
+				}
+
+				internal static struct ARM64 {
+					internal static struct Linux {
+						public static void PrepareContext_FPU( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+						public static void PrepareContext_NoFPU( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+
+						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool fpu ) {
+							var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
+
+							var intRegs = 12;
+							var fpuRegs = 8;
+
+							var sp = alignedStackTop - intRegs - 2;
+							if( fpu ) sp -= fpuRegs;
+
+							fiber->_suspendedStack = sp;
+
+							int index = 0;
+
+							++index; // sp[index++] = 0; // x29
+							sp[index++] = &FiberSwitchSetup[0]; // x30
+							++index; // sp[index++] = 0; // x27
+							++index; // sp[index++] = 0; // x28
+							++index; // sp[index++] = 0; // x25
+							++index; // sp[index++] = 0; // x26
+							++index; // sp[index++] = 0; // x23
+							++index; // sp[index++] = 0; // x24
+							sp[index++] = memberinfo( FiberInfo.FiberFunction ).Address; // x21
+							++index; // sp[index++] = 0; // x22
+							sp[index++] = bitcast<void*>( function ); // x19
+							sp[index++] = parameter; // x20
+
+							if( fpu ) {
+								++index; // sp[index++] = 0; // d14
+								++index; // sp[index++] = 0; // d15
+								++index; // sp[index++] = 0; // d12
+								++index; // sp[index++] = 0; // d13
+								++index; // sp[index++] = 0; // d10
+								++index; // sp[index++] = 0; // d11
+								++index; // sp[index++] = 0; // d8
+								++index; // sp[index++] = 0; // d9
+							}
+
+							sp[index++] = memberinfo( FiberInfo.FiberFunction ).Address; // x29
+							sp[index++] = bitcast<void**>( memberinfo( FiberInfo.FiberFunction ).Address ) + 1; // x30
+						}
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[3] FiberSwitchSetup = new uint_bigendian[3] {
+							0xE00313AA, // mov x0, x19
+							0xE10314AA, // mov x1, x20
+							0xA0025FD6  // ret x21
+						};
+
+						/// @{ Without FPU state
+
+						//  volatile registers: x0-x18, v0-v7, v16-v31, upper 64 bits of v8-v15
+						//  x0 oldStack
+						//  x1 newStack
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[16] FiberSwitchNoFPU = new uint_bigendian[16] {
+							0xFD7BBAA9, // stp x29, x30, [sp, #-0x60]!
+							0xFB7301A9, // stp x27, x28, [sp, #0x10]
+							0xF96B02A9, // stp x25, x26, [sp, #0x20]
+							0xF76303A9, // stp x23, x24, [sp, #0x30]
+							0xE3030091, // mov x3, sp
+							0xF55B04A9, // stp x21, x22, [sp, #0x40]
+							0xF35305A9, // stp x19, x20, [sp, #0x50]
+							0x030000F9, // str x3, [x0]
+
+							0x3B7041A9, // ldp x27, x28, [x1, #0x10]
+							0x396842A9, // ldp x25, x26, [x1, #0x20]
+							0x376043A9, // ldp x23, x24, [x1, #0x30]
+							0x355844A9, // ldp x21, x22, [x1, #0x40]
+							0x335045A9, // ldp x19, x20, [x1, #0x50]
+							0x3D78C6A8, // ldp x29, x30, [x1], #0x60
+							0x3F000091, // mov sp, x1
+
+							0xC0035FD6  // ret
+						};
+
+						public static void SwitchCurrentContext_NoFPU( void** oldStack, void* newStack ) { bitcast<Functors.Action<void**, void*>>( &FiberSwitchNoFPU[0] )( oldStack, newStack ); }
+
+						/// @} Without FPU state
+
+						/// @{ With FPU state
+
+						[Alignment( Boundary = 4 )]
+						[BackendSection( Name = ".text" )]
+						private static uint_bigendian[24] FiberSwitchFPU = new uint_bigendian[24] {
+							0xFD7BB6A9, // stp x29, x30, [sp, #-0xA0]!
+							0xFB7301A9, // stp x27, x28, [sp, #0x10]
+							0xF96B02A9, // stp x25, x26, [sp, #0x20]
+							0xF76303A9, // stp x23, x24, [sp, #0x30]
+							0xE3030091, // mov x3, sp
+							0xF55B04A9, // stp x21, x22, [sp, #0x40]
+							0xF35305A9, // stp x19, x20, [sp, #0x50]
+							0xEE3F066D, // stp d14, d15, [sp, #0x60]
+							0xEC37076D, // stp d12, d13, [sp, #0x70]
+							0xEA2F086D, // stp d10, d11, [sp, #0x80]
+							0xE827096D, // stp d8,  d9,  [sp, #0x90]
+							0x030000F9, // str x3, [x0]
+
+							0x3B7041A9, // ldp x27, x28, [x1, #0x10]
+							0x396842A9, // ldp x25, x26, [x1, #0x20]
+							0x376043A9, // ldp x23, x24, [x1, #0x30]
+							0x355844A9, // ldp x21, x22, [x1, #0x40]
+							0x335045A9, // ldp x19, x20, [x1, #0x50]
+							0x2E3C466D, // ldp d14, d15, [x1, #0x60]
+							0x2C34476D, // ldp d12, d13, [x1, #0x70]
+							0x2A2C486D, // ldp d10, d11, [x1, #0x80]
+							0x2824496D, // ldp d8, d9, [x1, #0x90]
+							0x3D78CAA8, // ldp x29, x30, [x1], #0xA0
+							0x3F000091, // mov sp, x1
+
+							0xC0035FD6  // ret
+						};
+
+						public static void SwitchCurrentContext_FPU( void** oldStack, void* newStack ) { bitcast<Functors.Action<void**, void*>>( &FiberSwitchFPU[0] )( oldStack, newStack ); }
+
+						/// @} With FPU state
+					}
+				}
+			}
+		}
+	}
+}

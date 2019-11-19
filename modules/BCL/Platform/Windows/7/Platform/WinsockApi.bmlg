@@ -22,11 +22,15 @@ namespace Platform {
 		public extern static int WSACleanup();
 
 		public extern static SocketHandle socket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol );
-		/// http://msdn.microsoft.com/en-us/library/ms742212(VS.85).aspx
+		
+		/// https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsasocketa
+		public static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOA& protocolInfo, SocketGroup group, SocketCreateFlags flags ) { return WSASocket( ( int ) family, type, protocol, protocolInfo, group, flags ); }
 		[BackendSymbol( Name = "WSASocketA" )]
-		public extern static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOA& protocolInfo, SocketGroup group, SocketCreateFlags flags );
+		private extern static SocketHandle WSASocket( int family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOA& protocolInfo, SocketGroup group, SocketCreateFlags flags );
+
+		public static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOW& protocolInfo, SocketGroup group, SocketCreateFlags flags ) { return WSASocket( ( int ) family, type, protocol, protocolInfo, group, flags ); }
 		[BackendSymbol( Name = "WSASocketW" )]
-		public extern static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOW& protocolInfo, SocketGroup group, SocketCreateFlags flags );
+		private extern static SocketHandle WSASocket( int family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOW& protocolInfo, SocketGroup group, SocketCreateFlags flags );
 
 		public extern static int shutdown( SocketHandle socket, SocketShutdownOptions options );
 		public extern static int closesocket( SocketHandle socket );

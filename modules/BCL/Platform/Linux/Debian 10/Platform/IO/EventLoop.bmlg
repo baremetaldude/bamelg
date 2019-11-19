@@ -412,6 +412,51 @@ namespace Platform.IO {
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
+		public abstract class GpioInputEventSink : EventSink {
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
+			private IOHandle _file;
+
+			public sealed override void OnEvent( epoll_event& @event ) {
+				int totalReaden;
+				long newPosition;
+				byte gpioValue;
+				bitcast<IOHandleNonBlocking>( _file ).Seek( 0, SeekOrigin.Begin, newPosition );
+				bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioValue, sizeof( gpioValue ), totalReaden );
+
+				OnRaised( gpioValue );
+			}
+
+			public abstract void OnRaised( byte value );
+
+			public GpioInputEventSink( EventLoop parent, CUtf8String path )
+				: base( parent ) {
+				IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+				_listenedEvents = EPOLL_EVENTS.EPOLLET;
+			}
+
+			~GpioInputEventSink() {
+				_file.Close();
+			}
+		}
+
+		public class GpioInputTraceEventSink : GpioInputEventSink {
+			public Utf8String Name;
+			public DateTime LastEvent = DateTime.MinValue;
+
+			public GpioInputTraceEventSink( EventLoop parent, Utf8String path )
+				: base( parent, path ) {
+				Name = path;
+			}
+
+			public override void OnRaised( byte value ) {
+				var diff = Parent.UtcNow - LastEvent;
+				Console.Write( "{0}: GPIO state changed: {1}", Name, ( char ) value );
+				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
+				Console.WriteLine();
+				LastEvent = Parent.UtcNow;
+			}
+		}
+
 		public abstract class SignalEventSink : EventSink {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			private SignalHandle _signal;

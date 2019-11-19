@@ -10,6 +10,7 @@ using System;
 using System.Diagnostics;
 using System.Runtime;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 using Platform;
 
@@ -18,61 +19,8 @@ namespace System.IO {
 		internal partial struct FiberInfo {
 			private _EXCEPTION_REGISTRATION_RECORD* ExceptionList = ( _EXCEPTION_REGISTRATION_RECORD* ) -1;
 
-			[Alignment( Boundary = 4 )]
-			private struct ProcessorContextX86_32 : ProcessorContext {
-				// public uint EAX; // volatile register
-				public uint EBX;
-				// public uint ECX; // volatile register
-				// public uint EDX; // volatile register
-				public uint EBP;
-				public uint EDI;
-				public uint ESI;
-				public uint EIP;
-				public uint ESP;
-			}
-
-			[Alignment( Boundary = 8 )]
-			private struct ProcessorContextX86_64 : ProcessorContext {
-				// public ulong RAX; // volatile register
-				public ulong RBX;
-
-				/// @{ need to optimize - RCX/RDX used only for initial switch context
-				public ulong InitialRCX; // volatile register, but need to pass parameters
-				public ulong InitialRDX; // volatile register, but need to pass parameters
-				/// @}
-
-				public ulong RBP;
-				public ulong RDI;
-				public ulong RSI;
-				// public ulong R8; // volatile register
-				// public ulong R9; // volatile register
-				// public ulong R10; // volatile register
-				// public ulong R11; // volatile register
-				public ulong R12;
-				public ulong R13;
-				public ulong R14;
-				public ulong R15;
-
-				public ulong RIP;
-				public ulong RSP;
-			}
-
-			private static void PrepareContext( ProcessorContextX86_32& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
-				context.ESP = cast<uint>( cast<byte*>( stack ) + stackSize - 12 ) & ~15U;
-				context.EIP = ( uint ) bitcast<uintptr>( memberinfo( FiberFunction ).Address );
-
-				*( uint* )( context.ESP + 0 ) = ( uint ) bitcast<uintptr>( memberinfo( FiberIncorrectExitHandler ).Address );
-				*( uint* )( context.ESP + 4 ) = ( uint ) bitcast<uintptr>( function );
-				*( uint* )( context.ESP + 8 ) = ( uint ) bitcast<uintptr>( parameter );
-			}
-
-			private static void PrepareContext( ProcessorContextX86_64& context, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
-				context.RSP = cast<ulong>( cast<byte*>( stack ) + ( ( stackSize - 16 ) & ~0xF ) - sizeof( context.RIP ) );
-				context.RIP = cast<uintptr>( memberinfo( FiberFunction ).Address );
-
-				*cast<void**>( context.RSP + 0 ) = memberinfo( FiberIncorrectExitHandler ).Address;
-				context.InitialRCX = bitcast<uintptr>( function );
-				context.InitialRDX = bitcast<uintptr>( parameter );
+			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+				ContextSwitch.X86.Windows.PrepareContext_SSE( fiber, stack, stackSize, function, parameter );
 			}
 
 			private static void PrepareMainFiberEnvironment( FiberInfo* context ) {
@@ -96,70 +44,10 @@ namespace System.IO {
 				tib.StackBase = ( byte* ) newContext->_stack + newContext->_stackSize;
 				tib.ExceptionList = newContext->ExceptionList;
 			}
-
-			private static void SwitchCurrentContext( ProcessorContext& context, ProcessorContext& newContext ) asm {
-				X86_32 {
-					mov ecx, [esp]     // return address
-					mov eax, [esp + 4] // context
-					lea edx, [esp + 4] // edx = esp + 4
-
-					mov [eax + const( memberinfo( ProcessorContextX86_32.EIP ).ByteOffset )], ecx
-					mov [eax + const( memberinfo( ProcessorContextX86_32.EBX ).ByteOffset )], ebx
-					mov [eax + const( memberinfo( ProcessorContextX86_32.EBP ).ByteOffset )], ebp
-					mov [eax + const( memberinfo( ProcessorContextX86_32.EDI ).ByteOffset )], edi
-					mov [eax + const( memberinfo( ProcessorContextX86_32.ESI ).ByteOffset )], esi
-					mov [eax + const( memberinfo( ProcessorContextX86_32.ESP ).ByteOffset )], edx
-
-					mov eax, [esp + 8] // newContext
-
-					mov ecx, [eax + const( memberinfo( ProcessorContextX86_32.EIP ).ByteOffset )]
-					mov ebx, [eax + const( memberinfo( ProcessorContextX86_32.EBX ).ByteOffset )]
-					mov ebp, [eax + const( memberinfo( ProcessorContextX86_32.EBP ).ByteOffset )]
-					mov edi, [eax + const( memberinfo( ProcessorContextX86_32.EDI ).ByteOffset )]
-					mov esi, [eax + const( memberinfo( ProcessorContextX86_32.ESI ).ByteOffset )]
-					mov esp, [eax + const( memberinfo( ProcessorContextX86_32.ESP ).ByteOffset )]
-
-					jmp ecx
-				}
-				X86_64 {
-					mov r8, [rsp]      // return address
-					lea rax, [rsp + 8] // do not include return address
-
-					// rcx - context
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RBX ).ByteOffset )], rbx
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RBP ).ByteOffset )], rbp
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RDI ).ByteOffset )], rdi
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.R12 ).ByteOffset )], r12
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.R13 ).ByteOffset )], r13
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.R14 ).ByteOffset )], r14
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.R15 ).ByteOffset )], r15
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RIP ).ByteOffset )], r8
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RSP ).ByteOffset )], rax
-					mov [rcx + const( memberinfo( ProcessorContextX86_64.RSI ).ByteOffset )], rsi
-
-					// rdx - newContext
-					mov rbx, [rdx + const( memberinfo( ProcessorContextX86_64.RBX ).ByteOffset )]
-					mov rbp, [rdx + const( memberinfo( ProcessorContextX86_64.RBP ).ByteOffset )]
-					mov rdi, [rdx + const( memberinfo( ProcessorContextX86_64.RDI ).ByteOffset )]
-					mov r12, [rdx + const( memberinfo( ProcessorContextX86_64.R12 ).ByteOffset )]
-					mov r13, [rdx + const( memberinfo( ProcessorContextX86_64.R13 ).ByteOffset )]
-					mov r14, [rdx + const( memberinfo( ProcessorContextX86_64.R14 ).ByteOffset )]
-					mov r15, [rdx + const( memberinfo( ProcessorContextX86_64.R15 ).ByteOffset )]
-					mov rax, [rdx + const( memberinfo( ProcessorContextX86_64.RIP ).ByteOffset )]
-					mov rsp, [rdx + const( memberinfo( ProcessorContextX86_64.RSP ).ByteOffset )]
-					mov rsi, [rdx + const( memberinfo( ProcessorContextX86_64.RSI ).ByteOffset )]
-
-					/// @{ need to optimize - RCX/RDX used only for initial switch context
-					mov rcx, [rdx + const( memberinfo( ProcessorContextX86_64.InitialRCX ).ByteOffset )]
-					mov rdx, [rdx + const( memberinfo( ProcessorContextX86_64.InitialRDX ).ByteOffset )]
-					/// @}
-
-					jmp rax
-				}
-				default {
-					Assert.NotImplemented();
-				}
-			}
+			
+			private static void SwitchCurrentContext( void** oldStack, void* newStack ) {
+				ContextSwitch.X86.Windows.SwitchCurrentContext_SSE( oldStack, newStack );
+			}			
 		}
 	}
 }
