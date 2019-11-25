@@ -412,7 +412,7 @@ namespace Platform.IO {
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
-		public abstract class GpioInputEventSink : EventSink {
+		public abstract class SysfsGpioInputEventSink : EventSink {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			private IOHandle _file;
 
@@ -428,22 +428,22 @@ namespace Platform.IO {
 
 			public abstract void OnRaised( byte value );
 
-			public GpioInputEventSink( EventLoop parent, CUtf8String path )
+			public SysfsGpioInputEventSink( EventLoop parent, CUtf8String path )
 				: base( parent ) {
 				IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
 				_listenedEvents = EPOLL_EVENTS.EPOLLET;
 			}
 
-			~GpioInputEventSink() {
+			~SysfsGpioInputEventSink() {
 				_file.Close();
 			}
 		}
 
-		public class GpioInputTraceEventSink : GpioInputEventSink {
+		public class SysfsGpioInputTraceEventSink : SysfsGpioInputEventSink {
 			public Utf8String Name;
 			public DateTime LastEvent = DateTime.MinValue;
 
-			public GpioInputTraceEventSink( EventLoop parent, Utf8String path )
+			public SysfsGpioInputTraceEventSink( EventLoop parent, Utf8String path )
 				: base( parent, path ) {
 				Name = path;
 			}
@@ -456,6 +456,43 @@ namespace Platform.IO {
 				LastEvent = Parent.UtcNow;
 			}
 		}
+
+		// Not supported (EPERM), ask Linus Walleij for epoll support
+		// public class GpioInputEventSink : EventLoop.EventSink {
+		// 	[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
+		// 	private IOHandle _file;
+		// 
+		// 	public sealed override void OnEvent( epoll_event& @event ) {
+		// 		int totalReaden;
+		// 		gpioevent_data gpioEvent;
+		// 		bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioEvent, sizeof( gpioEvent ), totalReaden );
+		// 
+		// 		Console.WriteLine( "{0}: {1}", gpioEvent.timestamp, ( GPIOEVENT_EVENT ) gpioEvent.id );
+		// 		// OnRaised( gpioValue, gpioEvent.id  == GPIOEVENT_EVENT.GPIOEVENT_EVENT_FALLING_EDGE );
+		// 	}
+		// 
+		// 	// public abstract void OnRaised( ulong timestamp, bool value );
+		// 
+		// 	public GpioInputEventSink( EventLoop parent, CUtf8String path, uint lineOffset, CUtf8String comment )
+		// 		: base( parent ) {
+		// 		IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+		// 		_listenedEvents = EPOLL_EVENTS.EPOLLIN;
+		// 
+		// 		var lineInfo = new gpioevent_request {
+		// 			lineoffset = lineOffset,
+		// 			handleflags = GPIOHANDLE_REQUEST.GPIOHANDLE_REQUEST_INPUT,
+		// 			eventflags = GPIOEVENT_REQUEST.GPIOEVENT_REQUEST_BOTH_EDGES
+		// 		};
+		// 
+		// 		CUtf8String.Copy( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) - 1 );
+		// 
+		// 		LibcApi.ioctl( _file, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo );
+		// 	}
+		// 
+		// 	~GpioInputEventSink() {
+		// 		_file.Close();
+		// 	}
+		// }
 
 		public abstract class SignalEventSink : EventSink {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]

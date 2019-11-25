@@ -14,6 +14,33 @@ namespace Platform.Kernel {
 		public const int _LINUX_CAPABILITY_VERSION = 429392688;
 
 	}
+	public enum GPIOEVENT_EVENT : uint {
+		GPIOEVENT_EVENT_RISING_EDGE =  1,
+		GPIOEVENT_EVENT_FALLING_EDGE = 2,
+	}
+	public enum GPIOEVENT_REQUEST : uint {
+		GPIOEVENT_REQUEST_RISING_EDGE =  1,
+		GPIOEVENT_REQUEST_FALLING_EDGE = 2,
+		GPIOEVENT_REQUEST_BOTH_EDGES =   3,
+	}
+	[Flags]
+	public enum GPIOHANDLE_REQUEST : uint {
+		None =                            0,
+		GPIOHANDLE_REQUEST_INPUT =        1,
+		GPIOHANDLE_REQUEST_OUTPUT =       2,
+		GPIOHANDLE_REQUEST_ACTIVE_LOW =   4,
+		GPIOHANDLE_REQUEST_OPEN_DRAIN =   8,
+		GPIOHANDLE_REQUEST_OPEN_SOURCE = 16,
+	}
+	[Flags]
+	public enum GPIOLINE_FLAG : uint {
+		None =                       0,
+		GPIOLINE_FLAG_KERNEL =       1,
+		GPIOLINE_FLAG_IS_OUT =       2,
+		GPIOLINE_FLAG_ACTIVE_LOW =   4,
+		GPIOLINE_FLAG_OPEN_DRAIN =   8,
+		GPIOLINE_FLAG_OPEN_SOURCE = 16,
+	}
 	public enum IoctlCommand : uint {
 		TIOCPKT_DATA =        0,
 		TIOCPKT_FLUSHREAD =   1,
@@ -1058,7 +1085,7 @@ namespace Platform.Kernel {
 		public int[2] val;
 	}
 	[ExplicitSize( Size = 128 )]
-	[Alignment( Boundary = 4 )]
+	[Alignment( Boundary = 2 )]
 	public partial struct __kernel_sockaddr_storage {
 		[ExplicitOffset( Offset = 0 )]
 		public ushort ss_family;
@@ -1100,6 +1127,71 @@ namespace Platform.Kernel {
 		public uint version;
 		[ExplicitOffset( Offset = 4 )]
 		public int pid;
+	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiochip_info {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte[32] label;
+		[ExplicitOffset( Offset = 64 )]
+		public uint lines;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpioevent_data {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong timestamp;
+		[ExplicitOffset( Offset = 8 )]
+		public uint id;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioevent_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint lineoffset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint handleflags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint eventflags;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 44 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 64 )]
+	public partial struct gpiohandle_data {
+		[ExplicitOffset( Offset = 0 )]
+		public byte[64] values;
+	}
+	[ExplicitSize( Size = 364 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiohandle_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[64] lineoffsets;
+		[ExplicitOffset( Offset = 256 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 260 )]
+		public byte[64] default_values;
+		[ExplicitOffset( Offset = 324 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 356 )]
+		public uint lines;
+		[ExplicitOffset( Offset = 360 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioline_info {
+		[ExplicitOffset( Offset = 0 )]
+		public uint line_offset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 40 )]
+		public sbyte[32] consumer;
 	}
 	[ExplicitSize( Size = 104 )]
 	[Alignment( Boundary = 8 )]
@@ -1614,11 +1706,11 @@ namespace Platform.Kernel {
 		public uint spp_hbinterval;
 		[ExplicitOffset( Offset = 136 )]
 		public ushort spp_pathmaxrxt;
-		[ExplicitOffset( Offset = 138 )]
+		[ExplicitOffset( Offset = 140 )]
 		public uint spp_pathmtu;
-		[ExplicitOffset( Offset = 142 )]
+		[ExplicitOffset( Offset = 144 )]
 		public uint spp_sackdelay;
-		[ExplicitOffset( Offset = 146 )]
+		[ExplicitOffset( Offset = 148 )]
 		public uint spp_flags;
 	}
 	[ExplicitSize( Size = 136 )]

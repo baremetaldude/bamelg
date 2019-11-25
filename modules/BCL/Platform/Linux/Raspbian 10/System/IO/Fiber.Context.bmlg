@@ -30,12 +30,14 @@ namespace System.IO {
 			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
 				switch( Environment.CurrentCpu ) {
 					case System.Runtime.CompilerServices.CpuID.ARM_32: ContextSwitch.ARM32.Linux.PrepareContext_fpu_d8_d15( fiber, stack, stackSize, function, parameter ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_64: ContextSwitch.ARM64.Linux.PrepareContext_FPU( fiber, stack, stackSize, function, parameter ); break;
 				}
 			}
 
 			private static void SwitchCurrentContext( void** oldStack, void* newStack ) {
 				switch( Environment.CurrentCpu ) {
 					case System.Runtime.CompilerServices.CpuID.ARM_32: ContextSwitch.ARM32.Linux.SwitchCurrentContext_fpu_d8_d15( oldStack, newStack ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_64: ContextSwitch.ARM64.Linux.SwitchCurrentContext_FPU( oldStack, newStack ); break;
 				}
 			}
 		}
