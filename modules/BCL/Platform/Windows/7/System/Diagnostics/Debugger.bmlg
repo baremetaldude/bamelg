@@ -8,5 +8,9 @@ namespace System.Diagnostics {
 	public static partial struct Debugger {
 		public static void _implBreak() {
 		}
+		
+		private static bool _isAttached() {
+			return Platform._TEB.Current.ProcessEnvironmentBlock->BeingDebugged != 0;
+		}		
 	}
 }

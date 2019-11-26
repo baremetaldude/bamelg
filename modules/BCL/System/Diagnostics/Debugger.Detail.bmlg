@@ -1,0 +1,30 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Diagnostics {
+	public static partial struct Debugger {
+		// Linux-way: text API
+		private static bool _isTracerProcessAttached() {
+			using( var file = System.IO.File.OpenRead( ( Utf8String ) "/proc/self/status" ) )
+			using( var reader = new System.IO.StreamReader( file ) ) {
+				for( var line = reader.ReadLine(); line != null; line = reader.ReadLine() ) {
+					if( line.StartsWith( "TracerPid:" ) ) {
+						var ptr = line.GetChars() + "TracerPid:".Length;
+						uint remaining = line.Length - "TracerPid:".Length;
+						uint value;
+
+						if( uint.TryFetch( ptr, remaining, value ) )
+							return value != 0;
+
+						return false;
+					}
+				}
+			}
+
+			return false;
+		}
+	}
+}

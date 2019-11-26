@@ -11,5 +11,9 @@ namespace System.Diagnostics {
 		public static void _implBreak() {
 			PthreadsApi.pthread_kill( pthread_t.CurrentThread, SignalCode.SIGTRAP );
 		}
+
+		private static bool _isAttached() {
+			return _isTracerProcessAttached();
+		}
 	}
 }

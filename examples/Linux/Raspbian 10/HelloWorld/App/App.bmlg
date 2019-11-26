@@ -39,9 +39,10 @@ namespace Example {
 			Console.WriteLine( "==== Hello {0}! ====", value );
 			PrintThreadInfo();
 		}
-		
+
 		[EntryPoint]
 		private static void Main() {
+			Console.WriteLine( "Debugger: {0}, Valgrind: {1}", System.Diagnostics.Debugger.IsAttached , System.Diagnostics.Valgrind.IsAttached );
 			Console.WriteLine( Utf8String.Format( "==== Hello {0}! ====", "world" ) );
 
 			Console.WriteLine( "IsTerminalSupportsRGB={0} IsTerminalSupports256Color={1} IsTerminalSupports16Color={2}", Console.IsTerminalSupportsRGB, Console.IsTerminalSupports256Color, Console.IsTerminalSupports16Color );
@@ -66,7 +67,7 @@ namespace Example {
 
 			var th2 = new pthread_t( DPC.Create<string>( ThirdThread, "third thread" ) );
 			th2.Join();
-			
+
 			Console.WriteLine( "==== bye-bye ====" );
 		}
 	}

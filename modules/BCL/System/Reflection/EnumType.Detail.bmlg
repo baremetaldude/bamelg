@@ -283,7 +283,8 @@ namespace System.Reflection {
 		}
 
 		private int GetIndexImpl<T>( T value ) {
-			return CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ElementCount, value );
+			var result = CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ElementCount, value );
+			return Math.Max( -1, result );
 		}
 
 		private bool IsValidFlagsImpl<T>( T value ) {
@@ -301,7 +302,7 @@ namespace System.Reflection {
 				return value == 0;
 			}
 
-			return GetIndexImpl<T>( value ) != -1;
+			return GetIndexImpl<T>( value ) >= 0;
 		}
 	}
 }

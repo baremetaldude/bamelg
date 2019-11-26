@@ -7,6 +7,7 @@
 //
 
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 
 namespace System.Diagnostics {
 	public static struct Valgrind {
@@ -46,9 +47,43 @@ namespace System.Diagnostics {
 				ret
 			}
 			default {
-				return 0;
+				switch( Environment.CurrentCpu ) {
+					case System.Runtime.CompilerServices.CpuID.ARM_32: return bitcast<Functors.Func<intptr, intptr[6]&, intptr>>( &ClientRequest_ARM32[0] )( defaultValue, args );
+					case System.Runtime.CompilerServices.CpuID.ARM_64: return bitcast<Functors.Func<intptr, intptr[6]&, intptr>>( &ClientRequest_ARM64[0] )( defaultValue, args );
+					default: return 0;
+				}
+
 			}
 		}
+
+		[Alignment( Boundary = 4 )]
+		[BackendSection( Name = ".text" )]
+		private static uint_bigendian[10] ClientRequest_ARM32 = new uint_bigendian[10] {
+			0x10402de9, // push {r4, lr}
+			0x0030A0E1, // mov r3, r0
+			0x0140A0E1, // mov r4, r1
+			0xECC1A0E1, // ror r12, r12, #3
+			0xECC6A0E1, // ror r12, r12, #13
+			0xECCEA0E1, // ror r12, r12, #29
+			0xECC9A0E1, // ror r12, r12, #19
+			0x0AA08AE1, // orr r10, r10, r10
+			0x0300A0E1, // mov r0, r3
+			0x1080bde8  // pop {r4, pc}
+		};
+
+		[Alignment( Boundary = 4 )]
+		[BackendSection( Name = ".text" )]
+		private static uint_bigendian[9] ClientRequest_ARM64 = new uint_bigendian[9] {
+			0xE30300AA, // mov x3, x0
+			0xE40301AA, // mov x4, x1
+			0x8C0DCC93, // ror x12, x12, #3
+			0x8C35CC93, // ror x12, x12, #13
+			0x8CCDCC93, // ror x12, x12, #51
+			0x8CF5CC93, // ror x12, x12, #61
+			0x4A010AAA, // orr x10, x10, x10
+			0xE00303AA, // mov x0, x3
+			0xC0035FD6  // ret
+		};
 
 		private enum RequestID : intptr {
 			IsRunningOnValgrind = 0x1001,
