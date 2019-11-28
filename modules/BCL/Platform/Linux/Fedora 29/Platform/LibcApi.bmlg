@@ -35,7 +35,7 @@ namespace Platform.Libc {
 		public extern static void makecontext( ucontext_t& ucp, Functors.Action<Functors.Action<void*>, void*> nonTerminatingMethod, int argc, Functors.Action<void*> method, void* parameter );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/prctl.2.html
-		public extern static int prctl( ProcessControlActions action, uint arg2 = 0, uint arg3 = 0, uint arg4 = 0, uint arg5 = 0 );
+		public extern static int prctl( ProcessControlActions action, uintptr arg2 = 0, uintptr arg3 = 0, uintptr arg4 = 0, uintptr arg5 = 0 );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/open.2.html
 		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
@@ -244,7 +244,9 @@ namespace Platform.Libc {
 
 		// int unixSeconds = LibcApi.time( null );
 		public static int GetCurrentTimezoneSecondsOffset( intptr unixSeconds ) {
-			var local = LibcApi.localtime( &unixSeconds );
+			tm holder;
+
+			var local = LibcApi.localtime_r( &unixSeconds, &holder );
 			if( local == null ) {
 				Assert.Fail( "cannot get localtime" );
 				LibcApi.exit( 1 );

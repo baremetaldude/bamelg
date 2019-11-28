@@ -531,7 +531,9 @@ namespace Platform.Libc {
 
 		// int unixSeconds = LibcApi.time( null );
 		public static int GetCurrentTimezoneSecondsOffset( intptr unixSeconds ) {
-			var local = LibcApi.localtime( &unixSeconds );
+			tm holder;
+
+			var local = LibcApi.localtime_r( &unixSeconds, &holder );
 			if( local == null ) {
 				Assert.Fail( "cannot get localtime" );
 				LibcApi.exit( 1 );

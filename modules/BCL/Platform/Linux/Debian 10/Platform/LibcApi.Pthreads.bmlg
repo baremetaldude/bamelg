@@ -61,7 +61,7 @@ namespace Platform.Libc {
 		public void Signal( SignalCode signal, void* value ) { PthreadsApi.pthread_sigqueue( this, signal, value ); }
 
 		public static Utf8String Name {
-			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_NAME, ( uint ) value.GetChars(), 0, 0, 0 ) ); }
+			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_NAME, ( uintptr ) value.GetChars(), 0, 0, 0 ) ); }
 		}
 
 		public static bool IsDumpable {
