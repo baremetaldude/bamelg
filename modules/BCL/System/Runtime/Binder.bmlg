@@ -322,12 +322,16 @@ namespace System.Runtime {
 				_mapping.Clear();
 			}
 
-			public void Add( UserType.Field& field ) {
+			public int Add( UserType.Field& field ) {
+				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( field ) );
+				return result;
 			}
 
-			public void Add( UserType.Property& property ) {
+			public int Add( UserType.Property& property ) {
+				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( property ) );
+				return result;
 			}
 
 			public void Apply() {
@@ -372,24 +376,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public void Add( UserType.Field& field ) {
-				if( IdMapping.Add( field.Name, _mapping.Count ) || IdMapping.Add( field.ToSbcsString(), _mapping.Count ) )
+			public int Add( UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( field.Name, _mapping.Count ) || IdMapping.Add( field.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( SbcsString name, UserType.Field& field ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( SbcsString name, UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( UserType.Property& property ) {
-				if( IdMapping.Add( property.Name, _mapping.Count ) || IdMapping.Add( property.ToSbcsString(), _mapping.Count ) )
+			public int Add( UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( property.Name, _mapping.Count ) || IdMapping.Add( property.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( SbcsString name, UserType.Property& property ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( SbcsString name, UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
 			public void Apply() {
@@ -434,24 +458,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public void Add( UserType.Field& field ) {
-				if( IdMapping.Add( ( Utf8String ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToUtf8String(), _mapping.Count ) )
+			public int Add( UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( ( Utf8String ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( Utf8String name, UserType.Field& field ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( Utf8String name, UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( UserType.Property& property ) {
-				if( IdMapping.Add( ( Utf8String ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToUtf8String(), _mapping.Count ) )
+			public int Add( UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( ( Utf8String ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( Utf8String name, UserType.Property& property ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( Utf8String name, UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
 			public void Apply() {
@@ -496,24 +540,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public void Add( UserType.Field& field ) {
-				if( IdMapping.Add( ( string ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) )
+			public int Add( UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( ( string ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( string name, UserType.Field& field ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( string name, UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( UserType.Property& property ) {
-				if( IdMapping.Add( ( string ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) )
+			public int Add( UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( ( string ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( string name, UserType.Property& property ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( string name, UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
 			public void Apply() {
@@ -559,34 +623,54 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public void Add( UserType.Field& field ) {
+			public int Add( UserType.Field& field ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) field.Name;
 				RetainSet.Add( name );
 
-				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) )
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( CUtf16StringSpan name, UserType.Field& field ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( CUtf16StringSpan name, UserType.Field& field ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( UserType.Property& property ) {
+			public int Add( UserType.Property& property ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) property.Name;
 				RetainSet.Add( name );
 
-				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) )
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
-			public void Add( CUtf16StringSpan name, UserType.Property& property ) {
-				if( IdMapping.Add( name, _mapping.Count ) )
+			public int Add( CUtf16StringSpan name, UserType.Property& property ) {
+				var result = _mapping.Count;
+				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
+					return result;
+				}
+
+				return -1;
 			}
 
 			public void Apply() {

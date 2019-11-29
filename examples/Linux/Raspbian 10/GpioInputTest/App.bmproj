@@ -2,25 +2,25 @@
 <Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <NativeTargetPlatform>Linux</NativeTargetPlatform>
-    <NativeTargetPlatformVersion>MCBC 2.4.32-vniins42</NativeTargetPlatformVersion>
+    <NativeTargetPlatformVersion>Raspbian 10</NativeTargetPlatformVersion>
     <RootNamespace>Example</RootNamespace>
     <SbcsStringCodepage>20866</SbcsStringCodepage>
   </PropertyGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>EDB8DBBC-E641-4F2B-99BB-3E8050C8E485</ProjectGuid>
+    <ProjectGuid>78AF5217-68B7-4281-9B1E-053C1382A727</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <AssemblyName>HttpServer</AssemblyName>
-    <TargetCpu Condition="'$(TargetCpu)' == ''">X86_32</TargetCpu>
+    <AssemblyName>GpioInputTest</AssemblyName>
+    <TargetCpu Condition="'$(TargetCpu)' == ''">ARM_32</TargetCpu>
     <BuildType>Debug</BuildType>
   </PropertyGroup>
   <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
   <PropertyGroup>
     <SshUser Condition=" '$(SshUser)' == '' ">root</SshUser>
     <SshKeyFile Condition=" '$(SshKeyFile)' == '' ">..\..\..\example.private.rsa</SshKeyFile>
-    <RemoteDebugMachine Condition=" '$(RemoteDebugMachine)' == '' ">msvs</RemoteDebugMachine>
+    <RemoteDebugMachine Condition=" '$(RemoteDebugMachine)' == '' ">raspbian</RemoteDebugMachine>
     <RemoteExecutablePath Condition="'$(RemoteExecutablePath)' == ''">/usr/local/bin/$(AssemblyName)</RemoteExecutablePath>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Validate|AnyCPU' ">
@@ -36,52 +36,52 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - memcheck|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - gdb|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
     <StartProgram>gdb -ex=run --args "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - helgrind|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - drd|AnyCPU' ">
     <BuildType>Debug</BuildType>
-    <RunUnitTests>true</RunUnitTests>
+    <RunUnitTests>false</RunUnitTests>
     <OptimizationLevel>0</OptimizationLevel>
     <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
-    <DefineConstants>DEBUG;TRACE;TRACE_EVENT_LOOP;TRACE_HTTP_SERVER;TRACE_FIBER</DefineConstants>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>true</DebugSymbols>
-    <StartProgram>valgrind --track-fds=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
@@ -101,10 +101,7 @@
     <DebugSymbols>false</DebugSymbols>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="App.Config\App.Config.bmlg" />
-    <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
-    <EmbeddedResource Include="Resources\**\*" />
   </ItemGroup>
   <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->

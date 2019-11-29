@@ -604,6 +604,7 @@ namespace Platform.Libc {
 		public extern static int srandom_r( uint seed, random_data* buf );
 		public extern static int strfromd( sbyte* dest, uint size, sbyte* format, double f );
 		public extern static int strfromf( sbyte* dest, uint size, sbyte* format, float f );
+		public extern static int strfromf128( sbyte* dest, uint size, sbyte* format, ulong[2] f );
 		public extern static int strfromf32( sbyte* dest, uint size, sbyte* format, float f );
 		public extern static int strfromf32x( sbyte* dest, uint size, sbyte* format, double f );
 		public extern static int strfromf64( sbyte* dest, uint size, sbyte* format, double f );
@@ -613,6 +614,8 @@ namespace Platform.Libc {
 		public extern static double strtod_l( sbyte* nptr, sbyte** endptr, locale_t* loc );
 		public extern static float strtof( sbyte* nptr, sbyte** endptr );
 		public extern static float strtof_l( sbyte* nptr, sbyte** endptr, locale_t* loc );
+		public extern static ulong[2] strtof128( sbyte* nptr, sbyte** endptr );
+		public extern static ulong[2] strtof128_l( sbyte* nptr, sbyte** endptr, locale_t* loc );
 		public extern static float strtof32( sbyte* nptr, sbyte** endptr );
 		public extern static float strtof32_l( sbyte* nptr, sbyte** endptr, locale_t* loc );
 		public extern static double strtof32x( sbyte* nptr, sbyte** endptr );
@@ -1042,20 +1045,31 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static int __finitef( float value );
 		[BackendHintReadNone]
+		public extern static int __finitef128( ulong[2] value );
+		[BackendHintReadNone]
 		public extern static int __finitel( LittleEndianIEEE754_80 value );
 		[BackendHintReadNone]
 		public extern static int __fpclassify( double value );
 		[BackendHintReadNone]
 		public extern static int __fpclassifyf( float value );
 		[BackendHintReadNone]
+		public extern static int __fpclassifyf128( ulong[2] value );
+		[BackendHintReadNone]
 		public extern static int __fpclassifyl( LittleEndianIEEE754_80 value );
 		public extern static int __iseqsig( double x, double y );
 		public extern static int __iseqsigf( float x, float y );
+		public extern static int __iseqsigf128( ulong[2] x, ulong[2] y );
 		public extern static int __iseqsigl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		[BackendHintReadNone]
+		public extern static int __isinff128( ulong[2] value );
+		[BackendHintReadNone]
+		public extern static int __isnanf128( ulong[2] value );
 		[BackendHintReadNone]
 		public extern static int __issignaling( double value );
 		[BackendHintReadNone]
 		public extern static int __issignalingf( float value );
+		[BackendHintReadNone]
+		public extern static int __issignalingf128( ulong[2] value );
 		[BackendHintReadNone]
 		public extern static int __issignalingl( LittleEndianIEEE754_80 value );
 		[BackendHintReadNone]
@@ -1063,16 +1077,20 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static int __signbitf( float value );
 		[BackendHintReadNone]
+		public extern static int __signbitf128( ulong[2] value );
+		[BackendHintReadNone]
 		public extern static int __signbitl( LittleEndianIEEE754_80 value );
 
 		public extern static double acos( double x );
 		public extern static float acosf( float x );
+		public extern static ulong[2] acosf128( ulong[2] x );
 		public extern static float acosf32( float x );
 		public extern static double acosf32x( double x );
 		public extern static double acosf64( double x );
 		public extern static LittleEndianIEEE754_80 acosf64x( LittleEndianIEEE754_80 x );
 		public extern static double acosh( double x );
 		public extern static float acoshf( float x );
+		public extern static ulong[2] acoshf128( ulong[2] x );
 		public extern static float acoshf32( float x );
 		public extern static double acoshf32x( double x );
 		public extern static double acoshf64( double x );
@@ -1081,12 +1099,14 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 acosl( LittleEndianIEEE754_80 x );
 		public extern static double asin( double x );
 		public extern static float asinf( float x );
+		public extern static ulong[2] asinf128( ulong[2] x );
 		public extern static float asinf32( float x );
 		public extern static double asinf32x( double x );
 		public extern static double asinf64( double x );
 		public extern static LittleEndianIEEE754_80 asinf64x( LittleEndianIEEE754_80 x );
 		public extern static double asinh( double x );
 		public extern static float asinhf( float x );
+		public extern static ulong[2] asinhf128( ulong[2] x );
 		public extern static float asinhf32( float x );
 		public extern static double asinhf32x( double x );
 		public extern static double asinhf64( double x );
@@ -1096,18 +1116,21 @@ namespace Platform.Libc {
 		public extern static double atan( double x );
 		public extern static double atan2( double y, double x );
 		public extern static float atan2f( float y, float x );
+		public extern static ulong[2] atan2f128( ulong[2] y, ulong[2] x );
 		public extern static float atan2f32( float y, float x );
 		public extern static double atan2f32x( double y, double x );
 		public extern static double atan2f64( double y, double x );
 		public extern static LittleEndianIEEE754_80 atan2f64x( LittleEndianIEEE754_80 y, LittleEndianIEEE754_80 x );
 		public extern static LittleEndianIEEE754_80 atan2l( LittleEndianIEEE754_80 y, LittleEndianIEEE754_80 x );
 		public extern static float atanf( float x );
+		public extern static ulong[2] atanf128( ulong[2] x );
 		public extern static float atanf32( float x );
 		public extern static double atanf32x( double x );
 		public extern static double atanf64( double x );
 		public extern static LittleEndianIEEE754_80 atanf64x( LittleEndianIEEE754_80 x );
 		public extern static double atanh( double x );
 		public extern static float atanhf( float x );
+		public extern static ulong[2] atanhf128( ulong[2] x );
 		public extern static float atanhf32( float x );
 		public extern static double atanhf32x( double x );
 		public extern static double atanhf64( double x );
@@ -1116,6 +1139,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 atanl( LittleEndianIEEE754_80 x );
 		public extern static int canonicalize( double* cx, double* x );
 		public extern static int canonicalizef( float* cx, float* x );
+		public extern static int canonicalizef128( ulong[2]* cx, ulong[2]* x );
 		public extern static int canonicalizef32( float* cx, float* x );
 		public extern static int canonicalizef32x( double* cx, double* x );
 		public extern static int canonicalizef64( double* cx, double* x );
@@ -1125,6 +1149,7 @@ namespace Platform.Libc {
 		public extern static double cbrt( double x );
 		[BackendHintReadNone]
 		public extern static float cbrtf( float x );
+		public extern static ulong[2] cbrtf128( ulong[2] x );
 		public extern static float cbrtf32( float x );
 		public extern static double cbrtf32x( double x );
 		public extern static double cbrtf64( double x );
@@ -1135,6 +1160,8 @@ namespace Platform.Libc {
 		public extern static double ceil( double x );
 		[BackendHintReadNone]
 		public extern static float ceilf( float x );
+		[BackendHintReadNone]
+		public extern static ulong[2] ceilf128( ulong[2] x );
 		[BackendHintReadNone]
 		public extern static float ceilf32( float x );
 		[BackendHintReadNone]
@@ -1150,6 +1177,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float copysignf( float x, float y );
 		[BackendHintReadNone]
+		public extern static ulong[2] copysignf128( ulong[2] x, ulong[2] y );
+		[BackendHintReadNone]
 		public extern static float copysignf32( float x, float y );
 		[BackendHintReadNone]
 		public extern static double copysignf32x( double x, double y );
@@ -1161,12 +1190,14 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 copysignl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double cos( double x );
 		public extern static float cosf( float x );
+		public extern static ulong[2] cosf128( ulong[2] x );
 		public extern static float cosf32( float x );
 		public extern static double cosf32x( double x );
 		public extern static double cosf64( double x );
 		public extern static LittleEndianIEEE754_80 cosf64x( LittleEndianIEEE754_80 x );
 		public extern static double cosh( double x );
 		public extern static float coshf( float x );
+		public extern static ulong[2] coshf128( ulong[2] x );
 		public extern static float coshf32( float x );
 		public extern static double coshf32x( double x );
 		public extern static double coshf64( double x );
@@ -1179,12 +1210,14 @@ namespace Platform.Libc {
 		public extern static double erf( double p0 );
 		public extern static double erfc( double p0 );
 		public extern static float erfcf( float p0 );
+		public extern static ulong[2] erfcf128( ulong[2] p0 );
 		public extern static float erfcf32( float p0 );
 		public extern static double erfcf32x( double p0 );
 		public extern static double erfcf64( double p0 );
 		public extern static LittleEndianIEEE754_80 erfcf64x( LittleEndianIEEE754_80 p0 );
 		public extern static LittleEndianIEEE754_80 erfcl( LittleEndianIEEE754_80 p0 );
 		public extern static float erff( float p0 );
+		public extern static ulong[2] erff128( ulong[2] p0 );
 		public extern static float erff32( float p0 );
 		public extern static double erff32x( double p0 );
 		public extern static double erff64( double p0 );
@@ -1193,6 +1226,7 @@ namespace Platform.Libc {
 		public extern static double exp( double x );
 		public extern static double exp10( double x );
 		public extern static float exp10f( float x );
+		public extern static ulong[2] exp10f128( ulong[2] x );
 		public extern static float exp10f32( float x );
 		public extern static double exp10f32x( double x );
 		public extern static double exp10f64( double x );
@@ -1200,12 +1234,14 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 exp10l( LittleEndianIEEE754_80 x );
 		public extern static double exp2( double x );
 		public extern static float exp2f( float x );
+		public extern static ulong[2] exp2f128( ulong[2] x );
 		public extern static float exp2f32( float x );
 		public extern static double exp2f32x( double x );
 		public extern static double exp2f64( double x );
 		public extern static LittleEndianIEEE754_80 exp2f64x( LittleEndianIEEE754_80 x );
 		public extern static LittleEndianIEEE754_80 exp2l( LittleEndianIEEE754_80 x );
 		public extern static float expf( float x );
+		public extern static ulong[2] expf128( ulong[2] x );
 		public extern static float expf32( float x );
 		public extern static double expf32x( double x );
 		public extern static double expf64( double x );
@@ -1213,6 +1249,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 expl( LittleEndianIEEE754_80 x );
 		public extern static double expm1( double x );
 		public extern static float expm1f( float x );
+		public extern static ulong[2] expm1f128( ulong[2] x );
 		public extern static float expm1f32( float x );
 		public extern static double expm1f32x( double x );
 		public extern static double expm1f64( double x );
@@ -1222,6 +1259,8 @@ namespace Platform.Libc {
 		public extern static double fabs( double x );
 		[BackendHintReadNone]
 		public extern static float fabsf( float x );
+		[BackendHintReadNone]
+		public extern static ulong[2] fabsf128( ulong[2] x );
 		[BackendHintReadNone]
 		public extern static float fabsf32( float x );
 		[BackendHintReadNone]
@@ -1234,6 +1273,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 fabsl( LittleEndianIEEE754_80 x );
 		public extern static double fdim( double x, double y );
 		public extern static float fdimf( float x, float y );
+		public extern static ulong[2] fdimf128( ulong[2] x, ulong[2] y );
 		public extern static float fdimf32( float x, float y );
 		public extern static double fdimf32x( double x, double y );
 		public extern static double fdimf64( double x, double y );
@@ -1250,6 +1290,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float floorf( float x );
 		[BackendHintReadNone]
+		public extern static ulong[2] floorf128( ulong[2] x );
+		[BackendHintReadNone]
 		public extern static float floorf32( float x );
 		[BackendHintReadNone]
 		public extern static double floorf32x( double x );
@@ -1263,6 +1305,7 @@ namespace Platform.Libc {
 		public extern static double fma( double x, double y, double z );
 		[BackendHintReadNone]
 		public extern static float fmaf( float x, float y, float z );
+		public extern static ulong[2] fmaf128( ulong[2] x, ulong[2] y, ulong[2] z );
 		public extern static float fmaf32( float x, float y, float z );
 		public extern static double fmaf32x( double x, double y, double z );
 		public extern static double fmaf64( double x, double y, double z );
@@ -1273,6 +1316,8 @@ namespace Platform.Libc {
 		public extern static double fmax( double x, double y );
 		[BackendHintReadNone]
 		public extern static float fmaxf( float x, float y );
+		[BackendHintReadNone]
+		public extern static ulong[2] fmaxf128( ulong[2] x, ulong[2] y );
 		[BackendHintReadNone]
 		public extern static float fmaxf32( float x, float y );
 		[BackendHintReadNone]
@@ -1288,6 +1333,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float fmaxmagf( float x, float y );
 		[BackendHintReadNone]
+		public extern static ulong[2] fmaxmagf128( ulong[2] x, ulong[2] y );
+		[BackendHintReadNone]
 		public extern static float fmaxmagf32( float x, float y );
 		[BackendHintReadNone]
 		public extern static double fmaxmagf32x( double x, double y );
@@ -1301,6 +1348,8 @@ namespace Platform.Libc {
 		public extern static double fmin( double x, double y );
 		[BackendHintReadNone]
 		public extern static float fminf( float x, float y );
+		[BackendHintReadNone]
+		public extern static ulong[2] fminf128( ulong[2] x, ulong[2] y );
 		[BackendHintReadNone]
 		public extern static float fminf32( float x, float y );
 		[BackendHintReadNone]
@@ -1316,6 +1365,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float fminmagf( float x, float y );
 		[BackendHintReadNone]
+		public extern static ulong[2] fminmagf128( ulong[2] x, ulong[2] y );
+		[BackendHintReadNone]
 		public extern static float fminmagf32( float x, float y );
 		[BackendHintReadNone]
 		public extern static double fminmagf32x( double x, double y );
@@ -1327,6 +1378,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 fminmagl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double fmod( double x, double y );
 		public extern static float fmodf( float x, float y );
+		public extern static ulong[2] fmodf128( ulong[2] x, ulong[2] y );
 		public extern static float fmodf32( float x, float y );
 		public extern static double fmodf32x( double x, double y );
 		public extern static double fmodf64( double x, double y );
@@ -1334,6 +1386,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 fmodl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double frexp( double x, int* exponent );
 		public extern static float frexpf( float x, int* exponent );
+		public extern static ulong[2] frexpf128( ulong[2] x, int* exponent );
 		public extern static float frexpf32( float x, int* exponent );
 		public extern static double frexpf32x( double x, int* exponent );
 		public extern static double frexpf64( double x, int* exponent );
@@ -1341,6 +1394,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 frexpl( LittleEndianIEEE754_80 x, int* exponent );
 		public extern static long fromfp( double x, int round, uint width );
 		public extern static long fromfpf( float x, int round, uint width );
+		public extern static long fromfpf128( ulong[2] x, int round, uint width );
 		public extern static long fromfpf32( float x, int round, uint width );
 		public extern static long fromfpf32x( double x, int round, uint width );
 		public extern static long fromfpf64( double x, int round, uint width );
@@ -1348,6 +1402,7 @@ namespace Platform.Libc {
 		public extern static long fromfpl( LittleEndianIEEE754_80 x, int round, uint width );
 		public extern static long fromfpx( double x, int round, uint width );
 		public extern static long fromfpxf( float x, int round, uint width );
+		public extern static long fromfpxf128( ulong[2] x, int round, uint width );
 		public extern static long fromfpxf32( float x, int round, uint width );
 		public extern static long fromfpxf32x( double x, int round, uint width );
 		public extern static long fromfpxf64( double x, int round, uint width );
@@ -1358,6 +1413,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 gammal( LittleEndianIEEE754_80 p0 );
 		public extern static double getpayload( double* x );
 		public extern static float getpayloadf( float* x );
+		public extern static ulong[2] getpayloadf128( ulong[2]* x );
 		public extern static float getpayloadf32( float* x );
 		public extern static double getpayloadf32x( double* x );
 		public extern static double getpayloadf64( double* x );
@@ -1365,6 +1421,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 getpayloadl( LittleEndianIEEE754_80* x );
 		public extern static double hypot( double x, double y );
 		public extern static float hypotf( float x, float y );
+		public extern static ulong[2] hypotf128( ulong[2] x, ulong[2] y );
 		public extern static float hypotf32( float x, float y );
 		public extern static double hypotf32x( double x, double y );
 		public extern static double hypotf64( double x, double y );
@@ -1372,6 +1429,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 hypotl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static int ilogb( double x );
 		public extern static int ilogbf( float x );
+		public extern static int ilogbf128( ulong[2] x );
 		public extern static int ilogbf32( float x );
 		public extern static int ilogbf32x( double x );
 		public extern static int ilogbf64( double x );
@@ -1379,6 +1437,7 @@ namespace Platform.Libc {
 		public extern static int ilogbl( LittleEndianIEEE754_80 x );
 		public extern static double j0( double p0 );
 		public extern static float j0f( float p0 );
+		public extern static ulong[2] j0f128( ulong[2] p0 );
 		public extern static float j0f32( float p0 );
 		public extern static double j0f32x( double p0 );
 		public extern static double j0f64( double p0 );
@@ -1386,6 +1445,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 j0l( LittleEndianIEEE754_80 p0 );
 		public extern static double j1( double p0 );
 		public extern static float j1f( float p0 );
+		public extern static ulong[2] j1f128( ulong[2] p0 );
 		public extern static float j1f32( float p0 );
 		public extern static double j1f32x( double p0 );
 		public extern static double j1f64( double p0 );
@@ -1393,6 +1453,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 j1l( LittleEndianIEEE754_80 p0 );
 		public extern static double jn( int p0, double p1 );
 		public extern static float jnf( int p0, float p1 );
+		public extern static ulong[2] jnf128( int p0, ulong[2] p1 );
 		public extern static float jnf32( int p0, float p1 );
 		public extern static double jnf32x( int p0, double p1 );
 		public extern static double jnf64( int p0, double p1 );
@@ -1400,6 +1461,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 jnl( int p0, LittleEndianIEEE754_80 p1 );
 		public extern static double ldexp( double x, int exponent );
 		public extern static float ldexpf( float x, int exponent );
+		public extern static ulong[2] ldexpf128( ulong[2] x, int exponent );
 		public extern static float ldexpf32( float x, int exponent );
 		public extern static double ldexpf32x( double x, int exponent );
 		public extern static double ldexpf64( double x, int exponent );
@@ -1409,6 +1471,8 @@ namespace Platform.Libc {
 		public extern static double lgamma_r( double p0, int* signgamp );
 		public extern static float lgammaf( float p0 );
 		public extern static float lgammaf_r( float p0, int* signgamp );
+		public extern static ulong[2] lgammaf128( ulong[2] p0 );
+		public extern static ulong[2] lgammaf128_r( ulong[2] p0, int* signgamp );
 		public extern static float lgammaf32( float p0 );
 		public extern static float lgammaf32_r( float p0, int* signgamp );
 		public extern static double lgammaf32x( double p0 );
@@ -1421,6 +1485,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 lgammal_r( LittleEndianIEEE754_80 p0, int* signgamp );
 		public extern static intptr llogb( double x );
 		public extern static intptr llogbf( float x );
+		public extern static intptr llogbf128( ulong[2] x );
 		public extern static intptr llogbf32( float x );
 		public extern static intptr llogbf32x( double x );
 		public extern static intptr llogbf64( double x );
@@ -1428,6 +1493,7 @@ namespace Platform.Libc {
 		public extern static intptr llogbl( LittleEndianIEEE754_80 x );
 		public extern static long llrint( double x );
 		public extern static long llrintf( float x );
+		public extern static long llrintf128( ulong[2] x );
 		public extern static long llrintf32( float x );
 		public extern static long llrintf32x( double x );
 		public extern static long llrintf64( double x );
@@ -1435,6 +1501,7 @@ namespace Platform.Libc {
 		public extern static long llrintl( LittleEndianIEEE754_80 x );
 		public extern static long llround( double x );
 		public extern static long llroundf( float x );
+		public extern static long llroundf128( ulong[2] x );
 		public extern static long llroundf32( float x );
 		public extern static long llroundf32x( double x );
 		public extern static long llroundf64( double x );
@@ -1443,6 +1510,7 @@ namespace Platform.Libc {
 		public extern static double log( double x );
 		public extern static double log10( double x );
 		public extern static float log10f( float x );
+		public extern static ulong[2] log10f128( ulong[2] x );
 		public extern static float log10f32( float x );
 		public extern static double log10f32x( double x );
 		public extern static double log10f64( double x );
@@ -1450,6 +1518,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 log10l( LittleEndianIEEE754_80 x );
 		public extern static double log1p( double x );
 		public extern static float log1pf( float x );
+		public extern static ulong[2] log1pf128( ulong[2] x );
 		public extern static float log1pf32( float x );
 		public extern static double log1pf32x( double x );
 		public extern static double log1pf64( double x );
@@ -1457,6 +1526,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 log1pl( LittleEndianIEEE754_80 x );
 		public extern static double log2( double x );
 		public extern static float log2f( float x );
+		public extern static ulong[2] log2f128( ulong[2] x );
 		public extern static float log2f32( float x );
 		public extern static double log2f32x( double x );
 		public extern static double log2f64( double x );
@@ -1464,12 +1534,14 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 log2l( LittleEndianIEEE754_80 x );
 		public extern static double logb( double x );
 		public extern static float logbf( float x );
+		public extern static ulong[2] logbf128( ulong[2] x );
 		public extern static float logbf32( float x );
 		public extern static double logbf32x( double x );
 		public extern static double logbf64( double x );
 		public extern static LittleEndianIEEE754_80 logbf64x( LittleEndianIEEE754_80 x );
 		public extern static LittleEndianIEEE754_80 logbl( LittleEndianIEEE754_80 x );
 		public extern static float logf( float x );
+		public extern static ulong[2] logf128( ulong[2] x );
 		public extern static float logf32( float x );
 		public extern static double logf32x( double x );
 		public extern static double logf64( double x );
@@ -1477,6 +1549,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 logl( LittleEndianIEEE754_80 x );
 		public extern static intptr lrint( double x );
 		public extern static intptr lrintf( float x );
+		public extern static intptr lrintf128( ulong[2] x );
 		public extern static intptr lrintf32( float x );
 		public extern static intptr lrintf32x( double x );
 		public extern static intptr lrintf64( double x );
@@ -1484,6 +1557,7 @@ namespace Platform.Libc {
 		public extern static intptr lrintl( LittleEndianIEEE754_80 x );
 		public extern static intptr lround( double x );
 		public extern static intptr lroundf( float x );
+		public extern static intptr lroundf128( ulong[2] x );
 		public extern static intptr lroundf32( float x );
 		public extern static intptr lroundf32x( double x );
 		public extern static intptr lroundf64( double x );
@@ -1491,6 +1565,7 @@ namespace Platform.Libc {
 		public extern static intptr lroundl( LittleEndianIEEE754_80 x );
 		public extern static double modf( double x, double* iptr );
 		public extern static float modff( float x, float* iptr );
+		public extern static ulong[2] modff128( ulong[2] x, ulong[2]* iptr );
 		public extern static float modff32( float x, float* iptr );
 		public extern static double modff32x( double x, double* iptr );
 		public extern static double modff64( double x, double* iptr );
@@ -1500,6 +1575,7 @@ namespace Platform.Libc {
 		public extern static double nan( sbyte* tagb );
 		[BackendHintReadOnly]
 		public extern static float nanf( sbyte* tagb );
+		public extern static ulong[2] nanf128( sbyte* tagb );
 		public extern static float nanf32( sbyte* tagb );
 		public extern static double nanf32x( sbyte* tagb );
 		public extern static double nanf64( sbyte* tagb );
@@ -1510,6 +1586,7 @@ namespace Platform.Libc {
 		public extern static double nearbyint( double x );
 		[BackendHintReadNone]
 		public extern static float nearbyintf( float x );
+		public extern static ulong[2] nearbyintf128( ulong[2] x );
 		public extern static float nearbyintf32( float x );
 		public extern static double nearbyintf32x( double x );
 		public extern static double nearbyintf64( double x );
@@ -1518,6 +1595,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 nearbyintl( LittleEndianIEEE754_80 x );
 		public extern static double nextafter( double x, double y );
 		public extern static float nextafterf( float x, float y );
+		public extern static ulong[2] nextafterf128( ulong[2] x, ulong[2] y );
 		public extern static float nextafterf32( float x, float y );
 		public extern static double nextafterf32x( double x, double y );
 		public extern static double nextafterf64( double x, double y );
@@ -1525,6 +1603,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 nextafterl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double nextdown( double x );
 		public extern static float nextdownf( float x );
+		public extern static ulong[2] nextdownf128( ulong[2] x );
 		public extern static float nextdownf32( float x );
 		public extern static double nextdownf32x( double x );
 		public extern static double nextdownf64( double x );
@@ -1535,6 +1614,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 nexttowardl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double nextup( double x );
 		public extern static float nextupf( float x );
+		public extern static ulong[2] nextupf128( ulong[2] x );
 		public extern static float nextupf32( float x );
 		public extern static double nextupf32x( double x );
 		public extern static double nextupf64( double x );
@@ -1542,6 +1622,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 nextupl( LittleEndianIEEE754_80 x );
 		public extern static double pow( double x, double y );
 		public extern static float powf( float x, float y );
+		public extern static ulong[2] powf128( ulong[2] x, ulong[2] y );
 		public extern static float powf32( float x, float y );
 		public extern static double powf32x( double x, double y );
 		public extern static double powf64( double x, double y );
@@ -1549,6 +1630,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 powl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double remainder( double x, double y );
 		public extern static float remainderf( float x, float y );
+		public extern static ulong[2] remainderf128( ulong[2] x, ulong[2] y );
 		public extern static float remainderf32( float x, float y );
 		public extern static double remainderf32x( double x, double y );
 		public extern static double remainderf64( double x, double y );
@@ -1556,6 +1638,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 remainderl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double remquo( double x, double y, int* quo );
 		public extern static float remquof( float x, float y, int* quo );
+		public extern static ulong[2] remquof128( ulong[2] x, ulong[2] y, int* quo );
 		public extern static float remquof32( float x, float y, int* quo );
 		public extern static double remquof32x( double x, double y, int* quo );
 		public extern static double remquof64( double x, double y, int* quo );
@@ -1565,6 +1648,7 @@ namespace Platform.Libc {
 		public extern static double rint( double x );
 		[BackendHintReadNone]
 		public extern static float rintf( float x );
+		public extern static ulong[2] rintf128( ulong[2] x );
 		public extern static float rintf32( float x );
 		public extern static double rintf32x( double x );
 		public extern static double rintf64( double x );
@@ -1578,6 +1662,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float roundevenf( float x );
 		[BackendHintReadNone]
+		public extern static ulong[2] roundevenf128( ulong[2] x );
+		[BackendHintReadNone]
 		public extern static float roundevenf32( float x );
 		[BackendHintReadNone]
 		public extern static double roundevenf32x( double x );
@@ -1589,6 +1675,8 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 roundevenl( LittleEndianIEEE754_80 x );
 		[BackendHintReadNone]
 		public extern static float roundf( float x );
+		[BackendHintReadNone]
+		public extern static ulong[2] roundf128( ulong[2] x );
 		[BackendHintReadNone]
 		public extern static float roundf32( float x );
 		[BackendHintReadNone]
@@ -1604,6 +1692,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 scalbl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 n );
 		public extern static double scalbln( double x, intptr n );
 		public extern static float scalblnf( float x, intptr n );
+		public extern static ulong[2] scalblnf128( ulong[2] x, intptr n );
 		public extern static float scalblnf32( float x, intptr n );
 		public extern static double scalblnf32x( double x, intptr n );
 		public extern static double scalblnf64( double x, intptr n );
@@ -1611,6 +1700,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 scalblnl( LittleEndianIEEE754_80 x, intptr n );
 		public extern static double scalbn( double x, int n );
 		public extern static float scalbnf( float x, int n );
+		public extern static ulong[2] scalbnf128( ulong[2] x, int n );
 		public extern static float scalbnf32( float x, int n );
 		public extern static double scalbnf32x( double x, int n );
 		public extern static double scalbnf64( double x, int n );
@@ -1618,6 +1708,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 scalbnl( LittleEndianIEEE754_80 x, int n );
 		public extern static int setpayload( double* x, double payload );
 		public extern static int setpayloadf( float* x, float payload );
+		public extern static int setpayloadf128( ulong[2]* x, ulong[2] payload );
 		public extern static int setpayloadf32( float* x, float payload );
 		public extern static int setpayloadf32x( double* x, double payload );
 		public extern static int setpayloadf64( double* x, double payload );
@@ -1625,6 +1716,7 @@ namespace Platform.Libc {
 		public extern static int setpayloadl( LittleEndianIEEE754_80* x, LittleEndianIEEE754_80 payload );
 		public extern static int setpayloadsig( double* x, double payload );
 		public extern static int setpayloadsigf( float* x, float payload );
+		public extern static int setpayloadsigf128( ulong[2]* x, ulong[2] payload );
 		public extern static int setpayloadsigf32( float* x, float payload );
 		public extern static int setpayloadsigf32x( double* x, double payload );
 		public extern static int setpayloadsigf64( double* x, double payload );
@@ -1636,18 +1728,21 @@ namespace Platform.Libc {
 		public extern static double sin( double x );
 		public extern static void sincos( double x, double* sinx, double* cosx );
 		public extern static void sincosf( float x, float* sinx, float* cosx );
+		public extern static void sincosf128( ulong[2] x, ulong[2]* sinx, ulong[2]* cosx );
 		public extern static void sincosf32( float x, float* sinx, float* cosx );
 		public extern static void sincosf32x( double x, double* sinx, double* cosx );
 		public extern static void sincosf64( double x, double* sinx, double* cosx );
 		public extern static void sincosf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80* sinx, LittleEndianIEEE754_80* cosx );
 		public extern static void sincosl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80* sinx, LittleEndianIEEE754_80* cosx );
 		public extern static float sinf( float x );
+		public extern static ulong[2] sinf128( ulong[2] x );
 		public extern static float sinf32( float x );
 		public extern static double sinf32x( double x );
 		public extern static double sinf64( double x );
 		public extern static LittleEndianIEEE754_80 sinf64x( LittleEndianIEEE754_80 x );
 		public extern static double sinh( double x );
 		public extern static float sinhf( float x );
+		public extern static ulong[2] sinhf128( ulong[2] x );
 		public extern static float sinhf32( float x );
 		public extern static double sinhf32x( double x );
 		public extern static double sinhf64( double x );
@@ -1656,6 +1751,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 sinl( LittleEndianIEEE754_80 x );
 		public extern static double sqrt( double x );
 		public extern static float sqrtf( float x );
+		public extern static ulong[2] sqrtf128( ulong[2] x );
 		public extern static float sqrtf32( float x );
 		public extern static double sqrtf32x( double x );
 		public extern static double sqrtf64( double x );
@@ -1663,12 +1759,14 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 sqrtl( LittleEndianIEEE754_80 x );
 		public extern static double tan( double x );
 		public extern static float tanf( float x );
+		public extern static ulong[2] tanf128( ulong[2] x );
 		public extern static float tanf32( float x );
 		public extern static double tanf32x( double x );
 		public extern static double tanf64( double x );
 		public extern static LittleEndianIEEE754_80 tanf64x( LittleEndianIEEE754_80 x );
 		public extern static double tanh( double x );
 		public extern static float tanhf( float x );
+		public extern static ulong[2] tanhf128( ulong[2] x );
 		public extern static float tanhf32( float x );
 		public extern static double tanhf32x( double x );
 		public extern static double tanhf64( double x );
@@ -1677,6 +1775,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 tanl( LittleEndianIEEE754_80 x );
 		public extern static double tgamma( double p0 );
 		public extern static float tgammaf( float p0 );
+		public extern static ulong[2] tgammaf128( ulong[2] p0 );
 		public extern static float tgammaf32( float p0 );
 		public extern static double tgammaf32x( double p0 );
 		public extern static double tgammaf64( double p0 );
@@ -1686,6 +1785,8 @@ namespace Platform.Libc {
 		public extern static int totalorder( double x, double y );
 		[BackendHintReadNone]
 		public extern static int totalorderf( float x, float y );
+		[BackendHintReadNone]
+		public extern static int totalorderf128( ulong[2] x, ulong[2] y );
 		[BackendHintReadNone]
 		public extern static int totalorderf32( float x, float y );
 		[BackendHintReadNone]
@@ -1701,6 +1802,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static int totalordermagf( float x, float y );
 		[BackendHintReadNone]
+		public extern static int totalordermagf128( ulong[2] x, ulong[2] y );
+		[BackendHintReadNone]
 		public extern static int totalordermagf32( float x, float y );
 		[BackendHintReadNone]
 		public extern static int totalordermagf32x( double x, double y );
@@ -1715,6 +1818,8 @@ namespace Platform.Libc {
 		[BackendHintReadNone]
 		public extern static float truncf( float x );
 		[BackendHintReadNone]
+		public extern static ulong[2] truncf128( ulong[2] x );
+		[BackendHintReadNone]
 		public extern static float truncf32( float x );
 		[BackendHintReadNone]
 		public extern static double truncf32x( double x );
@@ -1726,6 +1831,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 truncl( LittleEndianIEEE754_80 x );
 		public extern static ulong ufromfp( double x, int round, uint width );
 		public extern static ulong ufromfpf( float x, int round, uint width );
+		public extern static ulong ufromfpf128( ulong[2] x, int round, uint width );
 		public extern static ulong ufromfpf32( float x, int round, uint width );
 		public extern static ulong ufromfpf32x( double x, int round, uint width );
 		public extern static ulong ufromfpf64( double x, int round, uint width );
@@ -1733,6 +1839,7 @@ namespace Platform.Libc {
 		public extern static ulong ufromfpl( LittleEndianIEEE754_80 x, int round, uint width );
 		public extern static ulong ufromfpx( double x, int round, uint width );
 		public extern static ulong ufromfpxf( float x, int round, uint width );
+		public extern static ulong ufromfpxf128( ulong[2] x, int round, uint width );
 		public extern static ulong ufromfpxf32( float x, int round, uint width );
 		public extern static ulong ufromfpxf32x( double x, int round, uint width );
 		public extern static ulong ufromfpxf64( double x, int round, uint width );
@@ -1740,6 +1847,7 @@ namespace Platform.Libc {
 		public extern static ulong ufromfpxl( LittleEndianIEEE754_80 x, int round, uint width );
 		public extern static double y0( double p0 );
 		public extern static float y0f( float p0 );
+		public extern static ulong[2] y0f128( ulong[2] p0 );
 		public extern static float y0f32( float p0 );
 		public extern static double y0f32x( double p0 );
 		public extern static double y0f64( double p0 );
@@ -1747,6 +1855,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 y0l( LittleEndianIEEE754_80 p0 );
 		public extern static double y1( double p0 );
 		public extern static float y1f( float p0 );
+		public extern static ulong[2] y1f128( ulong[2] p0 );
 		public extern static float y1f32( float p0 );
 		public extern static double y1f32x( double p0 );
 		public extern static double y1f64( double p0 );
@@ -1754,6 +1863,7 @@ namespace Platform.Libc {
 		public extern static LittleEndianIEEE754_80 y1l( LittleEndianIEEE754_80 p0 );
 		public extern static double yn( int p0, double p1 );
 		public extern static float ynf( int p0, float p1 );
+		public extern static ulong[2] ynf128( int p0, ulong[2] p1 );
 		public extern static float ynf32( int p0, float p1 );
 		public extern static double ynf32x( int p0, double p1 );
 		public extern static double ynf64( int p0, double p1 );
@@ -1764,30 +1874,46 @@ namespace Platform.Libc {
 		public extern static double ddivl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double dmull( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static double dsubl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static float f32addf128( ulong[2] x, ulong[2] y );
 		public extern static float f32addf32x( double x, double y );
 		public extern static float f32addf64( double x, double y );
 		public extern static float f32addf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static float f32divf128( ulong[2] x, ulong[2] y );
 		public extern static float f32divf32x( double x, double y );
 		public extern static float f32divf64( double x, double y );
 		public extern static float f32divf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static float f32mulf128( ulong[2] x, ulong[2] y );
 		public extern static float f32mulf32x( double x, double y );
 		public extern static float f32mulf64( double x, double y );
 		public extern static float f32mulf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static float f32subf128( ulong[2] x, ulong[2] y );
 		public extern static float f32subf32x( double x, double y );
 		public extern static float f32subf64( double x, double y );
 		public extern static float f32subf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f32xaddf128( ulong[2] x, ulong[2] y );
 		public extern static double f32xaddf64( double x, double y );
 		public extern static double f32xaddf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f32xdivf128( ulong[2] x, ulong[2] y );
 		public extern static double f32xdivf64( double x, double y );
 		public extern static double f32xdivf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f32xmulf128( ulong[2] x, ulong[2] y );
 		public extern static double f32xmulf64( double x, double y );
 		public extern static double f32xmulf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f32xsubf128( ulong[2] x, ulong[2] y );
 		public extern static double f32xsubf64( double x, double y );
 		public extern static double f32xsubf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f64addf128( ulong[2] x, ulong[2] y );
 		public extern static double f64addf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f64divf128( ulong[2] x, ulong[2] y );
 		public extern static double f64divf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f64mulf128( ulong[2] x, ulong[2] y );
 		public extern static double f64mulf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static double f64subf128( ulong[2] x, ulong[2] y );
 		public extern static double f64subf64x( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
+		public extern static uint[3] f64xaddf128( ulong[2] x, ulong[2] y );
+		public extern static uint[3] f64xdivf128( ulong[2] x, ulong[2] y );
+		public extern static uint[3] f64xmulf128( ulong[2] x, ulong[2] y );
+		public extern static uint[3] f64xsubf128( ulong[2] x, ulong[2] y );
 		public extern static float fadd( double x, double y );
 		public extern static float faddl( LittleEndianIEEE754_80 x, LittleEndianIEEE754_80 y );
 		public extern static float fdiv( double x, double y );
@@ -3564,6 +3690,8 @@ namespace Platform.Libc {
 		Val_GNU_MIPS_ABI_FP_64 =     6,
 		Val_GNU_MIPS_ABI_FP_64A =    7,
 		Val_GNU_MIPS_ABI_FP_MAX =    7,
+	}
+	public partial struct __iseqsig_type {
 	}
 	public partial struct __iseqsig_type {
 	}

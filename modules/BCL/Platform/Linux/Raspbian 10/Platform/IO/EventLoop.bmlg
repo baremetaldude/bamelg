@@ -304,7 +304,11 @@ namespace Platform.IO {
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
 			protected void Subscribe( IOHandle handle ) {
-				Parent.Epoll.Add( handle, new epoll_event { Events = _listenedEvents, Data = bitcast<void*>( this ) } );
+				var @event = default( epoll_event );
+				@event.Events = _listenedEvents;
+				@event.Data = bitcast<void*>( this );
+
+				Parent.Epoll.Add( handle, @event );
 			}
 
 			protected void Unsubscribe( IOHandle handle ) {
@@ -417,21 +421,31 @@ namespace Platform.IO {
 			private IOHandle _file;
 
 			public sealed override void OnEvent( epoll_event& @event ) {
-				int totalReaden;
-				long newPosition;
 				byte gpioValue;
-				bitcast<IOHandleNonBlocking>( _file ).Seek( 0, SeekOrigin.Begin, newPosition );
-				bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioValue, sizeof( gpioValue ), totalReaden );
 
-				OnRaised( gpioValue );
+				var totalReceived = LibcApi.pread( _file, &gpioValue, sizeof( gpioValue ), 0 );
+				if( totalReceived < 0 ) return;
+
+				OnEvent( gpioValue == 49 );
 			}
 
-			public abstract void OnRaised( byte value );
+			public abstract void OnEvent( bool value );
 
-			public SysfsGpioInputEventSink( EventLoop parent, CUtf8String path )
+			public SysfsGpioInputEventSink( EventLoop parent )
 				: base( parent ) {
-				IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
-				_listenedEvents = EPOLL_EVENTS.EPOLLET;
+				_listenedEvents = EPOLL_EVENTS.EPOLLPRI;
+			}
+
+			/// \param Path to pin exported to sysfs (e.g. "/sys/class/gpio/gpio144/value")
+			public SystemError Open( CUtf8String path, bool& initialState = nullref ) {
+				var code = IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+				if( !code ) return code;
+
+				byte gpioValue;
+				LibcApi.pread( _file, &gpioValue, sizeof( gpioValue ), 0 );
+				if( initialState != nullref ) initialState = gpioValue == 49;
+
+				return code;
 			}
 
 			~SysfsGpioInputEventSink() {
@@ -440,59 +454,99 @@ namespace Platform.IO {
 		}
 
 		public class SysfsGpioInputTraceEventSink : SysfsGpioInputEventSink {
-			public Utf8String Name;
 			public DateTime LastEvent = DateTime.MinValue;
 
-			public SysfsGpioInputTraceEventSink( EventLoop parent, Utf8String path )
-				: base( parent, path ) {
-				Name = path;
+			public SysfsGpioInputTraceEventSink( EventLoop parent )
+				: base( parent ) {
 			}
 
-			public override void OnRaised( byte value ) {
+			public override void OnEvent( bool value ) {
 				var diff = Parent.UtcNow - LastEvent;
-				Console.Write( "{0}: GPIO state changed: {1}", Name, ( char ) value );
+				Console.Write( "GPIO state changed: {0}", value );
 				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
 				Console.WriteLine();
 				LastEvent = Parent.UtcNow;
 			}
 		}
 
-		// Not supported (EPERM), ask Linus Walleij for epoll support
-		// public class GpioInputEventSink : EventLoop.EventSink {
-		// 	[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
-		// 	private IOHandle _file;
-		// 
-		// 	public sealed override void OnEvent( epoll_event& @event ) {
-		// 		int totalReaden;
-		// 		gpioevent_data gpioEvent;
-		// 		bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioEvent, sizeof( gpioEvent ), totalReaden );
-		// 
-		// 		Console.WriteLine( "{0}: {1}", gpioEvent.timestamp, ( GPIOEVENT_EVENT ) gpioEvent.id );
-		// 		// OnRaised( gpioValue, gpioEvent.id  == GPIOEVENT_EVENT.GPIOEVENT_EVENT_FALLING_EDGE );
-		// 	}
-		// 
-		// 	// public abstract void OnRaised( ulong timestamp, bool value );
-		// 
-		// 	public GpioInputEventSink( EventLoop parent, CUtf8String path, uint lineOffset, CUtf8String comment )
-		// 		: base( parent ) {
-		// 		IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
-		// 		_listenedEvents = EPOLL_EVENTS.EPOLLIN;
-		// 
-		// 		var lineInfo = new gpioevent_request {
-		// 			lineoffset = lineOffset,
-		// 			handleflags = GPIOHANDLE_REQUEST.GPIOHANDLE_REQUEST_INPUT,
-		// 			eventflags = GPIOEVENT_REQUEST.GPIOEVENT_REQUEST_BOTH_EDGES
-		// 		};
-		// 
-		// 		CUtf8String.Copy( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) - 1 );
-		// 
-		// 		LibcApi.ioctl( _file, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo );
-		// 	}
-		// 
-		// 	~GpioInputEventSink() {
-		// 		_file.Close();
-		// 	}
-		// }
+		public abstract class GpioInputEventSink : EventLoop.EventSink {
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
+			private IOHandleNonBlocking _lineDevice = IOHandleNonBlocking.Invalid;
+
+			private IOHandle _gpioDevice;
+
+			private bool _externalGpioDevice { get; set; } = false;
+
+			public sealed override void OnEvent( epoll_event& @event ) {
+				int totalReaden;
+				gpioevent_data gpioEvent;
+
+				var totalReceived = LibcApi.read( _lineDevice, &gpioEvent, sizeof( gpioEvent ) );
+				if( totalReceived < 0 ) return;
+
+				OnEvent( gpioEvent.timestamp, gpioEvent.id == GPIOEVENT_EVENT.GPIOEVENT_EVENT_RISING_EDGE );
+			}
+
+			public abstract void OnEvent( ulong timestamp, bool value );
+
+			public GpioInputEventSink( EventLoop parent )
+				: base( parent ) {
+				_listenedEvents = EPOLL_EVENTS.EPOLLIN;
+			}
+
+			/// \param path Path to character device (e.g. "/dev/gpiochip4")
+			public SystemError OpenDevice( CUtf8String path ) {
+				return IOHandle.Open( _gpioDevice, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			}
+
+			public void ReuseDevice( GpioInputEventSink value ) {
+				_externalGpioDevice = true;
+				_gpioDevice = value._gpioDevice;
+			}
+
+			public SystemError Bind( uint lineOffset, CUtf8String comment, bool& initialValue = nullref ) {
+				var lineInfo = new gpioevent_request {
+					fd = 0,
+					lineoffset = lineOffset,
+					handleflags = GPIOHANDLE_REQUEST.GPIOHANDLE_REQUEST_INPUT,
+					eventflags = GPIOEVENT_REQUEST.GPIOEVENT_REQUEST_BOTH_EDGES
+				};
+
+				CUtf8String.InitializeBuffer( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) );
+
+				if( LibcApi.ioctl( _gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
+				_lineDevice = bitcast<IOHandleNonBlocking>( lineInfo.fd );
+
+				if( initialValue != nullref ) {
+					gpiohandle_data data;
+					if( LibcApi.ioctl( _lineDevice, IoctlCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
+					initialValue = data.values[0] != 0;
+				}
+
+				return SystemError.None;
+			}
+
+			~GpioInputEventSink() {
+				_lineDevice.Close();
+				if( !_externalGpioDevice ) _gpioDevice.Close();
+			}
+		}
+
+		public class UapiGpioInputTraceEventSink : GpioInputEventSink {
+			public ulong LastEvent = 0;
+
+			public UapiGpioInputTraceEventSink( EventLoop parent )
+				: base( parent ) {
+			}
+
+			public override void OnEvent( ulong timestamp, bool value ) {
+				var diff = new TimeSpan( cast<long>( timestamp - LastEvent ) / 100 );
+				Console.Write( "GPIO state changed: {0} at {1}", value, new DateTime( ( long ) timestamp / 100 + 621355968000000000, DateTimeKind.Utc ) );
+				if( LastEvent != 0 ) System.Console.Write( "( {0} ago )", diff );
+				Console.WriteLine();
+				LastEvent = timestamp;
+			}
+		}
 
 		public abstract class SignalEventSink : EventSink {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
@@ -842,7 +896,7 @@ namespace Platform.IO {
 		// 	}
 		// }
 
-		protected override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		protected sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
 
 		#endregion
 

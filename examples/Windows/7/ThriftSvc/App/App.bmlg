@@ -35,10 +35,12 @@ namespace Example {
 			var server = new ThriftServer( requestHandler );
 			server.Framed = false;
 			server.ExceptionHandler = serverImpl;
+			server.Attach( eventLoop );
 
 			var serverFramed = new ThriftServer( requestHandler );
 			serverFramed.Framed = true;
 			serverFramed.ExceptionHandler = serverImpl;
+			serverFramed.Attach( eventLoop );
 
 			eventLoop.BeginInvoke( () => {
 				Fiber.Start( 16, () => {

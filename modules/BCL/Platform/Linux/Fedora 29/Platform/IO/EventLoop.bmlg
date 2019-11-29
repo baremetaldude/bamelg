@@ -304,7 +304,11 @@ namespace Platform.IO {
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
 			protected void Subscribe( IOHandle handle ) {
-				Parent.Epoll.Add( handle, new epoll_event { Events = _listenedEvents, Data = bitcast<void*>( this ) } );
+				var @event = default( epoll_event );
+				@event.Events = _listenedEvents;
+				@event.Data = bitcast<void*>( this );
+
+				Parent.Epoll.Add( handle, @event );
 			}
 
 			protected void Unsubscribe( IOHandle handle ) {
@@ -411,6 +415,124 @@ namespace Platform.IO {
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
+
+		public abstract class SysfsGpioInputEventSink : EventSink {
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
+			private IOHandle _file;
+
+			public sealed override void OnEvent( epoll_event& @event ) {
+				int totalReaden;
+				long newPosition;
+				byte gpioValue;
+				bitcast<IOHandleNonBlocking>( _file ).Seek( 0, SeekOrigin.Begin, newPosition );
+				bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioValue, sizeof( gpioValue ), totalReaden );
+
+				OnEvent( gpioValue == 49 );
+			}
+
+			public abstract void OnEvent( bool value );
+
+			public SysfsGpioInputEventSink( EventLoop parent )
+				: base( parent ) {
+				_listenedEvents = EPOLL_EVENTS.EPOLLET;
+			}
+
+			/// \param Path to pin exported to sysfs (e.g. "/sys/class/gpio/gpio144/value")
+			public SystemError Open( CUtf8String path ) {
+				return IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			}
+
+			~SysfsGpioInputEventSink() {
+				_file.Close();
+			}
+		}
+
+		public class SysfsGpioInputTraceEventSink : SysfsGpioInputEventSink {
+			public DateTime LastEvent = DateTime.MinValue;
+
+			public SysfsGpioInputTraceEventSink( EventLoop parent )
+				: base( parent ) {
+			}
+
+			public override void OnEvent( bool value ) {
+				var diff = Parent.UtcNow - LastEvent;
+				Console.Write( "GPIO state changed: {0}", value );
+				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
+				Console.WriteLine();
+				LastEvent = Parent.UtcNow;
+			}
+		}
+
+		public abstract class GpioInputEventSink : EventLoop.EventSink {
+			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
+			private IOHandleNonBlocking _lineDevice = IOHandleNonBlocking.Invalid;
+
+			private IOHandle _gpioDevice;
+
+			private bool _externalGpioDevice { get; set; } = false;
+
+			public sealed override void OnEvent( epoll_event& @event ) {
+				int totalReaden;
+				gpioevent_data gpioEvent;
+				bitcast<IOHandleNonBlocking>( _lineDevice ).Read( TimeSpan.Zero, &gpioEvent, sizeof( gpioEvent ), totalReaden );
+
+				OnEvent( gpioEvent.timestamp, gpioEvent.id == GPIOEVENT_EVENT.GPIOEVENT_EVENT_RISING_EDGE );
+			}
+
+			public abstract void OnEvent( ulong timestamp, bool value );
+
+			public GpioInputEventSink( EventLoop parent )
+				: base( parent ) {
+				_listenedEvents = EPOLL_EVENTS.EPOLLIN;
+			}
+
+			/// \param path Path to character device (e.g. "/dev/gpiochip4")
+			public SystemError OpenDevice( CUtf8String path ) {
+				return IOHandle.Open( _gpioDevice, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			}
+
+			public void ReuseDevice( GpioInputEventSink value ) {
+				_externalGpioDevice = true;
+				_gpioDevice = value._gpioDevice;
+			}
+
+			public SystemError Bind( uint lineOffset, CUtf8String comment ) {
+				var lineInfo = new gpioevent_request {
+					fd = 0,
+					lineoffset = lineOffset,
+					handleflags = GPIOHANDLE_REQUEST.GPIOHANDLE_REQUEST_INPUT,
+					eventflags = GPIOEVENT_REQUEST.GPIOEVENT_REQUEST_BOTH_EDGES
+				};
+
+				CUtf8String.InitializeBuffer( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) );
+
+				if( LibcApi.ioctl( _gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
+				_lineDevice = bitcast<IOHandleNonBlocking>( lineInfo.fd );
+
+				return SystemError.None;
+			}
+
+			~GpioInputEventSink() {
+				_lineDevice.Close();
+				if( !_externalGpioDevice ) _gpioDevice.Close();
+			}
+		}
+
+		public class UapiGpioInputTraceEventSink : GpioInputEventSink {
+			public DateTime LastEvent = DateTime.MinValue;
+
+			public UapiGpioInputTraceEventSink( EventLoop parent )
+				: base( parent ) {
+			}
+
+			public override void OnEvent( ulong timestamp, bool value ) {
+				var diff = Parent.UtcNow - LastEvent;
+				Console.Write( "GPIO state changed: {0}", value );
+				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
+				Console.WriteLine();
+				LastEvent = Parent.UtcNow;
+			}
+		}
 
 		public abstract class SignalEventSink : EventSink {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]

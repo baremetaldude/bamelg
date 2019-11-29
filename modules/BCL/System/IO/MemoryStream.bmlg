@@ -33,6 +33,34 @@ namespace System.IO {
 			_bufferInfo.Position = 0;
 		}
 
+		public MemoryStream( byte[] buffer ) {
+			_flushGrow = 0;
+			_expandable = false;
+			_buffer = buffer;
+
+			_bufferInfo.Start = &buffer[0];
+			_bufferInfo.Capacity = buffer.Length;
+			_bufferInfo.AvailableToRead = buffer.Length;
+			_bufferInfo.Position = 0;
+		}
+
+		public MemoryStream( byte[] buffer, int start, int length ) {
+			if( !Assert.IsTrue( start >= 0 ) ) { start = 0; }
+			if( !Assert.IsTrue( start < buffer.Length  ) ) { start = buffer.Length - 1; }
+			if( !Assert.IsTrue( length >= 0 ) ) { length = 0; }
+			if( !Assert.IsTrue( length <= buffer.Length ) ) { length = 0; }
+			if( !Assert.IsTrue( start + length <= buffer.Length ) ) { length = buffer.Length - start; }
+
+			_flushGrow = 0;
+			_expandable = false;
+			_buffer = buffer;
+
+			_bufferInfo.Start = &buffer[0];
+			_bufferInfo.Capacity = buffer.Length;
+			_bufferInfo.AvailableToRead = length;
+			_bufferInfo.Position = start;
+		}
+
 		public MemoryStream( MemorySegment segment ) {
 			_expandable = false;
 			_flushGrow = 0;

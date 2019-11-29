@@ -12,70 +12,98 @@ namespace Platform.Kernel {
 		public const int _LINUX_CAPABILITY_VERSION = 429392688;
 
 	}
+	public enum GPIOEVENT_EVENT : uint {
+		GPIOEVENT_EVENT_RISING_EDGE =  1,
+		GPIOEVENT_EVENT_FALLING_EDGE = 2,
+	}
+	public enum GPIOEVENT_REQUEST : uint {
+		GPIOEVENT_REQUEST_RISING_EDGE =  1,
+		GPIOEVENT_REQUEST_FALLING_EDGE = 2,
+		GPIOEVENT_REQUEST_BOTH_EDGES =   3,
+	}
+	[Flags]
+	public enum GPIOHANDLE_REQUEST : uint {
+		None =                            0,
+		GPIOHANDLE_REQUEST_INPUT =        1,
+		GPIOHANDLE_REQUEST_OUTPUT =       2,
+		GPIOHANDLE_REQUEST_ACTIVE_LOW =   4,
+		GPIOHANDLE_REQUEST_OPEN_DRAIN =   8,
+		GPIOHANDLE_REQUEST_OPEN_SOURCE = 16,
+	}
+	[Flags]
+	public enum GPIOLINE_FLAG : uint {
+		None =                       0,
+		GPIOLINE_FLAG_KERNEL =       1,
+		GPIOLINE_FLAG_IS_OUT =       2,
+		GPIOLINE_FLAG_ACTIVE_LOW =   4,
+		GPIOLINE_FLAG_OPEN_DRAIN =   8,
+		GPIOLINE_FLAG_OPEN_SOURCE = 16,
+	}
 	public enum IoctlCommand : uint {
-		TIOCPKT_DATA =        0,
-		TIOCPKT_FLUSHREAD =   1,
-		TIOCPKT_FLUSHWRITE =  2,
-		TIOCPKT_STOP =        4,
-		TIOCPKT_START =       8,
-		TIOCPKT_NOSTOP =     16,
-		TIOCPKT_DOSTOP =     32,
-		TCGETS =          21505,
-		TCSETS =          21506,
-		TCSETSW =         21507,
-		TCSETSF =         21508,
-		TCGETA =          21509,
-		TCSETA =          21510,
-		TCSETAW =         21511,
-		TCSETAF =         21512,
-		TCSBRK =          21513,
-		TCXONC =          21514,
-		TCFLSH =          21515,
-		TIOCEXCL =        21516,
-		TIOCNXCL =        21517,
-		TIOCSCTTY =       21518,
-		TIOCGPGRP =       21519,
-		TIOCSPGRP =       21520,
-		TIOCOUTQ =        21521,
-		TIOCSTI =         21522,
-		TIOCGWINSZ =      21523,
-		TIOCSWINSZ =      21524,
-		TIOCMGET =        21525,
-		TIOCMBIS =        21526,
-		TIOCMBIC =        21527,
-		TIOCMSET =        21528,
-		TIOCGSOFTCAR =    21529,
-		TIOCSSOFTCAR =    21530,
-		FIONREAD =        21531,
-		TIOCINQ =         21531,
-		TIOCLINUX =       21532,
-		TIOCCONS =        21533,
-		TIOCGSERIAL =     21534,
-		TIOCSSERIAL =     21535,
-		TIOCPKT =         21536,
-		FIONBIO =         21537,
-		TIOCNOTTY =       21538,
-		TIOCSETD =        21539,
-		TIOCGETD =        21540,
-		TCSBRKP =         21541,
-		TIOCSBRK =        21543,
-		TIOCCBRK =        21544,
-		TIOCGSID =        21545,
-		FIONCLEX =        21584,
-		FIOCLEX =         21585,
-		FIOASYNC =        21586,
-		TIOCSERCONFIG =   21587,
-		TIOCSERGWILD =    21588,
-		TIOCSERSWILD =    21589,
-		TIOCGLCKTRMIOS =  21590,
-		TIOCSLCKTRMIOS =  21591,
-		TIOCSERGSTRUCT =  21592,
-		TIOCSERGETLSR =   21593,
-		TIOCSERGETMULTI = 21594,
-		TIOCSERSETMULTI = 21595,
-		TIOCMIWAIT =      21596,
-		TIOCGICOUNT =     21597,
-		FIOQSIZE =        21600,
+		TIOCPKT_DATA =                      0,
+		TIOCPKT_FLUSHREAD =                 1,
+		TIOCPKT_FLUSHWRITE =                2,
+		TIOCPKT_STOP =                      4,
+		TIOCPKT_START =                     8,
+		TIOCPKT_NOSTOP =                   16,
+		TIOCPKT_DOSTOP =                   32,
+		TCGETS =                        21505,
+		TCSETS =                        21506,
+		TCSETSW =                       21507,
+		TCSETSF =                       21508,
+		TCGETA =                        21509,
+		TCSETA =                        21510,
+		TCSETAW =                       21511,
+		TCSETAF =                       21512,
+		TCSBRK =                        21513,
+		TCXONC =                        21514,
+		TCFLSH =                        21515,
+		TIOCEXCL =                      21516,
+		TIOCNXCL =                      21517,
+		TIOCSCTTY =                     21518,
+		TIOCGPGRP =                     21519,
+		TIOCSPGRP =                     21520,
+		TIOCOUTQ =                      21521,
+		TIOCSTI =                       21522,
+		TIOCGWINSZ =                    21523,
+		TIOCSWINSZ =                    21524,
+		TIOCMGET =                      21525,
+		TIOCMBIS =                      21526,
+		TIOCMBIC =                      21527,
+		TIOCMSET =                      21528,
+		TIOCGSOFTCAR =                  21529,
+		TIOCSSOFTCAR =                  21530,
+		FIONREAD =                      21531,
+		TIOCINQ =                       21531,
+		TIOCLINUX =                     21532,
+		TIOCCONS =                      21533,
+		TIOCGSERIAL =                   21534,
+		TIOCSSERIAL =                   21535,
+		TIOCPKT =                       21536,
+		FIONBIO =                       21537,
+		TIOCNOTTY =                     21538,
+		TIOCSETD =                      21539,
+		TIOCGETD =                      21540,
+		TCSBRKP =                       21541,
+		TIOCSBRK =                      21543,
+		TIOCCBRK =                      21544,
+		TIOCGSID =                      21545,
+		FIONCLEX =                      21584,
+		FIOCLEX =                       21585,
+		FIOASYNC =                      21586,
+		TIOCSERCONFIG =                 21587,
+		TIOCSERGWILD =                  21588,
+		TIOCSERSWILD =                  21589,
+		TIOCGLCKTRMIOS =                21590,
+		TIOCSLCKTRMIOS =                21591,
+		TIOCSERGSTRUCT =                21592,
+		TIOCSERGETLSR =                 21593,
+		TIOCSERGETMULTI =               21594,
+		TIOCSERSETMULTI =               21595,
+		TIOCMIWAIT =                    21596,
+		TIOCGICOUNT =                   21597,
+		FIOQSIZE =                      21600,
+		GPIO_GET_LINEEVENT_IOCTL = 3224417284,
 	}
 	public enum ProcessControlActions : int {
 		PR_SET_PTRACER_ANY =          -1,
@@ -93,8 +121,10 @@ namespace Platform.Kernel {
 		PR_FPEMU_NOPRINT =             1,
 		PR_MCE_KILL_EARLY =            1,
 		PR_MCE_KILL_SET =              1,
+		PR_PAC_APIAKEY =               1,
 		PR_SET_MM_START_CODE =         1,
 		PR_SET_PDEATHSIG =             1,
+		PR_SPEC_INDIRECT_BRANCH =      1,
 		PR_SPEC_PRCTL =                1,
 		PR_TIMING_TIMESTAMP =          1,
 		PR_TSC_ENABLE =                1,
@@ -106,6 +136,7 @@ namespace Platform.Kernel {
 		PR_FPEMU_SIGFPE =              2,
 		PR_GET_PDEATHSIG =             2,
 		PR_MCE_KILL_DEFAULT =          2,
+		PR_PAC_APIBKEY =               2,
 		PR_SET_MM_END_CODE =           2,
 		PR_SPEC_ENABLE =               2,
 		PR_TSC_SIGSEGV =               2,
@@ -115,6 +146,7 @@ namespace Platform.Kernel {
 		PR_GET_DUMPABLE =              3,
 		PR_SET_MM_START_DATA =         3,
 		PR_CAP_AMBIENT_CLEAR_ALL =     4,
+		PR_PAC_APDAKEY =               4,
 		PR_SET_DUMPABLE =              4,
 		PR_SET_MM_END_DATA =           4,
 		PR_SPEC_DISABLE =              4,
@@ -124,6 +156,7 @@ namespace Platform.Kernel {
 		PR_SET_UNALIGN =               6,
 		PR_GET_KEEPCAPS =              7,
 		PR_SET_MM_BRK =                7,
+		PR_PAC_APDBKEY =               8,
 		PR_SET_KEEPCAPS =              8,
 		PR_SET_MM_ARG_START =          8,
 		PR_SPEC_FORCE_DISABLE =        8,
@@ -142,6 +175,7 @@ namespace Platform.Kernel {
 		PR_SET_MM_MAP_SIZE =          15,
 		PR_SET_NAME =                 15,
 		PR_GET_NAME =                 16,
+		PR_PAC_APGAKEY =              16,
 		PR_GET_ENDIAN =               19,
 		PR_SET_ENDIAN =               20,
 		PR_GET_SECCOMP =              21,
@@ -175,6 +209,7 @@ namespace Platform.Kernel {
 		PR_SVE_GET_VL =               51,
 		PR_GET_SPECULATION_CTRL =     52,
 		PR_SET_SPECULATION_CTRL =     53,
+		PR_PAC_RESET_KEYS =           54,
 		PR_FP_EXC_SW_ENABLE =        128,
 		PR_SVE_VL_LEN_MASK =       65535,
 		PR_FP_EXC_DIV =            65536,
@@ -247,6 +282,7 @@ namespace Platform.Kernel {
 		SO_COOKIE =                        57,
 		SO_PEERGROUPS =                    59,
 		SO_ZEROCOPY =                      60,
+		SO_TXTIME =                        61,
 	}
 	public enum SocketPropertyGroup : uint {
 		SOL_IP =          0,
@@ -906,6 +942,71 @@ namespace Platform.Kernel {
 		[ExplicitOffset( Offset = 4 )]
 		public int pid;
 	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiochip_info {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte[32] label;
+		[ExplicitOffset( Offset = 64 )]
+		public uint lines;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpioevent_data {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong timestamp;
+		[ExplicitOffset( Offset = 8 )]
+		public uint id;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioevent_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint lineoffset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint handleflags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint eventflags;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 44 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 64 )]
+	public partial struct gpiohandle_data {
+		[ExplicitOffset( Offset = 0 )]
+		public byte[64] values;
+	}
+	[ExplicitSize( Size = 364 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiohandle_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[64] lineoffsets;
+		[ExplicitOffset( Offset = 256 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 260 )]
+		public byte[64] default_values;
+		[ExplicitOffset( Offset = 324 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 356 )]
+		public uint lines;
+		[ExplicitOffset( Offset = 360 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioline_info {
+		[ExplicitOffset( Offset = 0 )]
+		public uint line_offset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 40 )]
+		public sbyte[32] consumer;
+	}
 	[ExplicitSize( Size = 104 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct prctl_mm_map {
@@ -937,6 +1038,70 @@ namespace Platform.Kernel {
 		public uint auxv_size;
 		[ExplicitOffset( Offset = 100 )]
 		public uint exe_fd;
+	}
+	[ExplicitSize( Size = 168 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct pt_regs {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr r15;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr r14;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr r13;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr r12;
+		[ExplicitOffset( Offset = 32 )]
+		public uintptr rbp;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr rbx;
+		[ExplicitOffset( Offset = 48 )]
+		public uintptr r11;
+		[ExplicitOffset( Offset = 56 )]
+		public uintptr r10;
+		[ExplicitOffset( Offset = 64 )]
+		public uintptr r9;
+		[ExplicitOffset( Offset = 72 )]
+		public uintptr r8;
+		[ExplicitOffset( Offset = 80 )]
+		public uintptr rax;
+		[ExplicitOffset( Offset = 88 )]
+		public uintptr rcx;
+		[ExplicitOffset( Offset = 96 )]
+		public uintptr rdx;
+		[ExplicitOffset( Offset = 104 )]
+		public uintptr rsi;
+		[ExplicitOffset( Offset = 112 )]
+		public uintptr rdi;
+		[ExplicitOffset( Offset = 120 )]
+		public uintptr orig_rax;
+		[ExplicitOffset( Offset = 128 )]
+		public uintptr rip;
+		[ExplicitOffset( Offset = 136 )]
+		public uintptr cs;
+		[ExplicitOffset( Offset = 144 )]
+		public uintptr eflags;
+		[ExplicitOffset( Offset = 152 )]
+		public uintptr rsp;
+		[ExplicitOffset( Offset = 160 )]
+		public uintptr ss;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ptrace_peeksiginfo_args {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong off;
+		[ExplicitOffset( Offset = 8 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 12 )]
+		public int nr;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct seccomp_metadata {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong filter_off;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong flags;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 2 )]

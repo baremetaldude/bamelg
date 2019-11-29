@@ -392,7 +392,7 @@ namespace System {
 			return *right == 0;
 		}
 
-		static void Copy( CUtf8String leftString, CUtf8String rightString ) {
+		public static void Copy( CUtf8String leftString, CUtf8String rightString ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
@@ -400,7 +400,7 @@ namespace System {
 				continue;
 		}
 
-		static void Copy( CUtf8String leftString, CUtf8String rightString, int length ) {
+		public static void Copy( CUtf8String leftString, CUtf8String rightString, int length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
@@ -408,6 +408,21 @@ namespace System {
 				--length;
 
 			if( length == 0 ) *--left = 0;
+		}
+
+		// Copy 'rightString' to buffer pointed by 'leftString' and fill remaining bytes with zeroes
+		public static void InitializeBuffer( CUtf8String leftString, CUtf8String rightString, int bufferLength ) {
+			var left = leftString.GetChars();
+			var right = rightString.GetChars();
+
+			while( bufferLength != 0 && ( *left++ = *right++ ) != 0 )
+				--bufferLength;
+
+			if( bufferLength == 0 ) *--left = 0;
+			else while( bufferLength != 0 ) {
+				*left++ = 0;
+				--bufferLength;
+			}
 		}
 
 		public bool StartsWith( CUtf8StringSpan value ) {
