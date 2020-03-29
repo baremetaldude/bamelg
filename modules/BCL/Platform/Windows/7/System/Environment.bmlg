@@ -21,10 +21,13 @@ namespace System {
 			var variable16 = ( string ) variable;
 
 		restart:
-			var length = Kernel32Api.GetEnvironmentVariable( variable16, null, 0U );
-			var value = new string.Builder( length );
-			var newLength = Kernel32Api.GetEnvironmentVariable( variable16, value.GetChars(), length );
-			if( newLength > length ) goto restart;
+			var lengthNullTerminated = Kernel32Api.GetEnvironmentVariable( variable16, null, 0U );
+			if( lengthNullTerminated == 0 ) return null;
+
+			var value = new string.Builder( lengthNullTerminated - 1 );
+			var newLength = Kernel32Api.GetEnvironmentVariable( variable16, value.GetChars(), lengthNullTerminated );
+
+			if( newLength + 1 > lengthNullTerminated ) goto restart;
 
 			return ( Utf8String ) value.Detach();
 		}

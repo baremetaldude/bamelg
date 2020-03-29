@@ -32,7 +32,7 @@ namespace BamelgBench {
 
 			uint exitCode;
 			ulong processCycles, mainThreadCycles;
-			var externallyMeasuredElapsedTime = DateTime.UnbiasedNow - started;
+			var waitTime = DateTime.UnbiasedNow - started;
 
 			if( !Kernel32Api.QueryProcessCycleTime( processInformation.Process, processCycles ) ) return ExitCodes.UnableToReadProcessInfo;
 			if( !Kernel32Api.QueryThreadCycleTime( processInformation.Thread, mainThreadCycles ) ) return ExitCodes.UnableToReadThreadInfo;
@@ -52,30 +52,69 @@ namespace BamelgBench {
 			Kernel32Api.CloseHandle( processInformation.Thread );
 
 			var builder = new StringBuilder();
-			using( var writer = new XmlWriter( builder ) { PreserveNewlines = true } ) {
-				writer.Declaration();
 
-				using( writer.Tag( "result" ) ) {
-					using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( creationTime );
-					using( writer.Tag( "ExitTimeReadable" ) ) writer.Write( exitTime );
-					using( writer.Tag( "KernelTimeReadable" ) ) writer.Write( kernelTime );
-					using( writer.Tag( "UserTimeReadable" ) ) writer.Write( userTime );
-					using( writer.Tag( "TotalTimeReadable" ) ) writer.Write( totalTime );
+			Delegates.Action xmlReport = () => {
+				using( var writer = new XmlWriter( builder ) { PreserveNewlines = true } ) {
+					writer.Declaration();
 
-					using( writer.Tag( "ExitCode" ) ) writer.Write( exitCode );
+					using( writer.Tag( "result" ) ) {
+						using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( creationTime.ToLocalTime() );
+						using( writer.Tag( "ExitTimeReadable" ) ) writer.Write( exitTime.ToLocalTime() );
+						using( writer.Tag( "WaitTimeReadable" ) ) writer.Write( waitTime );
 
-					using( writer.Tag( "CreationTime" ) ) writer.Write( creationTime.Ticks );
-					using( writer.Tag( "ExitTime" ) ) writer.Write( exitTime.Ticks );
-					using( writer.Tag( "KernelTime" ) ) writer.Write( kernelTime.Ticks );
-					using( writer.Tag( "UserTime" ) ) writer.Write( userTime.Ticks );
-					using( writer.Tag( "TotalTime" ) ) writer.Write( totalTime.Ticks );
+						using( writer.Tag( "KernelTimeReadable" ) ) writer.Write( kernelTime );
+						using( writer.Tag( "UserTimeReadable" ) ) writer.Write( userTime );
+						using( writer.Tag( "TotalTimeReadable" ) ) writer.Write( totalTime );
 
-					using( writer.Tag( "ProcessCycles" ) ) writer.Write( processCycles );
-					using( writer.Tag( "MainThreadCycles" ) ) writer.Write( mainThreadCycles );
+						using( writer.Tag( "ExitCode" ) ) writer.Write( exitCode );
 
-					using( writer.Tag( "PeakWorkingSetSize" ) ) writer.Write( memCounters.PeakWorkingSetSize );
-					using( writer.Tag( "PeakPagefileUsage" ) ) writer.Write( memCounters.PeakPagefileUsage );
-					using( writer.Tag( "PageFaultCount" ) ) writer.Write( memCounters.PageFaultCount );
+						using( writer.Tag( "CreationTime" ) ) writer.Write( creationTime.Ticks );
+						using( writer.Tag( "ExitTime" ) ) writer.Write( exitTime.Ticks );
+						using( writer.Tag( "WaitTime" ) ) writer.Write( waitTime.Ticks );
+
+						using( writer.Tag( "KernelTime" ) ) writer.Write( kernelTime.Ticks );
+						using( writer.Tag( "UserTime" ) ) writer.Write( userTime.Ticks );
+						using( writer.Tag( "TotalTime" ) ) writer.Write( totalTime.Ticks );
+
+						using( writer.Tag( "ProcessCycles" ) ) writer.Write( processCycles );
+						using( writer.Tag( "MainThreadCycles" ) ) writer.Write( mainThreadCycles );
+
+						using( writer.Tag( "PeakWorkingSetSize" ) ) writer.Write( memCounters.PeakWorkingSetSize );
+						using( writer.Tag( "PeakPagefileUsage" ) ) writer.Write( memCounters.PeakPagefileUsage );
+						using( writer.Tag( "PageFaultCount" ) ) writer.Write( memCounters.PageFaultCount );
+					}
+				}
+			};
+
+			var format = Environment.GetEnvironmentVariable( "BB_OUTPUT_FORMAT" );
+			if( format.IsNullOrEmpty )
+				xmlReport();
+			else {
+				switch( format ) {
+					case "xml":
+						xmlReport();
+						break;
+
+					case "human":
+						builder.Append( "CreationTime: " ); builder.Append( creationTime.ToLocalTime() ); builder.AppendLine();
+						builder.Append( "ExitTime: " ); builder.Append( exitTime.ToLocalTime() ); builder.AppendLine();
+						builder.Append( "WaitTime: " ); builder.Append( waitTime ); builder.AppendLine();
+
+						builder.Append( "KernelTimeReadable: " ); builder.Append( kernelTime ); builder.AppendLine();
+						builder.Append( "UserTimeReadable: " ); builder.Append( userTime ); builder.AppendLine();
+						builder.Append( "TotalTimeReadable: " ); builder.Append( totalTime ); builder.AppendLine();
+
+						builder.Append( "ExitCode: " ); builder.Append( exitCode ); builder.AppendLine();
+
+						break;
+
+					default:
+						builder.Append( "Wrong format specified: " );
+						builder.Append( '\'' );
+						builder.Append( format );
+						builder.Append( '\'' );
+						builder.AppendLine();
+						break;
 				}
 			}
 

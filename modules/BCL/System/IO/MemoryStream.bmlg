@@ -46,7 +46,7 @@ namespace System.IO {
 
 		public MemoryStream( byte[] buffer, int start, int length ) {
 			if( !Assert.IsTrue( start >= 0 ) ) { start = 0; }
-			if( !Assert.IsTrue( start < buffer.Length  ) ) { start = buffer.Length - 1; }
+			if( !Assert.IsTrue( start < buffer.Length ) ) { start = buffer.Length - 1; }
 			if( !Assert.IsTrue( length >= 0 ) ) { length = 0; }
 			if( !Assert.IsTrue( length <= buffer.Length ) ) { length = 0; }
 			if( !Assert.IsTrue( start + length <= buffer.Length ) ) { length = buffer.Length - start; }
@@ -195,6 +195,10 @@ namespace System.IO {
 			return result;
 		}
 
+		public ArraySegment<byte> GetWrittenSegment() {
+			return new ArraySegment<byte>( _buffer, 0, ( uint ) _bufferInfo.Position );
+		}
+
 		public int Read( [Out] void* buffer, int count ) {
 			if( !Assert.IsTrue( buffer != null ) ) return 0;
 			if( !Assert.IsTrue( count >= 0 ) ) return 0;
@@ -243,7 +247,7 @@ namespace System.IO {
 
 		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
 		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
-			
+
 		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
 		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 
