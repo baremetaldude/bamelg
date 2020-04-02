@@ -9,9 +9,9 @@ using System.Diagnostics;
 using System.Runtime.CompilerServices;
 
 namespace System.Collections {
-	public static struct CommonCollectionOperations {
+	public static partial struct CommonCollectionOperations {
 		[Conditional( ConditionString = "DEBUG" )]
-		public static void UpdateVersion( int* version ) {
+		public static void UpdateVersion( uint* version ) {
 			++*version;
 		}
 
@@ -41,6 +41,20 @@ namespace System.Collections {
 			}
 		}
 
+		public static void Copy<T>( T* destination, T* source, uint count ) {
+			// overlapped
+			if( source < destination && source + count >= destination ) {
+				source += count - 1;
+				destination += count - 1;
+				for( uint i = 0; i < count; ++i )
+					*destination-- = *source--;
+			}
+			else {
+				for( uint i = 0; i < count; ++i )
+					*destination++ = *source++;
+			}
+		}
+
 		public static int IndexOf<T>( T* destination, T value, int count ) {
 			for( int i = 0; i < count; ++i )
 				if( destination[i] == value )
@@ -59,6 +73,11 @@ namespace System.Collections {
 
 		public static void Clear<T>( T* destination, int count ) {
 			for( int i = 0; i < count; ++i )
+				*destination++ = default( T );
+		}
+
+		public static void Clear<T>( T* destination, uint count ) {
+			for( uint i = 0; i < count; ++i )
 				*destination++ = default( T );
 		}
 
@@ -91,14 +110,6 @@ namespace System.Collections {
 					return true;
 
 			return false;
-		}
-
-		public static bool Compare<T1, T2>( T1* source1, T2* source2, int count ) {
-			for( int i = 0; i < count; ++i )
-				if( *source1++ != *source2++ )
-					return false;
-
-			return true;
 		}
 
 		// [x; y]

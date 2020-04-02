@@ -228,12 +228,26 @@ namespace System.IO {
 			_bufferInfo.OnWritePerformed( count );
 		}
 
+		/// Read from source [ Position; Position + AvailableToRead ) and write to this stream
+		public void Write( MemoryStream source ) {
+			var readen = source._bufferInfo.AvailableToRead;
+			Write( source._bufferInfo.ReadBufferStart, readen );
+			source._bufferInfo.OnReadPerformed( readen );
+		}
+
+		/// Get source.GetWrittenSegment() [ 0 ; Position )  and write to this stream
+		public void WriteWritten( MemoryStream source ) {
+			var readen = source._bufferInfo.Position;
+			Write( source._bufferInfo.Start, readen );
+		}
+
 		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
 		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			switch( flushKind ) {
 				case FlushKind.Write:
+				case FlushKind.DeepWrite:
 				case FlushKind.SynchronizeWrite:
 					if( _expandable ) {
 						var resultPosition = _bufferInfo.Position + _flushGrow;

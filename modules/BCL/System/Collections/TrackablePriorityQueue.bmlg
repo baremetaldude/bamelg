@@ -1,0 +1,295 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Collections {
+	public class TrackablePriorityQueue<T> {
+		private const int DefaultCapacity = 16;
+
+		// Note:
+		// new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) ); - descending {30,20,10}
+		// new TrackablePriorityQueue<int>( ( x, y ) => -x.CompareTo( y ) ); - ascending {10,20,30}
+		// new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) ); - ascending {10,20,30}
+		public readonly Functors.Func<T, T, int> Comparer;
+
+		private int _count;
+		private T[] _heap;
+		private int[] _heapToTrackingKeyMapping, _trackingKeyToHeapMapping;
+
+		private PoolIndexManager _trackingManager = new PoolIndexManager();
+
+		public TrackablePriorityQueue( Functors.Func<T, T, int> comparer )
+			: this( DefaultCapacity, comparer ) {
+		}
+
+		public TrackablePriorityQueue( int capacity, Functors.Func<T, T, int> comparer ) {
+			if( !BitOperations.IsPowerOf2( capacity ) )
+				capacity = BitOperations.NextPowerOf2( capacity );
+
+			_heap = new[capacity] T;
+			_heapToTrackingKeyMapping = new[capacity] int;
+			_trackingKeyToHeapMapping = new[capacity] int;
+
+			for( int i = 0; i < capacity; i++ ) {
+				_heapToTrackingKeyMapping[i] = -1;
+				_trackingKeyToHeapMapping[i] = -1;
+			}
+
+			_count = 0;
+			Comparer = comparer;
+		}
+
+		public void Clear() {
+			_count = 0;
+		}
+
+		public T this[int trackingIndex] {
+			get {
+				if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
+				if( !Assert.IsTrue( trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
+				var heapIndex = _trackingKeyToHeapMapping[trackingIndex];
+				if( !Assert.IsTrue( heapIndex >= 0 ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
+				if( !Assert.IsTrue( heapIndex < _heap.Length ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
+				return _heap[heapIndex];
+			}
+		}
+
+		public Functors.Comparison<T> FindRanker = null;
+
+		private List<int> _heapIndices;
+
+		public int Find( T value ) {
+			if( FindRanker == null ) return -1;
+			if( _count == 0 ) return -1;
+
+			if( _heapIndices == null ) _heapIndices = new List<int>( 4 );
+			_heapIndices.Clear();
+
+			_heapIndices.Add( 0 );
+			int resultIndex = -1;
+
+			while( _heapIndices.Count > 0 ) {
+				for( int i = _heapIndices.Count - 1; i >= 0; --i ) {
+					var newIndex = _heapIndices[i];
+
+					if( Comparer( value, _heap[newIndex] ) < 0 ) {
+						_heapIndices.RemoveAt( i );
+
+						var leftIndex = PriorityQueueCommon.GetLeftChildIndex( newIndex );
+						var rightIndex = PriorityQueueCommon.GetRightChildIndexFromLeft( leftIndex );
+
+						if( leftIndex < _count ) { _heapIndices.Add( leftIndex ); ++i; }
+						if( rightIndex < _count ) { _heapIndices.Add( rightIndex ); ++i; }
+					}
+					else {
+						_heapIndices.RemoveAt( i );
+
+						if( resultIndex == -1 )
+							resultIndex = newIndex;
+						else {
+							if( FindRanker( _heap[resultIndex], _heap[newIndex] ) > 0 )
+								resultIndex = newIndex;
+						}
+					}
+				}
+			}
+
+			if( resultIndex == -1 ) return -1;
+
+			return _heapToTrackingKeyMapping[resultIndex];
+		}
+
+		public bool IsValid() {
+			for( var i = 1; i < _count; ++i ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( _heap[i], _heap[parentIndex] ) > 0 )
+					return false;
+
+				var trackingKey = _heapToTrackingKeyMapping[i];
+				if( trackingKey < 0 || trackingKey >= _count ) return false;
+
+				if( _trackingKeyToHeapMapping[trackingKey] != i ) return false;
+			}
+
+			return true;
+		}
+
+		public int Enqueue( T value ) {
+			EnsureCapacity( 1 );
+
+			var i = _count;
+			int trackingIndex = _trackingManager.Allocate();
+
+			while( i > 0 ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
+					break;
+
+				_heap[i] = _heap[parentIndex];
+				_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[parentIndex]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[parentIndex];
+
+				i = parentIndex;
+			}
+
+			_heap[i] = value;
+			_trackingKeyToHeapMapping[trackingIndex] = i; _heapToTrackingKeyMapping[i] = trackingIndex;
+			++_count;
+
+			return trackingIndex;
+		}
+
+		public T Dequeue() {
+			return Remove( 0, _heapToTrackingKeyMapping[0] );
+		}
+
+		public T Remove( int trackingIndex ) {
+			return Remove( _trackingKeyToHeapMapping[trackingIndex], trackingIndex );
+		}
+
+		public void Replace( int trackingIndex, T value ) {
+			Replace( _trackingKeyToHeapMapping[trackingIndex], trackingIndex, value );
+		}
+
+		private T Remove( int heapIndex, int trackingIndex ) {
+			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
+			if( !Assert.IsTrue( heapIndex >= 0 ) ) return default( T );
+			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
+
+			var result = _heap[heapIndex];
+
+			if( _count > 1 ) {
+				var i = heapIndex;
+
+				for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
+					var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+					var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
+
+					_heap[i] = _heap[highestPriorityChild];
+					_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[highestPriorityChild]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[highestPriorityChild];
+
+					i = highestPriorityChild;
+				}
+
+				if( i != _count - 1 ) {
+					while( i > 0 ) {
+						var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+						if( Comparer( _heap[_count - 1], _heap[parentIndex] ) <= 0 )
+							break;
+
+						_heap[i] = _heap[parentIndex];
+						_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[parentIndex]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[parentIndex];
+
+						i = parentIndex;
+					}
+
+					_heap[i] = _heap[_count - 1];
+					_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[_count - 1]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[_count - 1];
+				}
+			}
+
+			_heapToTrackingKeyMapping[_count - 1] = -1;
+			_trackingKeyToHeapMapping[trackingIndex] = -1;
+			_trackingManager.Deallocate( trackingIndex );
+			--_count;
+			return result;
+		}
+
+		private void Replace( int heapIndex, int trackingIndex, T value ) {
+			if( !Assert.IsTrue( _count > 0 ) ) return;
+			if( !Assert.IsTrue( heapIndex >= 0 ) ) return;
+			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return;
+
+			var i = heapIndex;
+
+			for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
+				var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
+				var highestPriorityChild = rightChild < _count && Comparer( _heap[rightChild], _heap[leftChild] ) >= 0 ? rightChild : leftChild;
+
+				_heap[i] = _heap[highestPriorityChild];
+				_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[highestPriorityChild]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[highestPriorityChild];
+
+				i = highestPriorityChild;
+			}
+
+			while( i > 0 ) {
+				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
+
+				if( Comparer( value, _heap[parentIndex] ) <= 0 )
+					break;
+
+				_heap[i] = _heap[parentIndex];
+				_trackingKeyToHeapMapping[_heapToTrackingKeyMapping[parentIndex]] = i; _heapToTrackingKeyMapping[i] = _heapToTrackingKeyMapping[parentIndex];
+
+				i = parentIndex;
+			}
+
+			_heap[i] = value;
+			_trackingKeyToHeapMapping[trackingIndex] = i; _heapToTrackingKeyMapping[i] = trackingIndex;
+		}
+
+		public void EnsureCapacity( int count ) {
+			var newCount = _count + count;
+
+			if( newCount >= _heap.Length ) {
+				if( !BitOperations.IsPowerOf2( newCount ) )
+					newCount = BitOperations.NextPowerOf2( newCount );
+
+				var heap = new[newCount] T;
+				var heapToTrackingKeyMapping = new[newCount] int;
+				var trackingKeyToHeapMapping = new[newCount] int;
+
+				CommonCollectionOperations.Copy<T>( &heap[0], &_heap[0], _count );
+				CommonCollectionOperations.Copy<int>( &heapToTrackingKeyMapping[0], &_heapToTrackingKeyMapping[0], _heapToTrackingKeyMapping.Length );
+				CommonCollectionOperations.Copy<int>( &trackingKeyToHeapMapping[0], &_trackingKeyToHeapMapping[0], _trackingKeyToHeapMapping.Length );
+
+				for( int i = _heapToTrackingKeyMapping.Length; i < newCount; i++ ) {
+					heapToTrackingKeyMapping[i] = -1;
+					trackingKeyToHeapMapping[i] = -1;
+				}
+
+				_heap = heap;
+				_heapToTrackingKeyMapping = heapToTrackingKeyMapping;
+				_trackingKeyToHeapMapping = trackingKeyToHeapMapping;
+			}
+		}
+
+		public T[] ToArray() {
+			var result = new[_count] T;
+			CommonCollectionOperations.Copy<T>( &result[0], &_heap[0], _count );
+			return result;
+		}
+
+		public int Count { get { return _count; } }
+		public int Capacity { get { return _heap.Length; } }
+
+		public T Top { get { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; } }
+		public T Peek() { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; }
+
+		public Enumerator GetEnumerator() {
+			return new Enumerator( this );
+		}
+
+		[EnumeratorAttribute]
+		public struct Enumerator {
+			private readonly declaringtype _parent;
+			private int _index, _count;
+
+			internal Enumerator( declaringtype parent ) {
+				_index = -1;
+				_parent = parent;
+				_count = parent._count;
+			}
+
+			public bool MoveNext() {
+				return ++_index < _count;
+			}
+
+			public T Current { get { return _parent._heap[_index]; } }
+		}
+	}
+}

@@ -55,18 +55,14 @@ namespace System.Runtime {
 		private void InitializeNew( Type* type, uint extraSize ) {
 			_instanceState = 0;
 
-			// if( Memory.MultithreadedEnvironment ) {
-			// 	/// @{ barrier makes DRD much happy
-			// 	atomic( _sharedReferenceCount = 1 );
-			// 	atomic( _weakReferenceCount = 0 );
-			// 	/// @}
-			// }
-			// else {
-			_sharedReferenceCount = 1;
-			_weakReferenceCount = 0;
-			// }
-
-			IsReferenceCounterAtomic = Memory.MultithreadedEnvironment;
+			if( IsReferenceCounterAtomic = Memory.MultithreadedEnvironment ) {
+				atomic( _sharedReferenceCount = 1 );
+				atomic( _weakReferenceCount = 0 );
+			}
+			else {
+				_sharedReferenceCount = 1;
+				_weakReferenceCount = 0;
+			}
 
 			var& userType = type->AsUserType;
 			if( userType != nullref ) {
@@ -106,36 +102,29 @@ namespace System.Runtime {
 
 			TrackReleaseReference();
 
-			// decrease refcount
-			// Valgrind.Drd.HappensBefore( &_sharedReferenceCount );
 			var finalSharedRefcount = IsReferenceCounterAtomic ? atomic( --_sharedReferenceCount, Release ) - 1 : --_sharedReferenceCount;
-			// if( !Assert.IsTrue( finalSharedRefcount >= 0 ) ) Console.WriteConcatLine( "TYPE: ", GetType() );
 			Assert.IsTrue( finalSharedRefcount >= 0 );
 
 			if( finalSharedRefcount == 0 ) {
-				Memory.Fence( Memory.FenceOrdering.Acquire );
-				// Valgrind.Drd.HappensAfter( &_sharedReferenceCount );
-
 				var& type = GetType();
 
 				if( type.Destructor != null ) {
-					if( IsReferenceCounterAtomic ) atomic( _sharedReferenceCount += int.MaxValue / 2 );
+					if( IsReferenceCounterAtomic ) atomic( _sharedReferenceCount += int.MaxValue / 2, Acquire );
 					else _sharedReferenceCount += int.MaxValue / 2;
 
-					type.Destructor( bitcast<void*>( this ) ); // invoke dtor but do not free space
+					type.Destructor( bitcast<void*>( this ) ); // invoke dtor; do not free space
 
-					finalSharedRefcount = IsReferenceCounterAtomic ? atomic( _sharedReferenceCount -= int.MaxValue / 2 ) - int.MaxValue / 2 : _sharedReferenceCount -= int.MaxValue / 2;
+					finalSharedRefcount = IsReferenceCounterAtomic ? atomic( _sharedReferenceCount -= int.MaxValue / 2, Relaxed ) - int.MaxValue / 2 : _sharedReferenceCount -= int.MaxValue / 2;
 					Assert.IsTrue( finalSharedRefcount == 0 ); // refcount increased ==> bad destructor code
 				}
-			}
+				
+				var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( _weakReferenceCount, Relaxed ) : _weakReferenceCount;
+				if( finalWeakRefcount == 0 ) {
+					TrackDeallocation();
 
-			if( finalSharedRefcount == 0 && _weakReferenceCount == 0 ) {
-				var& type = GetType();
-
-				TrackDeallocation();
-
-				if( AlignedAllocation ) Memory.DeallocateAligned( bitcast<void*>( this ) ); // free space
-				else Memory.Deallocate( bitcast<void*>( this ) ); // free space
+					if( AlignedAllocation ) Memory.DeallocateAligned( bitcast<void*>( this ) ); // free space
+					else Memory.Deallocate( bitcast<void*>( this ) ); // free space
+				}
 			}
 		}
 
@@ -144,17 +133,16 @@ namespace System.Runtime {
 
 			TrackReleaseWeakReference();
 
-			// decrease refcount
-			var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( --_weakReferenceCount ) - 1 : --_weakReferenceCount;
+			var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( --_weakReferenceCount, Release ) - 1 : --_weakReferenceCount;
 			Assert.IsTrue( finalWeakRefcount >= 0 );
 
-			if( _sharedReferenceCount == 0 && finalWeakRefcount == 0 ) {
-				var& type = GetType();
+			if( finalWeakRefcount == 0 ) {
+				if( atomic( _sharedReferenceCount, Relaxed ) == 0 ) {
+					TrackDeallocation();
 
-				TrackDeallocation();
-
-				if( AlignedAllocation ) Memory.DeallocateAligned( bitcast<void*>( this ) ); // free space
-				else Memory.Deallocate( bitcast<void*>( this ) ); // free space
+					if( AlignedAllocation ) Memory.DeallocateAligned( bitcast<void*>( this ) ); // free space
+					else Memory.Deallocate( bitcast<void*>( this ) ); // free space
+				}
 			}
 		}
 

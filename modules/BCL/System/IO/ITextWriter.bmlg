@@ -11,7 +11,7 @@ using System.Text;
 
 namespace System.IO {
 	public interface ITextWriter {
-		void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite );
+		void Flush( FlushKind flushKind = FlushKind.DeepWrite );
 
 		void WriteLine();
 
@@ -60,11 +60,17 @@ namespace System.IO {
 		void Write( CString value );
 		void WriteLine( CString value );
 
+		void Write( CStringSpan value );
+		void WriteLine( CStringSpan value );
+
 		void Write( Utf8String value );
 		void WriteLine( Utf8String value );
 
 		void Write( CUtf8String value );
 		void WriteLine( CUtf8String value );
+
+		void Write( CUtf8StringSpan value );
+		void WriteLine( CUtf8StringSpan value );
 
 		void Write( Utf16String value );
 		void WriteLine( Utf16String value );
@@ -72,11 +78,17 @@ namespace System.IO {
 		void Write( CUtf16String value );
 		void WriteLine( CUtf16String value );
 
+		void Write( CUtf16StringSpan value );
+		void WriteLine( CUtf16StringSpan value );
+
 		void Write( Utf32String value );
 		void WriteLine( Utf32String value );
 
 		void Write( CUtf32String value );
 		void WriteLine( CUtf32String value );
+
+		void Write( CUtf32StringSpan value );
+		void WriteLine( CUtf32StringSpan value );
 
 		void Write( StringBuilder value );
 		void WriteLine( StringBuilder value );

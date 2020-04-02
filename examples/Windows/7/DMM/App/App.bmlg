@@ -40,6 +40,10 @@ namespace Dmm {
 
 		public static ILocalizer Localizer = AppLocalizer.EN.Instance;
 
+		public static bool TraceEvents = true;
+
+		public static string LastComPort;
+
 		[EntryPoint]
 		private static void Main() {
 			// System.Console.WriteLine( "GetACP() == {0}", Kernel32Api.GetACP() );
@@ -52,13 +56,6 @@ namespace Dmm {
 					break;
 			}
 
-			Console.WriteLine( new VoltageFormatter( -0.0011 ) );
-			Console.WriteLine( new VoltageFormatter( 0.011 ) );
-			Console.WriteLine( new VoltageFormatter( 0.11 ) );
-			Console.WriteLine( new VoltageFormatter( 1.1 ) );
-			return;
-
-			// Break();
 			_eventLoop.CatchConsoleQuit();
 
 			_eventLoop.BeginInvoke( Initialize );
@@ -67,11 +64,15 @@ namespace Dmm {
 		}
 
 		static void Initialize() {
+			Server.Attach( _eventLoop );
+
 			Server.Listen( TcpConnectionPort );
 			Server.Listen( NamedPipeConnectionPath );
 			PrintConnectionOptions();
 
-			_devices.Add( _debugDevice = new DeviceHandler() );
+			_devices.Add( _debugDevice = new DeviceHandler() {
+				SerialPortPath = LastComPort
+			} );
 
 			foreach( var device in _devices )
 				device.Connect();
@@ -81,12 +82,13 @@ namespace Dmm {
 			Console.WriteLine( "@{ Possible connection URLs:" );
 			Console.WriteLine( "\thttp://127.0.0.1:{0}", TcpConnectionPort );
 			Console.WriteLine( "\thttp://localhost:{0}", TcpConnectionPort );
-			Console.WriteLine( "\t{0}", NamedPipeConnectionPath );
+			Console.WriteLine( "{0}", NamedPipeConnectionPath );
 			Console.WriteLine( "@}" );
 
-			foreach( var info in EnumerateComPorts() )
+			foreach( var info in EnumerateComPorts() ) {
 				Console.WriteLine( @"Found serial port: {0} <- {1}", info.Item1, info.Item2 );
-
+				LastComPort = info.Item1;
+			}
 		}
 	}
 
@@ -94,12 +96,7 @@ namespace Dmm {
 		public string SerialPortPath = @"\\.\COM4";
 		public string Name = "UT61E";
 
-		public EventLogBuffer Events = new EventLogBuffer() {
-			// Trace = true,
-
-			MaxCount = 10000,
-			MaxTime = TimeSpan.FromHours( 1 )
-		};
+		public FiberSlidingEventQueue<string> Events = new FiberSlidingEventQueue<string>( TimeSpan.FromMinutes( 1 ) );
 
 		public bool Enabled = true;
 
@@ -107,98 +104,45 @@ namespace Dmm {
 		}
 
 		public void ToString( StringBuilder result, string format ) {
-			result.AppendFormat( "{0} ( {1} ); Events {{ {2} }}", Name, SerialPortPath, Events );
+			result.AppendFormat( "{0} ( {1} ); Events {{ {2} }}", Name, SerialPortPath, Events.Count );
 		}
 
 		#region event buffer
 
-		public Fiber.Event NewMesageEvent = new Fiber.Event();
-
 		public void AddEvent( string text ) {
+			if( App.TraceEvents ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkGray ) )
+					Console.WriteLine( text );
+			}
+
 			Events.Add( DateTime.UtcNow, text );
-			NewMesageEvent.Signal();
 		}
 
 		public void AddEvent( string format, vararg TypedReference parameters ) {
+			if( App.TraceEvents ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkGray ) )
+					Console.WriteLine( format, vararg( parameters, parameters.Length ) );
+			}
+
 			Events.Add( DateTime.UtcNow, string.Format( format, vararg( parameters, parameters.Length ) ) );
-			NewMesageEvent.Signal();
 		}
 
 		#endregion
 
 		public void Connect() {
 			Fiber.Start( 16, Connector, "serial connector" );
-			Fiber.Start( 16, ShuntTask, "shunt" );
+			// Fiber.Start( 16, ShuntTask, "shunt" );
 		}
 
-		public void Connector() {
-			// bvar y1 = new Yo() { FileName = @"t:\\yo1.txt" };
-			// var y2 = new Yo() { FileName = @"t:\\yo2.txt" };
-
-			// by1.AddReference();
-			// y2.AddReference();
-
-			// Fiber.Start( 16, y1.WriteFile, "log1" );
-			// Fiber.Start( 16, y2.WriteFile, "log2" );
-
+		private void Connector() {
 			while( !Fiber.IsCancelled ) {
-				Worker();
+				ConnectorWorker();
 
 				if( Enabled ) {
 					using( Fiber.CancellationRegion() )
 						Fiber.Sleep( 1000 );
 				}
 				else break;
-			}
-		}
-
-		class Yo {
-			public Yo() { }
-
-			public string FileName;
-
-			public void WriteFile() {
-				finally { ReleaseReference(); }
-
-				// EventLogBuffer.EventEntry* lastEvent = null;
-
-				// wait for first event arrival
-				if( App._debugDevice.Events.Events.Count == 0 ) {
-					using( Fiber.CancellationRegion() )
-						App._debugDevice.NewMesageEvent.Wait();
-					if( Fiber.IsCancelled ) return;
-				}
-
-				var lastEvent = App._debugDevice.Events.Events.Last();
-
-				// traverse event buffer from last reported event
-				using( var fs = new StreamWriter( System.IO.File.OpenWrite( FileName ) ) ) {
-					fs.UseAutoFlush = false; // prevent "Events" modification while traversing it using GetEnumerator( lastEvent ) in device data parser fiber
-
-					for( ; ; ) {
-						App._debugDevice.Events.Events.CreateMarker( lastEvent );
-
-						using( Fiber.CancellationRegion() )
-							App._debugDevice.NewMesageEvent.Wait();
-
-						if( !App._debugDevice.Events.Events.ReleaseMarker( lastEvent ) )
-							return;
-
-						if( Fiber.IsCancelled ) break;
-
-						var skipFirst = true;
-						foreach( var @event in App._debugDevice.Events.Events.GetEnumerator( lastEvent ) ) {
-							if( skipFirst ) { skipFirst = false; continue; }
-
-							fs.Write( @event->Text );
-							fs.WriteLine();
-						}
-
-						lastEvent = App._debugDevice.Events.Events.Last();
-
-						fs.TryFlush();
-					}
-				}
 			}
 		}
 
@@ -210,7 +154,7 @@ namespace Dmm {
 		FixedPointSlidingQueue _resistance = new FixedPointSlidingQueue( TimeSpan.FromSeconds( 2 ), 100 );
 		FixedPointSlidingQueue.AverageView _avgView = new FixedPointSlidingQueue.AverageView( _resistance, TimeSpan.FromSeconds( 2 ) );
 
-		public void ShuntTask() {
+		private void ShuntTask() {
 			Console.WriteLine( "{0} ...", App.Localizer.MeasureProbeResistance );
 
 			TaskMeasureResistance = true;
@@ -240,7 +184,7 @@ namespace Dmm {
 			Fiber.FiberManager.Suspend();
 		}
 
-		public void Worker() {
+		private void ConnectorWorker() {
 			StreamError = false;
 
 			var fs = new Platform.IO.FileStream() {
@@ -346,10 +290,10 @@ namespace Dmm {
 						}
 						else {
 							if( dmm.Mode == Dmm.UT61E.MeasurementMode.Volts ) {
-								OnResistanceParsed( dmm.Value );
+								if( OnResistanceParsed != null ) OnResistanceParsed( dmm.Value );
 							}
 							else if( dmm.Mode == Dmm.UT61E.MeasurementMode.MilliVolts ) {
-								OnResistanceParsed( dmm.Value );
+								if( OnResistanceParsed != null ) OnResistanceParsed( dmm.Value );
 							}
 						}
 					}

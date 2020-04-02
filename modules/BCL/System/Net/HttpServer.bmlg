@@ -138,7 +138,7 @@ namespace System.Net {
 
 				while( !Quit ) {
 					int readen = requestBuffer->AvailableToRead;
-					if( readen == 0 ) WriteStream.Flush( FlushKind.SynchronizeWrite ); // try to flush multiple responses
+					if( readen == 0 ) WriteStream.Flush( FlushKind.DeepWrite ); // try to flush multiple responses
 
 					using( Fiber.CancellationRegion() ) {
 						ReadStream.Flush( FlushKind.Read );
@@ -491,7 +491,6 @@ namespace System.Net {
 			}
 
 			public void Flush() {
-				WriteEventEnd();
 				// StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
 				// Response.Clear();
 				Response.Flush( FlushKind.Write );

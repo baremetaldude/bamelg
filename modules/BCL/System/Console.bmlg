@@ -40,12 +40,35 @@ namespace System {
 		}
 
 		public static void Write( TypedReference parameter ) {
-			WriteFormatted( false, "{0}", vararg( &parameter, 1 ) );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( parameter );
+				PlatformWrite( builder.Value.GetTextSpan(), false );
+			}
 		}
 
 		public static void WriteLine( TypedReference parameter ) {
-			WriteFormatted( true, "{0}", vararg( &parameter, 1 ) );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( parameter );
+				PlatformWrite( builder.Value.GetTextSpan(), true );
+			}
 		}
+
+		public static void Write( TypedReference parameter, string format ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( parameter, format );
+				PlatformWrite( builder.Value.GetTextSpan(), false );
+			}
+		}
+
+		public static void WriteLine( TypedReference parameter, string format ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( parameter, format );
+				PlatformWrite( builder.Value.GetTextSpan(), true );
+			}
+		}
+
+		public static void Write( [VerifyFormatString] string format, string parameter ) { WriteFormatted( false, format, parameter ); }
+		public static void WriteLine( [VerifyFormatString] string format, string parameter ) { WriteFormatted( true, format, parameter ); }
 
 		public static void Write( [VerifyFormatString] string format, vararg TypedReference parameters ) {
 			WriteFormatted( false, format, vararg( parameters, parameters.Length ) );
@@ -319,7 +342,7 @@ namespace System {
 		}
 
 		public struct ConsoleWriter : System.IO.ITextWriter {
-			public void Flush( System.IO.FlushKind flushKind = System.IO.FlushKind.SynchronizeWrite ) { }
+			public void Flush( System.IO.FlushKind flushKind = System.IO.FlushKind.DeepWrite ) { }
 
 			public void WriteLine() { Console.WriteLine(); }
 
@@ -368,11 +391,17 @@ namespace System {
 			public void Write( CString value ) { Console.Write( value ); }
 			public void WriteLine( CString value ) { Console.WriteLine( value ); }
 
+			public void Write( CStringSpan value ) { Console.Write( value ); }
+			public void WriteLine( CStringSpan value ) { Console.WriteLine( value ); }
+
 			public void Write( Utf8String value ) { Console.Write( value ); }
 			public void WriteLine( Utf8String value ) { Console.WriteLine( value ); }
 
 			public void Write( CUtf8String value ) { Console.Write( value ); }
 			public void WriteLine( CUtf8String value ) { Console.WriteLine( value ); }
+
+			public void Write( CUtf8StringSpan value ) { Console.Write( value ); }
+			public void WriteLine( CUtf8StringSpan value ) { Console.WriteLine( value ); }
 
 			public void Write( Utf16String value ) { Console.Write( value ); }
 			public void WriteLine( Utf16String value ) { Console.WriteLine( value ); }
@@ -380,11 +409,17 @@ namespace System {
 			public void Write( CUtf16String value ) { Console.Write( value ); }
 			public void WriteLine( CUtf16String value ) { Console.WriteLine( value ); }
 
+			public void Write( CUtf16StringSpan value ) { Console.Write( value ); }
+			public void WriteLine( CUtf16StringSpan value ) { Console.WriteLine( value ); }
+
 			public void Write( Utf32String value ) { Console.Write( value ); }
 			public void WriteLine( Utf32String value ) { Console.WriteLine( value ); }
 
 			public void Write( CUtf32String value ) { Console.Write( value ); }
 			public void WriteLine( CUtf32String value ) { Console.WriteLine( value ); }
+
+			public void Write( CUtf32StringSpan value ) { Console.Write( value ); }
+			public void WriteLine( CUtf32StringSpan value ) { Console.WriteLine( value ); }
 
 			public void Write( StringBuilder value ) { Console.Write( value ); }
 			public void WriteLine( StringBuilder value ) { Console.WriteLine( value ); }

@@ -1,0 +1,72 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Collections {
+	public class FiberSlidingEventQueue<T> {
+		public struct TimedValue {
+			public DateTime Time;
+			public T Value;
+		}
+
+		private System.IO.Fiber.Event NewEvent = new System.IO.Fiber.Event();
+
+		private TrackableQueue<TimedValue> _values = new TrackableQueue<TimedValue>();
+
+		public readonly TimeSpan Timeframe;
+
+		public TrackableQueue<TimedValue>.Enumerator GetEnumerator() { return _values.GetEnumerator(); }
+
+		public TimeSpan ElementsTimeframe { get { return _values.Count > 1 ? _values.Last().Time - _values.First().Time : new TimeSpan( 0 ); } }
+
+		public int Count { get { return ( int ) _values.Count; } }
+		public uint FirstIndex { get { return _values.FirstIndex; } }
+		public uint LastIndex { get { return _values.LastIndex; } }
+
+		public uint Capacity {
+			get { return _values.Capacity; }
+			set { _values.Capacity = value; }
+		}
+
+		public FiberSlidingEventQueue( TimeSpan timeframe ) {
+			Timeframe = timeframe;
+		}
+
+		public uint Add( DateTime time, T value ) {
+			Update( time );
+
+			var result = _values.Enqueue( new TimedValue { Time = time, Value = value } );
+
+			NewEvent.Signal();
+			return result;
+		}
+
+		public bool IsValid( uint index ) { return _values.IsValid( index ); }
+
+		public void FiberWaitEvent() { NewEvent.Wait(); }
+
+		public int Update( DateTime time ) {
+			int dropped = 0;
+
+		start_remove:
+			if( Count > 0 ) {
+				var top = _values.Peek().Time;
+
+				if( ( time - top ) >= Timeframe ) {
+					_values.Dequeue();
+					++dropped;
+
+					goto start_remove;
+				}
+			}
+
+			return dropped;
+		}
+
+		public TimedValue this[uint index] { get { return _values[index]; } }
+		public T Value[uint index] { get { return _values[index].Value; } }
+		public DateTime Time[uint index] { get { return _values[index].Time; } }
+	}
+}

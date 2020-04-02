@@ -8,12 +8,14 @@ namespace Example {
 	public partial class App {
 		private static void PrintFloatNumber( float value ) {
 			Console.WriteLine( "== {0:@} ==", value );
+			Console.WriteLine( " RAW: {0:X8}; {0:B32}", *( uint* ) &value );
 			Console.WriteLine( " Exponent: {0} BiasedExponent: {1}", value.Exponent, value.BiasedExponent );
 			Console.WriteLine( " Mantissa: {0:X6}; {0:B23}", value.Mantissa );
 		}
 
 		private static void PrintDoubleNumber( double value ) {
 			Console.WriteLine( "== {0:@} ==", value );
+			Console.WriteLine( " RAW: {0:X16}; {0:B64}", *( ulong* ) &value );
 			Console.WriteLine( " Exponent: {0} BiasedExponent: {1}", value.Exponent, value.BiasedExponent );
 			Console.WriteLine( " Mantissa: {0:X13}; {0:B52}", value.Mantissa );
 		}

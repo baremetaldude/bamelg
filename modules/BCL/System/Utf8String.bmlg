@@ -296,13 +296,46 @@ namespace System {
 			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
 		}
 
+		public static Utf8String Join( Utf8String separator, Utf8String* values, int count ) {
+			if( count == 0 ) return "";
+			if( count == 1 ) return values[0];
+
+			uint totalLength = ( count - 1 ) * separator.Length;
+			uint totalByteLength = ( count - 1 ) * separator.ByteLength;
+			for( int i = 0; i < count; ++i ) {
+				totalLength += values[i].Length;
+				totalByteLength += values[i].ByteLength;
+			}
+
+			var result = new Utf8String( totalByteLength, totalLength );
+			var chars = result.GetChars();
+
+			Memory.Copy( chars, values[0].GetChars(), values[0].ByteLength ); chars += values[0].ByteLength;
+
+			for( int i = 1; i < count; ++i ) {
+				Memory.Copy( chars, separator.GetChars(), separator.ByteLength ); chars += separator.ByteLength;
+				Memory.Copy( chars, values[i].GetChars(), values[i].ByteLength ); chars += values[i].ByteLength;
+			}
+
+			result.UpdateHash();
+
+			return result;
+		}
+
+		public static Utf8String Join( Utf8String separator, System.Collections.List<Utf8String> values ) { return Join( separator, values.GetBuffer(), values.Count ); }
+		public static Utf8String Join( Utf8String separator, Utf8String[] values ) { return Join( separator, &values[0], values.Length ); }
+
 		// TODO
 		public bool Contains( Utf8String value ) {
 			if( value.IsNullOrEmpty ) return false;
 			return ( ( string ) this ).Contains( ( string ) value );
 		}
 
-		public override string ToString() { return ( string ) this; }
+		public SbcsString ToSbcsString() { return SbcsString.FromUtf8( this ); }
+		public SbcsString ToSbcsString( System.Text.CodePageID codePage ) { return SbcsString.FromUtf8( codePage, this ); }
+		public Utf8String ToUtf8String() { return this; }
+		public override Utf16String ToString() { return Utf16String.FromUtf8( this ); }
+		public Utf32String ToUtf32String() { return Utf32String.FromUtf8( this ); }
 	}
 
 	[PrimitiveType( Size = sizeof( uintptr ) )]

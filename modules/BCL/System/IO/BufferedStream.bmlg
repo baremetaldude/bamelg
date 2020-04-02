@@ -151,7 +151,7 @@ namespace System.IO {
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-			
+
 			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
 			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 		}
@@ -216,18 +216,24 @@ namespace System.IO {
 			int IStream.Read( vararg MemorySegment segments ) { Assert.Unreachable(); return 0; }
 			void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
 
-			public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+			public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 				if( _stream == null ) return;
 
 				switch( flushKind ) {
 					case FlushKind.Write:
+					case FlushKind.DeepWrite:
 					case FlushKind.SynchronizeWrite:
 						if( _bufferInfo.Position > 0 ) {
 							_stream.Write( &_buffer[0], _bufferInfo.Position );
 							_bufferInfo.Position = 0;
 						}
 
-						if( flushKind == FlushKind.SynchronizeWrite ) _stream.Flush( flushKind ); // we need to go deeper
+						switch( flushKind ) {
+							case FlushKind.DeepWrite:
+							case FlushKind.SynchronizeWrite:
+								_stream.Flush( flushKind );
+								break;
+						}
 
 						break;
 				}

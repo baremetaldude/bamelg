@@ -19,11 +19,15 @@ namespace System.Runtime {
 
 		// @{ this staff lives here to maintain proper load/unload order
 		[ThreadStatic]
-		internal static CachingStack<StringBuilder> _cachedStringBuilders = new CachingStack<StringBuilder>( () => new StringBuilder(), x => x.Clear() );
+		internal static CachingStack<StringBuilder> _cachedStringBuilders = new CachingStack<StringBuilder>( () => new StringBuilder() { IsReferenceCounterAtomic = false }, x => x.Clear() );
 
 		[ThreadStatic]
 		internal static CachingStack<void*> _cachedMemoryPages = new CachingStack<void*>( () => Memory.AllocatePages( 1 ), null, x => Memory.FreePages( x, 1 ) );
 		// @}
+
+		public bool ReferenceEquals( thistype left, thistype right ) {
+			return left == right;
+		}
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private void TrackAllocation() {

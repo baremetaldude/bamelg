@@ -46,7 +46,7 @@ namespace System.Net {
 
 				while( !Fiber.IsCancelled ) {
 					if( requestBuffer->AvailableToRead == 0 ) {
-						WriteStream.Flush( FlushKind.SynchronizeWrite ); // for corking
+						WriteStream.Flush( FlushKind.DeepWrite ); // for corking
 
 						using( Fiber.CancellationRegion() )
 							if( !ReadStream.EnsureReadable( 1 ) )

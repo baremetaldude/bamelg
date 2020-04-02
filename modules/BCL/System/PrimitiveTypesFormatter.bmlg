@@ -64,7 +64,7 @@ namespace System {
 				_writeIndex = 0;
 			}
 
-			private int IntegerDigits {
+			public int IntegerDigits {
 				get { return _decPointPos > 0 ? _decPointPos : 1; }
 			}
 
@@ -911,7 +911,7 @@ namespace System {
 					// case 'C': return FormatCurrency( _precision );
 					case 'D': FormatDecimal( _precision ); break;
 					case 'E': FormatExponential( _precision ); break;
-					case 'F': FormatFixedPoint( _precision ); break;
+					case 'F': FormatFixedPoint( IntegerDigits, _precision ); break;
 					case 'G': FormatGeneral( _precision ); break;
 
 					case 'N': FormatNumber( _precision ); break;
@@ -1004,7 +1004,7 @@ namespace System {
 			public void FormatBinary() {
 			}
 
-			public void FormatFixedPoint( int precision ) {
+			public void FormatFixedPoint( int minIntegerLength, int precision ) {
 				if( precision == -1 )
 					precision = 2;
 
@@ -1013,7 +1013,7 @@ namespace System {
 				if( !_positive )
 					Append( '-' );
 
-				AppendIntegerString( IntegerDigits );
+				AppendIntegerString( minIntegerLength );
 
 				if( precision > 0 ) {
 					Append( '.' );
@@ -1167,40 +1167,90 @@ namespace System {
 		public static Utf16String FormatInt8Utf16( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatInt8Utf32( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf32String(); }
 
+		public static SbcsString FormatInt8Sbcs( sbyte value, string format ) { Instance.Init( format, value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt8Utf8( sbyte value, string format ) { Instance.Init( format, value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt8Utf16( sbyte value, string format ) { Instance.Init( format, value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt8Utf32( sbyte value, string format ) { Instance.Init( format, value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
 		public static SbcsString FormatUInt8Sbcs( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatUInt8Utf8( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatUInt8Utf16( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt8Utf32( byte value ) { Instance.Init(); Instance.FormatUInt8( value ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatUInt8Sbcs( byte value, string format ) { Instance.Init( format, ( uint ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt8Utf8( byte value, string format ) { Instance.Init( format, ( uint ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt8Utf16( byte value, string format ) { Instance.Init( format, ( uint ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt8Utf32( byte value, string format ) { Instance.Init( format, ( uint ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
 		public static SbcsString FormatInt16Sbcs( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatInt16Utf8( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatInt16Utf16( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatInt16Utf32( short value ) { Instance.Init(); Instance.FormatInt16( value ); return Instance.ToUtf32String(); }
 
+		public static SbcsString FormatInt16Sbcs( short value, string format ) { Instance.Init( format, value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt16Utf8( short value, string format ) { Instance.Init( format, value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt16Utf16( short value, string format ) { Instance.Init( format, value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt16Utf32( short value, string format ) { Instance.Init( format, value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
 		public static SbcsString FormatUInt16Sbcs( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatUInt16Utf8( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatUInt16Utf16( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt16Utf32( ushort value ) { Instance.Init(); Instance.FormatUInt16( value ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatUInt16Sbcs( ushort value, string format ) { Instance.Init( format, ( uint ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt16Utf8( ushort value, string format ) { Instance.Init( format, ( uint ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt16Utf16( ushort value, string format ) { Instance.Init( format, ( uint ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt16Utf32( ushort value, string format ) { Instance.Init( format, ( uint ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
 		public static SbcsString FormatInt32Sbcs( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatInt32Utf8( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatInt32Utf16( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatInt32Utf32( int value ) { Instance.Init(); Instance.FormatInt32( value ); return Instance.ToUtf32String(); }
 
+		public static SbcsString FormatInt32Sbcs( int value, string format ) { Instance.Init( format, value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt32Utf8( int value, string format ) { Instance.Init( format, value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt32Utf16( int value, string format ) { Instance.Init( format, value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt32Utf32( int value, string format ) { Instance.Init( format, value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
 		public static SbcsString FormatUInt32Sbcs( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatUInt32Utf8( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatUInt32Utf16( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt32Utf32( uint value ) { Instance.Init(); Instance.FormatUInt32( value ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatUInt32Sbcs( uint value, string format ) { Instance.Init( format, value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt32Utf8( uint value, string format ) { Instance.Init( format, value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt32Utf16( uint value, string format ) { Instance.Init( format, value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt32Utf32( uint value, string format ) { Instance.Init( format, value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
 		public static SbcsString FormatInt64Sbcs( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatInt64Utf8( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatInt64Utf16( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatInt64Utf32( long value ) { Instance.Init(); Instance.FormatInt64( value ); return Instance.ToUtf32String(); }
 
+		public static SbcsString FormatInt64Sbcs( long value, string format ) { Instance.Init( format, value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatInt64Utf8( long value, string format ) { Instance.Init( format, value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatInt64Utf16( long value, string format ) { Instance.Init( format, value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatInt64Utf32( long value, string format ) { Instance.Init( format, value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
 		public static SbcsString FormatUInt64Sbcs( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatUInt64Utf8( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatUInt64Utf16( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt64Utf32( ulong value ) { Instance.Init(); Instance.FormatUInt64( value ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatUInt64Sbcs( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatUInt64Utf8( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatUInt64Utf16( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatUInt64Utf32( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatFloatingPointSbcs( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatFloatingPointSbcs( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
 		public static string FormatInt8Hex( sbyte value ) {
 			Instance.Init();
@@ -1242,16 +1292,31 @@ namespace System {
 			return Instance.ToUtf16String();
 		}
 
-		public static void FormatInteger( StringBuilder builder, string format, sbyte value ) { Instance.Init( format, ( int ) value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, byte value ) { Instance.Init( format, ( int ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, short value ) { Instance.Init( format, ( int ) value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, ushort value ) { Instance.Init( format, ( int ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, int value ) { Instance.Init( format, ( int ) value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, uint value ) { Instance.Init( format, ( uint ) value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, long value ) { Instance.Init( format, ( long ) value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatInteger( StringBuilder builder, string format, ulong value ) { Instance.Init( format, ( ulong ) value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatDouble( StringBuilder builder, string format, float value ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatDouble( StringBuilder builder, string format, double value ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, sbyte value, string format ) { Instance.Init( format, ( int ) value, Int8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, byte value, string format ) { Instance.Init( format, ( int ) value, UInt8DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, short value, string format ) { Instance.Init( format, ( int ) value, Int16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, ushort value, string format ) { Instance.Init( format, ( int ) value, UInt16DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, int value, string format ) { Instance.Init( format, ( int ) value, Int32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, uint value, string format ) { Instance.Init( format, ( uint ) value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, long value, string format ) { Instance.Init( format, ( long ) value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatInteger( StringBuilder builder, ulong value, string format ) { Instance.Init( format, ( ulong ) value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, float value, string format ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, double value, string format ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+
+		public static void FormatFixedPoint( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPoint( StringBuilder builder, float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPoint( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPoint( StringBuilder builder, double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+
+		public static SbcsString FormatFixedPointSbcs( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointUtf8( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointUtf16( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointUtf32( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatFixedPointSbcs( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointUtf8( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointUtf16( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointUtf32( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
 
 		public static string FormatUInt8Hex( byte value ) { return FormatInt8Hex( bitcast<sbyte>( value ) ); }
 		public static string FormatUInt16Hex( ushort value ) { return FormatInt16Hex( bitcast<short>( value ) ); }
@@ -1274,7 +1339,7 @@ namespace System {
 
 		private static byte[24] _12hourMapping = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
-		public static void FormatDateTime( StringBuilder builder, string format, DateTime value ) {
+		public static void FormatDateTime( StringBuilder builder, DateTime value, string format ) {
 			int year, dayOfYear, month, day;
 
 			switch( format ) {
@@ -2108,7 +2173,7 @@ namespace System {
 			return true;
 		}
 
-		public static void FormatTimeSpan( StringBuilder builder, string format, TimeSpan value ) {
+		public static void FormatTimeSpan( StringBuilder builder, TimeSpan value, string format ) {
 			if( value.Ticks < 0 ) {
 				builder.Append( '-' );
 				value.Ticks = -value.Ticks;

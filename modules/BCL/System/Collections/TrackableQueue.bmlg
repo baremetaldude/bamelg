@@ -4,27 +4,42 @@
 // See license at http://bamelg.com/license.txt
 //
 // Usage:
-//	var q = new Queue<int>( 3 );
-//	q.Enqueue( 0 );
-//	q.Dequeue();
-//	q.Enqueue( 1 );
-//	q.AddRange( vararg( new int[3] { 2, 3, 4 }, 3 ) );
-//	foreach( var item in q ) System.Console.WriteLine( item );
+//	var q = new TrackableQueue<int>( 3 );
+//	var _0 = q.Enqueue( 0 );
+//	q.Dequeue( _0 ); // or q.Dequeue();
+//
+//	var _1 = q.Enqueue( 1 );
+//	var _2 = q.Enqueue( 2 );
+//	var _3 = q.Enqueue( 3 );
+//	var _4 = q.Enqueue( 4 );
+//	var last = q.Last();
+//
+//	System.Console.WriteLine( "[{0}]: {1}", _1, q[_1] );
+//	System.Console.WriteLine( "[{0}]: {1}", _2, q[_2] );
+//	System.Console.WriteLine( "[{0}]: {1}", _3, q[_3] );
+//	System.Console.WriteLine( "[{0}]: {1}", _4, q[_4] );
+//	System.Console.WriteLine( "Last: {0}", last );
+//
+//	q.Dequeue( _1 ); // or q.Dequeue();
+//	q.Dequeue( _2 );
+//	q.Dequeue( _3 );
+//	q.Dequeue( _4 );
 //
 
 using System.IO;
 
 namespace System.Collections {
-	public class Queue<T> {
+	public class TrackableQueue<T> {
 		private T[] _items;
 		private uint _tail, _head, _count;
+		private uint _staticIndexOffset;
 		private uint _version;
 
-		public Queue() {
+		public TrackableQueue() {
 			_items = new[16] T;
 		}
 
-		public Queue( int capacity ) {
+		public TrackableQueue( int capacity ) {
 			if( !BitOperations.IsPowerOf2( capacity ) )
 				capacity = BitOperations.NextPowerOf2( capacity );
 
@@ -34,11 +49,12 @@ namespace System.Collections {
 			_items = new[capacity] T;
 		}
 
-		public Queue( Queue<T> other ) {
+		public TrackableQueue( TrackableQueue<T> other ) {
 			if( other == null ) return;
 
 			_items = new[other._items.Length] T;
 			_count = other._count;
+			_staticIndexOffset = other._staticIndexOffset;
 
 			if( other._count > 0 ) {
 				if( other._head < other._tail ) {
@@ -80,9 +96,15 @@ namespace System.Collections {
 			return false;
 		}
 
+		public T Dequeue( uint index ) {
+			System.Diagnostics.Debug.Assert( index == _staticIndexOffset );
+			return Dequeue();
+		}
+
 		public T Dequeue() {
 			System.Diagnostics.Debug.Assert( _count > 0 );
 
+			++_staticIndexOffset;
 			var result = _items[_head];
 
 			_items[_head] = default( T );
@@ -93,18 +115,22 @@ namespace System.Collections {
 			return result;
 		}
 
-		public void Enqueue( T item ) {
+		public uint Enqueue( T item ) {
 			if( _count == ( uint ) _items.Length )
 				SetCapacity( ( uint ) _items.Length * 2U );
 
+			var result = _count + _staticIndexOffset;
 			_items[_tail] = item;
 			_tail = ( _tail + 1 ) & ( ( uint ) _items.Length - 1U );
 			++_count;
 			CommonCollectionOperations.UpdateVersion( &_version );
+
+			return result;
 		}
 
-		public void AddRange( vararg T values ) {
+		public uint AddRange( vararg T values ) {
 			EnsureCapacity( _count + values.Length );
+			var result = _count + _staticIndexOffset;
 
 			if( _head < _tail ) {
 				var available = ( uint ) _items.Length - _tail;
@@ -126,6 +152,8 @@ namespace System.Collections {
 			_tail = ( _tail + values.Length ) & ( ( uint ) _items.Length - 1U );
 			_count += values.Length;
 			CommonCollectionOperations.UpdateVersion( &_version );
+
+			return result;
 		}
 
 		public T Peek() {
@@ -141,38 +169,28 @@ namespace System.Collections {
 		public T Last() {
 			System.Diagnostics.Debug.Assert( _count > 0 );
 
-			return _items[( _tail - 1U ) & ( ( uint ) _items.Length - 1U )];
+			return _items[( _tail - 1U + ( uint ) _items.Length ) & ( ( uint ) _items.Length - 1U )];
 		}
 
 		public uint Count { get { return _count; } }
 
+		public bool IsValid( uint index ) { return index - _staticIndexOffset < _count; }
+
+		public uint FirstIndex { get { return _staticIndexOffset; } }
+
+		public uint LastIndex { get { return _staticIndexOffset + _count - 1; } }
+
 		public T this[uint index] {
 			get {
-				System.Diagnostics.Debug.Assert( index < _count );
+				System.Diagnostics.Debug.Assert( IsValid( index ) );
 
-				return _items[( _head + index ) & ( _items.Length - 1 )];
+				return _items[( _head + index - _staticIndexOffset ) & ( ( uint ) _items.Length - 1U )];
 			}
 
 			set {
-				System.Diagnostics.Debug.Assert( index < _count );
+				System.Diagnostics.Debug.Assert( IsValid( index ) );
 
-				_items[( _head + index ) & ( _items.Length - 1 )] = value;
-			}
-		}
-
-		public T this[int index] {
-			get {
-				System.Diagnostics.Debug.Assert( index >= 0 );
-				System.Diagnostics.Debug.Assert( ( uint ) index < _count );
-
-				return _items[( _head + ( uint ) index ) & ( _items.Length - 1 )];
-			}
-
-			set {
-				System.Diagnostics.Debug.Assert( index >= 0 );
-				System.Diagnostics.Debug.Assert( ( uint ) index < _count );
-
-				_items[( _head + ( uint ) index ) & ( _items.Length - 1 )] = value;
+				_items[( _head + index - _staticIndexOffset ) & ( ( uint ) _items.Length - 1U )] = value;
 			}
 		}
 
@@ -252,7 +270,7 @@ namespace System.Collections {
 					return false;
 				}
 
-				_currentElement = _parent[_index];
+				_currentElement = _parent._items[( _parent._head + _index ) & ( ( uint ) _parent._items.Length - 1U )];
 				return true;
 			}
 

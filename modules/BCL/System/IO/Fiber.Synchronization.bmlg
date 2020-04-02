@@ -292,7 +292,7 @@ namespace System.IO {
 		}
 
 		// Must be used within single OS thread by multiple fibers.
-		// All blocked fibers will be resumed by Signal()
+		// All blocked by this Event fibers will be resumed by Signal(), for non-blocked fibers signal would be lost
 		public struct Event {
 			private FiberInfo* _firstWaiter = null;
 

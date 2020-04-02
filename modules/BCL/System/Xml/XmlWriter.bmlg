@@ -3,22 +3,48 @@
 //
 // See license at http://bamelg.com/license.txt
 //
+// Usage:
+//
+// using( var writer = new XmlWriter( builder ) { Formatting = true } ) {
+// 	writer.Declaration();
+//
+// 	using( writer.Tag( "result" ) ) {
+// 		using( writer.Tag( "subresult" ) ) {
+// 			using( writer.Attribute( "attr" ) ) writer.Write( "value" );
+// 			using( writer.AttributeDoubleQuoted( "dq" ) ) writer.Write( "value2" );
+// 			using( writer.AttributeSingleQuoted( "sq" ) ) writer.Write( "value3" );
+// 		using( writer.Tag( "tag4" ) ) using( writer.Attribute( "attr" ) ) { }
+// 		using( writer.Tag( "tag5" ) ) { }
+// 	}
+// }
 
 using System.IO;
 
-namespace System {
+namespace System.Xml {
 	public class XmlWriter {
-		private const string _declaration = @"<?xml version=""1.0"" encoding=""utf-8""?>";
-
 		protected ITextWriter _writer;
 		protected StringBuilder _formatter = new StringBuilder();
 		public string NewLine { get { return _formatter.NewLine; } set { _formatter.NewLine = value; } }
 
-		public bool PreserveNewlines { get; set; } = false;
+		private enum State {
+			Start,
+			Control,
+
+			Opening,
+			AttributeSingleQuotedValue,
+			AttributeDoubleQuotedValue,
+			Content,
+			Comment,
+		}
+
+		private State _state = State.Start;
+		private int _escapeStart = 0;
+
+		public bool Formatting { get; set; } = false;
 		public bool UseSpaceIndent { get; set; } = true;
+		public bool UseDoubleQuotes { get; set; } = true;
 		public int SpaceIndentCount = 2;
 
-		private bool _tagFinished { get; set; } = true;
 		private bool _closeTagOnNewLine { get; set; } = false;
 
 		public XmlWriter( ITextWriter writer ) {
@@ -30,33 +56,59 @@ namespace System {
 
 		private void Cleanup() {
 			if( _writer != null ) {
+				FlushBuffered();
 				_writer.Flush( FlushKind.Write );
 				_writer = null;
 			}
 		}
 
-		public void Declaration() {
-			_writer.Write( _declaration );
-		}
+		// <?xml version='1.0' encoding='utf-8'?>
+		public void Declaration() { Declaration( new Version( 1, 0 ), "utf-8" ); }
 
-		private void FinishTag() {
-			if( _tagFinished ) return;
-			_tagFinished = true;
-			_writer.Write( '>' );
+		public void Declaration( Version version, string encoding ) {
+			switch( _state ) {
+				case State.Start:
+					_state = State.Opening;
+
+					_formatter.Append( "<?xml" );
+
+					BeginAttribute( "version" ); Write( version );
+					BeginAttribute( "encoding" ); Write( encoding );
+					EndAttribute();
+
+					_formatter.Append( "?>" );
+
+					_escapeStart = _formatter.Length;
+					_state = State.Control;
+
+					break;
+			}
 		}
 
 		protected int _depth;
 
+		private void AppendQuote() { _formatter.Append( UseDoubleQuotes ? '"' : '\'' ); }
+
+		private void FlushBuffered() {
+			if( _formatter.Length > 0 ) {
+				_writer.Write( _formatter );
+				_formatter.Clear();
+			}
+		}
+
 		public void OpenTag( string name ) {
-			_formatter.Clear();
-			if( !_tagFinished ) {
-				FinishTag();
+			bool appendLine = true;
+
+			switch( _state ) {
+				case State.Start: appendLine = false; break;
+				case State.Opening: _formatter.Append( '>' ); break;
+				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( "'>" ); break;
+				case State.AttributeDoubleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _formatter.Append( "\">" ); break;
 			}
 
-			if( PreserveNewlines )
-				_formatter.AppendLine();
+			if( Formatting ) {
+				if( appendLine ) _formatter.AppendLine();
 
-			if( PreserveNewlines ) {
 				if( UseSpaceIndent )
 					_formatter.Append( ' ', _depth * SpaceIndentCount );
 				else
@@ -64,123 +116,366 @@ namespace System {
 			}
 
 			_formatter.Append( '<' ); _formatter.Append( name );
-			_writer.Write( _formatter );
 
 			++_depth;
-			_tagFinished = false;
+			_state = State.Opening;
 			_closeTagOnNewLine = false;
+			_escapeStart = _formatter.Length;
 		}
 
-		public void Attribute( string name, TypedReference value ) {
-			if( !Assert.IsTrue( !_tagFinished ) ) return;
+		public void BeginAttribute( string name ) {
+			BeginAttribute( name, UseDoubleQuotes );
+		}
 
-			_formatter.Clear();
+		public void BeginAttribute( string name, bool doubleQuoted ) {
+			switch( _state ) {
+				case State.Content:
+				case State.Control:
+				case State.Start:
+					return;
+
+				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( '\'' ); break;
+				case State.AttributeDoubleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _formatter.Append( '"' ); break;
+			}
+
 			_formatter.Append( ' ' );
 			_formatter.Append( name );
 			_formatter.Append( '=' );
-			_formatter.Append( '"' );
-			_writer.Write( _formatter );
 
-			_formatter.Clear();
-			_formatter.Append( value );
-			EscapeFormatter();
-			_formatter.Append( '"' );
-			_writer.Write( _formatter );
+			if( doubleQuoted ) {
+				_formatter.Append( '"' );
+				_state = State.AttributeDoubleQuotedValue;
+			}
+			else {
+				_formatter.Append( '\'' );
+				_state = State.AttributeSingleQuotedValue;
+			}
+
+			_escapeStart = _formatter.Length;
+		}
+
+		public void EndAttribute() {
+			switch( _state ) {
+				case State.AttributeSingleQuotedValue:
+					TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute );
+					_formatter.Append( '\'' );
+					_state = State.Opening;
+					_escapeStart = _formatter.Length;
+					break;
+
+				case State.AttributeDoubleQuotedValue:
+					TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute );
+					_formatter.Append( '"' );
+					_state = State.Opening;
+					_escapeStart = _formatter.Length;
+					break;
+			}
 		}
 
 		public void CloseTag( string name ) {
-			_formatter.Clear();
+			switch( _state ) {
+				case State.Start: return;
+
+				case State.Content:
+					TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue );
+					goto case State.Control;
+
+				case State.Control:
+					if( _closeTagOnNewLine & Formatting ) {
+						_formatter.AppendLine();
+
+						if( UseSpaceIndent )
+							_formatter.Append( ' ', ( _depth - 1 ) * SpaceIndentCount );
+						else
+							_formatter.Append( '\t', ( _depth - 1 ) );
+					}
+
+					_formatter.Append( "</" );
+					_formatter.Append( name );
+					_formatter.Append( '>' );
+					break;
+
+				case State.Opening:
+					_formatter.Append( "/>" );
+					break;
+
+				case State.AttributeSingleQuotedValue:
+					_formatter.Append( "'/>" );
+					break;
+
+				case State.AttributeDoubleQuotedValue:
+					_formatter.Append( "\"/>" );
+					break;
+			}
+
 			--_depth;
-
-			if( _tagFinished ) {
-				if( _closeTagOnNewLine & PreserveNewlines ) {
-					_formatter.AppendLine();
-
-					if( UseSpaceIndent )
-						_formatter.Append( ' ', _depth * SpaceIndentCount );
-					else
-						_formatter.Append( '\t', _depth );
-				}
-
-				_formatter.Append( "</" ); _formatter.Append( name ); _formatter.Append( '>' );
-			}
-			else {
-				_formatter.Append( "/>" );
-				_tagFinished = true;
-			}
-
-			_writer.Write( _formatter );
+			_state = State.Control;
 			_closeTagOnNewLine = true;
+			_escapeStart = _formatter.Length;
 		}
 
-		private static string[,] EscapeStrings = new[7, 2] string {
-			{ "&", "&amp;" },
-			{ "<", "&lt;" },
-			{ ">", "&gt;" },
-			{ "\"", "&quot;" },
-			{ "©", "&copy;" },
-			{ "®", "&reg;" },
-			{ "°", "&deg;" }
-		};
+		public void BeginComment() {
+			switch( _state ) {
+				case State.Opening:
+					_formatter.Append( '>' );
+					break;
 
-		private void EscapeFormatter() {
-			for( var i = 0; i < EscapeStrings.GetLength( 0 ); ++i )
-				_formatter.Replace( EscapeStrings[i, 0], EscapeStrings[i, 1] );
+				case State.Content:
+					TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue );
+					break;
+
+				case State.Start:
+				case State.Control:
+					break;
+
+				case State.AttributeSingleQuotedValue:
+				case State.AttributeDoubleQuotedValue:
+					EndAttribute();
+					break;
+
+				default: return;
+			}
+
+			_state = State.Comment;
+			_formatter.Append( "<!--" );
+			_escapeStart = _formatter.Length;
 		}
 
-		public void Write( string value ) {
-			FinishTag();
-			_formatter.Clear();
-			_formatter.Append( value );
+		public void EndComment() {
+			switch( _state ) {
+				case State.Comment: break;
 
-			EscapeFormatter();
-			_writer.Write( _formatter );
+				default: return;
+			}
+
+			_state = State.Control;
+			_formatter.Append( "-->" );
+			_escapeStart = _formatter.Length;
 		}
 
-		public void WriteUnescaped( string value ) {
-			FinishTag();
-			_writer.Write( value );
+		protected void StartWrite() {
+			switch( _state ) {
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _escapeStart = _formatter.Length; break;
+				case State.Control: _state = State.Content; _escapeStart = _formatter.Length; break;
+			}
 		}
 
-		public void Write( TypedReference value ) {
-			FinishTag();
-			_formatter.Clear();
-			_formatter.Append( value, "" );
+		public void Write( string unescapedValue ) {
+			StartWrite();
 
-			EscapeFormatter();
-			_writer.Write( _formatter );
+			_formatter.Append( unescapedValue );
+		}
+
+		public void Write( StringBuilder unescapedValue ) {
+			StartWrite();
+
+			_formatter.Append( unescapedValue );
+		}
+
+		public void WriteUnescaped( string escapedValue ) {
+			switch( _state ) {
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeDoubleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+			}
+		}
+
+		public void Write( TypedReference value, string format = "" ) {
+			StartWrite();
+
+			_formatter.Append( value, format );
 		}
 
 		public void Write( [VerifyFormatString] string format, vararg TypedReference parameters ) {
-			FinishTag();
-			_formatter.Clear();
-			_formatter.AppendFormat( format, vararg( parameters, parameters.Length ) );
+			StartWrite();
 
-			EscapeFormatter();
-			_writer.Write( _formatter );
+			_formatter.AppendFormat( format, vararg( parameters, parameters.Length ) );
 		}
 
-		/// Usage:
-		/// using( writer.Tag( "td" ) ) writer.Write( "Hello" );
+		private void WriteEscaped( int start, Functors.Func<char*, int, int, int> searcher ) {
+			if( !TryWriteEscaped( start, searcher ) ) {
+				_writer.Write( _formatter );
+				_formatter.Clear();
+			}
+		}
+
+		private bool TryWriteEscaped( int start, Functors.Func<char*, int, int, int> searcher ) {
+			var buffer = _formatter.GetChars();
+			var length = _formatter.Length;
+
+			var nonEscapedSegmentStart = 0;
+			var firstIndex = searcher( buffer, length, start );
+			if( firstIndex == -1 ) return false;
+
+			int segmentLength = 0;
+			while( firstIndex != -1 ) {
+				segmentLength = firstIndex - nonEscapedSegmentStart;
+				switch( segmentLength ) {
+					case 0: break;
+					case 1: _writer.Write( buffer[nonEscapedSegmentStart] ); break;
+					default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, ( uint ) segmentLength ) ); break;
+				}
+
+				WriteEscaped( buffer[firstIndex] );
+
+				nonEscapedSegmentStart = firstIndex + 1;
+				firstIndex = searcher( buffer, length, nonEscapedSegmentStart );
+			}
+
+			segmentLength = _formatter.Length - nonEscapedSegmentStart;
+			switch( segmentLength ) {
+				case 0: break;
+				case 1: _writer.Write( buffer[nonEscapedSegmentStart] ); break;
+				default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, ( uint ) segmentLength ) ); break;
+			}
+
+			_formatter.Clear();
+			return true;
+		}
+
+		private void WriteEscaped( char @char ) {
+			switch( @char ) {
+				case '&': _writer.Write( "&amp;" ); break;
+				case '<': _writer.Write( "&lt;" ); break;
+				case '>': _writer.Write( "&gt;" ); break;
+				case '\'': _writer.Write( "&apos;" ); break;
+				case '"': _writer.Write( "&quot;" ); break;
+				case '\r': _writer.Write( "&#13;" ); break;
+				case '\n': _writer.Write( "&#10;" ); break;
+			}
+		}
+
+		private static int IndexOfEscapeCharacterInValue( char* buffer, int length, int start ) {
+			for( var i = start; i < length; ++i ) {
+				switch( buffer[i] ) {
+					case '&':
+					case '<':
+					case '>':
+					case '\'':
+					case '"':
+						return i;
+				}
+			}
+
+			return -1;
+		}
+
+		private static int IndexOfEscapeCharacterInSingleQuotedAttribute( char* buffer, int length, int start ) {
+			for( var i = start; i < length; ++i ) {
+				switch( buffer[i] ) {
+					case '&':
+					case '<':
+					// case '>':
+					case '\'':
+					case '\r':
+					case '\n':
+						return i;
+				}
+			}
+
+			return -1;
+		}
+
+		private static int IndexOfEscapeCharacterInDoubleQuotedAttribute( char* buffer, int length, int start ) {
+			for( var i = start; i < length; ++i ) {
+				switch( buffer[i] ) {
+					case '&':
+					case '<':
+					// case '>':
+					case '"':
+					case '\r':
+					case '\n':
+						return i;
+				}
+			}
+
+			return -1;
+		}
+
+		public CommentRegion Comment() { return new CommentRegion( this ); }
+
+		public struct CommentRegion : IDisposable {
+			private readonly void* _parent;
+
+			public CommentRegion( declaringtype parent ) {
+				_parent = bitcast<void*>( parent );
+
+				parent.BeginComment();
+			}
+
+			public void Dispose() {
+				bitcast<declaringtype>( _parent ).EndComment();
+			}
+		}
+
 		public TagRegion Tag( string name ) { return new TagRegion( this, name ); }
 
 		public struct TagRegion : IDisposable {
 			public readonly string Name;
-			private readonly declaringtype _parent;
+			private readonly void* _parent;
 
 			public TagRegion( declaringtype parent, string name ) {
-				_parent = parent;
+				_parent = bitcast<void*>( parent );
 				Name = name;
 
-				_parent.OpenTag( Name );
+				parent.OpenTag( Name );
 			}
 
 			public void Dispose() {
-				_parent.CloseTag( Name );
+				bitcast<declaringtype>( _parent ).CloseTag( Name );
 			}
 		}
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) { FinishTag(); _writer.Flush( flushKind ); }
-		public void WriteLine() { FinishTag(); _writer.WriteLine(); }
+		public AttributeRegion Attribute( string name ) { return new AttributeRegion( this, name, UseDoubleQuotes ); }
+		public AttributeRegion AttributeSingleQuoted( string name ) { return new AttributeRegion( this, name, false ); }
+		public AttributeRegion AttributeDoubleQuoted( string name ) { return new AttributeRegion( this, name, true ); }
+
+		public struct AttributeRegion : IDisposable {
+			private readonly void* _parent;
+
+			public AttributeRegion( declaringtype parent, string name, bool doubleQuoted ) {
+				_parent = bitcast<void*>( parent );
+
+				parent.BeginAttribute( name, doubleQuoted );
+			}
+
+			public void Dispose() {
+				bitcast<declaringtype>( _parent ).EndAttribute();
+			}
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
+			switch( _state ) {
+				case State.Comment:
+				case State.Control: FlushBuffered(); _escapeStart = 0; return;
+
+				case State.Content: WriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _escapeStart = 0; break;
+				case State.AttributeSingleQuotedValue: WriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _escapeStart = 0; break;
+				case State.AttributeDoubleQuotedValue: WriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _escapeStart = 0; break;
+			}
+
+			switch( flushKind ) {
+				case FlushKind.DeepWrite:
+				case FlushKind.SynchronizeWrite:
+					_writer.Flush( flushKind );
+					break;
+			}
+		}
+
+		public void WriteLine() {
+			switch( _state ) {
+				case State.Comment:
+				case State.Content:
+				case State.Control:
+				case State.Opening:
+				case State.AttributeSingleQuotedValue:
+				case State.AttributeDoubleQuotedValue:
+					_formatter.AppendLine();
+					return;
+			}
+		}
 	}
 }

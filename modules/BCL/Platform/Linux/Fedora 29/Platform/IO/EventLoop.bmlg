@@ -409,8 +409,8 @@ namespace Platform.IO {
 				_notificationPipe[PipeHandle.WriteEnd].Write( &command, sizeof( command ) );
 			}
 
-			public void RequestExit() { if( !atomic( _exitRequestPending = true ) ) SendCommand( NotificationCommand.Exit ); } // dont overwhelm pipe
-			public void NotifyNewDispatcherTasks() { if( !atomic( _newDispatcherTasks = true ) ) SendCommand( NotificationCommand.NewDispatcherTasks ); } // dont overwhelm pipe
+			public void RequestExit() { if( !atomic( _exitRequestPending = true, Relaxed ) ) SendCommand( NotificationCommand.Exit ); } // dont overwhelm pipe
+			public void NotifyNewDispatcherTasks() { if( !atomic( _newDispatcherTasks = true, Relaxed ) ) SendCommand( NotificationCommand.NewDispatcherTasks ); } // dont overwhelm pipe
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
@@ -572,7 +572,7 @@ namespace Platform.IO {
 			}
 
 			public void Notify() {
-				var id = atomic( Parent.PollId, Unordered );
+				var id = atomic( Parent.PollId, Relaxed );
 
 				// eliminate unnecessary syscalls
 				if( atomic( _notificationId = id, Relaxed ) == id ) return;
@@ -581,9 +581,8 @@ namespace Platform.IO {
 			}
 
 			public override void OnEvent( epoll_event& @event ) {
-				var id = atomic( Parent.PollId, Unordered ) ^ ( int ) 0x80000000;
+				atomic( --_notificationId, Relaxed );
 
-				atomic( _notificationId = id, Relaxed );
 				_eventHandle.Decrement();
 				OnNotified();
 			}
@@ -834,55 +833,7 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		// private DispatcherRealtimeEventSink _dispatcherUtcAlarmEventSink;
-		// private DispatcherUnbiasedAlarmEventSink _dispatcherUnbiasedAlarmEventSink;
-
-		// private sealed class DispatcherRealtimeEventSink : TimerEventSink {
-		// 	public override void OnRaised( long expirations ) { Parent.OnUtcAlarm(); }
-
-		// 	public DispatcherRealtimeEventSink( EventLoop parent )
-		// 		: base( parent, ClockType.CLOCK_REALTIME ) {
-		// 	}
-		// }
-
-		// private sealed class DispatcherUnbiasedAlarmEventSink : TimerEventSink {
-		// 	public override void OnRaised( long expirations ) { Parent.OnUnbiasedAlarm(); }
-
-		// 	public DispatcherUnbiasedAlarmEventSink( EventLoop parent )
-		// 		: base( parent, ClockType.CLOCK_MONOTONIC ) {
-		// 	}
-		// }
-
-		// private void InitDispatcher() {
-		// 	_dispatcherUtcAlarmEventSink = new DispatcherRealtimeEventSink( this );
-		// 	_dispatcherUtcAlarmEventSink.Register();
-
-		// 	_dispatcherUnbiasedAlarmEventSink = new DispatcherUnbiasedAlarmEventSink( this );
-		// 	_dispatcherUnbiasedAlarmEventSink.Register();
-		// }
-
-		// private void CloseDispatcher() {
-		// 	ExecuteTasks();
-
-		// 	if( _dispatcherUtcAlarmEventSink != null ) { _dispatcherUtcAlarmEventSink.Unregister(); _dispatcherUtcAlarmEventSink = null; }
-		// 	if( _dispatcherUnbiasedAlarmEventSink != null ) { _dispatcherUnbiasedAlarmEventSink.Unregister(); _dispatcherUnbiasedAlarmEventSink = null; }
-		// }
-
-		// protected override void StopAlarm( AlarmKind kind ) {
-		// 	switch( kind ) {
-		// 		case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.Stop(); break;
-		// 		case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.Stop(); break;
-		// 	}
-		// }
-
-		// protected override void SetAlarm( AlarmKind kind, TimeSpan time ) {
-		// 	switch( kind ) {
-		// 		case AlarmKind.Utc: _dispatcherUtcAlarmEventSink.SetInterval( time ); break;
-		// 		case AlarmKind.Unbiased: _dispatcherUnbiasedAlarmEventSink.SetInterval( time ); break;
-		// 	}
-		// }
-
-		protected sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
 
 		#endregion
 

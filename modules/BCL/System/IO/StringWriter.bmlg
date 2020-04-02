@@ -21,7 +21,7 @@ namespace System.IO {
 			Buffer = buffer;
 		}
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 		}
 
 		public void WriteLine() { Buffer.AppendLine(); }
@@ -71,11 +71,17 @@ namespace System.IO {
 		public void Write( CString value ) { Buffer.Append( value ); }
 		public void WriteLine( CString value ) { Buffer.Append( value ); Buffer.AppendLine(); }
 
+		public void Write( CStringSpan value ) { Buffer.Append( value ); }
+		public void WriteLine( CStringSpan value ) { Buffer.Append( value ); Buffer.AppendLine(); }
+
 		public void Write( Utf8String value ) { Buffer.Append( value ); }
 		public void WriteLine( Utf8String value ) { Write( value ); WriteLine(); }
 
 		public void Write( CUtf8String value ) { Buffer.Append( value ); }
 		public void WriteLine( CUtf8String value ) { Buffer.Append( value ); Buffer.AppendLine(); }
+
+		public void Write( CUtf8StringSpan value ) { Buffer.Append( value ); }
+		public void WriteLine( CUtf8StringSpan value ) { Buffer.Append( value ); Buffer.AppendLine(); }
 
 		public void Write( Utf16String value ) { Buffer.Append( value ); }
 		public void WriteLine( Utf16String value ) { Write( value ); WriteLine(); }
@@ -83,11 +89,17 @@ namespace System.IO {
 		public void Write( CUtf16String value ) { Buffer.Append( value ); }
 		public void WriteLine( CUtf16String value ) { Buffer.Append( value ); Buffer.AppendLine(); }
 
+		public void Write( CUtf16StringSpan value ) { Buffer.Append( value ); }
+		public void WriteLine( CUtf16StringSpan value ) { Buffer.Append( value ); Buffer.AppendLine(); }
+
 		public void Write( Utf32String value ) { Buffer.Append( value ); }
 		public void WriteLine( Utf32String value ) { Write( value ); WriteLine(); }
 
 		public void Write( CUtf32String value ) { Buffer.Append( value ); }
 		public void WriteLine( CUtf32String value ) { Buffer.Append( value ); Buffer.AppendLine(); }
+
+		public void Write( CUtf32StringSpan value ) { Buffer.Append( value ); }
+		public void WriteLine( CUtf32StringSpan value ) { Buffer.Append( value ); Buffer.AppendLine(); }
 
 		public void Write( StringBuilder value ) { Buffer.Append( value ); }
 		public void WriteLine( StringBuilder value ) { Write( value ); WriteLine(); }

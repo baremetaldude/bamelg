@@ -206,7 +206,11 @@ namespace System {
 			return ( Utf16String ) new CUtf16StringSpan( GetChars() + startIndex, ( uint )( endIndex - startIndex + 1 ) );
 		}
 
+		public SbcsString ToSbcsString() { return SbcsString.FromUtf16( this ); }
+		public SbcsString ToSbcsString( System.Text.CodePageID codePage ) { return SbcsString.FromUtf16( codePage, this ); }
+		public Utf8String ToUtf8String() { return Utf8String.FromUtf16( this ); }
 		public override Utf16String ToString() { return this; }
+		public Utf32String ToUtf32String() { return Utf32String.FromUtf16( this ); }
 
 		public List<Utf16String> Split( Utf16String separator ) {
 			return Split( separator, int.MaxValue, StringSplitOptions.None );

@@ -27,7 +27,7 @@ namespace Platform.IO {
 			set { Close(); _handle = value; }
 		}
 
-		public bool CloseHandle = true;
+		public bool CloseHandle { get; set; } = true;
 		public string Context;
 
 		public FileStream() { }
@@ -105,7 +105,7 @@ namespace Platform.IO {
 			}
 		}
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			if( !_handle.IsValid ) return;
 
 			switch( flushKind ) {
@@ -117,9 +117,9 @@ namespace Platform.IO {
 		}
 
 		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); if( !result.OpenRead( name ) ) return null; return result; }
-		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenWrite( name, permission ) ) return null; return result; }
-		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenReadWrite( name, permission ) ) return null; return result; }
-		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); if( !result.OpenAppend( name, permission ) ) return null; return result; }
+		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) { var result = new FileStream(); if( !result.OpenWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) { var result = new FileStream(); if( !result.OpenReadWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true ) { var result = new FileStream(); if( !result.OpenAppend( name, permission, createNew ) ) return null; return result; }
 
 		public bool OpenRead( CUtf8String name ) {
 			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
@@ -139,14 +139,17 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
 			var exists = FileHandle.Exists( name );
 
 			Context = ( string ) name;
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_TRUNC, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_WRONLY | ( truncateExistingData ? FctlFlags.O_TRUNC : ( FctlFlags ) 0 ), permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -158,14 +161,17 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
 			var exists = FileHandle.Exists( name );
 
 			Context = ( string ) name;
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_RDWR | FctlFlags.O_TRUNC, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_RDWR | ( truncateExistingData ? FctlFlags.O_TRUNC : ( FctlFlags ) 0 ), permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -177,14 +183,17 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public bool OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+		public bool OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
 			var exists = FileHandle.Exists( name );
 
 			Context = ( string ) name;
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_APPEND, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_WRONLY | FctlFlags.O_APPEND, permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;

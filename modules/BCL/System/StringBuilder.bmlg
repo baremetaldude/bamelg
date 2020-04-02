@@ -42,34 +42,36 @@ namespace System {
 
 		public void AppendLine() { Append( NewLine ); }
 
-		public void Append( void* value ) { PrimitiveTypesFormatter.FormatInteger( this, "X" + ( sizeof( void* ) * 2 ), ( uintptr ) value ); }
-		public void Append( void* value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "X" + ( sizeof( void* ) * 2 ), ( uintptr ) value ); }
+		public void Append( void* value ) { PrimitiveTypesFormatter.FormatInteger( this, ( uintptr ) value, "X" + ( sizeof( void* ) * 2 ) ); }
+		public void Append( void* value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, ( uintptr ) value, format ?? "X" + ( sizeof( void* ) * 2 ) ); }
 
-		public void Append( TimeSpan value ) { PrimitiveTypesFormatter.FormatTimeSpan( this, "c", value ); }
-		public void Append( DateTime value ) { PrimitiveTypesFormatter.FormatDateTime( this, "G", value ); }
+		public void Append( TimeSpan value ) { PrimitiveTypesFormatter.FormatTimeSpan( this, value, "c" ); }
+		public void Append( DateTime value ) { PrimitiveTypesFormatter.FormatDateTime( this, value, "G" ); }
 
-		public void Append( sbyte value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( byte value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( short value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( ushort value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( int value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( uint value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( long value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( ulong value ) { PrimitiveTypesFormatter.FormatInteger( this, "D", value ); }
-		public void Append( double value ) { PrimitiveTypesFormatter.FormatDouble( this, "G", value ); }
+		public void Append( sbyte value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( byte value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( short value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( ushort value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( int value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( uint value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( long value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( ulong value ) { PrimitiveTypesFormatter.FormatInteger( this, value, "D" ); }
+		public void Append( float value ) { PrimitiveTypesFormatter.FormatFloatingPoint( this, value, "G" ); }
+		public void Append( double value ) { PrimitiveTypesFormatter.FormatFloatingPoint( this, value, "G" ); }
 
-		public void Append( sbyte value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( byte value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( short value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( ushort value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( int value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( uint value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( long value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( ulong value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, format ?? "D", value ); }
-		public void Append( double value, string format ) { PrimitiveTypesFormatter.FormatDouble( this, format ?? "G", value ); }
+		public void Append( sbyte value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( byte value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( short value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( ushort value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( int value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( uint value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( long value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( ulong value, string format ) { PrimitiveTypesFormatter.FormatInteger( this, value, format ?? "D" ); }
+		public void Append( float value, string format ) { PrimitiveTypesFormatter.FormatFloatingPoint( this, value, format ?? "G" ); }
+		public void Append( double value, string format ) { PrimitiveTypesFormatter.FormatFloatingPoint( this, value, format ?? "G" ); }
 
-		public void Append( TimeSpan value, string format ) { PrimitiveTypesFormatter.FormatTimeSpan( this, format ?? "c", value ); }
-		public void Append( DateTime value, string format ) { PrimitiveTypesFormatter.FormatDateTime( this, format ?? "G", value ); }
+		public void Append( TimeSpan value, string format ) { PrimitiveTypesFormatter.FormatTimeSpan( this, value, format ?? "c" ); }
+		public void Append( DateTime value, string format ) { PrimitiveTypesFormatter.FormatDateTime( this, value, format ?? "G" ); }
 
 		public void Append( Guid value ) { value.ToString( this, "" ); }
 		public void Append( Guid value, string format ) { value.ToString( this, format ?? "" ); }
@@ -220,28 +222,38 @@ namespace System {
 				var textEnd = uint.MaxValue;
 
 				while( parsingPosition < format.Length ) {
-					var currentCharPos = parsingPosition;
-					currentChar = formatChars[currentCharPos];
-					++parsingPosition;
+					currentChar = formatChars[parsingPosition];
 
 					if( currentChar == '}' ) {
-						if( parsingPosition < format.Length && formatChars[parsingPosition] == '}' )
+						if( parsingPosition + 1 < format.Length && formatChars[parsingPosition + 1] == '}' ) {
 							++parsingPosition;
+
+							if( textStart != uint.MaxValue ) {
+								Append( formatChars + textStart, ( int )( textEnd - textStart + 1 ) );
+								textEnd = textStart = uint.MaxValue;
+							}
+						}
 						else
 							goto incorrect_format;
 					}
 
 					if( currentChar == '{' ) {
-						if( parsingPosition < format.Length && formatChars[parsingPosition] == '{' )
+						if( parsingPosition + 1 < format.Length && formatChars[parsingPosition + 1] == '{' ) {
 							++parsingPosition;
+
+							if( textStart != uint.MaxValue ) {
+								Append( formatChars + textStart, ( int )( textEnd - textStart + 1 ) );
+								textEnd = textStart = uint.MaxValue;
+							}
+						}
 						else {
-							--parsingPosition;
 							break;
 						}
 					}
 
-					if( textStart == uint.MaxValue ) textStart = currentCharPos;
-					textEnd = currentCharPos;
+					if( textStart == uint.MaxValue ) textStart = parsingPosition;
+					textEnd = parsingPosition;
+					++parsingPosition;
 				}
 
 				if( textStart != uint.MaxValue )
@@ -787,6 +799,7 @@ namespace System {
 				Append( item );
 		}
 
+		// Ready-to-use instances of StringBuilder with non-atomic reference counter
 		public static CachingStack<StringBuilder> CachedBuilders { get { return RuntimeObjectBase._cachedStringBuilders; } }
 	}
 

@@ -347,6 +347,11 @@ namespace Platform.Libc {
 		public extern static int tcsendbreak( IOHandle fd, int duration );
 		public extern static int tcsetattr( IOHandle fd, TerminalSetAttributesBehaviour optionalActions, termios* termiosP );
 
+		public extern static void if_freenameindex( if_nameindex* ptr );
+		public extern static sbyte* if_indextoname( uint ifindex, CUtf8String ifname );
+		public extern static if_nameindex* if_nameindex();
+		public extern static uint if_nametoindex( CUtf8String ifname );
+
 		public extern static int bindresvport( int sockfd, sockaddr_in* sockIn );
 		public extern static int getipv4sourcefilter( int s, in_addr interfaceAddr, in_addr group, uint* fmode, uint* numsrc, in_addr* slist );
 		public extern static int getsourcefilter( int s, uint interfaceAddr, sockaddr* group, uint grouplen, uint* fmode, uint* numsrc, sockaddr_storage* slist );
@@ -2659,6 +2664,26 @@ namespace Platform.Libc {
 		P_PID =  1,
 		P_PGID = 2,
 	}
+	[Flags]
+	public enum InterfaceFlag : uint {
+		None =              0,
+		IFF_UP =            1,
+		IFF_BROADCAST =     2,
+		IFF_DEBUG =         4,
+		IFF_LOOPBACK =      8,
+		IFF_POINTOPOINT =  16,
+		IFF_NOTRAILERS =   32,
+		IFF_RUNNING =      64,
+		IFF_NOARP =       128,
+		IFF_PROMISC =     256,
+		IFF_ALLMULTI =    512,
+		IFF_MASTER =     1024,
+		IFF_SLAVE =      2048,
+		IFF_MULTICAST =  4096,
+		IFF_PORTSEL =    8192,
+		IFF_AUTOMEDIA = 16384,
+		IFF_DYNAMIC =   32768,
+	}
 	public enum IPPort : uint {
 		IPPORT_ECHO =            7,
 		IPPORT_DISCARD =         9,
@@ -3570,6 +3595,8 @@ namespace Platform.Libc {
 		Val_GNU_MIPS_ABI_FP_64 =     6,
 		Val_GNU_MIPS_ABI_FP_64A =    7,
 		Val_GNU_MIPS_ABI_FP_MAX =    7,
+	}
+	public partial struct __iseqsig_type {
 	}
 	public partial struct __iseqsig_type {
 	}
@@ -4889,6 +4916,28 @@ namespace Platform.Libc {
 	[PrimitiveType( Size = sizeof( void* ) )]
 	public partial struct iconv_t {
 	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct if_nameindex {
+		[ExplicitOffset( Offset = 0 )]
+		public uint if_index;
+		[ExplicitOffset( Offset = 8 )]
+		public CUtf8String if_name;
+	}
+	public partial struct iface {
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ifaddr {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr ifa_addr;
+		[ExplicitOffset( Offset = 16 )]
+		public UnnamedUnion_712F14EC ifa_ifu;
+		[ExplicitOffset( Offset = 32 )]
+		public iface* ifa_ifp;
+		[ExplicitOffset( Offset = 40 )]
+		public ifaddr* ifa_next;
+	}
 	[ExplicitSize( Size = 56 )]
 	[Alignment( Boundary = 8 )]
 	public partial struct ifaddrs {
@@ -4906,6 +4955,38 @@ namespace Platform.Libc {
 		public UnnamedUnion_EA05F89D ifa_ifu;
 		[ExplicitOffset( Offset = 48 )]
 		public void* ifa_data;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ifconf {
+		[ExplicitOffset( Offset = 0 )]
+		public int ifc_len;
+		[ExplicitOffset( Offset = 8 )]
+		public UnnamedUnion_712F1804 ifc_ifcu;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ifmap {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr mem_start;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr mem_end;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort base_addr;
+		[ExplicitOffset( Offset = 18 )]
+		public byte irq;
+		[ExplicitOffset( Offset = 19 )]
+		public byte dma;
+		[ExplicitOffset( Offset = 20 )]
+		public byte port;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ifreq {
+		[ExplicitOffset( Offset = 0 )]
+		public UnnamedUnion_712F1E15 ifr_ifrn;
+		[ExplicitOffset( Offset = 16 )]
+		public UnnamedUnion_712F1EB0 ifr_ifru;
 	}
 	[ExplicitSize( Size = 4 )]
 	[Alignment( Boundary = 4 )]
@@ -5305,6 +5386,18 @@ namespace Platform.Libc {
 		public ushort sa_family;
 		[ExplicitOffset( Offset = 2 )]
 		public byte[14] sa_data;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct packet_mreq {
+		[ExplicitOffset( Offset = 0 )]
+		public int mr_ifindex;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort mr_type;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort mr_alen;
+		[ExplicitOffset( Offset = 8 )]
+		public byte[8] mr_address;
 	}
 	[ExplicitSize( Size = 48 )]
 	[Alignment( Boundary = 8 )]
@@ -5782,6 +5875,24 @@ namespace Platform.Libc {
 		public byte sipx_type;
 		[ExplicitOffset( Offset = 15 )]
 		public byte sipx_zero;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sockaddr_ll {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sll_family;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sll_protocol;
+		[ExplicitOffset( Offset = 4 )]
+		public int sll_ifindex;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort sll_hatype;
+		[ExplicitOffset( Offset = 10 )]
+		public byte sll_pkttype;
+		[ExplicitOffset( Offset = 11 )]
+		public byte sll_halen;
+		[ExplicitOffset( Offset = 12 )]
+		public byte[8] sll_addr;
 	}
 	[ExplicitSize( Size = 28 )]
 	[Alignment( Boundary = 4 )]
@@ -6567,6 +6678,55 @@ namespace Platform.Libc {
 		public uint d_val;
 		[Overlapped( Offset = 0 )]
 		public uint d_ptr;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct UnnamedUnion_712F14EC {
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifu_broadaddr;
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifu_dstaddr;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_712F1804 {
+		[Overlapped( Offset = 0 )]
+		public sbyte* ifcu_buf;
+		[Overlapped( Offset = 0 )]
+		public ifreq* ifcu_req;
+	}
+	[ExplicitSize( Size = 16 )]
+	public partial struct UnnamedUnion_712F1E15 {
+		[Overlapped( Offset = 0 )]
+		public sbyte[16] ifrn_name;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedUnion_712F1EB0 {
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifru_addr;
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifru_dstaddr;
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifru_broadaddr;
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifru_netmask;
+		[Overlapped( Offset = 0 )]
+		public sockaddr ifru_hwaddr;
+		[Overlapped( Offset = 0 )]
+		public short ifru_flags;
+		[Overlapped( Offset = 0 )]
+		public int ifru_ivalue;
+		[Overlapped( Offset = 0 )]
+		public int ifru_mtu;
+		[Overlapped( Offset = 0 )]
+		public ifmap ifru_map;
+		[Overlapped( Offset = 0 )]
+		public sbyte[16] ifru_slave;
+		[Overlapped( Offset = 0 )]
+		public sbyte[16] ifru_newname;
+		[Overlapped( Offset = 0 )]
+		public sbyte* ifru_data;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]

@@ -7,7 +7,8 @@
 namespace System.Collections {
 	public class List<T> {
 		private T[] _items;
-		private int _count, _version;
+		private int _count;
+		private uint _version;
 
 		public List() {
 			_items = new[16] T;
@@ -234,7 +235,7 @@ namespace System.Collections {
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private readonly declaringtype _parent;
-			private readonly int _version;
+			private readonly uint _version;
 			private int _index;
 
 			internal Enumerator( declaringtype parent ) {

@@ -11,11 +11,11 @@ using Platform.Zlib;
 
 namespace Platform.IO {
 	public static class DeflateStream {
-		public static IStream CreateRead( IStream stream ) { return new ReadStream( stream, false ); }
-		public static IStream CreateWrite( IStream stream, int level ) { return new WriteStream( stream, level, false ); }
+		public static ReadStream CreateRead( IStream stream ) { return new ReadStream( stream, false ); }
+		public static WriteStream CreateWrite( IStream stream, int level ) { return new WriteStream( stream, level, false ); }
 
-		public static IStream CreateGZRead( IStream stream ) { return new ReadStream( stream, true ); }
-		public static IStream CreateGZWrite( IStream stream, int level ) { return new WriteStream( stream, level, true ); }
+		public static ReadStream CreateGZRead( IStream stream ) { return new ReadStream( stream, true ); }
+		public static WriteStream CreateGZWrite( IStream stream, int level ) { return new WriteStream( stream, level, true ); }
 
 		public interface IEventHandler {
 			void OnError( ZlibError error );
@@ -37,7 +37,7 @@ namespace Platform.IO {
 			}
 		}
 
-		private class ZlibStream {
+		public class ZlibStream {
 			protected ZlibStream() { }
 
 			public IEventHandler EventHandler = EventHandlerConsole.Instance;
@@ -60,7 +60,7 @@ namespace Platform.IO {
 			}
 		}
 
-		private sealed class ReadStream : ZlibStream, IStream {
+		public sealed class ReadStream : ZlibStream, IStream {
 			public StreamCapabilities Capabilities { get { return StreamCapabilities.Read; } }
 
 			public ReadStream( IStream stream, bool useGZipWrapper ) {
@@ -124,12 +124,12 @@ namespace Platform.IO {
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-		
+
 			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
 			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 		}
 
-		private sealed class WriteStream : ZlibStream, IStream {
+		public sealed class WriteStream : ZlibStream, IStream {
 			public StreamCapabilities Capabilities { get { return StreamCapabilities.Write; } }
 
 			private bool _canFlush = true;
@@ -192,21 +192,29 @@ namespace Platform.IO {
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-			
+
 			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
 			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 
-			public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+			public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 				if( _stream == null ) return;
 
 				switch( flushKind ) {
+					case FlushKind.Write:
+					case FlushKind.DeepWrite:
 					case FlushKind.SynchronizeWrite:
 						if( _canFlush ) {
 							Compress( &_zState, 0, FlushOptions.Z_SYNC_FLUSH );
 							_canFlush = false;
 						}
 
-						_stream.Flush( flushKind );
+						switch( flushKind ) {
+							case FlushKind.DeepWrite:
+							case FlushKind.SynchronizeWrite:
+								_stream.Flush( flushKind );
+								break;
+						}
+
 						break;
 				}
 			}

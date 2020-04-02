@@ -1,0 +1,137 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+using System.IO;
+using System.Serialization;
+
+namespace System.Net {
+	public struct MACAddress : IBinarySerializable, ITextSerializable, IFormattable {
+		private byte[6] Data;
+
+		public uint GetHashCode() { return BitOperations.CombineHashCodes( unaligned( *( uint* ) &Data[0] ), unaligned( *( uint* ) &Data[2] ) ); }
+
+		public static TextParsingStatus TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static TextParsingStatus TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+
+		public static TextParsingStatus TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static TextParsingStatus TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+
+		public static TextParsingStatus TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+
+		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+
+		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+
+		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+
+		public static bool TryFetch( byte*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static bool TryFetch( char*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+		public static bool TryFetch( uint*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<uint>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
+
+
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { }
+
+		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { }
+		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { }
+
+		public void ToString( StringBuilder builder, string format ) {
+			switch( format ) {
+				case "":
+				case "G": // 00:0C:29:1C:BC:04
+					builder.Append( Data[0], "X2" );
+					for( var i = 1; i < sizeof( Data ); ++i ) {
+						builder.Append( ':' );
+						builder.Append( Data[i], "X2" );
+					}
+
+					break;
+
+				case "M": // 00-0C-29-1C-BC-04
+					builder.Append( Data[0], "X2" );
+					for( var i = 1; i < sizeof( Data ); ++i ) {
+						builder.Append( '-' );
+						builder.Append( Data[i], "X2" );
+					}
+
+					break;
+
+				case "X": // 000C291CBC04
+					PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, Data, sizeof( Data ), true );
+					break;
+			}
+		}
+
+		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint textLength, MACAddress& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			var data = ( byte* ) &parsedResult;
+			var result = false;
+
+			var start = PrimitiveTypesParser.SkipWhitespace<TElement>( text, textLength, 0U, trimLeadingWhitespace );
+			var buffer = text + start;
+			var length = textLength - start;
+			var patternLength = 0U;
+
+			if( length >= 17 ) { // 00:0C:29:1C:BC:04 or 00-0C-29-1C-BC-04
+				if( ( buffer[2] == ':' & buffer[5] == ':' & buffer[8] == ':' & buffer[11] == ':' & buffer[14] == ':' ) || ( buffer[2] == '-' & buffer[5] == '-' & buffer[8] == '-' & buffer[11] == '-' & buffer[14] == '-' ) ) {
+					result = true;
+
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[0], 2, data[0] );
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[3], 2, data[1] );
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[6], 2, data[2] );
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[9], 2, data[3] );
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[12], 2, data[4] );
+					result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[15], 2, data[5] );
+
+					patternLength = 17;
+					goto find_match;
+				}
+			}
+
+			if( length >= 12 ) { // 000C291CBC04
+				result = true;
+
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[0], 2, data[0] );
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[2], 2, data[1] );
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[4], 2, data[2] );
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[6], 2, data[3] );
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[8], 2, data[4] );
+				result &= PrimitiveTypesParser.TryParseHexUInt8( &buffer[10], 2, data[5] );
+
+
+				patternLength = 12;
+				goto find_match;
+			}
+
+		find_match:
+			if( result ) {
+				var end = PrimitiveTypesParser.SkipWhitespace<TElement>( buffer, length, patternLength, trimTrailingWhitespace );
+				if( result && readen != nullref ) readen = end;
+				else result &= end == length;
+			}
+
+			if( !result && readen != nullref ) readen = 0;
+
+			return result ? TextParsingStatus.OK : TextParsingStatus.Format;
+		}
+	}
+}

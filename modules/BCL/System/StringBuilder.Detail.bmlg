@@ -13,7 +13,7 @@ using System.Text;
 
 namespace System {
 	public partial class StringBuilder : ITextWriter {
-		void ITextWriter.Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) { }
+		void ITextWriter.Flush( FlushKind flushKind = FlushKind.DeepWrite ) { }
 
 		void ITextWriter.WriteLine() { AppendLine(); }
 
@@ -62,11 +62,17 @@ namespace System {
 		void ITextWriter.Write( CString value ) { Append( value ); }
 		void ITextWriter.WriteLine( CString value ) { Append( value ); AppendLine(); }
 
+		void ITextWriter.Write( CStringSpan value ) { Append( value ); }
+		void ITextWriter.WriteLine( CStringSpan value ) { Append( value ); AppendLine(); }
+
 		void ITextWriter.Write( Utf8String value ) { Append( value ); }
 		void ITextWriter.WriteLine( Utf8String value ) { Append( value ); AppendLine(); }
 
 		void ITextWriter.Write( CUtf8String value ) { Append( value ); }
 		void ITextWriter.WriteLine( CUtf8String value ) { Append( value ); AppendLine(); }
+
+		void ITextWriter.Write( CUtf8StringSpan value ) { Append( value ); }
+		void ITextWriter.WriteLine( CUtf8StringSpan value ) { Append( value ); AppendLine(); }
 
 		void ITextWriter.Write( Utf16String value ) { Append( value ); }
 		void ITextWriter.WriteLine( Utf16String value ) { Append( value ); AppendLine(); }
@@ -74,11 +80,17 @@ namespace System {
 		void ITextWriter.Write( CUtf16String value ) { Append( value ); }
 		void ITextWriter.WriteLine( CUtf16String value ) { Append( value ); AppendLine(); }
 
+		void ITextWriter.Write( CUtf16StringSpan value ) { Append( value ); }
+		void ITextWriter.WriteLine( CUtf16StringSpan value ) { Append( value ); AppendLine(); }
+
 		void ITextWriter.Write( Utf32String value ) { Append( value ); }
 		void ITextWriter.WriteLine( Utf32String value ) { Append( value ); AppendLine(); }
 
 		void ITextWriter.Write( CUtf32String value ) { Append( value ); }
 		void ITextWriter.WriteLine( CUtf32String value ) { Append( value ); AppendLine(); }
+
+		void ITextWriter.Write( CUtf32StringSpan value ) { Append( value ); }
+		void ITextWriter.WriteLine( CUtf32StringSpan value ) { Append( value ); AppendLine(); }
 
 		void ITextWriter.Write( StringBuilder value ) { Append( value ); }
 		void ITextWriter.WriteLine( StringBuilder value ) { Append( value ); AppendLine(); }

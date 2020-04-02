@@ -274,7 +274,7 @@ namespace System.Serialization.Thrift {
 
 		public override void WriteBinary( byte[] b ) {
 			WriteInt32( b.Length );
-			_writer.Write( &b[0], b.Length );
+			_writer.WriteValues( &b[0], b.Length );
 		}
 
 		public override byte[] ReadBinary() {
@@ -285,14 +285,14 @@ namespace System.Serialization.Thrift {
 			if( IsStreamBroken ) return null;
 
 			var buf = new[size] byte;
-			var readen = _reader.Read( &buf[0], size );
+			var readen = _reader.ReadValues( &buf[0], size );
 			if( readen != size ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
 			return buf;
 		}
 
 		public override void WriteString( Utf8String value ) {
 			WriteInt32( ( int ) value.ByteLength );
-			_writer.Write( value.GetChars(), ( int ) value.ByteLength );
+			_writer.WriteValues( value.GetChars(), ( int ) value.ByteLength );
 		}
 
 		public override Utf8String ReadString() {
@@ -303,7 +303,7 @@ namespace System.Serialization.Thrift {
 			if( IsStreamBroken ) return null;
 
 			var builder = new Utf8String.Builder( ( uint ) byteLength );
-			var readen = _reader.Read( builder.GetChars(), ( int ) byteLength );
+			var readen = _reader.ReadValues( builder.GetChars(), ( int ) byteLength );
 			if( readen != byteLength ) { ExceptionHandler.OnException( ProtocolError.InvalidData ); IsStreamBroken = true; }
 			return builder.Detach();
 		}

@@ -271,7 +271,11 @@ namespace System {
 			}
 		}
 
-		public override string ToString() { return ( string ) this; }
+		public SbcsString ToSbcsString() { return SbcsString.FromUtf32( this ); }
+		public SbcsString ToSbcsString( System.Text.CodePageID codePage ) { return SbcsString.FromUtf32( codePage, this ); }
+		public Utf8String ToUtf8String() { return Utf8String.FromUtf32( this ); }
+		public override Utf16String ToString() { return Utf16String.FromUtf32( this ); }
+		public Utf32String ToUtf32String() { return this; }
 
 		public uint[] ToCharArray() {
 			var result = new[Length] uint;

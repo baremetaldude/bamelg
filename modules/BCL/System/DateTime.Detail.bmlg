@@ -15,6 +15,6 @@ namespace System {
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "S" ); }
 		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { TryParse<char>( builder.GetChars(), ( uint ) builder.Length, *( thistype* ) object ); }
 
-		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, format ?? "G", this ); }
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, this, format ?? "G" ); }
 	}
 }

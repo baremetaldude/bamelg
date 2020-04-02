@@ -45,7 +45,7 @@ namespace System.Data.MySQL {
 
 				case 0xFD: {
 						ulong_littleendian result;
-						_binaryReader.Read( &result, 3 );
+						_binaryReader.BaseStream.Read( &result, 3 );
 						return result;
 					}
 
@@ -64,7 +64,7 @@ namespace System.Data.MySQL {
 			else if( length < 16777216 ) {
 				ulong_littleendian lengthLE = length;
 				_binaryWriter.Write( ( byte ) 253 );
-				_binaryWriter.Write( &lengthLE, 3 );
+				_binaryWriter.BaseStream.Write( &lengthLE, 3 );
 			}
 			else {
 				_binaryWriter.Write( ( byte ) 254 );
@@ -121,7 +121,7 @@ namespace System.Data.MySQL {
 		}
 
 		private void WriteNullTerminatedString( Utf8String value ) {
-			_binaryWriter.Write( value.GetChars(), ( int ) value.ByteLength + 1 );
+			_binaryWriter.BaseStream.Write( value.GetChars(), ( int ) value.ByteLength + 1 );
 		}
 
 		private bool ParseBit( bool& isNull ) {
@@ -307,7 +307,7 @@ namespace System.Data.MySQL {
 			if( Trace ) Console.WriteLine( "MySQL connection info:" );
 
 			PacketHeader greetingHeader;
-			_binaryReader.Read( &greetingHeader, sizeof( greetingHeader ) );
+			_binaryReader.BaseStream.Read( &greetingHeader, sizeof( greetingHeader ) );
 
 			var protocol = _binaryReader.ReadUInt8();
 
@@ -336,7 +336,7 @@ namespace System.Data.MySQL {
 
 			{
 				byte[11] filler;
-				_binaryReader.Read( &filler[0], sizeof( filler ) );
+				_binaryReader.BaseStream.Read( &filler[0], sizeof( filler ) );
 			}
 
 			scramble += ReadNullTerminatedString();
@@ -355,14 +355,14 @@ namespace System.Data.MySQL {
 			loginHeader.PacketLength = 33 + ( Parameters.Schema.ByteLength + 1 ) + ( Parameters.User.ByteLength + 1 ) + sizeof( SHA1 );
 			loginHeader.PacketNumber = 1;
 
-			_binaryWriter.Write( &loginHeader, sizeof( loginHeader ) );
+			_binaryWriter.BaseStream.Write( &loginHeader, sizeof( loginHeader ) );
 
 			_binaryWriter.Write( ( Capabilities.LongPassword | Capabilities.FoundRows | Capabilities.LongColumnFlags | Capabilities.ConnectWithDatabase | Capabilities.LocalFiles | Capabilities.Protocol41 | Capabilities.SecureConnection | Capabilities.Transactions ).Value() ); // client caps
 			_binaryWriter.Write( 0x00FFFFFF ); // max packet
 			_binaryWriter.Write( ( byte ) 33 ); // charset
 			{
 				var filler = new byte[23] default( 0 );
-				_binaryWriter.Write( &filler[0], sizeof( filler ) );
+				_binaryWriter.BaseStream.Write( &filler[0], sizeof( filler ) );
 			}
 
 			WriteNullTerminatedString( Parameters.User );
@@ -374,7 +374,7 @@ namespace System.Data.MySQL {
 				Memory.PerformXor( &token, &token, &Parameters.PasswordFirstHash, sizeof( token ) );
 
 				_binaryWriter.Write( ( byte ) sizeof( SHA1 ) );
-				_binaryWriter.Write( &token, sizeof( token ) );
+				_binaryWriter.BaseStream.Write( &token, sizeof( token ) );
 			}
 
 			WriteNullTerminatedString( Parameters.Schema );
@@ -388,7 +388,7 @@ namespace System.Data.MySQL {
 			header.PacketLength = 1;
 			header.PacketNumber = 0;
 
-			_binaryWriter.Write( &header, sizeof( header ) );
+			_binaryWriter.BaseStream.Write( &header, sizeof( header ) );
 			_binaryWriter.Write( command.Value() );
 		}
 
@@ -422,9 +422,9 @@ namespace System.Data.MySQL {
 			header.PacketLength = command.ByteLength + 1;
 			header.PacketNumber = 0;
 
-			_binaryWriter.Write( &header, sizeof( header ) );
+			_binaryWriter.BaseStream.Write( &header, sizeof( header ) );
 			_binaryWriter.Write( Command.Query.Value() );
-			_binaryWriter.Write( command.GetChars(), ( int ) command.ByteLength );
+			_binaryWriter.BaseStream.Write( command.GetChars(), ( int ) command.ByteLength );
 			_binaryWriter.Flush();
 
 			return EnsureOK();
@@ -477,7 +477,7 @@ namespace System.Data.MySQL {
 					[DisableWarningUnreachable]
 					if( _parent.Trace ) Console.WriteLine( "Schema for query: '{0}'", _command );
 
-					_parent._binaryReader.Read( &header, sizeof( header ) );
+					_parent._binaryReader.BaseStream.Read( &header, sizeof( header ) );
 
 					var numberOfFields = ( int ) _parent.ReadFieldLength();
 					Fields = new[numberOfFields] FieldInfo;
@@ -487,7 +487,7 @@ namespace System.Data.MySQL {
 						var& currentField = Fields[i];
 
 						PacketHeader fieldHeader;
-						_parent._binaryReader.Read( &fieldHeader, sizeof( fieldHeader ) );
+						_parent._binaryReader.BaseStream.Read( &fieldHeader, sizeof( fieldHeader ) );
 						currentField.Catalog = _parent.ReadLengthPrefixedUtf8String();
 						currentField.Database = _parent.ReadLengthPrefixedUtf8String();
 						currentField.Table = _parent.ReadLengthPrefixedUtf8String();
@@ -536,7 +536,7 @@ namespace System.Data.MySQL {
 				++_rowCounter;
 
 				PacketHeader rowHeader;
-				_parent._binaryReader.Read( &rowHeader, sizeof( rowHeader ) );
+				_parent._binaryReader.BaseStream.Read( &rowHeader, sizeof( rowHeader ) );
 
 				bool isNull;
 				for( var i = 0; i < Fields.Length; ++i ) {
@@ -724,9 +724,9 @@ namespace System.Data.MySQL {
 			header.PacketLength = command.ByteLength + 1;
 			header.PacketNumber = 0;
 
-			_binaryWriter.Write( &header, sizeof( header ) );
+			_binaryWriter.BaseStream.Write( &header, sizeof( header ) );
 			_binaryWriter.Write( Command.Query.Value() );
-			_binaryWriter.Write( command.GetChars(), ( int ) command.ByteLength );
+			_binaryWriter.BaseStream.Write( command.GetChars(), ( int ) command.ByteLength );
 			_binaryWriter.Flush();
 
 			// ============================================================
@@ -766,7 +766,7 @@ namespace System.Data.MySQL {
 
 		private bool ReadEnd() {
 			PacketHeaderSig header;
-			_binaryReader.Read( &header, sizeof( header ) );
+			_binaryReader.BaseStream.Read( &header, sizeof( header ) );
 			Assert.IsTrue( header.Sig == 0xFE && header.PacketLength <= 5 );
 
 			var warnings = _binaryReader.ReadUInt16();
@@ -777,7 +777,7 @@ namespace System.Data.MySQL {
 
 		private void ReadError() {
 			PacketHeaderSig header;
-			var readen = _binaryReader.Read( &header, sizeof( header ) );
+			var readen = _binaryReader.BaseStream.Read( &header, sizeof( header ) );
 			Console.WriteLine( "ReadError: {0}", readen );
 			Assert.IsTrue( header.Sig == 0xFF );
 
@@ -796,7 +796,7 @@ namespace System.Data.MySQL {
 			}
 
 			PacketHeader header;
-			_binaryReader.Read( &header, sizeof( header ) );
+			_binaryReader.BaseStream.Read( &header, sizeof( header ) );
 			// Console.WriteLine( "ok Header: {0}", header.ToString() );
 
 			var protocol = _binaryReader.ReadUInt8();

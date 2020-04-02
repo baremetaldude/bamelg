@@ -95,7 +95,11 @@ namespace System {
 		public byte this[int index] { get { System.Diagnostics.Debug.Assert( ( uint ) index < Length ); return GetChars()[index]; } }
 		public byte this[uint index] { get { System.Diagnostics.Debug.Assert( index < Length ); return GetChars()[index]; } }
 
-		public override string ToString() { return ( string ) this; }
+		public SbcsString ToSbcsString() { return this; }
+		public SbcsString ToSbcsString( System.Text.CodePageID codePage ) { if( this == null ) return null; if( codePage == CodePage ) return this; return FromUtf16( codePage, Utf16String.FromSBCS( this ) ); }
+		public Utf8String ToUtf8String() { return Utf8String.FromSBCS( this ); }
+		public override Utf16String ToString() { return Utf16String.FromSBCS( this ); }
+		public Utf32String ToUtf32String() { return Utf32String.FromSBCS( this ); }
 
 		public static bool operator ==( SbcsString left, SbcsString right ) {
 			if( cast<RuntimeObjectBase>( left ) == cast<RuntimeObjectBase>( right ) ) return true;

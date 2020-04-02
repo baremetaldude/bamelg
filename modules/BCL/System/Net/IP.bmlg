@@ -148,8 +148,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }
@@ -377,8 +377,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }

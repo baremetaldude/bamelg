@@ -193,9 +193,10 @@ namespace Platform.IO {
 			}
 		}
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			switch( flushKind ) {
 				case FlushKind.Write:
+				case FlushKind.DeepWrite:
 				case FlushKind.SynchronizeWrite:
 					if( KernelBufferingTCP & _cork ) {
 						bitcast<SocketHandleTCP>( _handle ).Cork = _cork = false;

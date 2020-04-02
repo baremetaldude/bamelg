@@ -4,6 +4,8 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
+using System.Text;
 using System.Xml;
 
 using Platform;
@@ -12,30 +14,140 @@ namespace BamelgBench {
 	public partial class App {
 		[EntryPoint]
 		private static void Main() {
-			Print( "No newlines", false );
-			Print( "Newlines preserved", true );
+			using( var file = File.OpenWrite( "compact.xml" ) )
+			using( var writer = new StreamWriter( file ) )
+				Print( writer, false, false );
+
+			using( var file = File.OpenWrite( "pretty.xml" ) )
+			// using( var writer = new TraceTextWriter( new StreamWriter( file ) ) )
+			using( var writer = new StreamWriter( file ) )
+				Print( writer, true, true );
+
+			Console.WriteLine( "OK!" );
 		}
 
-		private static void Print( string name, bool preserveNewlines ) {
-			var builder = new StringBuilder();
-			using( var writer = new XmlWriter( builder ) { PreserveNewlines = preserveNewlines } ) {
-				writer.Declaration();
+		private static void Print( ITextWriter textWriter, bool formatting, bool doubleQuotes ) {
+			using( var xmlWriter = new XmlWriter( textWriter ) { Formatting = formatting, UseDoubleQuotes = doubleQuotes } ) {
+				xmlWriter.Declaration();
 
-				using( writer.Tag( "result" ) ) {
-					using( writer.Tag( "subresult" ) ) {
-						writer.Attribute( "attr1", "value1" );
-						writer.Attribute( "attr2", "value2" );
+				using( xmlWriter.Tag( "result" ) ) {
+					using( xmlWriter.Tag( "subresult" ) ) {
+						using( xmlWriter.Attribute( "attr" ) ) xmlWriter.Write( "attrvalue" );
+						using( xmlWriter.AttributeDoubleQuoted( "dq" ) ) xmlWriter.Write( "<>'\"&" );
+						using( xmlWriter.AttributeSingleQuoted( "sq" ) ) xmlWriter.Write( "<>'\"&" );
+						using( xmlWriter.Comment() ) xmlWriter.Write( "<>'\"&" );
 
-						using( writer.Tag( "tag1" ) ) { }
-						using( writer.Tag( "tag2" ) ) writer.Attribute( "attr3", "value3" );
+						using( xmlWriter.Tag( "tag0" ) ) xmlWriter.Write( "non-escaped value" );
+						using( xmlWriter.Tag( "tag1" ) ) xmlWriter.Write( "333<>'\"&333\r\n333<>'\"&333" );
+						using( xmlWriter.Tag( "tag2" ) ) {
+							using( xmlWriter.Attribute( "attr3" ) ) xmlWriter.Write( "4444<>'\"&4444\r\n" );
+							xmlWriter.Write( "55555<>'\"&55555\r\n" );
+							using( xmlWriter.Comment() ) xmlWriter.Write( "comment inside content <>'\"&" );
+							xmlWriter.Write( "\r\n55555<>'\"&55555" );
+						}
 					}
 
-					using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( DateTime.UtcNow );
-					using( writer.Tag( "tag4" ) ) { }
+					using( xmlWriter.Tag( "CreationTimeReadable" ) ) xmlWriter.Write( DateTime.UtcNow );
+					using( xmlWriter.Tag( "tag4" ) ) using( xmlWriter.Attribute( "attr" ) ) { }
+					using( xmlWriter.Tag( "tag5" ) ) { }
 				}
 			}
-
-			Console.WriteLine( "{0}: '{1}'", name, builder );
 		}
+	}
+
+	public class TraceTextWriter : ITextWriter {
+		private ITextWriter _delegate;
+
+		public TraceTextWriter( ITextWriter @delegate ) {
+			_delegate = @delegate;
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
+			Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, flushKind );
+			_delegate.Flush( flushKind );
+		}
+
+		public void WriteLine() { Console.WriteLine( "{0}: {1}()", typeof( thistype ), thismethod ); _delegate.WriteLine(); }
+
+		public void Write( bool value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( bool value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( char value ) { Console.WriteLine( "{0}: {1}( '{2}' )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( char value ) { Console.WriteLine( "{0}: {1}( '{2}' )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( sbyte value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( sbyte value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( byte value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( byte value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( short value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( short value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( ushort value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( ushort value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( int value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( int value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( uint value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( uint value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( long value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( long value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( ulong value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( ulong value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( float value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( float value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( double value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( double value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( TypedReference value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( TypedReference value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( SbcsString value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( SbcsString value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CString value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CString value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CStringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CStringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( Utf8String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( Utf8String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf8String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf8String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf8StringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf8StringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( Utf16String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( Utf16String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf16String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf16String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf16StringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf16StringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( Utf32String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( Utf32String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf32String value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf32String value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( CUtf32StringSpan value ) { Console.WriteLine( "{0}: {1}( {2} )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( CUtf32StringSpan value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( StringBuilder value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.Write( value ); }
+		public void WriteLine( StringBuilder value ) { Console.WriteLine( "{0}: {1}( \"{2}\" )", typeof( thistype ), thismethod, value ); _delegate.WriteLine( value ); }
+
+		public void Write( [VerifyFormatString] string str, vararg TypedReference parameters ) { _delegate.Write( str, vararg( parameters, parameters.Length ) ); }
+		public void WriteLine( [VerifyFormatString] string str, vararg TypedReference parameters ) { _delegate.WriteLine( str, vararg( parameters, parameters.Length ) ); }
 	}
 }

@@ -10,6 +10,7 @@ using System.Net;
 using System.Runtime;
 using System.Text;
 using System.Web;
+using System.Xml;
 
 using Platform;
 using Platform.IO;
@@ -102,109 +103,59 @@ namespace Dmm {
 
 			public override void OnRender() {
 				Response.UseAutoFlush = false;
+				var queue = App._debugDevice.Events;
 
 				// wait for first event arrival
-				if( App._debugDevice.Events.Events.Count == 0 ) {
+				while( App._debugDevice.Events.Count == 0 ) {
 					using( Fiber.CancellationRegion() )
-						App._debugDevice.NewMesageEvent.Wait();
+						App._debugDevice.Events.FiberWaitEvent();
+
 					if( Fiber.IsCancelled ) return;
 				}
 
-				var lastEvent = App._debugDevice.Events.Events.First();
-				var skipFirst = false;
-				{
-				restart:
-					foreach( var @event in App._debugDevice.Events.Events.GetEnumerator( lastEvent ) ) {
-						if( skipFirst ) { skipFirst = false; continue; }
+				var lastIndex = queue.FirstIndex - 1;
+				if( _fromSpecified && _lastDate >= queue.Time[queue.FirstIndex] && _lastDate <= queue.Time[queue.LastIndex] ) {
+					while( lastIndex != queue.LastIndex ) {
+						++lastIndex;
+						if( !queue.IsValid( lastIndex ) ) return;
 
-						if( _fromSpecified && @event->Time <= _lastDate ) continue;
-
-						switch( WriteEvent( @event ) ) {
-							case WriteEventResult.CollectionChanged:
-								lastEvent = @event;
-								skipFirst = true;
-								goto restart;
-
-							case WriteEventResult.EventFreed: return;
+						var entry = queue[lastIndex];
+						if( _lastDate > entry.Time ) {
+							--lastIndex;
+							break;
 						}
-
-						if( Session.StreamError ) return;
 					}
 
-					Flush();
+					while( lastIndex != queue.LastIndex )
+						queue.FiberWaitEvent();
 				}
 
-				lastEvent = App._debugDevice.Events.Events.Last();
+				while( true ) {
+					using( Fiber.CancellationRegion() ) {
+						while( lastIndex != queue.LastIndex ) {
+							++lastIndex;
+							if( !queue.IsValid( lastIndex ) ) break;
+							var entry = queue[lastIndex];
 
-				// traverse event buffer from last reported event
-				for( ; ; ) {
-					App._debugDevice.Events.Events.CreateMarker( lastEvent );
+							Response.Write( "data: " );
+							Response.Write( entry.Value );
+							Response.WriteLine();
 
-					using( Fiber.CancellationRegion() )
-						App._debugDevice.NewMesageEvent.Wait();
+							Response.Write( "id: " );
+							Response.Write( entry.Time.Ticks );
+							Response.WriteLine();
 
-					if( !App._debugDevice.Events.Events.ReleaseMarker( lastEvent ) )
-						return;
-
-					if( Fiber.IsCancelled ) break;
-
-				restart2:
-					skipFirst = true;
-					foreach( var @event in App._debugDevice.Events.Events.GetEnumerator( lastEvent ) ) {
-						if( skipFirst ) { skipFirst = false; continue; }
-
-						switch( WriteEvent( @event ) ) {
-							case WriteEventResult.CollectionChanged:
-								lastEvent = @event;
-								goto restart2;
-
-							case WriteEventResult.EventFreed: return;
+							WriteEventEnd();
 						}
 
-						if( Session.StreamError ) return;
+						Flush();
+						if( Session.StreamError ) break;
+						if( Fiber.IsCancelled ) break;
+
+						queue.FiberWaitEvent();
+						if( Fiber.IsCancelled ) break;
 					}
-
-					lastEvent = App._debugDevice.Events.Events.Last();
-
-					Flush();
-
-					if( Session.StreamError ) return;
 				}
-			}
-
-			private enum WriteEventResult {
-				OK,
-				CollectionChanged, // new events arrived while flushing output
-				EventFreed,        // slow client tried to continue stream from deleted event
-			}
-
-			private WriteEventResult WriteEvent( EventLogBuffer.EventEntry* @event ) {
-				Response.Write( "data: " );
-				Response.Write( @event->Time );
-				Response.Write( " " );
-				Response.Write( @event->Text );
-				Response.WriteLine();
-
-				Response.Write( "id: " );
-				Response.Write( @event->Time.Ticks );
-				Response.WriteLine();
-
-				WriteEventEnd();
-
-				if( Response.IsReadyToFlush ) {
-					App._debugDevice.Events.Events.CreateMarker( @event );
-					var version = App._debugDevice.Events.Events.Version;
-
-					Response.Flush( FlushKind.Write ); // <- fiber switch occured inside stream
-
-					if( !App._debugDevice.Events.Events.ReleaseMarker( @event ) )
-						return WriteEventResult.EventFreed;
-
-					if( version != App._debugDevice.Events.Events.Version )
-						return WriteEventResult.CollectionChanged;
-				}
-
-				return WriteEventResult.OK;
 			}
 
 			protected override void AddCustomHeaders() {

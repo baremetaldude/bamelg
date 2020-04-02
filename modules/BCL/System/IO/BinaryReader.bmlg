@@ -30,8 +30,6 @@ namespace System.IO {
 			BaseStream = null;
 		}
 
-		public int Read( void* buffer, int length ) { return BaseStream.Read( buffer, length ); }
-
 		public void Read( System.Serialization.IBinarySerializable value, System.Serialization.SerializerContext context ) {
 			var i = bitcast<InterfaceInstance>( value );
 			value.Deserialize( i.Object, this, context );
@@ -168,7 +166,7 @@ namespace System.IO {
 			}
 
 			byte[sizeof( Guid )] tmp;
-			Read( &tmp[0], sizeof( Guid ) );
+			ReadValues( &tmp[0], sizeof( Guid ) );
 			return new Guid { Bytes = tmp };
 		}
 
@@ -179,7 +177,53 @@ namespace System.IO {
 		public void Read( [Out] DateTime& value ) { value = ReadDateTime(); }
 		public void Read( [Out] TimeSpan& value ) { value = ReadTimeSpan(); }
 
-		public byte[] ReadByteArray() {
+		public int ReadValues( byte* buffer, int length ) { return BaseStream.Read( buffer, length ); }
+		public int ReadValues( sbyte* buffer, int length ) { return BaseStream.Read( ( byte* ) buffer, length ); }
+
+		public int ReadValues( short* buffer, int length ) {
+			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+			var readenCount = readen / sizeof( buffer[0] );
+
+			if( typeof( short ) != typeof( short_littleendian ) )
+				for( int i = 0; i < readenCount; ++i )
+					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			return readenCount;
+		}
+
+		public int ReadValues( ushort* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
+		public int ReadValues( char* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
+
+		public int ReadValues( int* buffer, int length ) {
+			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+			var readenCount = readen / sizeof( buffer[0] );
+
+			if( typeof( short ) != typeof( short_littleendian ) )
+				for( int i = 0; i < readenCount; ++i )
+					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			return readenCount;
+		}
+
+		public int ReadValues( uint* buffer, int length ) { return ReadValues( ( int* ) buffer, length ); }
+
+		public int ReadValues( long* buffer, int length ) {
+			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+			var readenCount = readen / sizeof( buffer[0] );
+
+			if( typeof( short ) != typeof( short_littleendian ) )
+				for( int i = 0; i < readenCount; ++i )
+					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			return readenCount;
+		}
+
+		public int ReadValues( ulong* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+
+		public int ReadValues( DateTime* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+		public int ReadValues( TimeSpan* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+
+		public byte[] ReadUInt8Array() {
 			uint_littleendian length;
 
 			Read( length );
@@ -192,7 +236,160 @@ namespace System.IO {
 			}
 
 			var result = new[length] byte;
-			Read( &result[0], ( int ) length );
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public sbyte[] ReadInt8Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] sbyte;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public ushort[] ReadUInt16Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] ushort;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public short[] ReadInt16Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] short;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public uint[] ReadUInt32Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] uint;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public int[] ReadInt32Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] int;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public ulong[] ReadUInt64Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] ulong;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public long[] ReadInt64Array() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] long;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public DateTime[] ReadDateTimeArray() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] DateTime;
+			ReadValues( &result[0], ( int ) length );
+			return result;
+		}
+
+		public TimeSpan[] ReadTimeSpanArray() {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( ( int ) length );
+				return null;
+			}
+
+			var result = new[length] TimeSpan;
+			ReadValues( &result[0], ( int ) length );
 			return result;
 		}
 
@@ -212,7 +409,7 @@ namespace System.IO {
 			}
 
 			var result = new SbcsString.Builder( length, ( System.Text.CodePageID ) codePage );
-			Read( result.GetChars(), ( int ) length );
+			ReadValues( result.GetChars(), ( int ) length );
 			return result.Detach();
 		}
 
@@ -226,7 +423,7 @@ namespace System.IO {
 
 			var result = new Utf8String.Builder( byteLength );
 			result.Length = length;
-			Read( result.GetChars(), ( int ) byteLength );
+			ReadValues( result.GetChars(), ( int ) byteLength );
 
 			return result.Detach();
 		}
@@ -238,7 +435,7 @@ namespace System.IO {
 			if( length == uint.MaxValue ) return null;
 
 			var result = new Utf16String.Builder( length );
-			Read( result.GetChars(), ( int ) result.ByteLength );
+			ReadValues( result.GetChars(), ( int ) length );
 			return result.Detach();
 		}
 
@@ -249,7 +446,7 @@ namespace System.IO {
 			if( length == uint.MaxValue ) return null;
 
 			var result = new Utf32String.Builder( length );
-			Read( result.GetChars(), ( int ) result.ByteLength );
+			ReadValues( result.GetChars(), ( int ) length );
 			return result.Detach();
 		}
 

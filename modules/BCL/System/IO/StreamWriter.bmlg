@@ -74,7 +74,9 @@ namespace System.IO {
 
 		/// @{ buffering
 
-		protected StringBuilder _buffer = StringBuilder.CachedBuilders.Pop(); // dont capture this StringBuilder instance since it cached ad reused
+		protected StringBuilder _buffer = StringBuilder.CachedBuilders.Pop(); // dont capture this StringBuilder instance since it cached and reused
+		public StringBuilder GetInternalBuffer() { return _buffer; }
+
 		public uint FlushLimit = 8192;
 		public bool UseAutoFlush = true;
 
@@ -87,20 +89,25 @@ namespace System.IO {
 
 			switch( flushKind ) {
 				case FlushKind.Write:
+				case FlushKind.DeepWrite:
 				case FlushKind.SynchronizeWrite:
 					if( ( uint ) _buffer.Length >= limit ) {
 						WriteUtf16( _buffer.GetChars(), ( uint ) _buffer.Length );
 						_buffer.Length = 0;
 					}
 
-					if( flushKind == FlushKind.SynchronizeWrite )
-						_stream.Flush( flushKind );
+					switch( flushKind ) {
+						case FlushKind.DeepWrite:
+						case FlushKind.SynchronizeWrite:
+							_stream.Flush( flushKind );
+							break;
+					}
 
 					break;
 			}
 		}
 
-		public void Flush( FlushKind flushKind = FlushKind.SynchronizeWrite ) {
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			TryFlush( flushKind, 0 );
 		}
 
@@ -132,10 +139,16 @@ namespace System.IO {
 		public void Write( CString value ) { _buffer.Append( value ); AutoFlush(); }
 		public void WriteLine( CString value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
 
+		public void Write( CStringSpan value ) { _buffer.Append( value ); AutoFlush(); }
+		public void WriteLine( CStringSpan value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
+
 		public void Write( Utf8String value ) { _buffer.Append( value ); AutoFlush(); }
 
 		public void Write( CUtf8String value ) { _buffer.Append( value ); AutoFlush(); }
 		public void WriteLine( CUtf8String value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
+
+		public void Write( CUtf8StringSpan value ) { _buffer.Append( value ); AutoFlush(); }
+		public void WriteLine( CUtf8StringSpan value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
 
 		public void Write( Utf16String value ) {
 			if( value.Length > FlushLimit ) {
@@ -151,6 +164,9 @@ namespace System.IO {
 		public void Write( CUtf16String value ) { _buffer.Append( value ); AutoFlush(); }
 		public void WriteLine( CUtf16String value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
 
+		public void Write( CUtf16StringSpan value ) { _buffer.Append( value ); AutoFlush(); }
+		public void WriteLine( CUtf16StringSpan value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
+
 		public void Write( Utf32String value ) {
 			_buffer.Append( value );
 			AutoFlush();
@@ -158,6 +174,9 @@ namespace System.IO {
 
 		public void Write( CUtf32String value ) { _buffer.Append( value ); AutoFlush(); }
 		public void WriteLine( CUtf32String value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
+
+		public void Write( CUtf32StringSpan value ) { _buffer.Append( value ); AutoFlush(); }
+		public void WriteLine( CUtf32StringSpan value ) { _buffer.Append( value ); _buffer.AppendLine(); AutoFlush(); }
 
 		public void Write( StringBuilder value ) {
 			if( ( uint ) value.Length > FlushLimit ) {
@@ -265,7 +284,7 @@ namespace System.IO {
 		}
 
 		// writes all buffered data
-		public void ToString( StringBuilder builder, string format ) { 
+		public void ToString( StringBuilder builder, string format ) {
 			builder.Append( _buffer );
 		}
 	}

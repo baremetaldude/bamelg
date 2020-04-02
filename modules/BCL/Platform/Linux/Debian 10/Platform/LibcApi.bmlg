@@ -85,6 +85,21 @@ namespace Platform.Libc {
 			return true;
 		}
 
+		public static bool TryGetMACAddress( Utf8String interfaceName, MACAddress& result ) {
+			var fd = LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_DGRAM, IPProtocol.IPPROTO_IP );
+			if( fd == -1 ) return false;
+
+			ifreq s;
+			CString.Copy( new CString( s.ifr_ifrn.ifrn_name ), new CString( interfaceName.GetChars() ), sizeof( s.ifr_ifrn.ifrn_name ) );
+
+			using( var socket = bitcast<SocketHandle>( fd ) )
+				if( LibcApi.ioctl( socket, ( IoctlCommand ) SocketIOControl.SIOCGIFHWADDR, &s ) < 0 )
+					return false;
+
+			result = *( MACAddress* ) &s.ifr_ifru.ifru_addr.sa_data[0];
+			return true;
+		}
+
 		public static yield<ifaddrs*> GetNetworkInterfaces() {
 			ifaddrs* interfaces = null;
 			LibcApi.getifaddrs( &interfaces ); finally { LibcApi.freeifaddrs( interfaces ); }
