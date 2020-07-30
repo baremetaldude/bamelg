@@ -1,0 +1,57 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime.InteropServices;
+
+using Platform.Libc;
+
+namespace System.Runtime {
+	[ExternLibrary]
+	public static class CRuntime {
+		public extern static CString gnu_get_libc_version();
+		public extern static CString gnu_get_libc_release();
+
+		public static double asin( double value ) { return MathApi.asin( value ); }
+		public static double acos( double value ) { return MathApi.acos( value ); }
+		public static float asinf( float value ) { return MathApi.asinf( value ); }
+		public static float acosf( float value ) { return MathApi.acosf( value ); }
+
+		public static double round( double value ) { return MathApi.round( value ); }
+		public static float roundf( float value ) { return MathApi.roundf( value ); }
+
+		public static double atan( double value ) { return MathApi.atan2( value, 1 ); }
+		public static double atan2( double y, double x ) { return MathApi.atan2( y, x ); }
+		public static float atanf( float value ) { return ( float ) MathApi.atan2( value, 1 ); }
+		public static float atan2f( float y, float x ) { return MathApi.atan2f( y, x ); }
+
+		[BackendSymbol( Name = "stdin" )]
+		public extern static Platform.Libc.FILE* StdIn;
+
+		[BackendSymbol( Name = "stdout" )]
+		public extern static Platform.Libc.FILE* StdOut;
+
+		[BackendSymbol( Name = "stderr" )]
+		public extern static Platform.Libc.FILE* StdErr;
+
+		enum LocaleType {
+			LC_CTYPE =           0,
+			LC_NUMERIC =         1,
+			LC_TIME =            2,
+			LC_COLLATE =         3,
+			LC_MONETARY =        4,
+			LC_MESSAGES =        5,
+			LC_ALL =             6,
+			LC_PAPER =           7,
+			LC_NAME =            8,
+			LC_ADDRESS =         9,
+			LC_TELEPHONE =      10,
+			LC_MEASUREMENT =    11,
+			LC_IDENTIFICATION = 12,
+		}
+
+		extern static byte* setlocale( LocaleType category, CUtf8String locale );
+	}
+}

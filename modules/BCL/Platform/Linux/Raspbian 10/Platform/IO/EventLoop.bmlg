@@ -409,8 +409,8 @@ namespace Platform.IO {
 				_notificationPipe[PipeHandle.WriteEnd].Write( &command, sizeof( command ) );
 			}
 
-			public void RequestExit() { if( !atomic( _exitRequestPending = true ) ) SendCommand( NotificationCommand.Exit ); } // dont overwhelm pipe
-			public void NotifyNewDispatcherTasks() { if( !atomic( _newDispatcherTasks = true ) ) SendCommand( NotificationCommand.NewDispatcherTasks ); } // dont overwhelm pipe
+			public void RequestExit() { if( !atomic( _exitRequestPending = true, Relaxed ) ) SendCommand( NotificationCommand.Exit ); } // dont overwhelm pipe
+			public void NotifyNewDispatcherTasks() { if( !atomic( _newDispatcherTasks = true, Relaxed ) ) SendCommand( NotificationCommand.NewDispatcherTasks ); } // dont overwhelm pipe
 		}
 
 		public void RequestExit() { _notificationEmitter.RequestExit(); }
@@ -627,7 +627,7 @@ namespace Platform.IO {
 		}
 
 		public static void BlockExitSignals() {
-			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
+			LibcApi.SignalInstallIgnore( SignalCode.SIGPIPE );
 			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
 		}
 
@@ -746,9 +746,19 @@ namespace Platform.IO {
 
 		#region process termination notification
 
-		public void BeginProcess( System.Diagnostics.ProcessStartInfo& info, DPC* onFinished ) {
+		public void BeginProcess( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
+			if( IsDispatchingThread ) {
+				BeginProcessWorker( info, onFinished );
+				return;
+			}
+
+			BeginInvoke( DPC.Create<System.Diagnostics.ProcessStartInfo, DPC*>( BeginProcessWorker, info, onFinished ) );
+		}
+
+		private void BeginProcessWorker( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
 			LibcApi.pipe( info._pipe );
 			info.WaitExit = false;
+
 			System.Diagnostics.Process.Start( info );
 
 			var exitSink = new HandleBrokenEventSink( this, info._pipe[PipeHandle.ReadEnd] );

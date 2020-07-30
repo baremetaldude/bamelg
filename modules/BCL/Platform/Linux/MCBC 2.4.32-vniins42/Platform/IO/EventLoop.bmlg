@@ -522,9 +522,19 @@ namespace Platform.IO {
 
 		#region process termination notification
 
-		public void BeginProcess( System.Diagnostics.ProcessStartInfo& info, DPC* onFinished ) {
+		public void BeginProcess( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
+			if( IsDispatchingThread ) {
+				BeginProcessWorker( info, onFinished );
+				return;
+			}
+
+			BeginInvoke( DPC.Create<System.Diagnostics.ProcessStartInfo, DPC*>( BeginProcessWorker, info, onFinished ) );
+		}
+
+		private void BeginProcessWorker( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
 			LibcApi.pipe( info._pipe );
 			info.WaitExit = false;
+
 			System.Diagnostics.Process.Start( info );
 
 			var exitSink = new HandleBrokenEventSink( this, info._pipe[PipeHandle.ReadEnd] );

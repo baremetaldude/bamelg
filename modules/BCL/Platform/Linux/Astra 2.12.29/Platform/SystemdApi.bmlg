@@ -1,0 +1,137 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Net;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.Systemd {
+	public class SystemdApi {
+		public static bool HasPassedHandles;
+		public static int PassedHandles;
+		public static bool IsStartedAsService;
+
+		public static bool HasWatchdog;
+		public static SocketHandleLocal ServiceNotifySocket;
+		public static Utf8String ServiceNotifyPath;
+		public static sockaddr_un ServiceNotifyEndpoint;
+		public static TimeSpan WatchdogNotifyTimeout;
+
+		public static IOHandle GetPassedHandle( int index ) {
+			if( index < 0 || index >= PassedHandles ) return IOHandle.Invalid;
+
+			return bitcast<IOHandle>( 3 + index );
+		}
+
+		private static void CheckPassedHandles() {
+			var listen_fds = LibcApi.getenv( "LISTEN_FDS" );
+			if( listen_fds.IsNullOrEmpty ) return;
+
+			if( !int.TryParse( listen_fds, PassedHandles ) ) return;
+
+			HasPassedHandles = true;
+		}
+
+		private static void CheckWatchdog() {
+			var watchdog_usec = LibcApi.getenv( "WATCHDOG_USEC" );
+			if( watchdog_usec.IsNullOrEmpty ) return;
+
+			int watchdogNotifyTimeout;
+			if( !int.TryParse( watchdog_usec, watchdogNotifyTimeout ) ) return;
+
+			WatchdogNotifyTimeout = TimeSpan.FromMicroseconds( watchdogNotifyTimeout );
+
+			var notify_socket = LibcApi.getenv( "NOTIFY_SOCKET" );
+			if( notify_socket.IsNullOrEmpty ) return;
+			ServiceNotifyPath = ( Utf8String ) notify_socket;
+			var addressLength = ServiceNotifyPath.ByteLength;
+			var isAbstract = ServiceNotifyPath.GetChars()[0] == ( byte ) '@';
+
+			ServiceNotifyEndpoint = new sockaddr_un( ServiceNotifyPath );
+			if( isAbstract ) {
+				Console.WriteLine( "abstract" );
+				ServiceNotifyEndpoint.sun_path[0] = 0;
+			}
+			else {
+				Console.WriteLine( "not abstract" );
+			}
+
+			ServiceNotifySocket = new SocketHandleLocal( __socket_type.SOCK_DGRAM, true );
+
+			HasWatchdog = true;
+		}
+
+		public static void Initialize() {
+			CheckPassedHandles();
+			CheckWatchdog();
+		}
+
+		private static void ServiceNotify( Utf8String message ) {
+			if( !HasWatchdog ) return;
+
+			var data = new iovec[1] {
+				new iovec( message.GetChars(), message.ByteLength )
+			};
+
+			var m = default( msghdr );
+			m.msg_name = &ServiceNotifyEndpoint;
+			m.msg_namelen = ( uint )( memberinfo( sockaddr_un.sun_path ).ByteOffset + ServiceNotifyPath.ByteLength );
+
+			m.msg_iov = &data[0];
+			m.msg_iovlen = ( uint ) data.Length;
+
+			LibcApi.sendmsg( ServiceNotifySocket, &m, MessageFlags.None );
+		}
+
+		public static void ServiceNotifyReady() {
+			ServiceNotify( "READY=1" );
+		}
+
+		public static void ServiceNotifyWatchdog() {
+			ServiceNotify( "WATCHDOG=1" );
+		}
+
+		private static Utf8String _status = "STATUS=";
+		public static void ServiceNotifyStatus( Utf8String status ) {
+			if( !HasWatchdog ) return;
+
+			var data = new iovec[2] {
+				new iovec( _status.GetChars(), _status.ByteLength ),
+				new iovec( status.GetChars(), status.ByteLength )
+			};
+
+			var m = default( msghdr );
+			m.msg_name = &ServiceNotifyEndpoint;
+			m.msg_namelen = ( uint )( memberinfo( sockaddr_un.sun_path ).ByteOffset + ServiceNotifyPath.ByteLength );
+
+			m.msg_iov = &data[0];
+			m.msg_iovlen = ( uint ) data.Length;
+
+			LibcApi.sendmsg( ServiceNotifySocket, &m, MessageFlags.None );
+		}
+
+		public static void RegisterWatchdogNotifier( EventLoop eventLoop ) {
+			if( !SystemdApi.HasWatchdog ) return;
+
+			eventLoop.BeginAlarmUnbiased( SystemdApi.WatchdogNotifyTimeout / 2, SystemdApi.ServiceNotifyWatchdog );
+		}
+
+		static ~SystemdApi() {
+			if( HasWatchdog ) {
+				HasWatchdog = false;
+				ServiceNotifySocket.Close();
+			}
+		}
+	}
+}

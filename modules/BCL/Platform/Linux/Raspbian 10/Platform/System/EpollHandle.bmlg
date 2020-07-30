@@ -36,7 +36,7 @@ namespace Platform.Kernel {
 		}
 
 
-		public bool Add( IOHandle handle, epoll_event& @event ) { return LibcApi.AssertErrno( LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_ADD, handle, &@event ) ); }
+		public bool Add( IOHandle handle, epoll_event& @event ) { return LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_ADD, handle, &@event ) == 0; }
 
 		public bool Remove( IOHandle handle ) { return LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_DEL, handle, null ) == 0; }
 

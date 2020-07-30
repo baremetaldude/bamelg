@@ -10,7 +10,7 @@ using Platform.Kernel;
 using Platform.Libc;
 
 namespace System.Diagnostics {
-	public struct ProcessStartInfo {
+	public class ProcessStartInfo : IFormattable {
 		public ProcessStartInfo() {
 		}
 
@@ -44,6 +44,30 @@ namespace System.Diagnostics {
 		public EnvironmentVariableUTF8[] EnvironmentVariables;
 
 		internal PipeHandle[2] _pipe = new PipeHandle[2] default( PipeHandle.Invalid );
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( '\'' );
+			builder.Append( FileName );
+			builder.Append( '\'' );
+
+			foreach( var parameter in Parameters ) {
+				builder.Append( ' ' );
+				builder.Append( parameter );
+			}
+
+			builder.Append( "; { " );
+			builder.Append( "DetachSession = " );
+			builder.Append( DetachSession );
+			builder.Append( ", WaitExit = " );
+			builder.Append( WaitExit );
+			builder.Append( ", DetachIO = " );
+			builder.Append( DetachIO );
+			builder.Append( ", InheritHandles = " );
+			builder.Append( InheritHandles );
+			builder.Append( ", WorkingDirectory = " );
+			builder.Append( WorkingDirectory );
+			builder.Append( " }" );
+		}
 	}
 
 	public class Process {
@@ -64,10 +88,10 @@ namespace System.Diagnostics {
 			return info.ExitCode;
 		}
 
-		public static void Start( ProcessStartInfo& info ) {
+		public static void Start( ProcessStartInfo info ) {
 			int forkedPID;
 
-			if( info.WaitExit ) {
+			if( info.WaitExit && info.EnvironmentVariables == null ) {
 				if( !LibcApi.AssertErrno( forkedPID = LibcApi.vfork() ) ) return;
 			}
 			else {
@@ -75,7 +99,7 @@ namespace System.Diagnostics {
 			}
 
 			if( forkedPID == 0 ) { // child process
-				info._pipe[0].Close();
+				info._pipe[PipeHandle.ReadEnd].Close();
 
 				if( info.DetachSession ) LibcApi.setsid();
 				if( info.WorkingDirectory != null )
@@ -115,7 +139,7 @@ namespace System.Diagnostics {
 				if( !info.InheritHandles ) {
 					for( var i = LibcApi.getdtablesize() - 1; i > 2; --i ) {
 						var handle = new IOHandle( i );
-						if( handle != info._pipe[1] )
+						if( handle != info._pipe[PipeHandle.WriteEnd] )
 							LibcApi.close( handle );
 					}
 				}
@@ -128,7 +152,7 @@ namespace System.Diagnostics {
 				LibcApi._exit( 1 ); // if 'execve' fails, dot't call dtors/atexit
 			}
 			else {
-				info._pipe[1].Close();
+				info._pipe[PipeHandle.WriteEnd].Close();
 			}
 
 			info.PID = forkedPID;

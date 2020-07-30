@@ -421,11 +421,10 @@ namespace Platform.IO {
 			private IOHandle _file;
 
 			public sealed override void OnEvent( epoll_event& @event ) {
-				int totalReaden;
-				long newPosition;
 				byte gpioValue;
-				bitcast<IOHandleNonBlocking>( _file ).Seek( 0, SeekOrigin.Begin, newPosition );
-				bitcast<IOHandleNonBlocking>( _file ).Read( TimeSpan.Zero, &gpioValue, sizeof( gpioValue ), totalReaden );
+
+				var totalReceived = LibcApi.pread( _file, &gpioValue, sizeof( gpioValue ), 0 );
+				if( totalReceived < 0 ) return;
 
 				OnEvent( gpioValue == 49 );
 			}
@@ -434,12 +433,19 @@ namespace Platform.IO {
 
 			public SysfsGpioInputEventSink( EventLoop parent )
 				: base( parent ) {
-				_listenedEvents = EPOLL_EVENTS.EPOLLET;
+				_listenedEvents = EPOLL_EVENTS.EPOLLPRI;
 			}
 
 			/// \param Path to pin exported to sysfs (e.g. "/sys/class/gpio/gpio144/value")
-			public SystemError Open( CUtf8String path ) {
-				return IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			public SystemError Open( CUtf8String path, bool& initialState = nullref ) {
+				var code = IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+				if( !code ) return code;
+
+				byte gpioValue;
+				LibcApi.pread( _file, &gpioValue, sizeof( gpioValue ), 0 );
+				if( initialState != nullref ) initialState = gpioValue == 49;
+
+				return code;
 			}
 
 			~SysfsGpioInputEventSink() {
@@ -474,7 +480,9 @@ namespace Platform.IO {
 			public sealed override void OnEvent( epoll_event& @event ) {
 				int totalReaden;
 				gpioevent_data gpioEvent;
-				bitcast<IOHandleNonBlocking>( _lineDevice ).Read( TimeSpan.Zero, &gpioEvent, sizeof( gpioEvent ), totalReaden );
+
+				var totalReceived = LibcApi.read( _lineDevice, &gpioEvent, sizeof( gpioEvent ) );
+				if( totalReceived < 0 ) return;
 
 				OnEvent( gpioEvent.timestamp, gpioEvent.id == GPIOEVENT_EVENT.GPIOEVENT_EVENT_RISING_EDGE );
 			}
@@ -496,7 +504,7 @@ namespace Platform.IO {
 				_gpioDevice = value._gpioDevice;
 			}
 
-			public SystemError Bind( uint lineOffset, CUtf8String comment ) {
+			public SystemError Bind( uint lineOffset, CUtf8String comment, bool& initialValue = nullref ) {
 				var lineInfo = new gpioevent_request {
 					fd = 0,
 					lineoffset = lineOffset,
@@ -509,6 +517,12 @@ namespace Platform.IO {
 				if( LibcApi.ioctl( _gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
 				_lineDevice = bitcast<IOHandleNonBlocking>( lineInfo.fd );
 
+				if( initialValue != nullref ) {
+					gpiohandle_data data;
+					if( LibcApi.ioctl( _lineDevice, IoctlCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
+					initialValue = data.values[0] != 0;
+				}
+
 				return SystemError.None;
 			}
 
@@ -519,18 +533,18 @@ namespace Platform.IO {
 		}
 
 		public class UapiGpioInputTraceEventSink : GpioInputEventSink {
-			public DateTime LastEvent = DateTime.MinValue;
+			public ulong LastEvent = 0;
 
 			public UapiGpioInputTraceEventSink( EventLoop parent )
 				: base( parent ) {
 			}
 
 			public override void OnEvent( ulong timestamp, bool value ) {
-				var diff = Parent.UtcNow - LastEvent;
-				Console.Write( "GPIO state changed: {0}", value );
-				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
+				var diff = new TimeSpan( cast<long>( timestamp - LastEvent ) / 100 );
+				Console.Write( "GPIO state changed: {0} at {1}", value, new DateTime( ( long ) timestamp / 100 + 621355968000000000, DateTimeKind.Utc ) );
+				if( LastEvent != 0 ) System.Console.Write( "( {0} ago )", diff );
 				Console.WriteLine();
-				LastEvent = Parent.UtcNow;
+				LastEvent = timestamp;
 			}
 		}
 
@@ -572,7 +586,7 @@ namespace Platform.IO {
 			}
 
 			public void Notify() {
-				var id = atomic( Parent.PollId, Relaxed );
+				var id = atomic( Parent.PollId, Unordered );
 
 				// eliminate unnecessary syscalls
 				if( atomic( _notificationId = id, Relaxed ) == id ) return;
@@ -581,8 +595,9 @@ namespace Platform.IO {
 			}
 
 			public override void OnEvent( epoll_event& @event ) {
-				atomic( --_notificationId, Relaxed );
+				var id = atomic( Parent.PollId, Unordered ) ^ ( int ) 0x80000000;
 
+				atomic( _notificationId = id, Relaxed );
 				_eventHandle.Decrement();
 				OnNotified();
 			}
@@ -612,7 +627,7 @@ namespace Platform.IO {
 		}
 
 		public static void BlockExitSignals() {
-			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
+			LibcApi.SignalInstallIgnore( SignalCode.SIGPIPE );
 			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
 		}
 
@@ -731,9 +746,19 @@ namespace Platform.IO {
 
 		#region process termination notification
 
-		public void BeginProcess( System.Diagnostics.ProcessStartInfo& info, DPC* onFinished ) {
+		public void BeginProcess( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
+			if( IsDispatchingThread ) {
+				BeginProcessWorker( info, onFinished );
+				return;
+			}
+
+			BeginInvoke( DPC.Create<System.Diagnostics.ProcessStartInfo, DPC*>( BeginProcessWorker, info, onFinished ) );
+		}
+
+		private void BeginProcessWorker( System.Diagnostics.ProcessStartInfo info, DPC* onFinished ) {
 			LibcApi.pipe( info._pipe );
 			info.WaitExit = false;
+
 			System.Diagnostics.Process.Start( info );
 
 			var exitSink = new HandleBrokenEventSink( this, info._pipe[PipeHandle.ReadEnd] );

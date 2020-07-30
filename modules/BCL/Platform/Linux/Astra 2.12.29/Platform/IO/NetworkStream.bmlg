@@ -1,0 +1,215 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Net;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.IO {
+	// Must be used with non-blocking sockets inside Fibers or with blocking sockets(in ST/MT environment)
+	public class NetworkStream : IStream {
+		public TimeSpan ConnectTimeout { get; set; }
+		public TimeSpan WriteTimeout { get; set; }
+		public TimeSpan ReadTimeout { get; set; }
+
+		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
+		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
+
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.VectoredIO | StreamCapabilities.Timeout; } }
+		public StreamingBufferInfo* BufferInfo { get { return null; } }
+
+		private IOHandleNonBlocking _handle = IOHandleNonBlocking.Invalid;
+		public IOHandleNonBlocking Handle {
+			get { return _handle; }
+			set {
+				if( _handle == value ) return;
+
+				Close();
+				_handle = value;
+
+				Boolean32 cork = true;
+				if( LibcApi.setsockopt( _handle, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_CORK, &cork, sizeof( cork ) ) >= 0 )
+					KernelBufferingTCP = _cork = true;
+			}
+		}
+
+		public bool CloseHandle { get; set; } = true;
+
+		private bool _immediateDeliveryTCP { get; set; } = true;
+
+		public bool ImmediateDeliveryTCP {
+			get { return _immediateDeliveryTCP; }
+			set {
+				if( _handle != IOHandleNonBlocking.Invalid ) bitcast<SocketHandleTCP>( _handle ).ImmediateDelivery = value;
+				_immediateDeliveryTCP = value;
+			}
+		}
+
+		public bool KernelBufferingTCP { get; set; }
+		private bool _cork { get; set; }
+
+		public string Context;
+
+		public NetworkStream() {
+		}
+
+		public NetworkStream( IOHandleNonBlocking handle )
+			: this() {
+			_handle = handle;
+		}
+
+		~NetworkStream() { Close(); }
+		public override void Dispose() { Close(); base.Dispose(); }
+
+		private void Close() {
+			if( CloseHandle ) _handle.Close();
+			else _handle = IOHandleNonBlocking.Invalid;
+		}
+
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
+
+		public bool Connect( IPv4Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET ) );
+
+		restart_Connect:
+			var status = socket.Connect( ConnectTimeout, endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
+			}
+
+			if( _immediateDeliveryTCP ) socket.ImmediateDelivery = true;
+			return true;
+		}
+
+		public bool Connect( IPv6Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET6 ) );
+
+		restart_Connect:
+			var status = socket.Connect( ConnectTimeout, endpoint );
+			if( !status ) {
+				if( OnLastError( "Connect", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Connect;
+				return false;
+			}
+
+			if( _immediateDeliveryTCP ) socket.ImmediateDelivery = true;
+			return true;
+		}
+
+		public bool Bind( IPv4Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET ) );
+			var nativeEndpoint = ( sockaddr_in ) endpoint;
+
+		restart_Bind:
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+
+			if( !status ) {
+				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;
+				return false;
+			}
+
+			return true;
+		}
+
+		public bool Bind( IPv6Endpoint endpoint ) {
+			var socket = bitcast<SocketHandleTCP>( _handle != SocketHandle.Invalid ? _handle : _handle = new SocketHandleTCP( ProtocolFamily.PF_INET6 ) );
+			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
+
+		restart_Bind:
+			var status = socket.Bind( &nativeEndpoint, sizeof( nativeEndpoint ) );
+
+			if( !status ) {
+				if( OnLastError( "Bind", endpoint, status ) == PlatformErrorAction.Restart ) goto restart_Bind;
+				return false;
+			}
+
+			return true;
+		}
+
+		public int Read( void* buffer, int count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
+
+			var data = ( byte* ) buffer;
+
+			var transmitted = 0;
+		restart_Receive:
+			var error = _handle.Read( ReadTimeout, data, count, transmitted );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return transmitted;
+			}
+
+			return transmitted;
+		}
+
+		public void Write( void* buffer, int count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return;
+
+			if( KernelBufferingTCP & !_cork ) {
+				bitcast<SocketHandleTCP>( _handle ).Cork = _cork = true;
+			}
+
+		restart_Send:
+			var error = _handle.Write( WriteTimeout, buffer, count );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return;
+			}
+		}
+
+		public int Read( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+			int totalReaden;
+
+		restart_Receive:
+			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return totalReaden;
+			}
+
+			return totalReaden;
+		}
+
+		public void Write( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+
+			if( KernelBufferingTCP & !_cork ) {
+				bitcast<SocketHandleTCP>( _handle ).Cork = _cork = true;
+			}
+
+		restart_Send:
+			var error = _handle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return;
+			}
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
+			switch( flushKind ) {
+				case FlushKind.Write:
+				case FlushKind.DeepWrite:
+				case FlushKind.SynchronizeWrite:
+					if( KernelBufferingTCP & _cork ) {
+						bitcast<SocketHandleTCP>( _handle ).Cork = _cork = false;
+					}
+
+					break;
+			}
+		}
+
+		long IStream.Position { get { return 0; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+	}
+}

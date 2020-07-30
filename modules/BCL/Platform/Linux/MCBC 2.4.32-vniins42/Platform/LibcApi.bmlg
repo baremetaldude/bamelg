@@ -115,6 +115,40 @@ namespace Platform.Libc {
 
 			return LibcApi.strerror( code );
 		}
+
+		public static void SignalInstallDefault( vararg SignalCode codes ) {
+			var ignoreAction = default( sigaction );
+			ignoreAction.__sigaction_handler.sa_handler = LibcApi.SIG_DFL;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &ignoreAction, null ) );
+		}
+
+		public static void SignalInstallIgnore( vararg SignalCode codes ) {
+			var ignoreAction = default( sigaction );
+			ignoreAction.__sigaction_handler.sa_handler = LibcApi.SIG_IGN;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &ignoreAction, null ) );
+		}
+
+		public static void SignalInstallHandler( Functors.Action<int> handler, vararg SignalCode codes ) {
+			var newAction = default( sigaction );
+			newAction.__sigaction_handler.sa_handler = handler;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &newAction, null ) );
+		}
+
+		public static void SignalBlock( vararg SignalCode codes ) {
+			var signalSet = new sigset_t( vararg( codes, codes.Length ) );
+			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );
+		}
+
+		public static void SignalUnblock( vararg SignalCode codes ) {
+			var signalSet = new sigset_t( vararg( codes, codes.Length ) );
+			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_UNBLOCK, &signalSet, null ) );
+		}
 	}
 
 	public partial struct in_addr {
@@ -460,21 +494,21 @@ namespace Platform.Libc {
 			_timeout = timeout;
 			if( timeout <= TimeSpan.Zero ) return;
 
-			// LibcApi.signal( SignalCode.SIGALRM, AlarmSignalHandler );
-			var sa = default( sigaction );
-			var& handler = sa.__sigaction_handler.sa_handler; *&handler = AlarmSignalHandler;
-			LibcApi.sigaction( SignalCode.SIGALRM, &sa, null );
+			LibcApi.SignalInstallHandler( AlarmSignalHandler, SignalCode.SIGALRM ); 
+			LibcApi.SignalUnblock( SignalCode.SIGALRM ); 
 
 			var @new = new itimerval { it_interval = default( timeval ), it_value = new timeval( timeout ) };
-			LibcApi.setitimer( 0, &@new, null );
+			LibcApi.AssertErrno( LibcApi.setitimer( 0, &@new, null ) );
 		}
 
 		public void Dispose() {
 			if( _timeout <= TimeSpan.Zero ) return;
-			LibcApi.signal( SignalCode.SIGALRM, LibcApi.SIG_IGN );
+
+			LibcApi.SignalBlock( SignalCode.SIGALRM ); 
 		}
 
-		private static void AlarmSignalHandler( int signal ) { }
+		private static void AlarmSignalHandler( int signal ) {
+	}
 	}
 
 	[PrimitiveType( Size = sizeof( uintptr ) )]

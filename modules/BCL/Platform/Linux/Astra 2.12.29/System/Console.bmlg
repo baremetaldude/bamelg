@@ -1,0 +1,737 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+using System.Text;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System {
+	public static partial class Console {
+		public const ConsoleEncoding DefaultPlatformConsoleEncoding = ConsoleEncoding.Utf8;
+
+		private static IOHandle _handle = LibcApi.StdOut;
+
+		static Console() {
+			// TestEncodings();
+			// PrintDefaultColorsLab( DefaultColors256, DefaultColors256.Length );
+
+			UpdateTerminalCapabilities();
+		}
+
+		private static void UpdateTerminalCapabilities() {
+			var term = Environment.GetEnvironmentVariable( "TERM" );
+			switch( term ) {
+				case "xterm":
+					break;
+
+				case "xterm-16color":
+					IsTerminalSupports16Color = true;
+					break;
+					
+				case "xterm-256color": 
+					IsTerminalSupports16Color = IsTerminalSupports256Color = true;
+					break;
+			}
+
+			if( Environment.GetEnvironmentVariable( "COLORTERM" ) != CUtf8String.Null ) {
+				IsTerminalSupports16Color = true;
+				IsTerminalSupports256Color = true;
+				IsTerminalSupportsRGB = true;
+			}
+		}
+
+		private static void WriteVector( vararg iovec vectors ) {
+			LibcApi.AssertErrno( LibcApi.writev( _handle, &vectors[0], vectors.Length.ToSigned() ) );
+		}
+
+		public static void WriteLine() {
+			LibcApi.AssertErrno( LibcApi.write( _handle, _newlineUtf8.Start, ( int ) _newlineUtf8.Count ) );
+		}
+
+		public static void Clear() {
+			Console.Write( ( Utf8String ) "\x001Bc" );
+		}
+
+		private static void PlatformWrite( CStringSpan data, bool appendNewLine ) {
+			if( data.IsNullOrEmpty ) {
+				if( appendNewLine ) WriteLine();
+				return;
+			}
+
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				var lastSegment = new MemorySegment<byte>( null, 0 );
+				foreach( var segment in Unicode.StreamConvertSbcsCharactersToUtf8( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length ) ) {
+					if( lastSegment.Count != 0 )
+						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+
+					lastSegment = segment;
+				}
+
+				if( lastSegment.Count != 0 ) {
+					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
+					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				}
+			}
+		}
+
+		private static void PlatformWrite( CUtf8StringSpan data, bool appendNewLine ) {
+			if( data.IsNullOrEmpty ) {
+				if( appendNewLine ) WriteLine();
+				return;
+			}
+
+			if( appendNewLine ) WriteVector( new iovec( data.GetChars(), data.ByteLength ), _newlineUtf8 );
+			else LibcApi.AssertErrno( LibcApi.write( _handle, data.GetChars(), ( int ) data.ByteLength ) );
+		}
+
+		private static void PlatformWrite( CUtf16StringSpan data, bool appendNewLine ) {
+			if( data.IsNullOrEmpty ) {
+				if( appendNewLine ) WriteLine();
+				return;
+			}
+
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				var lastSegment = new MemorySegment<byte>( null, 0 );
+				foreach( var segment in Unicode.StreamConvertUtf16CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
+					if( lastSegment.Count != 0 )
+						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+
+					lastSegment = segment;
+				}
+
+				if( lastSegment.Count != 0 ) {
+					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
+					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				}
+			}
+		}
+
+		private static void PlatformWrite( CUtf32StringSpan data, bool appendNewLine ) {
+			if( data.IsNullOrEmpty ) {
+				if( appendNewLine ) WriteLine();
+				return;
+			}
+
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				var lastSegment = new MemorySegment<byte>( null, 0 );
+				foreach( var segment in Unicode.StreamConvertUtf32CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
+					if( lastSegment.Count != 0 )
+						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+
+					lastSegment = segment;
+				}
+
+				if( lastSegment.Count != 0 ) {
+					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
+					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				}
+			}
+		}
+
+		// private static RgbColor[256] DefaultColors256 = new RgbColor[256] {
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x80, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x80, B = 0x00 },
+		// 	new RgbColor { R = 0x80, G = 0x80, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0x80 },
+		// 	new RgbColor { R = 0x80, G = 0x00, B = 0x80 },
+		// 	new RgbColor { R = 0x00, G = 0x80, B = 0x80 },
+		// 	new RgbColor { R = 0xc0, G = 0xc0, B = 0xc0 },
+		// 	new RgbColor { R = 0x80, G = 0x80, B = 0x80 },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0x00, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0x5f, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0x87, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0xaf, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0xd7, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0x00, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0x5f, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0x87, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0xaf, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0xd7, B = 0xff },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0x00 },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0x5f },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0x87 },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0xaf },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0xd7 },
+		// 	new RgbColor { R = 0xff, G = 0xff, B = 0xff },
+		// 	new RgbColor { R = 0x08, G = 0x08, B = 0x08 },
+		// 	new RgbColor { R = 0x12, G = 0x12, B = 0x12 },
+		// 	new RgbColor { R = 0x1c, G = 0x1c, B = 0x1c },
+		// 	new RgbColor { R = 0x26, G = 0x26, B = 0x26 },
+		// 	new RgbColor { R = 0x30, G = 0x30, B = 0x30 },
+		// 	new RgbColor { R = 0x3a, G = 0x3a, B = 0x3a },
+		// 	new RgbColor { R = 0x44, G = 0x44, B = 0x44 },
+		// 	new RgbColor { R = 0x4e, G = 0x4e, B = 0x4e },
+		// 	new RgbColor { R = 0x58, G = 0x58, B = 0x58 },
+		// 	new RgbColor { R = 0x60, G = 0x60, B = 0x60 },
+		// 	new RgbColor { R = 0x66, G = 0x66, B = 0x66 },
+		// 	new RgbColor { R = 0x76, G = 0x76, B = 0x76 },
+		// 	new RgbColor { R = 0x80, G = 0x80, B = 0x80 },
+		// 	new RgbColor { R = 0x8a, G = 0x8a, B = 0x8a },
+		// 	new RgbColor { R = 0x94, G = 0x94, B = 0x94 },
+		// 	new RgbColor { R = 0x9e, G = 0x9e, B = 0x9e },
+		// 	new RgbColor { R = 0xa8, G = 0xa8, B = 0xa8 },
+		// 	new RgbColor { R = 0xb2, G = 0xb2, B = 0xb2 },
+		// 	new RgbColor { R = 0xbc, G = 0xbc, B = 0xbc },
+		// 	new RgbColor { R = 0xc6, G = 0xc6, B = 0xc6 },
+		// 	new RgbColor { R = 0xd0, G = 0xd0, B = 0xd0 },
+		// 	new RgbColor { R = 0xda, G = 0xda, B = 0xda },
+		// 	new RgbColor { R = 0xe4, G = 0xe4, B = 0xe4 },
+		// 	new RgbColor { R = 0xee, G = 0xee, B = 0xee }
+		// };
+
+		private static ColorValue.Lab[256] DefaultLabColors256 = new ColorValue.Lab[256] {
+			new ColorValue.Lab { L = -16, A = 68.9655172413793, B = 0 },
+			new ColorValue.Lab { L = 25.5307845724162, A = 48.0552360454883, B = 40.323356531254 },
+			new ColorValue.Lab { L = 46.2288178426266, A = -51.6996473280824, B = 49.8979523098384 },
+			new ColorValue.Lab { L = 51.8683313633482, A = -12.930760098733, B = 56.6772846619415 },
+			new ColorValue.Lab { L = 12.9753115777165, A = 47.5077653101377, B = -64.7042732458055 },
+			new ColorValue.Lab { L = 29.7821000920981, A = 58.939837319042, B = -36.4979299628239 },
+			new ColorValue.Lab { L = 48.2560738133755, A = -28.841559463342, B = -8.48105008628839 },
+			new ColorValue.Lab { L = 77.7043635899527, A = 0.00424941207544105, B = -0.00840769230232574 },
+			new ColorValue.Lab { L = 53.585013452169, A = 0.00315562034797212, B = -0.00624356603626808 },
+			new ColorValue.Lab { L = 53.2328817858425, A = 80.109309529822, B = 67.2200683102643 },
+			new ColorValue.Lab { L = 87.7370334735442, A = -86.1846364976253, B = 83.1811647477785 },
+			new ColorValue.Lab { L = 97.1382469812973, A = -21.5559083348323, B = 94.4824854464446 },
+			new ColorValue.Lab { L = 32.3025866672495, A = 79.1966617893093, B = -107.863681044952 },
+			new ColorValue.Lab { L = 60.319933664076, A = 98.2542186861611, B = -60.8429842238623 },
+			new ColorValue.Lab { L = 91.1165211094634, A = -48.0796184662288, B = -14.1381277548461 },
+			new ColorValue.Lab { L = 100, A = 0.00526049995830391, B = -0.0104081845252679 },
+			new ColorValue.Lab { L = -16, A = 68.9655172413793, B = 0 },
+			new ColorValue.Lab { L = 7.45077245181827, A = 38.4497606175603, B = -52.3675193095969 },
+			new ColorValue.Lab { L = 14.1122758881477, A = 49.3719258897778, B = -67.2432088225827 },
+			new ColorValue.Lab { L = 20.4209838849761, A = 59.7156496533561, B = -81.3310768670703 },
+			new ColorValue.Lab { L = 26.4661207014601, A = 69.6272235246121, B = -94.8303686118007 },
+			new ColorValue.Lab { L = 32.3025866672495, A = 79.1966617893093, B = -107.863681044952 },
+			new ColorValue.Lab { L = 34.3640433083512, A = -41.8424030429584, B = 40.3842258017202 },
+			new ColorValue.Lab { L = 36.0047752240068, A = -23.3425220058919, B = -6.86402198618553 },
+			new ColorValue.Lab { L = 37.7231524727078, A = -8.27352972215034, B = -28.8425770606784 },
+			new ColorValue.Lab { L = 40.0473932027357, A = 8.05956654766593, B = -49.0830986594833 },
+			new ColorValue.Lab { L = 42.8996128819908, A = 24.2431754300944, B = -67.6715156041304 },
+			new ColorValue.Lab { L = 46.1832027812074, A = 39.6240979552308, B = -84.8416187158274 },
+			new ColorValue.Lab { L = 48.6706188488944, A = -53.7282934641645, B = 51.8559016070434 },
+			new ColorValue.Lab { L = 49.6825667917841, A = -41.4660036959733, B = 12.8683578909339 },
+			new ColorValue.Lab { L = 50.7774224607677, A = -29.9732754650509, B = -8.81383861341865 },
+			new ColorValue.Lab { L = 52.3122330112981, A = -16.0799667330687, B = -29.6737718558873 },
+			new ColorValue.Lab { L = 54.2746625133521, A = -0.974296366554162, B = -49.3527805529051 },
+			new ColorValue.Lab { L = 56.6322851764367, A = 14.4489518677622, B = -67.8325435995714 },
+			new ColorValue.Lab { L = 62.2195133863693, A = -64.9847031720316, B = 62.7200336429705 },
+			new ColorValue.Lab { L = 62.9159139743253, A = -56.2737358692024, B = 30.5504631465759 },
+			new ColorValue.Lab { L = 63.679663041081, A = -47.5304054140825, B = 9.98583082701416 },
+			new ColorValue.Lab { L = 64.7677053822805, A = -36.252862013736, B = -10.6603923030093 },
+			new ColorValue.Lab { L = 66.1871608458157, A = -23.1713466980535, B = -30.6654548115 },
+			new ColorValue.Lab { L = 67.9320376045692, A = -9.01072610072856, B = -49.7993489016552 },
+			new ColorValue.Lab { L = 75.2023493699534, A = -75.7708319294038, B = 73.1302736766737 },
+			new ColorValue.Lab { L = 75.7162666705731, A = -69.2378949779996, B = 46.4140739697687 },
+			new ColorValue.Lab { L = 76.2836798542266, A = -62.4350127566777, B = 27.3554703129718 },
+			new ColorValue.Lab { L = 77.0987178626009, A = -53.313388363872, B = 7.40988209293683 },
+			new ColorValue.Lab { L = 78.1734890077679, A = -42.2700940455304, B = -12.429798922902 },
+			new ColorValue.Lab { L = 79.5117660618326, A = -29.7943515008191, B = -31.750969187037 },
+			new ColorValue.Lab { L = 87.7370334735442, A = -86.1846364976253, B = 83.1811647477785 },
+			new ColorValue.Lab { L = 88.1349735194192, A = -81.0797268329629, B = 60.7831846111238 },
+			new ColorValue.Lab { L = 88.575980091299, A = -75.6487698343556, B = 43.3664132379288 },
+			new ColorValue.Lab { L = 89.2124141317532, A = -68.1892169523942, B = 24.4043538779374 },
+			new ColorValue.Lab { L = 90.0568997662806, A = -58.8984344622302, B = 5.0491161673494 },
+			new ColorValue.Lab { L = 91.1165211094634, A = -48.0796184662288, B = -14.1381277548461 },
+			new ColorValue.Lab { L = 17.6123729382851, A = 38.892848575538, B = 32.635157553757 },
+			new ColorValue.Lab { L = 21.0531170561021, A = 47.7021518684552, B = -29.5391008384813 },
+			new ColorValue.Lab { L = 24.2647558120017, A = 55.1197239081013, B = -50.1186634209885 },
+			new ColorValue.Lab { L = 28.189092810364, A = 63.5083537557131, B = -68.1977173569365 },
+			new ColorValue.Lab { L = 32.5669412468356, A = 72.2901352501811, B = -84.5030350439092 },
+			new ColorValue.Lab { L = 37.2121163880556, A = 81.1700204454058, B = -99.5469089114306 },
+			new ColorValue.Lab { L = 38.9283065073397, A = -10.4653339754815, B = 45.8709857952411 },
+			new ColorValue.Lab { L = 40.3176796959272, A = 0.0025539582041989, B = -0.00505314484751107 },
+			new ColorValue.Lab { L = 41.7929109053089, A = 9.72221824355898, B = -22.1912554943816 },
+			new ColorValue.Lab { L = 43.8177087439776, A = 21.3666077031601, B = -42.8368572685479 },
+			new ColorValue.Lab { L = 46.3431730764705, A = 33.9210240118938, B = -61.9230227088717 },
+			new ColorValue.Lab { L = 49.2981897533851, A = 46.6633272055268, B = -79.6174887763296 },
+			new ColorValue.Lab { L = 51.5657295680853, A = -31.1089617215458, B = 55.3642012453514 },
+			new ColorValue.Lab { L = 52.4945689252887, A = -22.3651527003702, B = 17.1826321175984 },
+			new ColorValue.Lab { L = 53.5033189958546, A = -13.7522605882623, B = -4.46511013246491 },
+			new ColorValue.Lab { L = 54.9236892008567, A = -2.85405730908972, B = -25.4196230334525 },
+			new ColorValue.Lab { L = 56.7496509031832, A = 9.53176981714116, B = -45.2713921769543 },
+			new ColorValue.Lab { L = 58.9565901322649, A = 22.6811108637729, B = -63.9701361802105 },
+			new ColorValue.Lab { L = 64.2360124972737, A = -48.2056481355615, B = 65.172036041844 },
+			new ColorValue.Lab { L = 64.8982775062062, A = -41.1711139439512, B = 33.4846739952657 },
+			new ColorValue.Lab { L = 65.6255533992612, A = -33.9612559694516, B = 13.0083820538891 },
+			new ColorValue.Lab { L = 66.6633102822173, A = -24.4598818083374, B = -7.63240027542493 },
+			new ColorValue.Lab { L = 68.0199786854694, A = -13.1819030871657, B = -27.6872925840817 },
+			new ColorValue.Lab { L = 69.6917717156406, A = -0.698144738061568, B = -46.9081891369141 },
+			new ColorValue.Lab { L = 76.6994625943134, A = -62.8831958282337, B = 74.9538478929397 },
+			new ColorValue.Lab { L = 77.1970469148074, A = -57.2222097813458, B = 48.5354183195794 },
+			new ColorValue.Lab { L = 77.7467306825039, A = -51.2698044286222, B = 29.5671064560932 },
+			new ColorValue.Lab { L = 78.5368455314301, A = -43.2027784991219, B = 9.65900683205259 },
+			new ColorValue.Lab { L = 79.5796988883655, A = -33.3154141180105, B = -10.1821530070063 },
+			new ColorValue.Lab { L = 80.8796757962464, A = -22.0016077245077, B = -29.532597216874 },
+			new ColorValue.Lab { L = 88.900216505189, A = -75.971010758982, B = 84.5993541008238 },
+			new ColorValue.Lab { L = 89.2894292578616, A = -71.3559068100409, B = 62.391338508315 },
+			new ColorValue.Lab { L = 89.7208770505383, A = -66.4218391392288, B = 45.0525196728629 },
+			new ColorValue.Lab { L = 90.3437221465566, A = -59.6062898063301, B = 26.1357351767704 },
+			new ColorValue.Lab { L = 91.1705430728214, A = -51.0593613932409, B = 6.79826482200323 },
+			new ColorValue.Lab { L = 92.2085729182244, A = -41.0317443655356, B = -12.3920210959886 },
+			new ColorValue.Lab { L = 27.1604139800722, A = 49.9408788682245, B = 41.9056075841844 },
+			new ColorValue.Lab { L = 29.3546669778101, A = 55.7366561954794, B = -15.9133835581631 },
+			new ColorValue.Lab { L = 31.5785471715951, A = 61.2525817847792, B = -37.9300748307418 },
+			new ColorValue.Lab { L = 34.4901317846553, A = 68.0565859196776, B = -57.6231470278207 },
+			new ColorValue.Lab { L = 37.9448829301673, A = 75.6667520100378, B = -75.4439515741419 },
+			new ColorValue.Lab { L = 41.7996287523141, A = 83.7212934836388, B = -91.8024049982191 },
+			new ColorValue.Lab { L = 43.2641979350927, A = 9.13553251996602, B = 50.9337400599837 },
+			new ColorValue.Lab { L = 44.4637106927082, A = 16.3146118750467, B = 6.50658462297569 },
+			new ColorValue.Lab { L = 45.749830725414, A = 23.3787890445434, B = -15.7747389818852 },
+			new ColorValue.Lab { L = 47.5342483893774, A = 32.309181331312, B = -36.7120900710755 },
+			new ColorValue.Lab { L = 49.7878541798066, A = 42.4549893531059, B = -56.1942122670347 },
+			new ColorValue.Lab { L = 52.4593385317823, A = 53.2365279750344, B = -74.3306780081369 },
+			new ColorValue.Lab { L = 54.5314216414866, A = -13.4381511133068, B = 58.9012486631547 },
+			new ColorValue.Lab { L = 55.3851869557353, A = -6.7670464790448, B = 21.5764797953163 },
+			new ColorValue.Lab { L = 56.3154647408046, A = 0.00327944395911439, B = -0.00648855776772539 },
+			new ColorValue.Lab { L = 57.6304533543731, A = 8.83158176368587, B = -21.0292708242364 },
+			new ColorValue.Lab { L = 59.3291337635537, A = 19.1880512638601, B = -41.0311408187145 },
+			new ColorValue.Lab { L = 61.3935017418484, A = 30.5191802854564, B = -59.9303162420542 },
+			new ColorValue.Lab { L = 66.3751394099051, A = -33.3380095448979, B = 67.7483220931807 },
+			new ColorValue.Lab { L = 67.0038452001063, A = -27.5275218342443, B = 36.5797957172348 },
+			new ColorValue.Lab { L = 67.6951471053947, A = -21.4807991596491, B = 16.2072929838704 },
+			new ColorValue.Lab { L = 68.6831100288409, A = -13.3806421913302, B = -4.417532047078 },
+			new ColorValue.Lab { L = 69.9772867863408, A = -3.58737468462478, B = -24.5153523012473 },
+			new ColorValue.Lab { L = 71.5758982559078, A = 7.45719962284097, B = -43.8190539681942 },
+			new ColorValue.Lab { L = 78.3167708989474, A = -50.5881215209529, B = 76.9115591470586 },
+			new ColorValue.Lab { L = 78.7975663484945, A = -45.6526088252347, B = 50.816514980114 },
+			new ColorValue.Lab { L = 79.3290004868668, A = -40.4212828615032, B = 31.9495849798618 },
+			new ColorValue.Lab { L = 80.0934164554038, A = -33.2671616879148, B = 12.0861596567384 },
+			new ColorValue.Lab { L = 81.1032831780074, A = -24.4046972552607, B = -7.75244058396971 },
+			new ColorValue.Lab { L = 82.3635663545024, A = -14.1472389221164, B = -27.130439650018 },
+			new ColorValue.Lab { L = 90.1699232341948, A = -65.7732559570525, B = 86.1407444752192 },
+			new ColorValue.Lab { L = 90.5499320525185, A = -61.6007503859296, B = 64.1404140479704 },
+			new ColorValue.Lab { L = 90.9712922673102, A = -57.1201874869712, B = 46.8882430032077 },
+			new ColorValue.Lab { L = 91.579784569596, A = -50.8991965530597, B = 28.0227663049527 },
+			new ColorValue.Lab { L = 92.3879266929444, A = -43.0485974863697, B = 8.70663317866007 },
+			new ColorValue.Lab { L = 93.403093246032, A = -33.7729878920439, B = -10.4850469654165 },
+			new ColorValue.Lab { L = 36.202787589889, A = 60.4038017988894, B = 50.6850914950088 },
+			new ColorValue.Lab { L = 37.7348599189939, A = 64.5087967654349, B = -2.44927767728557 },
+			new ColorValue.Lab { L = 39.3491526125321, A = 68.6645588396937, B = -25.1416547364366 },
+			new ColorValue.Lab { L = 41.5465470044162, A = 74.0853764220029, B = -45.8766600471447 },
+			new ColorValue.Lab { L = 44.2619679085456, A = 80.4741837268934, B = -64.8623678895851 },
+			new ColorValue.Lab { L = 47.4096201261588, A = 87.5367473982509, B = -82.3700811301557 },
+			new ColorValue.Lab { L = 48.6338137837996, A = 27.3340630203389, B = 57.0349688792516 },
+			new ColorValue.Lab { L = 49.6468880003719, A = 32.3515260878449, B = 14.5293528379818 },
+			new ColorValue.Lab { L = 50.7429049363225, A = 37.4905168296887, B = -7.75283614534044 },
+			new ColorValue.Lab { L = 52.2792502374205, A = 44.258891021524, B = -28.9418232541435 },
+			new ColorValue.Lab { L = 54.2434973424339, A = 52.2916183495792, B = -48.8177645000109 },
+			new ColorValue.Lab { L = 56.6031116135911, A = 61.1914622422749, B = -67.4240621185733 },
+			new ColorValue.Lab { L = 58.4541495590404, A = 5.07364312697894, B = 63.4992462140873 },
+			new ColorValue.Lab { L = 59.2216929996157, A = 10.0722212271618, B = 27.3430093217428 },
+			new ColorValue.Lab { L = 60.0610619247814, A = 15.2713884333111, B = 5.88725649902109 },
+			new ColorValue.Lab { L = 61.2527060867111, A = 22.2320475288125, B = -15.1852992855988 },
+			new ColorValue.Lab { L = 62.800481328017, A = 30.6421875363282, B = -35.3471784727744 },
+			new ColorValue.Lab { L = 64.6933147899869, A = 40.1222203154195, B = -54.47634669825 },
+			new ColorValue.Lab { L = 69.3081906040897, A = -16.2535268659072, B = 71.2414244720076 },
+			new ColorValue.Lab { L = 69.8948493517469, A = -11.5992499046395, B = 40.793472767883 },
+			new ColorValue.Lab { L = 70.5409191601439, A = -6.68539605906637, B = 20.5790355702482 },
+			new ColorValue.Lab { L = 71.4660017642863, A = 0.00396650774686647, B = -0.00784795074182387 },
+			new ColorValue.Lab { L = 72.6808189294103, A = 8.24492404962607, B = -20.1488350234841 },
+			new ColorValue.Lab { L = 74.1858698687178, A = 17.7252743186369, B = -39.5509947841723 },
+			new ColorValue.Lab { L = 80.5799882019888, A = -35.5165986023332, B = 79.6304691280647 },
+			new ColorValue.Lab { L = 81.0386736408983, A = -31.3481902420784, B = 53.9901182540201 },
+			new ColorValue.Lab { L = 81.5460354688384, A = -26.8925782222125, B = 35.2713954417515 },
+			new ColorValue.Lab { L = 82.2764852487012, A = -20.7398438161598, B = 15.4774716083822 },
+			new ColorValue.Lab { L = 83.2426377050755, A = -13.0279031081113, B = -4.35057625670006 },
+			new ColorValue.Lab { L = 84.4501466186552, A = -3.98615457187096, B = -23.7603041834293 },
+			new ColorValue.Lab { L = 91.9685623982821, A = -52.7045060004308, B = 88.312599255743 },
+			new ColorValue.Lab { L = 92.3360799593375, A = -49.0387022531915, B = 66.6067960920276 },
+			new ColorValue.Lab { L = 92.7437387217225, A = -45.0825248620391, B = 49.4800129017981 },
+			new ColorValue.Lab { L = 93.3327166704944, A = -39.5570536352731, B = 30.6904802110396 },
+			new ColorValue.Lab { L = 94.1154282405462, A = -32.5327308402333, B = 11.4079477231965 },
+			new ColorValue.Lab { L = 95.0994144071089, A = -24.1638208605159, B = -7.78235826800771 },
+			new ColorValue.Lab { L = 44.8673803471677, A = 70.4295948214852, B = 59.0977778082341 },
+			new ColorValue.Lab { L = 46.006266368749, A = 73.5037384298395, B = 10.5182609047361 },
+			new ColorValue.Lab { L = 47.2310374645972, A = 76.7222429248765, B = -12.3623773850642 },
+			new ColorValue.Lab { L = 48.9360936865347, A = 81.0681785379188, B = -33.6971119527188 },
+			new ColorValue.Lab { L = 51.0980942953016, A = 86.3820304054903, B = -53.4912452967956 },
+			new ColorValue.Lab { L = 53.6719668278977, A = 92.4645357855235, B = -71.8950557453365 },
+			new ColorValue.Lab { L = 54.6907154618711, A = 43.5558521602351, B = 63.7350172862985 },
+			new ColorValue.Lab { L = 55.5407056757579, A = 47.2035222515348, B = 23.4875731714463 },
+			new ColorValue.Lab { L = 56.4670205047654, A = 51.0386101626169, B = 1.33535087811596 },
+			new ColorValue.Lab { L = 57.7766601788048, A = 56.2363798749482, B = -20.0127009016114 },
+			new ColorValue.Lab { L = 59.4688392747787, A = 62.6097959440699, B = -40.2182023473901 },
+			new ColorValue.Lab { L = 61.5258728167254, A = 69.9116951848594, B = -59.2556548908903 },
+			new ColorValue.Lab { L = 63.1565020848221, A = 22.8626887719017, B = 68.9032757525932 },
+			new ColorValue.Lab { L = 63.8367235059027, A = 26.6384618711363, B = 34.1803418546612 },
+			new ColorValue.Lab { L = 64.583200530283, A = 30.6385377028883, B = 12.9327560806857 },
+			new ColorValue.Lab { L = 65.6474552208743, A = 36.1056444450259, B = -8.14476366731367 },
+			new ColorValue.Lab { L = 67.0372496972765, A = 42.8737609684705, B = -28.4459593491814 },
+			new ColorValue.Lab { L = 68.7476570624835, A = 50.7029301246612, B = -47.8019305066108 },
+			new ColorValue.Lab { L = 72.9623047681756, A = 1.42999694631785, B = 75.5338179826993 },
+			new ColorValue.Lab { L = 73.5021946561938, A = 5.12079863078979, B = 45.9929099526629 },
+			new ColorValue.Lab { L = 74.0977501060349, A = 9.06486138694984, B = 25.9988160257809 },
+			new ColorValue.Lab { L = 74.9522604348135, A = 14.5094104555092, B = 5.48340111999917 },
+			new ColorValue.Lab { L = 76.0774322662918, A = 21.3308386671664, B = -14.6876671141543 },
+			new ColorValue.Lab { L = 77.4759704038124, A = 29.3248568661582, B = -34.1895980098112 },
+			new ColorValue.Lab { L = 83.4676017116283, A = -18.9512791826791, B = 83.0660407233041 },
+			new ColorValue.Lab { L = 83.9002145554173, A = -15.4931956672389, B = 58.0078412838659 },
+			new ColorValue.Lab { L = 84.3791346083878, A = -11.7679936135979, B = 39.4881998571142 },
+			new ColorValue.Lab { L = 85.069355211336, A = -6.57656522313027, B = 19.7941841264924 },
+			new ColorValue.Lab { L = 85.9835652965019, A = 0.00462486673269424, B = -0.00915054970820339 },
+			new ColorValue.Lab { L = 87.1281161301254, A = 7.82003878836429, B = -19.4483246515906 },
+			new ColorValue.Lab { L = 94.2982704465725, A = -37.67117957481, B = 91.1060425872858 },
+			new ColorValue.Lab { L = 94.6505006922472, A = -34.5142073806065, B = 69.781761094601 },
+			new ColorValue.Lab { L = 95.0413741583945, A = -31.0901455029279, B = 52.8217002953953 },
+			new ColorValue.Lab { L = 95.6064151341764, A = -26.2792156492652, B = 34.1359866046602 },
+			new ColorValue.Lab { L = 96.3578792053172, A = -20.11694166289, B = 14.9026519577755 },
+			new ColorValue.Lab { L = 97.3034705287617, A = -12.7107327880033, B = -4.28023368744954 },
+			new ColorValue.Lab { L = 53.2328817858425, A = 80.109309529822, B = 67.2200683102643 },
+			new ColorValue.Lab { L = 54.1183696286074, A = 82.5095524202327, B = 22.9011207231614 },
+			new ColorValue.Lab { L = 55.08188465961, A = 85.0724820835365, B = 0.154060746448392 },
+			new ColorValue.Lab { L = 56.4416329357607, A = 88.6095112905886, B = -21.4670262211115 },
+			new ColorValue.Lab { L = 58.1945621141999, A = 93.0443066861153, B = -41.7835464697457 },
+			new ColorValue.Lab { L = 60.319933664076, A = 98.2542186861611, B = -60.8429842238623 },
+			new ColorValue.Lab { L = 61.1718622448926, A = 58.0171589395083, B = 70.7358746505305 },
+			new ColorValue.Lab { L = 61.8870395222219, A = 60.7799747870229, B = 32.9330358007257 },
+			new ColorValue.Lab { L = 62.6707992239377, A = 63.7346977877467, B = 11.0479773195467 },
+			new ColorValue.Lab { L = 63.786343556261, A = 67.818209301195, B = -10.3468242688907 },
+			new ColorValue.Lab { L = 65.239999950579, A = 72.9436789451158, B = -30.7883917193239 },
+			new ColorValue.Lab { L = 67.0244971957812, A = 78.9663245821668, B = -50.1813967585303 },
+			new ColorValue.Lab { L = 68.4517284934361, A = 39.3526706819041, B = 74.8663890800432 },
+			new ColorValue.Lab { L = 69.0502213797255, A = 42.2631285320684, B = 41.7731861635424 },
+			new ColorValue.Lab { L = 69.7090394539139, A = 45.3875260356422, B = 20.8234975061475 },
+			new ColorValue.Lab { L = 70.6518745529619, A = 49.7240681951986, B = -0.196394932097355 },
+			new ColorValue.Lab { L = 71.8891463822586, A = 55.1945496038688, B = -20.5934058677445 },
+			new ColorValue.Lab { L = 73.4207404539587, A = 61.6563173790286, B = -40.1468638949583 },
+			new ColorValue.Lab { L = 77.2329433902658, A = 18.7176461918471, B = 80.4738537613786 },
+			new ColorValue.Lab { L = 77.7248943802549, A = 21.6550706214092, B = 51.9975636493115 },
+			new ColorValue.Lab { L = 78.2684575211792, A = 24.8241813330133, B = 32.2905230578434 },
+			new ColorValue.Lab { L = 79.049958379961, A = 29.2486464285831, B = 11.889841175146 },
+			new ColorValue.Lab { L = 80.0817634553841, A = 34.8704572178396, B = -8.28572676696495 },
+			new ColorValue.Lab { L = 81.3684581664166, A = 41.5645811743273, B = -27.8745140148215 },
+			new ColorValue.Lab { L = 86.9285847161576, A = -1.92421496510276, B = 87.1371576065337 },
+			new ColorValue.Lab { L = 87.3327638907738, A = 0.926245545115001, B = 62.7768584665991 },
+			new ColorValue.Lab { L = 87.7806001671221, A = 4.01740364802883, B = 44.5092306180931 },
+			new ColorValue.Lab { L = 88.4267365530417, A = 8.35976335024252, B = 24.9504930608693 },
+			new ColorValue.Lab { L = 89.283822567843, A = 13.9204256276831, B = 5.19242985507282 },
+			new ColorValue.Lab { L = 90.3588270340679, A = 20.6015112991858, B = -14.2666624106539 },
+			new ColorValue.Lab { L = 97.1382469812973, A = -21.5559083348323, B = 94.4824854464446 },
+			new ColorValue.Lab { L = 97.473094123287, A = -18.8680790728189, B = 73.6223553397826 },
+			new ColorValue.Lab { L = 97.8448589788724, A = -15.939487356037, B = 56.8715483129143 },
+			new ColorValue.Lab { L = 98.3826097224443, A = -11.801803870766, B = 38.3202685554482 },
+			new ColorValue.Lab { L = 99.0983782406906, A = -6.46402248478667, B = 19.1551872525686 },
+			new ColorValue.Lab { L = 100, A = 0.00526049995830391, B = -0.0104081845252679 },
+			new ColorValue.Lab { L = -0.40852915818815, A = 11.2154584353913, B = -0.00139895608224916 },
+			new ColorValue.Lab { L = 5.13562952897583, A = 1.41554055004839, B = -0.0018964097603158 },
+			new ColorValue.Lab { L = 10.2681843112301, A = 0.00119123950409472, B = -0.0023569319780592 },
+			new ColorValue.Lab { L = 15.159720130189, A = 0.00141306643489103, B = -0.00279582859371574 },
+			new ColorValue.Lab { L = 19.8655335145322, A = 0.00162647101342728, B = -0.00321806112860701 },
+			new ColorValue.Lab { L = 24.4213199058581, A = 0.00183307199727589, B = -0.00362683238221972 },
+			new ColorValue.Lab { L = 28.8519023984, A = 0.00203399509218771, B = -0.0040243696247555 },
+			new ColorValue.Lab { L = 33.1754721104998, A = 0.00223006524990854, B = -0.0044123050676248 },
+			new ColorValue.Lab { L = 37.4058903717923, A = 0.00242191106958334, B = -0.00479188242866746 },
+			new ColorValue.Lab { L = 40.7305480289954, A = 0.00257268142705991, B = -0.0050901897595379 },
+			new ColorValue.Lab { L = 43.1922895629848, A = 0.0026843192825754, B = -0.00531107131245268 },
+			new ColorValue.Lab { L = 49.6370143727509, A = 0.00297658199455153, B = -0.00588932894205474 },
+			new ColorValue.Lab { L = 53.585013452169, A = 0.00315562034797212, B = -0.00624356603626808 },
+			new ColorValue.Lab { L = 57.4777563882338, A = 0.00333215288289557, B = -0.00659284523270021 },
+			new ColorValue.Lab { L = 61.3195826701449, A = 0.00350637639151552, B = -0.0069375558952478 },
+			new ColorValue.Lab { L = 65.1142450374671, A = 0.00367846105719938, B = -0.00727803474118716 },
+			new ColorValue.Lab { L = 68.8650182500781, A = 0.00384855538759776, B = -0.00761457560076728 },
+			new ColorValue.Lab { L = 72.574782831502, A = 0.00401679001199584, B = -0.00794743693102173 },
+			new ColorValue.Lab { L = 76.2460905474144, A = 0.0041832806506048, B = -0.00827684769095782 },
+			new ColorValue.Lab { L = 79.8812163096804, A = 0.00434813046895632, B = -0.00860301199878677 },
+			new ColorValue.Lab { L = 83.4821998273182, A = 0.00451143196594783, B = -0.00892611286882339 },
+			new ColorValue.Lab { L = 87.0508794000839, A = 0.00467326850683847, B = -0.00924631524390485 },
+			new ColorValue.Lab { L = 90.5889196114805, A = 0.00483371557902235, B = -0.00956376847989215 },
+			new ColorValue.Lab { L = 94.0978342288504, A = 0.00499284183075321, B = -0.0098786084007596 }
+		};
+
+		private static void SeparateTerminalCommand( StringBuilder builder ) { if( builder.Length > 2 && !builder.EndsWith( ';' ) ) builder.Append( ';' ); }
+
+		private static void WriteColor( StringBuilder builder, bool foreground, RgbColor color, int colorIndex ) {
+			if( IsTerminalSupportsRGB ) {
+				SeparateTerminalCommand( builder ); builder.Append( foreground ? 38 : 48 );
+				SeparateTerminalCommand( builder ); builder.Append( 2 );
+				SeparateTerminalCommand( builder ); builder.Append( color.R );
+				SeparateTerminalCommand( builder ); builder.Append( color.G );
+				SeparateTerminalCommand( builder ); builder.Append( color.B );
+				return;
+			}
+
+			if( IsTerminalSupports256Color ) {
+				SeparateTerminalCommand( builder ); builder.Append( foreground ? 38 : 48 );
+				SeparateTerminalCommand( builder ); builder.Append( 5 );
+				SeparateTerminalCommand( builder ); builder.Append( colorIndex );
+				return;
+			}
+
+			if( IsTerminalSupports16Color ) {
+				SeparateTerminalCommand( builder ); builder.Append( ( foreground ? 30 : 40 ) + ( colorIndex & 7 ) + ( colorIndex > 7 ? 60 : 0 ) );
+				return;
+			}
+		}
+
+		// http://man7.org/linux/man-pages/man4/console_codes.4.html
+		public static void ApplyAttributes( Console.OutputAttributes& attributes ) {
+			if( !Console.IsTerminalSupportsRGB & !Console.IsTerminalSupports256Color & !Console.IsTerminalSupports16Color ) return;
+
+			using( var builderScope = StringBuilder.CachedBuilders.PopScoped() ) {
+				var& builder = builderScope.Value;
+
+				builder.Append( "\x001B[" ); // Control sequence introducer
+
+				builder.Append( '0' ); // defaults
+
+				if( attributes.Bold ) { SeparateTerminalCommand( builder ); builder.Append( '1' ); }
+				if( attributes.Blink ) { SeparateTerminalCommand( builder ); builder.Append( '5' ); }
+				if( attributes.Thin ) { SeparateTerminalCommand( builder ); builder.Append( '2' ); }
+				if( attributes.Italic ) { SeparateTerminalCommand( builder ); builder.Append( '3' ); }
+				if( attributes.Underline ) { SeparateTerminalCommand( builder ); builder.Append( '4' ); }
+				if( attributes.Strikeout ) { SeparateTerminalCommand( builder ); builder.Append( '9' ); }
+
+				if( !attributes.DefaultForegroundColor ) WriteColor( builder, true, attributes.ForegroundColor, attributes.ForegroundColorIndex );
+				if( !attributes.DefaultBackgroundColor ) WriteColor( builder, false, attributes.BackgroundColor, attributes.BackgroundColorIndex );
+
+				builder.Append( 'm' ); // ECMA-48 Set Graphics Rendition
+
+
+				Console.Write( builder );
+			}
+		}
+
+		public static void ResetAttributes() {
+			if( Console.IsTerminalSupportsRGB | Console.IsTerminalSupports256Color | Console.IsTerminalSupports16Color ) Console.Write( ( Utf8String ) "\x001B[0m" );
+		}
+
+		private static int GetIndexedColor( RgbColor& color ) {
+			if( Console.IsTerminalSupportsRGB ) return -1;
+
+			if( Console.IsTerminalSupports256Color )
+				return Console.CreateIndexedColor( Console.DefaultLabColors256, DefaultLabColors256.Length, color );
+
+			if( Console.IsTerminalSupports16Color )
+				return Console.CreateIndexedColor( Console.DefaultLabColors256, 16, color );
+
+			return -1;
+		}
+
+		public partial struct OutputAttributes {
+			private void OnForegroundColorChanged() { ForegroundColorIndex = Console.GetIndexedColor( ForegroundColor ); }
+			private void OnBackgroundColorChanged() { BackgroundColorIndex = Console.GetIndexedColor( BackgroundColor ); }
+		}
+	}
+}

@@ -15,8 +15,16 @@ namespace System.IO {
 
 		public System.Text.CodePageID CodePage = CompilerInfo.CurrentPlatform == PlatformID.Windows ? Environment.DefaultCodePage : ( System.Text.CodePageID ) 0;
 
+		public char CarriageReturn = '\r';
+
 		public StreamReader( IStream stream )
 			: this( stream, true ) {
+		}
+
+		public StreamReader( IStream stream, Unicode.ByteOrderMark bom ) {
+			_bom = bom;
+			_stream = stream as BufferedStream.ReadStream;
+			if( _stream == null ) _stream = new BufferedStream.ReadStream( stream );
 		}
 
 		public StreamReader( IStream stream, bool detectBOM ) {
@@ -103,7 +111,7 @@ namespace System.IO {
 								var data = ( byte* ) _stream.Peek( i + 1 );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {
@@ -169,7 +177,7 @@ namespace System.IO {
 								var data = ( byte* ) _stream.Peek( i + 1 );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {
@@ -235,7 +243,7 @@ namespace System.IO {
 								var data = ( char_littleendian* ) _stream.Peek( ( i + 1 ) * sizeof( char ) );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {
@@ -301,7 +309,7 @@ namespace System.IO {
 								var data = ( char_bigendian* ) _stream.Peek( ( i + 1 ) * sizeof( char ) );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {
@@ -370,7 +378,7 @@ namespace System.IO {
 								var data = ( uint_littleendian* ) _stream.Peek( ( i + 1 ) * sizeof( uint ) );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {
@@ -436,7 +444,7 @@ namespace System.IO {
 								var data = ( uint_bigendian* ) _stream.Peek( ( i + 1 ) * sizeof( uint ) );
 
 								var isLF = data[i] == '\n';
-								var isCR = data[i] == '\r';
+								var isCR = data[i] == CarriageReturn;
 
 								if( isLF | isCR ) {
 									if( isLF && hasCR ) {

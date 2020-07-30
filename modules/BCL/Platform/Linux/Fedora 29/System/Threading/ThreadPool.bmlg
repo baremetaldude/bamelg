@@ -24,7 +24,7 @@ namespace System.Threading {
 		}
 
 		private static void _implSetThreadProperties() {
-			LibcApi.signal( SignalCode.SIGPIPE, LibcApi.SIG_IGN );
+			LibcApi.SignalInstallIgnore( SignalCode.SIGPIPE ); // ensure process-wide handler ignored
 
 			var signalSet = new sigset_t( SignalCode.SIGINT, SignalCode.SIGQUIT, SignalCode.SIGTERM, SignalCode.SIGHUP, SignalCode.SIGABRT );
 			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );

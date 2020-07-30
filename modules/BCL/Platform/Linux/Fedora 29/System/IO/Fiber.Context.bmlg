@@ -18,10 +18,6 @@ using Platform.Libc;
 namespace System.IO {
 	public partial struct Fiber {
 		internal partial struct FiberInfo {
-			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
-				ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter );
-			}
-
 			private static void PrepareMainFiberEnvironment( FiberInfo* context ) {
 			}
 
@@ -31,8 +27,22 @@ namespace System.IO {
 			private static void SwitchEnvironment( FiberInfo* context, FiberInfo* newContext ) {
 			}
 
+			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+				switch( Environment.CurrentCpu ) {
+					case System.Runtime.CompilerServices.CpuID.X86_32: ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter ); break;
+					case System.Runtime.CompilerServices.CpuID.X86_64: ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_32: ContextSwitch.ARM32.Linux.PrepareContext_fpu_d8_d15( fiber, stack, stackSize, function, parameter ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_64: ContextSwitch.ARM64.Linux.PrepareContext_FPU( fiber, stack, stackSize, function, parameter ); break;
+				}
+			}
+
 			private static void SwitchCurrentContext( void** oldStack, void* newStack ) {
-				ContextSwitch.X86.Linux.SwitchCurrentContext( oldStack, newStack );
+				switch( Environment.CurrentCpu ) {
+					case System.Runtime.CompilerServices.CpuID.X86_32: ContextSwitch.X86.Linux.SwitchCurrentContext( oldStack, newStack ); break;
+					case System.Runtime.CompilerServices.CpuID.X86_64: ContextSwitch.X86.Linux.SwitchCurrentContext( oldStack, newStack ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_32: ContextSwitch.ARM32.Linux.SwitchCurrentContext_fpu_d8_d15( oldStack, newStack ); break;
+					case System.Runtime.CompilerServices.CpuID.ARM_64: ContextSwitch.ARM64.Linux.SwitchCurrentContext_FPU( oldStack, newStack ); break;
+				}
 			}
 		}
 	}

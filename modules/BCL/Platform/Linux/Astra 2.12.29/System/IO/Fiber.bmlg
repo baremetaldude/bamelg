@@ -1,0 +1,39 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Runtime;
+
+using Platform.Libc;
+
+namespace System.IO {
+	public partial struct Fiber {
+		internal partial struct FiberInfo {
+			internal partial class Manager {
+				private void OnInitialize() {
+					TraceInformation();
+					TracePlatformInformation();
+				}
+
+				private void OnFinalize() {
+					Epoll.Close();
+				}
+
+				public void Shutdown() {
+					CurrentEventLoop = null;
+				}
+
+				/// @{ Tracing
+				[Conditional( ConditionString = TraceConditionString )]
+				private static void TracePlatformInformation() {
+				}
+				/// @}
+			}
+		}
+	}
+}

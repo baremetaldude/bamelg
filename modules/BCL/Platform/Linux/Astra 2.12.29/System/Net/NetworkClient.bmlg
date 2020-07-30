@@ -1,0 +1,78 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+using System.IO;
+using System.Serialization;
+
+using Platform;
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System.Net {
+	public partial class NetworkClient {
+		private NetworkStream _platformStream;
+
+		private void _implInitialize() {
+			_platformStream = new NetworkStream() { 
+				ErrorHandler = ErrorHandler
+			};
+		}
+
+		private TimeSpan _implConnectTimeout { get { return _platformStream.ConnectTimeout; } set { _platformStream.ConnectTimeout = value; } }
+		private TimeSpan _implReadTimeout { get { return _platformStream.ReadTimeout; } set { _platformStream.ReadTimeout = value; } }
+		private TimeSpan _implWriteTimeout { get { return _platformStream.WriteTimeout; } set { _platformStream.WriteTimeout = value; } }
+		private bool _implImmediateDelivery { get { return _platformStream.ImmediateDeliveryTCP; } set { _platformStream.ImmediateDeliveryTCP = value; } }
+
+		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
+			if( @interface != IPv4Address.AllInterfaces ) {
+				if( !_platformStream.Bind( new IPv4Endpoint( @interface, 0 ) ) ) return false;
+			}
+
+			if( _platformStream.Connect( endpoint ) ) {
+				_stream = _platformStream;
+				return OnConnected();
+			}
+
+			return false;
+		}
+
+		private bool _implConnect( IPv6Endpoint endpoint, IPv6Address @interface ) {
+			if( @interface != IPv6Address.AllInterfaces ) {
+				if( !_platformStream.Bind( new IPv6Endpoint( @interface, 0 ) ) ) return false;
+			}
+
+			if( _platformStream.Connect( endpoint ) ) {
+				_stream = _platformStream;
+				return OnConnected();
+			}
+
+			return false;
+		}
+
+		private bool _implConnectLocal( string endpoint ) { return _implConnectLocal( ( Utf8String ) endpoint ); }
+
+		private bool _implConnectLocal( Utf8String endpoint ) {
+			using( var socket = new SocketHandleLocal( __socket_type.SOCK_STREAM ) ) {
+				if( socket.Connect( endpoint ) != SystemError.None ) return false;
+
+				_stream = new Platform.IO.NetworkStream( socket );
+				socket = SocketHandleLocal.Invalid;
+			}
+
+			return OnConnected();
+		}
+
+		private bool _implAccept( IPv4Endpoint endpoint ) { return false; }
+		private bool _implAccept( IPv6Endpoint endpoint ) { return false; }
+
+		private bool _implAcceptLocal( string endpoint ) { return false; }
+		private bool _implAcceptLocal( Utf8String endpoint ) { return false; }
+
+		protected virtual IPlatformErrorHandler ErrorHandler { get { return PlatformErrorHandlerNull.Instance; } }
+	}
+}
