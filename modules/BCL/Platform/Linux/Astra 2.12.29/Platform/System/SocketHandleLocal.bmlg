@@ -24,9 +24,9 @@ namespace Platform.Kernel {
 			LibcApi.Assert( this = bitcast<SocketHandleLocal>( LibcApi.socket( ProtocolFamily.PF_UNIX, type | ( nonBlocking ? __socket_type.SOCK_NONBLOCK : ( __socket_type ) 0 ) | __socket_type.SOCK_CLOEXEC, IPProtocol.IPPROTO_IP ) ) );
 		}
 
-		public SystemError Connect( Utf8String path ) {
-			var endpoint = new sockaddr_un( path );
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+		public SystemError Connect( Utf8String path, bool @abstract = false ) {
+			var endpoint = new sockaddr_un( path, @abstract );
+			return Connect( endpoint );
 		}
 
 		public SystemError Connect( sockaddr_un& endpoint ) {
@@ -42,8 +42,8 @@ namespace Platform.Kernel {
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
-		public bool Bind( Utf8String path ) {
-			var nativeEndpoint = new sockaddr_un( path );
+		public bool Bind( Utf8String path, bool @abstract = false ) {
+			var nativeEndpoint = new sockaddr_un( path, @abstract );
 			return LibcApi.bind( this, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) ) == 0;
 		}
 

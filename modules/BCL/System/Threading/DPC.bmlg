@@ -37,6 +37,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create( Functors.Action action ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Functors.Action> {
 				P0 = action,
 				OnAction = data => {
@@ -55,6 +57,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create<T0>( Functors.Action<T0> action, T0 p0 ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Functors.Action<T0>, T0> {
 				P0 = action,
 				P1 = p0,
@@ -74,6 +78,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create<T0, T1>( Functors.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Functors.Action<T0, T1>, T0, T1> {
 				P0 = action,
 				P1 = p0,
@@ -94,6 +100,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create<T0, T1, T2>( Functors.Action<T0, T1, T2> action, T0 p0, T1 p1, T2 p2 ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Functors.Action<T0, T1, T2>, T0, T1, T2> {
 				P0 = action,
 				P1 = p0,
@@ -115,6 +123,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create( Delegates.Action action ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Delegates.Action> {
 				P0 = action,
 				OnAction = data => {
@@ -133,6 +143,8 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			if( action == null ) return null;
+
 			return heapalloc DPC<Delegates.Action<T0>, T0> {
 				P0 = action,
 				P1 = p0,
@@ -152,6 +164,9 @@ namespace System.Threading {
 		}
 
 		public static DPC* Create<T0, T1>( Delegates.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			if( action == null ) return null;
+			if( action == null ) return null;
+
 			return heapalloc DPC<Delegates.Action<T0, T1>, T0, T1> {
 				P0 = action,
 				P1 = p0,

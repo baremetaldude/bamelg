@@ -243,11 +243,21 @@ namespace Platform.Libc {
 			sun_path[0] = 0;
 		}
 
-		public sockaddr_un( Utf8String path ) {
+		public sockaddr_un( Utf8String path, bool @abstract = false ) {
+			if( @abstract ) {
+				if( !Assert.IsTrue( path.ByteLength + 2 < sun_path.Length ) ) return;
+
+				ProtocolFamily = ProtocolFamily.PF_UNIX;
+				sun_path[0] = 0;
+				Memory.Copy( &sun_path[1], path.GetChars(), path.ByteLength + 1 );
+				Memory.Clear( &sun_path[path.ByteLength + 2], sun_path.Length - path.ByteLength - 2 );
+			}
+			else {
 			if( !Assert.IsTrue( path.ByteLength + 1 < sun_path.Length ) ) return;
 
 			ProtocolFamily = ProtocolFamily.PF_UNIX;
 			Memory.Copy( &sun_path[0], path.GetChars(), path.ByteLength + 1 );
+			}
 		}
 
 		public bool IsAbstract { get { return sun_path[0] == 0; } }

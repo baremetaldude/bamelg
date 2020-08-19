@@ -466,6 +466,8 @@ namespace System.Threading {
 		}
 
 		public void BeginInvoke( DPC* task ) {
+			if( task == null ) return;
+
 			task->Next = null;
 
 			using( _taskLock.LockRegion() ) {
