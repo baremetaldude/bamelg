@@ -7,6 +7,7 @@ using System.IO;
 using System.Text;
 
 using Platform.IO;
+using Platform.Kernel;
 using Platform.Libc;
 
 namespace Example {
@@ -38,21 +39,28 @@ namespace Example {
 			using( var eventLoop = new EventLoop() { Tracing = true } ) {
 				eventLoop.CatchExitSignals(); // convert signals to events
 
-				var eventSink = new EventLoop.UapiGpioInputTraceEventSink( eventLoop );
-				if( !eventSink.OpenDevice( DefaultUapiDeviceName ) ) {
-					Console.WriteLine( "{0}: Open failed", DefaultUapiDeviceName );
-					return;
+				using( IOHandle gpioFile = IOHandle.Invalid ) {
+					var openStatus = IOHandle.Open( gpioFile, DefaultUapiDeviceName, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+
+					if( openStatus ) {
+						var eventSink = new EventLoop.UapiGpioInputTraceEventSink( eventLoop );
+
+						if( !eventSink.Bind( gpioFile, DefaultUapiDeviceLine, "GpioInputTest" ) ) {
+							Console.WriteLine( "{0}[{1}]: Bind line failed", DefaultUapiDeviceName, DefaultUapiDeviceLine );
+							return;
+						}
+
+						bool initialValue = eventSink.GetValue();
+
+						Console.WriteLine( "{0}[{1}]: Waiting UAPI events. Initial value: {2}", DefaultUapiDeviceName, DefaultUapiDeviceLine, initialValue );
+						eventSink.Register();
+					}
+					else {
+						Console.WriteLine( "{0}: Open failed: {1}", DefaultUapiDeviceName, openStatus );
+						return;
+					}
 				}
 
-				bool initialValue;
-				if( !eventSink.Bind( DefaultUapiDeviceLine, "GpioInputTest", initialValue ) ) {
-					Console.WriteLine( "{0}[{1}]: Bind line failed", DefaultUapiDeviceName, DefaultUapiDeviceLine );
-					return;
-				}
-
-				eventSink.Register();
-
-				Console.WriteLine( "{0}[{1}]: Waiting UAPI events. Initial value: {2}", DefaultUapiDeviceName, DefaultUapiDeviceLine, initialValue );
 				eventLoop.Dispatch(); // wait until RequestExit
 				Console.WriteLine( "Finished" );
 			}
@@ -84,7 +92,7 @@ namespace Example {
 
 				eventSink.Register();
 
-				Console.WriteLine( "{0}: Waiting SysFS events. Initial value: {1}", pathToPin, initialValue  );
+				Console.WriteLine( "{0}: Waiting SysFS events. Initial value: {1}", pathToPin, initialValue );
 				eventLoop.Dispatch(); // wait until RequestExit
 				Console.WriteLine( "Finished" );
 			}

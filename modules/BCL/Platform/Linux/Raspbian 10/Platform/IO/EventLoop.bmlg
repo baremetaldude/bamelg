@@ -473,10 +473,6 @@ namespace Platform.IO {
 			[Overlapped( Offset = memberinfo( EventSink.EventHandle ).ByteOffset )]
 			private IOHandleNonBlocking _lineDevice = IOHandleNonBlocking.Invalid;
 
-			private IOHandle _gpioDevice;
-
-			private bool _externalGpioDevice { get; set; } = false;
-
 			public sealed override void OnEvent( epoll_event& @event ) {
 				int totalReaden;
 				gpioevent_data gpioEvent;
@@ -494,17 +490,8 @@ namespace Platform.IO {
 				_listenedEvents = EPOLL_EVENTS.EPOLLIN;
 			}
 
-			/// \param path Path to character device (e.g. "/dev/gpiochip4")
-			public SystemError OpenDevice( CUtf8String path ) {
-				return IOHandle.Open( _gpioDevice, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
-			}
-
-			public void ReuseDevice( GpioInputEventSink value ) {
-				_externalGpioDevice = true;
-				_gpioDevice = value._gpioDevice;
-			}
-
-			public SystemError Bind( uint lineOffset, CUtf8String comment, bool& initialValue = nullref ) {
+			// vat gpioDevice = IOHandle.Open( "/dev/gpiochip4", path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			public SystemError Bind( IOHandle gpioDevice, uint lineOffset, CUtf8String comment ) {
 				var lineInfo = new gpioevent_request {
 					fd = 0,
 					lineoffset = lineOffset,
@@ -514,21 +501,20 @@ namespace Platform.IO {
 
 				CUtf8String.InitializeBuffer( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) );
 
-				if( LibcApi.ioctl( _gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
+				if( LibcApi.ioctl( gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
 				_lineDevice = bitcast<IOHandleNonBlocking>( lineInfo.fd );
-
-				if( initialValue != nullref ) {
-					gpiohandle_data data;
-					if( LibcApi.ioctl( _lineDevice, IoctlCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
-					initialValue = data.values[0] != 0;
-				}
 
 				return SystemError.None;
 			}
 
+			public bool GetValue() {
+				gpiohandle_data data;
+				if( LibcApi.ioctl( _lineDevice, IoctlCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
+				return data.values[0] != 0;
+			}
+
 			~GpioInputEventSink() {
 				_lineDevice.Close();
-				if( !_externalGpioDevice ) _gpioDevice.Close();
 			}
 		}
 

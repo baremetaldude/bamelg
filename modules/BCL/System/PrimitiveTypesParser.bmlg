@@ -9,7 +9,6 @@ namespace System {
 		public static uint SkipWhitespace<TElement>( TElement* buffer, uint length, uint offset, bool condition ) {
 			if( offset >= length ) return length;
 			if( !condition ) return offset;
-
 			for( uint i = offset; i < length; ++i ) {
 				switch( ( uint ) buffer[i] ) {
 					// whitespace
@@ -30,6 +29,50 @@ namespace System {
 			}
 
 			return length;
+		}
+
+		public static TextParsingStatus TryFetchLetters( char* buffer, uint length, CUtf16StringSpan& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			return TryTokenize( ( text, textLength ) => {
+				var result = 0U;
+
+				for( var i = 0U; i < textLength; ++i ) {
+					if( text[i].IsLetter ) ++result;
+					else break;
+				}
+
+				return result;
+			}, buffer, length, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace );
+		}
+
+		public static TextParsingStatus TryTokenize( Functors.Func<char*, uint, uint> selector, char* buffer, uint length, CUtf16StringSpan& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			if( length == 0 ) {
+				if( readen != nullref ) readen = 0;
+				return TextParsingStatus.Format;
+			}
+
+			var start = SkipWhitespace<char>( buffer, length, 0U, trimLeadingWhitespace );
+			var text = buffer + start;
+			var textLength = length - start;
+			var lettersBlock = selector( text, textLength );
+
+			if( lettersBlock >= 1 ) {
+				parsedResult = new CUtf16StringSpan( text, lettersBlock );
+				var end = SkipWhitespace<char>( text, textLength, lettersBlock, trimTrailingWhitespace );
+
+				if( readen != nullref ) {
+					readen = start + end;
+					return TextParsingStatus.OK;
+				}
+				else {
+					return end == length ? TextParsingStatus.OK : TextParsingStatus.Format;
+				}
+
+			}
+			else {
+				parsedResult = default( CUtf16StringSpan );
+				if( readen != nullref ) readen = 0;
+				return TextParsingStatus.Format;
+			}
 		}
 
 		// NOTE for fetch methods:

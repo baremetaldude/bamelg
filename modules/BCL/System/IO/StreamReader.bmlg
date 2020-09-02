@@ -93,6 +93,97 @@ namespace System.IO {
 			if( peekData != null && cast<uint_bigendian*>( peekData )[0] == '\n' ) _stream.Drain( sizeof( uint_bigendian ) );
 		}
 
+		public string ReadAllText() {
+			_builder.Clear();
+			if( _stream.Peek( 1 ) == null ) return null;
+
+			switch( _bom ) {
+				case Unicode.ByteOrderMark.Unknown: {
+						if( CodePage == 0 ) goto case Unicode.ByteOrderMark.Utf8;
+
+						while( true ) {
+							var bufferedBytes = _stream.Count;
+							var dataStart = ( byte* ) _stream.Peek( 1 );
+
+							_builder.AppendSBCS( CodePage, dataStart, ( int ) bufferedBytes );
+							_stream.Drain( bufferedBytes );
+
+							if( _stream.Peek( 1 ) == null ) break;
+						}
+					} break;
+
+				case Unicode.ByteOrderMark.Utf8: {
+						while( true ) {
+							var bufferedBytes = _stream.Count;
+							var dataStart = ( byte* ) _stream.Peek( 1 );
+
+							_builder.Append( new CUtf8StringSpan( dataStart, ( uint ) bufferedBytes ) );
+							_stream.Drain( bufferedBytes );
+
+							if( _stream.Peek( 1 ) == null ) break;
+						}
+					} break;
+
+				case Unicode.ByteOrderMark.Utf16LittleEndian: {
+						while( true ) {
+							var bufferedChars = _stream.Count / sizeof( char );
+							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
+
+							_builder.Append( new CUtf16StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_stream.Drain( bufferedChars * sizeof( char ) );
+
+							if( _stream.Peek( sizeof( char ) ) == null ) break;
+						}
+					} break;
+
+				case Unicode.ByteOrderMark.Utf16BigEndian: {
+						while( true ) {
+							var bufferedChars = _stream.Count / sizeof( char );
+							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
+
+							System.Runtime.Memory.PerformBswap2( dataStart, ( uint ) bufferedChars );
+							_builder.Append( new CUtf16StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_stream.Drain( bufferedChars * sizeof( char ) );
+
+							if( _stream.Peek( sizeof( char ) ) == null ) break;
+						}
+					} break;
+
+				case Unicode.ByteOrderMark.Utf32LittleEndian: {
+						bool hasCR = false; // \r
+
+						while( true ) {
+							var bufferedChars = _stream.Count / sizeof( uint );
+							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
+
+							_builder.Append( new CUtf32StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_stream.Drain( bufferedChars * sizeof( uint ) );
+
+							if( _stream.Peek( sizeof( uint ) ) == null ) break;
+						}
+					} break;
+
+				case Unicode.ByteOrderMark.Utf32BigEndian: {
+						while( true ) {
+							var bufferedChars = _stream.Count / sizeof( uint );
+
+							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
+							System.Runtime.Memory.PerformBswap4( dataStart, ( uint ) bufferedChars );
+							_builder.Append( new CUtf32StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_stream.Drain( bufferedChars * sizeof( uint ) );
+
+							if( _stream.Peek( sizeof( uint ) ) == null ) break;
+						}
+					} break;
+
+				default:
+					Assert.NotImplemented();
+					break;
+			}
+
+			return _builder.ToString();
+		}
+
 		private bool ReadLine( StringBuilder builder, string* fastString ) {
 			var stringStart = -1;
 

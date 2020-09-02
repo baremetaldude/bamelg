@@ -1,0 +1,648 @@
+//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Collections;
+using System.Text;
+
+namespace System.Net.Ftp {
+	public partial class FtpClient : System.Net.NetworkClient {
+		public bool Trace = true;
+
+		public struct FtpCapabilities {
+			public bool EPRT { get; set; }
+			public bool EPSV { get; set; }
+			public bool MDTM { get; set; }
+			public bool PASV { get; set; }
+			public bool REST_STREAM { get; set; }
+			public bool SIZE { get; set; }
+			public bool TVFS { get; set; }
+			public bool UTF8 { get; set; }
+		}
+
+		public struct FtpCommands {
+			public bool ABOR { get; set; }
+			public bool ACCT { get; set; }
+			public bool ALLO { get; set; }
+			public bool APPE { get; set; }
+			public bool CDUP { get; set; }
+			public bool CWD { get; set; }
+			public bool DELE { get; set; }
+			public bool EPRT { get; set; }
+			public bool EPSV { get; set; }
+			public bool FEAT { get; set; }
+			public bool HELP { get; set; }
+			public bool LIST { get; set; }
+			public bool MDTM { get; set; }
+			public bool MKD { get; set; }
+			public bool MODE { get; set; }
+			public bool NLST { get; set; }
+			public bool NOOP { get; set; }
+			public bool OPTS { get; set; }
+			public bool PASS { get; set; }
+			public bool PASV { get; set; }
+			public bool PORT { get; set; }
+			public bool PWD { get; set; }
+			public bool QUIT { get; set; }
+			public bool REIN { get; set; }
+			public bool REST { get; set; }
+			public bool RETR { get; set; }
+			public bool RMD { get; set; }
+			public bool RNFR { get; set; }
+			public bool RNTO { get; set; }
+			public bool SITE { get; set; }
+			public bool SIZE { get; set; }
+			public bool SMNT { get; set; }
+			public bool STAT { get; set; }
+			public bool STOR { get; set; }
+			public bool STOU { get; set; }
+			public bool STRU { get; set; }
+			public bool SYST { get; set; }
+			public bool TYPE { get; set; }
+			public bool USER { get; set; }
+			public bool XCUP { get; set; }
+			public bool XCWD { get; set; }
+			public bool XMKD { get; set; }
+			public bool XPWD { get; set; }
+			public bool XRMD { get; set; }
+		}
+
+		public FtpCapabilities Capabilities = default( FtpCapabilities );
+		public FtpCommands Commands = default( FtpCommands );
+
+		public interface IEventListener {
+			void ServerResponse( FtpStatusCode code, string message );
+			void UnbleToParseReponse( string message );
+		}
+
+		public struct NullListener : IEventListener {
+			public static NullListener Instance;
+
+			public void ServerResponse( FtpStatusCode code, string message ) { }
+			public void UnbleToParseReponse( string message ) { }
+		}
+
+		public struct ConsoleListener : IEventListener {
+			public static ConsoleListener Instance;
+
+			public void ServerResponse( FtpStatusCode code, string message ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkYellow ) )
+					Console.WriteLine( "[{0}]: {1}", code, message );
+			}
+
+			public void UnbleToParseReponse( string message ) {
+				using( Console.AttributedRegion( ConsoleColor.DarkRed ) )
+					Console.WriteLine( message );
+			}
+		}
+
+		public IEventListener EventListener = NullListener.Instance;
+
+		protected StreamReader _reader;
+		protected StreamWriter _writer;
+
+		public FtpClient() {
+		}
+
+		public FtpClient( bool trace ) {
+			if( trace ) {
+				Trace = true;
+				EventListener = ConsoleListener.Instance;
+			}
+		}
+
+		protected FtpStatusCode WaitResponse() {
+			string line;
+			return WaitResponse( line );
+		}
+
+		protected FtpStatusCode WaitResponse( string& line ) {
+			line = _reader.ReadLine();
+			if( line == null ) return FtpStatusCode.Undefined;
+
+			int code;
+			uint remaining = ( uint ) line.Length;
+			var start = line.GetChars();
+
+			if( !int.TryFetch( start, remaining, code, true, false ) ) {
+				EventListener.UnbleToParseReponse( line );
+				return LastStatus = FtpStatusCode.Undefined;
+			}
+
+			if( *start != ' ' && *start != '-' ) {
+				EventListener.UnbleToParseReponse( line );
+				return LastStatus = FtpStatusCode.Undefined;
+			}
+
+			EventListener.ServerResponse( ( FtpStatusCode ) code, line );
+
+			return LastStatus = ( FtpStatusCode ) code;
+		}
+
+		protected override bool OnConnected() {
+			Capabilities = default( FtpCapabilities );
+
+			_reader = new StreamReader( _stream ) {
+			};
+
+			_writer = new StreamWriter( _stream, TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader.Skip ) {
+				UseAutoFlush = false,
+				NewLine = "\r\n"
+			};
+
+			WaitResponse();
+
+			return LastStatus != FtpStatusCode.Undefined;
+		}
+
+		public bool Login( string user, string password ) {
+			if( _writer == null ) return false;
+
+			var code = User( user );
+			if( code == FtpStatusCode.SendPasswordCommand ) {
+				code = Password( password );
+				return code == FtpStatusCode.LoggedInProceed;
+			}
+
+			return false;
+		}
+
+		private FtpStatusCode User( string user ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "USER " );
+			_writer.Write( user );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		private FtpStatusCode Password( string user ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "PASS " );
+			_writer.Write( user );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode System() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "SYST" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		private static TextParsingStatus TryFetchFeature( char* buffer, uint length, CUtf16StringSpan& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			return PrimitiveTypesParser.TryTokenize( ( text, textLength ) => {
+				var result = 0U;
+
+				for( var i = 0U; i < textLength; ++i ) {
+					if( text[i].IsLetterOrDigit || text[i] == '_' ) ++result;
+					else break;
+				}
+
+				return result;
+			}, buffer, length, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace );
+		}
+
+		public FtpStatusCode Feat() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "FEAT" );
+
+			FlushCommand();
+
+			if( WaitResponse() != FtpStatusCode.Feat ) return LastStatus;
+
+			for( ; ; ) {
+				var line = _reader.ReadLine();
+				if( line == null ) return FtpStatusCode.Undefined;
+
+				int code;
+				uint remaining = ( uint ) line.Length;
+				var start = line.GetChars();
+
+				if( !int.TryFetch( start, remaining, code, true, false ) ) {
+					CUtf16StringSpan feature;
+					uint readen = 0;
+
+					if( TryFetchFeature( start, remaining, feature, readen ) ) {
+						switch( feature ) {
+							case "EPRT": Capabilities.EPRT = true; break;
+							case "EPSV": Capabilities.EPSV = true; break;
+							case "MDTM": Capabilities.MDTM = true; break;
+							case "PASV": Capabilities.PASV = true; break;
+							case "REST":
+								start += readen;
+								remaining -= readen;
+								if( TryFetchFeature( start, remaining, feature, readen ) )
+									if( feature == ( CUtf16StringSpan ) "STREAM" ) {
+										Capabilities.REST_STREAM = true;
+									}
+								break;
+
+							case "SIZE": Capabilities.SIZE = true; break;
+							case "TVFS": Capabilities.TVFS = true; break;
+							case "UTF8": Capabilities.UTF8 = true; break;
+						}
+					}
+
+					EventListener.ServerResponse( FtpStatusCode.Feat, line );
+					continue;
+				}
+
+				if( *start != ' ' && *start != '-' ) {
+					EventListener.UnbleToParseReponse( line );
+					return LastStatus = FtpStatusCode.Undefined;
+				}
+
+				EventListener.ServerResponse( ( FtpStatusCode ) code, line );
+
+				return LastStatus = ( FtpStatusCode ) code;
+			}
+
+		}
+
+		public FtpStatusCode HelpSite() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+			Commands = default( FtpCommands );
+
+			_writer.Write( "HELP SITE" );
+
+			FlushCommand();
+
+			if( WaitResponse() != FtpStatusCode.Help ) return LastStatus;
+
+			for( ; ; ) {
+				var line = _reader.ReadLine();
+				if( line == null ) return FtpStatusCode.Undefined;
+
+				int code;
+				uint remaining = ( uint ) line.Length;
+				var start = line.GetChars();
+
+				if( !int.TryFetch( start, remaining, code, true, false ) ) {
+					CUtf16StringSpan verb;
+					uint readen = 0;
+
+					while( PrimitiveTypesParser.TryFetchLetters( start, remaining, verb, readen ) ) {
+						remaining -= readen;
+						start += readen;
+
+						switch( verb ) {
+							case "ABOR": Commands.ABOR = true; break;
+							case "ACCT": Commands.ACCT = true; break;
+							case "ALLO": Commands.ALLO = true; break;
+							case "APPE": Commands.APPE = true; break;
+							case "CDUP": Commands.CDUP = true; break;
+							case "CWD": Commands.CWD = true; break;
+							case "DELE": Commands.DELE = true; break;
+							case "EPRT": Commands.EPRT = true; break;
+							case "EPSV": Commands.EPSV = true; break;
+							case "FEAT": Commands.FEAT = true; break;
+							case "HELP": Commands.HELP = true; break;
+							case "LIST": Commands.LIST = true; break;
+							case "MDTM": Commands.MDTM = true; break;
+							case "MKD": Commands.MKD = true; break;
+							case "MODE": Commands.MODE = true; break;
+							case "NLST": Commands.NLST = true; break;
+							case "NOOP": Commands.NOOP = true; break;
+							case "OPTS": Commands.OPTS = true; break;
+							case "PASS": Commands.PASS = true; break;
+							case "PASV": Commands.PASV = true; break;
+							case "PORT": Commands.PORT = true; break;
+							case "PWD": Commands.PWD = true; break;
+							case "QUIT": Commands.QUIT = true; break;
+							case "REIN": Commands.REIN = true; break;
+							case "REST": Commands.REST = true; break;
+							case "RETR": Commands.RETR = true; break;
+							case "RMD": Commands.RMD = true; break;
+							case "RNFR": Commands.RNFR = true; break;
+							case "RNTO": Commands.RNTO = true; break;
+							case "SITE": Commands.SITE = true; break;
+							case "SIZE": Commands.SIZE = true; break;
+							case "SMNT": Commands.SMNT = true; break;
+							case "STAT": Commands.STAT = true; break;
+							case "STOR": Commands.STOR = true; break;
+							case "STOU": Commands.STOU = true; break;
+							case "STRU": Commands.STRU = true; break;
+							case "SYST": Commands.SYST = true; break;
+							case "TYPE": Commands.TYPE = true; break;
+							case "USER": Commands.USER = true; break;
+							case "XCUP": Commands.XCUP = true; break;
+							case "XCWD": Commands.XCWD = true; break;
+							case "XMKD": Commands.XMKD = true; break;
+							case "XPWD": Commands.XPWD = true; break;
+							case "XRMD": Commands.XRMD = true; break;
+						}
+					}
+
+					EventListener.ServerResponse( FtpStatusCode.Help, line );
+					continue;
+				}
+
+				if( *start != ' ' && *start != '-' ) {
+					EventListener.UnbleToParseReponse( line );
+					return LastStatus = FtpStatusCode.Undefined;
+				}
+
+				EventListener.ServerResponse( FtpStatusCode.Help, line );
+
+				return LastStatus = ( FtpStatusCode ) code;
+			}
+		}
+
+		public FtpStatusCode Utf8() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "OPTS UTF8 ON" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode Pwd() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "PWD" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode TextMode() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "TYPE A" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode BinaryMode() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "TYPE I" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode Quit() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "QUIT" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode Delete( string path ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "DELE " );
+			_writer.Write( path );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode Size( string path ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "SIZE " );
+			_writer.Write( path );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode SetWorkingDirectory( string path ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "CWD " );
+			_writer.Write( path );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode WriteText( string remotePath, string text, CodePageID codePageID ) {
+			var stream = new MemoryStream();
+			using( var writer = new StreamWriter( stream, codePageID ) )
+				writer.Write( text );
+
+			stream.Position = 0;
+
+			return WriteFile( remotePath, stream );
+		}
+
+		public FtpStatusCode WriteText( string remotePath, string text, TextEncodingKind textEncodingKind = TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader headerStyle = StreamWriter.ByteOrderMarkHeader.Auto ) {
+			var stream = new MemoryStream();
+			using( var writer = new StreamWriter( stream, textEncodingKind, headerStyle ) )
+				writer.Write( text );
+
+			stream.Position = 0;
+
+			return WriteFile( remotePath, stream );
+		}
+
+		public FtpStatusCode WriteFile( string remotePath, string localPath ) {
+			var localFile = File.OpenRead( localPath );
+			if( localFile == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			return WriteFile( remotePath, localFile );
+		}
+
+		public FtpStatusCode WriteFile( string remotePath, IStream stream ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			var client = Pasv();
+			if( LastStatus != FtpStatusCode.EnteringPassive ) return LastStatus;
+
+			_writer.Write( "STOR " );
+			_writer.Write( remotePath );
+
+			FlushCommand();
+
+			var result = WaitResponse();
+			if( result == FtpStatusCode.OpeningData ) {
+				client.Write( stream );
+				client = null;
+
+				result = WaitResponse();
+			}
+
+			return result;
+		}
+	
+		public FtpStatusCode ReadText( string remotePath, string& fileContents ) {
+			var stream = new MemoryStream();
+			var result = ReadFile( remotePath, stream );
+			
+			stream.Position = 0;
+			using( var reader = new StreamReader( stream ) )
+				fileContents = reader.ReadAllText();
+
+			return result;
+		}
+
+		public FtpStatusCode ReadFile( string remotePath, string localPath ) {
+			var localFile = File.OpenWrite( localPath );
+			if( localFile == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			return ReadFile( remotePath, localFile );
+		}
+
+		public FtpStatusCode ReadFile( string remotePath, IStream stream ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			var client = Pasv();
+			if( LastStatus != FtpStatusCode.EnteringPassive ) return LastStatus;
+
+			_writer.Write( "RETR " );
+			_writer.Write( remotePath );
+
+			FlushCommand();
+
+			var result = WaitResponse();
+			if( result == FtpStatusCode.OpeningData ) {
+				client.Read( stream );
+				client = null;
+
+				result = WaitResponse();
+			}
+
+			return result;
+		}
+
+		public FtpStatusCode List() {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			var client = Pasv();
+			if( LastStatus != FtpStatusCode.EnteringPassive ) return LastStatus;
+
+			_writer.Write( "LIST" );
+
+			FlushCommand();
+
+			var result = WaitResponse();
+			if( result == FtpStatusCode.OpeningData ) {
+				foreach( var line in client.GetTextLines() )
+					Console.WriteLine( line );
+
+				result = WaitResponse();
+			}
+			return result;
+		}
+
+		private FtpDataClient Pasv() {
+			if( _writer == null ) return null;
+
+			_writer.Write( "PASV" );
+
+			FlushCommand();
+
+			string lastLine;
+			if( WaitResponse( lastLine ) == FtpStatusCode.EnteringPassive ) {
+				var braceStart = lastLine.IndexOf( '(' );
+				var braceEnd = lastLine.IndexOf( ')' );
+				if( braceStart == -1 ) return null;
+				if( braceEnd == -1 ) return null;
+
+				var parsePosition = lastLine.GetChars() + braceStart + 1;
+				var remaining = ( uint )( braceEnd - braceStart - 1 );
+
+				IPv4Endpoint endpoint;
+				byte[2] port;
+
+				if( !byte.TryFetch( parsePosition, remaining, endpoint.Address.Data[0] ) || remaining == 0 ) return null;
+				if( *parsePosition++ != ',' || --remaining == 0 ) return null;
+
+				if( !byte.TryFetch( parsePosition, remaining, endpoint.Address.Data[1] ) ) return null;
+				if( remaining == 0 ) return null;
+				if( *parsePosition++ != ',' || --remaining == 0 ) return null;
+
+				if( !byte.TryFetch( parsePosition, remaining, endpoint.Address.Data[2] ) ) return null;
+				if( remaining == 0 ) return null;
+				if( *parsePosition++ != ',' || --remaining == 0 ) return null;
+
+				if( !byte.TryFetch( parsePosition, remaining, endpoint.Address.Data[3] ) ) return null;
+				if( remaining == 0 ) return null;
+				if( *parsePosition++ != ',' || --remaining == 0 ) return null;
+
+				if( !byte.TryFetch( parsePosition, remaining, port[0] ) ) return null;
+				if( remaining == 0 ) return null;
+				if( *parsePosition++ != ',' || --remaining == 0 ) return null;
+
+				if( !byte.TryFetch( parsePosition, remaining, port[1] ) ) return null;
+				if( remaining != 0 ) return null;
+
+				endpoint.Port = ( ( ushort ) port[0] << 8 ) | port[1];
+
+				var client = new FtpDataClient() {
+					ConnectTimeout = ConnectTimeout,
+					ReadTimeout = ReadTimeout,
+					WriteTimeout = WriteTimeout
+				};
+
+				var connectResult = client.Connect( endpoint );
+				return client;
+			}
+
+			return null;
+		}
+
+		protected void FlushCommand() {
+			if( _writer == null ) return;
+
+			_writer.WriteLine();
+
+			if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
+			_writer.Flush( FlushKind.Write );
+		}
+
+		public FtpStatusCode LastStatus { get; private set; }
+		
+		private class FtpDataClient : System.Net.NetworkClient {
+			public FtpDataClient() {
+			}
+
+			public void Write( IStream stream ) { _stream.Write( stream ); }
+			public void Read( IStream stream ) { stream.Write( _stream ); }
+
+			public yield<string> GetTextLines() {
+				var reader = new StreamReader( _stream ) {
+				};
+
+				var line = reader.ReadLine();
+				while( line != null ) {
+					yield return line;
+					line = reader.ReadLine();
+				}
+			}
+
+			protected override bool OnConnected() {
+				return true;
+			}
+		}
+	}
+}
