@@ -24,13 +24,13 @@ namespace System.Diagnostics {
 
 		public void Append( string parameter ) {
 			if( Value.Length > 0 ) Value.Append( ' ' );
-			Value.EnsureCapacity( ( int ) parameter.Length );
+			Value.EnsureCapacity( parameter.Length );
 
 			if( Platform == PlatformID.Windows ) {
 				// http://www.daviddeley.com/autohotkey/parameters/parameters.htm
 				// http://blogs.msdn.com/b/twistylittlepassagesallalike/archive/2011/04/23/everyone-quotes-arguments-the-wrong-way.aspx
 				var needQuot = false;
-				var slashesCount = 0;
+				var slashesCount = 0U;
 
 				if( parameter.Contains( ' ' ) ) needQuot = true;
 				if( parameter.Contains( '\t' ) ) needQuot = true;

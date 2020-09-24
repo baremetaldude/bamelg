@@ -45,6 +45,7 @@ namespace System.Net {
 				acceptSocket.ReuseAddress = true;
 				acceptSocket.DefferedAccept = DefferedAccept;
 				acceptSocket.ImmediateDelivery = true;
+				if( MaximumSegmentSize != 0 ) acceptSocket.MaximumSegmentSize = MaximumSegmentSize;
 
 				if( !acceptSocket.Bind( endpoint ) ) return false;
 				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
@@ -66,6 +67,7 @@ namespace System.Net {
 				acceptSocket.ReuseAddress = true;
 				acceptSocket.DefferedAccept = DefferedAccept;
 				acceptSocket.ImmediateDelivery = true;
+				if( MaximumSegmentSize != 0 ) acceptSocket.MaximumSegmentSize = MaximumSegmentSize;
 
 				if( !acceptSocket.Bind( endpoint ) ) return false;
 				if( !acceptSocket.Listen( ListenBacklog ) ) return false;
@@ -121,13 +123,15 @@ namespace System.Net {
 				_server.OnSocketAccepted( socket );
 			}
 
-			/// @{ Tracing
+			#region Tracing
+
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( sockaddr_in& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
 				using( Console.AttributedRegion( TraceStyleNormal ) )
 					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
 			}
-			/// @}
+
+			#endregion
 		}
 
 		private class AcceptSocketTCP6EventSink : EventLoop.AcceptSocketTCP6EventSink {
@@ -151,13 +155,13 @@ namespace System.Net {
 				_server.OnSocketAccepted( socket );
 			}
 
-			/// @{ Tracing
+			#region Tracing
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( sockaddr_in6& clientSocketInfo, SocketHandleTCP clientSocketHandle ) {
 				using( Console.AttributedRegion( TraceStyleNormal ) )
 					Console.WriteLine( "NS: Client {0} accepted to {1}", clientSocketInfo, clientSocketHandle );
 			}
-			/// @}
+			#endregion
 		}
 
 		private class AcceptSocketEventSink : EventLoop.AcceptSocketAnyEventSink {
@@ -179,13 +183,13 @@ namespace System.Net {
 				_server.OnSocketAccepted( socket );
 			}
 
-			/// @{ Tracing
+			#region Tracing
 			[Conditional( ConditionString = TraceConditionString )]
 			private static void TraceClientAccepted( SocketHandle clientSocketHandle ) {
 				using( Console.AttributedRegion( TraceStyleNormal ) )
 					Console.WriteLine( "NS: Client accepted to {0}", clientSocketHandle );
 			}
-			/// @}
+			#endregion
 		}
 
 		private void OnSocketAccepted( SocketHandle handle ) {
@@ -227,12 +231,12 @@ namespace System.Net {
 			}
 		}
 
-		/// @{ Tracing
+		#region Tracing
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceAcceptStarted( SocketHandle acceptSocket ) {
 			using( Console.AttributedRegion( TraceStyleNormal ) )
 				Console.WriteLine( "NS: Accepting started on socket:{0}", acceptSocket );
 		}
-		/// @}
+		#endregion
 	}
 }

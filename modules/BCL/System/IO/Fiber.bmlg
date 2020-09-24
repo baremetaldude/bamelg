@@ -68,10 +68,6 @@ namespace System.IO {
 			Assert.IsTrue( IsFiberExecuting );
 		}
 
-		public static DateTime Now {
-			get { EnsureFiberExecuting(); return FiberManager.Now; }
-		}
-
 		public static DateTime UtcNow {
 			get { EnsureFiberExecuting(); return FiberManager.UtcNow; }
 		}
@@ -103,6 +99,11 @@ namespace System.IO {
 			}
 		}
 
+		public static void TerminateEventLoop() {
+			Assert.IsTrue( FiberManager != null );
+			FiberManager.CurrentEventLoop.RequestExit();
+		}
+
 		public static void RuntimeInitialize() {
 			Assert.IsTrue( FiberManager == null );
 			FiberManager = new FiberInfo.Manager();
@@ -115,18 +116,18 @@ namespace System.IO {
 		}
 
 		/// Create and run fiber
-		public static Fiber Start( int pageCount, Functors.Action<void*> function, void* parameter, string name = null ) { var result = Create( pageCount, function, parameter, name ); if( result.IsValid ) result._impl->Ready(); return result; }
+		public static Fiber Start( uint pageCount, Functors.Action<void*> function, void* parameter, string name = null ) { var result = Create( pageCount, function, parameter, name ); if( result.IsValid ) result._impl->Ready(); return result; }
 		/// Create suspended fiber
-		public static Fiber Create( int pageCount, Functors.Action<void*> function, void* parameter, string name = null ) { return *FiberManager.CreateFiber( pageCount, function, parameter, name ); }
+		public static Fiber Create( uint pageCount, Functors.Action<void*> function, void* parameter, string name = null ) { return *FiberManager.CreateFiber( pageCount, function, parameter, name ); }
 
-		public static Fiber Start( int pageCount, Functors.Action start, string name = null ) { return Start( pageCount, passedData => bitcast<Functors.Action>( passedData )(), bitcast<void*>( start ), name ); }
+		public static Fiber Start( uint pageCount, Functors.Action start, string name = null ) { return Start( pageCount, passedData => bitcast<Functors.Action>( passedData )(), bitcast<void*>( start ), name ); }
 		/// Create suspended fiber
-		public static Fiber Create( int pageCount, Functors.Action start, string name = null ) { return Create( pageCount, passedData => bitcast<Functors.Action>( passedData )(), bitcast<void*>( start ), name ); }
+		public static Fiber Create( uint pageCount, Functors.Action start, string name = null ) { return Create( pageCount, passedData => bitcast<Functors.Action>( passedData )(), bitcast<void*>( start ), name ); }
 
 		/// Create and run fiber
-		public static Fiber Start( int pageCount, Delegates.Action start, string name = null ) { var result = Create( pageCount, start, name ); if( result.IsValid ) result._impl->Ready(); return result; }
+		public static Fiber Start( uint pageCount, Delegates.Action start, string name = null ) { var result = Create( pageCount, start, name ); if( result.IsValid ) result._impl->Ready(); return result; }
 		/// Create suspended fiber
-		public static Fiber Create( int pageCount, Delegates.Action start, string name = null ) {
+		public static Fiber Create( uint pageCount, Delegates.Action start, string name = null ) {
 			cast<RuntimeObjectBase>( start ).AddReference();
 
 			return *FiberManager.CreateFiber( pageCount, parameter => {
@@ -162,7 +163,7 @@ namespace System.IO {
 
 		internal partial struct FiberInfo : IFormattable {
 			private void* _stack, _suspendedStack, _fls;
-			private int _stackSize;
+			private uint _stackSize;
 			private intptr ValgrindStackID;
 			internal uint _version;
 			public string Name;
@@ -219,7 +220,7 @@ namespace System.IO {
 			}
 
 			internal partial class Manager {
-				public DateTime Now, UtcNow, UnbiasedNow;
+				public DateTime UtcNow, UnbiasedNow;
 
 				internal FiberInfo MainFiber = new FiberInfo {
 					_stack = null,
@@ -236,7 +237,7 @@ namespace System.IO {
 				private List<FiberInfo*> _finishedList = new List<FiberInfo*>();
 				private List<DPC*> _pendingThreadPoolTasks = new List<DPC*>();
 
-				public int FiberCount { get { return _fibers.Count; } }
+				public uint FiberCount { get { return _fibers.Count; } }
 				public bool IsFiberExecuting { get { return this != null && CurrentFiber != &MainFiber; } }
 
 				// false - transfer blocking operations to ThreadPool
@@ -269,7 +270,7 @@ namespace System.IO {
 					OnFinalize();
 				}
 
-				public FiberInfo* CreateFiber( int pageCount, Functors.Action<void*> function, void* parameter, string name = null ) {
+				public FiberInfo* CreateFiber( uint pageCount, Functors.Action<void*> function, void* parameter, string name = null ) {
 					var additionalPages = ( Loader._flsSnapshotSize + Loader._flsSnapshotAlignment + Memory.DefaultPageSize / 8 ) / Memory.DefaultPageSize;
 					pageCount += additionalPages;
 
@@ -295,17 +296,17 @@ namespace System.IO {
 
 					{
 						void* adjustedStack = null;
-						int adjustedStackSize = 0;
+						uint adjustedStackSize = 0U;
 						var flsStart = ( byte* ) result->_stack;
 
 						[DisableWarningUnreachable]
 						if( Memory.StackGrowsDown ) {
 							flsStart += stackSize;
 							flsStart -= Loader._flsSnapshotSize;
-							flsStart = ( byte* )( ( intptr ) flsStart & ~( Loader._flsSnapshotAlignment - 1 ) );
+							flsStart = ( byte* )( ( uintptr ) flsStart & ~( uintptr )( Loader._flsSnapshotAlignment - 1 ) );
 
 							adjustedStack = result->_stack;
-							adjustedStackSize = ( int )( flsStart - ( byte* ) result->_stack );
+							adjustedStackSize = ( uint )( flsStart - ( byte* ) result->_stack );
 						}
 						else {
 							adjustedStack = ( byte* ) result->_stack + Loader._flsSnapshotSize;
@@ -314,7 +315,7 @@ namespace System.IO {
 
 						result->_fls = flsStart;
 
-						Memory.Copy( flsStart, Loader._flsSnapshotStart, ( uint ) Loader._flsSnapshotSize );
+						Memory.Copy( flsStart, Loader._flsSnapshotStart, Loader._flsSnapshotSize );
 						PrepareContext( result, adjustedStack, adjustedStackSize, function, parameter );
 						PrepareFiberEnvironment( result );
 					}
@@ -325,7 +326,7 @@ namespace System.IO {
 				}
 
 				/// returns allocation start address
-				internal void* AllocateStack( int pageCount ) {
+				internal void* AllocateStack( uint pageCount ) {
 					if( !Assert.IsTrue( pageCount >= 1 ) ) return null;
 
 					var allocationCount = pageCount;
@@ -358,7 +359,7 @@ namespace System.IO {
 					}
 				}
 
-				internal void FreeStack( bool guardPage, void* stack, int length ) {
+				internal void FreeStack( bool guardPage, void* stack, uint length ) {
 					if( stack == null ) return;
 					if( length == 0 ) return;
 
@@ -460,7 +461,6 @@ namespace System.IO {
 				public void Dispatch() {
 					UnbiasedNow = DateTime.UnbiasedNow;
 					UtcNow = DateTime.UtcNow;
-					Now = UtcNow.ToLocalTime();
 
 					using( _readyListAsyncLock.LockRegion() )
 						if( _readyListAsync.Count > 0 ) {
@@ -482,7 +482,7 @@ namespace System.IO {
 						PrepareMainFiberEnvironment( CurrentFiber );
 						scheduleTo = _readyList[0];
 
-						for( var i = 0; i < _readyList.Count; ++i )
+						for( var i = 0U; i < _readyList.Count; ++i )
 							_readyList[i]->ScheduledNext = i + 1 < _readyList.Count ? _readyList[i + 1] : CurrentFiber;
 
 						_readyList.Clear();
@@ -530,24 +530,15 @@ namespace System.IO {
 
 				public void Sleep( TimeSpan time ) {
 					if( !IsFiberExecuting ) {
-						Threading.Thread.Sleep( ( int ) time.TotalMilliseconds );
+						Threading.Thread.Sleep( time );
 						return;
 					}
 
 					if( !Assert.IsTrue( time > TimeSpan.Zero ) ) return;
 
-					CurrentFiber->_alarmID = BeginTimeout( time, passedData => {
-						var currentFiber = bitcast<FiberInfo*>( passedData );
-						currentFiber->_alarmID = null;
-						currentFiber->Ready();
-					}, CurrentFiber );
-
+					BeginTimeout( time );
 					Suspend();
-
-					if( CurrentFiber->_alarmID != null ) {
-						EndTimeout( CurrentFiber->_alarmID );
-						CurrentFiber->_alarmID = null;
-					}
+					EndTimeout( time );
 				}
 
 				public static void BeginAsyncCompletion( AsyncCompletionRegionInfo* context ) { // called from original fiber
@@ -675,14 +666,14 @@ namespace System.IO {
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
-				private static void TraceReadyFibers( int readyCount ) {
+				private static void TraceReadyFibers( uint readyCount ) {
 					if( !FiberManager?.Tracing ) return;
 
 					Console.WriteLine( "Fiber: Ready to dispatch: {0}", readyCount );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
-				private static void TraceIOEvents( int polledHandles ) {
+				private static void TraceIOEvents( uint polledHandles ) {
 					if( !FiberManager?.Tracing ) return;
 
 					Console.WriteLine( "Fiber: IO events count = {0}", polledHandles );

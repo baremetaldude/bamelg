@@ -10,7 +10,6 @@ namespace Platform.Kernel {
 	public partial struct cap_user_header_t {
 		public cap_user_header_t() {
 			version = KernelApi._LINUX_CAPABILITY_VERSION;
-			pid = LibcApi.getpid();
 		}
 	}
 
@@ -158,7 +157,7 @@ namespace Platform.Kernel {
 
 		public static string CapsParse( uint caps ) {
 			using( var result = System.StringBuilder.CachedBuilders.PopScoped() ) {
-				for( var i = 0; i < typeof( ThreadCapabilities ).ElementCount; ++i ) {
+				for( var i = 0U; i < typeof( ThreadCapabilities ).ElementCount; ++i ) {
 					var element = enumvalue<ThreadCapabilities>( i );
 
 					if( ( caps & ( 1U << element ) ) != 0 ) {
@@ -169,6 +168,15 @@ namespace Platform.Kernel {
 
 				return result.Value.ToString();
 			}
+		}
+
+		public static SystemError gettid( uintptr& tid ) {
+			var code = raw_syscall( SystemCall.gettid );
+			if( bitcast<uintptr>( code ) > uint.MaxValue - RawErrorsMax )
+				return ( SystemError ) - code;
+
+			tid = ( uintptr ) code;
+			return SystemError.None;
 		}
 
 		public static SystemError setresuid( uintptr e, uintptr r, uintptr s ) {
@@ -201,6 +209,21 @@ namespace Platform.Kernel {
 
 			readen = code;
 			return SystemError.None;
+		}
+	}
+
+	public partial struct serial_icounter_struct : System.IFormattable {
+		public void ToString( System.StringBuilder builder, string format ) {
+			builder.Append( "cts=" ); builder.Append( cts );
+			builder.Append( " dsr=" ); builder.Append( dsr );
+			builder.Append( " rng=" ); builder.Append( rng );
+			builder.Append( " dcd=" ); builder.Append( dcd );
+			builder.Append( " rx=" ); builder.Append( rx );
+			builder.Append( " tx=" ); builder.Append( tx );
+			builder.Append( " frame=" ); builder.Append( frame );
+			builder.Append( " overrun=" ); builder.Append( overrun );
+			builder.Append( " parity=" ); builder.Append( parity );
+			builder.Append( " buf_overrun=" ); builder.Append( buf_overrun );
 		}
 	}
 }

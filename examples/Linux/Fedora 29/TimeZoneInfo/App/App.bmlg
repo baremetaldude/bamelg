@@ -1,0 +1,128 @@
+﻿using System;
+using System.Collections;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Threading;
+
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		static void Traverse( CUtf8String path ) {
+			stat st;
+			foreach( var file in Directory.GetContents( path, true ) ) {
+				file.GetStat( st );
+				if( file.Type == DirectoryEntryType.DT_LNK ) continue;
+
+				if( file.Type == DirectoryEntryType.DT_DIR ) {
+					Traverse( file.FullPath );
+				}
+
+				if( file.Type == DirectoryEntryType.DT_REG ) {
+					var parsedFile = TimeZone.BinaryReader.ParseFile( file.FullPath );
+					if( parsedFile == null ) {
+						System.Console.WriteLine( "Unable to read '{0}'", file.FullPath );
+						continue;
+					}
+					// Console.WriteLine( "Type: '{0}'; Name: '{1}'; FullPath: '{2}'; Size: {3}", file.Type, file.Name, file.FullPath, st.st_size );
+
+					if( parsedFile.LeapV1 != null && parsedFile.LeapV1.Length > 0 ) {
+						System.Console.WriteLine( "{0}: LeapV1 {1}", file.FullPath, parsedFile.LeapV1.Length );
+					}
+
+					if( parsedFile.LeapV2 != null && parsedFile.LeapV2.Length > 0 ) {
+						System.Console.WriteLine( "{0}: LeapV2 {1}", file.FullPath, parsedFile.LeapV2.Length );
+					}
+				}
+
+			}
+		}
+
+		[EntryPoint]
+		static void Main() {
+			// Traverse( "/usr/share/zoneinfo" );
+			// return;
+
+			var tzEnv = Environment.GetEnvironmentVariable( "TZ" );
+			if( tzEnv.IsNullOrEmpty ) {
+				Console.WriteLine( "TZ: Environment variable not set" );
+				return;
+			}
+
+			var tzFile = ( Utf8String ) "/usr/share/zoneinfo/" + tzEnv;
+			if( !File.Exists( tzFile ) ) {
+				Console.WriteLine( "{0}: Not found", tzFile );
+				return;
+			}
+
+			Console.WriteLine( "TZ={0}", tzEnv );
+			Console.WriteLine( "Start={0} End={1} Step={2} Count={3}", StartDate, EndDate, Step, ( EndDate - StartDate ).Ticks / Step.Ticks );
+
+			TimeZone.CurrentTimeZone = new TimeZone.BinaryConverter( ( string ) tzEnv, TimeZone.BinaryReader.ParseFile( tzFile ) );
+
+			var sw = new Stopwatch();
+			sw.Start();
+			PrintDstChanges1();
+			var cTime = sw.Elapsed;
+			System.Console.WriteLine( "PrintDstChanges1: {0}", cTime );
+
+			sw.Restart();
+			PrintDstChanges2();
+			var baTime = sw.Elapsed;
+			System.Console.WriteLine( "PrintDstChanges2: {0}", baTime );
+			// System.Console.WriteLine( "PrintDstChanges2: {0}, speedup x {1:F1}", baTime, ( double ) cTime.Ticks / baTime.Ticks );
+		}
+
+		static DateTime StartDate = new DateTime( 1990, 1, 1, DateTimeKind.Utc );
+		static DateTime EndDate = new DateTime( 2022, 1, 1, DateTimeKind.Utc );
+		static TimeSpan Step = TimeSpan.FromMilliseconds( 1000 );
+
+		static void PrintDstChanges1() {
+			var start = StartDate;
+			var offset = DateTime.GetLocalFromUtcOffset( start );
+			var prevDate = new TimeSpan( 1 );
+
+			using( var file = File.OpenWrite( "/tmp/dst1.txt" ) )
+			using( var writer = new StreamWriter( file ) )
+				while( start < EndDate ) {
+					var newStart = start + Step;
+					var newOffset = DateTime.GetLocalFromUtcOffset( newStart );
+
+					if( offset != newOffset ) {
+						// writer.WriteLine( "{0:yyyy.MM.dd HH:mm:ss.fffffff}: {1} -> {2}", newStart, offset, newOffset );
+						writer.WriteLine( "{0}: {1}             ({2})", newStart - prevDate, offset, newStart - prevDate + offset );
+						writer.WriteLine( "{0}: {1} -> {2} ({3})", newStart, offset, newOffset, newStart + newOffset );
+						offset = newOffset;
+					}
+
+					start = newStart;
+				}
+		}
+
+		static void PrintDstChanges2() {
+			var start = StartDate;
+			var offset = TimeZone.CurrentTimeZone.GetLocalTimeOffset( start );
+			var prevDate = new TimeSpan( 1 );
+
+			using( var file = File.OpenWrite( "/tmp/dst2.txt" ) )
+			using( var writer = new StreamWriter( file ) )
+				while( start < EndDate ) {
+					var newStart = start + Step;
+					var newOffset = TimeZone.CurrentTimeZone.GetLocalTimeOffset( newStart );
+
+					if( offset != newOffset ) {
+						// writer.WriteLine( "{0:yyyy.MM.dd HH:mm:ss.fffffff}: {1} -> {2}", newStart, offset, newOffset );
+						writer.WriteLine( "{0}: {1}             ({2})", newStart - prevDate, offset, newStart - prevDate + offset );
+						writer.WriteLine( "{0}: {1} -> {2} ({3})", newStart, offset, newOffset, newStart + newOffset );
+						offset = newOffset;
+					}
+
+					start = newStart;
+				}
+		}
+	}
+}

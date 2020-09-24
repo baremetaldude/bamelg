@@ -16,7 +16,7 @@ namespace System {
 
 		public bool IsNull {
 			get {
-				return Runtime.Memory.ComparePtr( Data, 0, sizeof( Data ) / sizeof( intptr ) );
+				return Runtime.Memory.ComparePtr( ( intptr* ) &Data[0], 0, ( uint ) sizeof( Data ) / sizeof( intptr ) );
 			}
 		}
 

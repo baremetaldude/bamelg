@@ -17,21 +17,21 @@ using Platform.Libc;
 
 namespace Example {
 	public partial class App {
-		private static int _connectionCounter;
+		private static uint _connectionCounter;
 		private static EpollHandle Epoll = new EpollHandle();
 
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields )]
 		private struct AppSettings {
 			public bool Trace = true;           // trace app execution
-			public int ListenBacklog = 128;     // queue length for completely established sockets waiting to be accepted
-			public int MaxEvents = 1024;        // max epoll events
-			public int ReceiveLowWatermark = 1; // set for client connections
+			public uint ListenBacklog = 128;     // queue length for completely established sockets waiting to be accepted
+			public uint MaxEvents = 1024;        // max epoll events
+			public uint ReceiveLowWatermark = 1; // set for client connections
 
-			public int ServerSendBufferSize = 0;
-			public int ClientSendBufferSize = 0;
+			public uint ServerSendBufferSize = 0;
+			public uint ClientSendBufferSize = 0;
 
-			public int ServerReceiveBufferSize = 0;
-			public int ClientReceiveBufferSize = 0;
+			public uint ServerReceiveBufferSize = 0;
+			public uint ClientReceiveBufferSize = 0;
 
 			public IPv4Endpoint ServerEndpoint = new IPv4Endpoint( 0, 0, 0, 0, 6666 );
 			public IPv4Endpoint ClientEndpoint = new IPv4Endpoint( 0, 0, 0, 0, 6667 );
@@ -54,15 +54,15 @@ namespace Example {
 			Signal,
 		}
 
-		public enum MuxCommand : int {
-			None = int.MinValue,
+		public enum MuxCommand : uint {
+			None = uint.MinValue,
 
 			Close,
 			ClientConnected,
 		}
 
 		private struct EventSink {
-			public int ConnectionID;
+			public uint ConnectionID;
 
 			public IOHandle Handle;
 			public SocketHandle Socket { get { return bitcast<SocketHandle>( Handle ); } }
@@ -72,7 +72,7 @@ namespace Example {
 			public EventSinkType Type;
 			public bool Cork;
 
-			public int ServerID;
+			public uint ServerID;
 			public EventSink* Server;
 
 			public void Remove() {
@@ -98,16 +98,16 @@ namespace Example {
 				Handle.Close();
 				_sinks.Free( &this );
 
-				ConnectionID = -1;
+				ConnectionID = uint.MaxValue;
 			}
 		}
 
 		private struct FrameHeader {
-			public const int DefaultMarker = ( int ) 0xDEADFEED;
+			public const uint DefaultMarker = 0xDEADFEEDu;
 
-			public int_littleendian Marker;
-			public int_littleendian Source;
-			public int_littleendian Length;
+			public uint_littleendian Marker;
+			public uint_littleendian Source;
+			public uint_littleendian Length;
 
 			public bool IsMarkerValid { get { return Marker == DefaultMarker; } }
 			public void SetMarker() { Marker = DefaultMarker; }
@@ -116,7 +116,7 @@ namespace Example {
 		private static PagedPool<EventSink> _sinks = new PagedPool<EventSink>();
 		private static List<EventSink*> _servers = new List<EventSink*>();
 		private static List<EventSink*> _stopCork = new List<EventSink*>();
-		private static Dictionary<int, EventSink*> _idMapping = new Dictionary<int, EventSink*>();
+		private static Dictionary<uint, EventSink*> _idMapping = new Dictionary<uint, EventSink*>();
 
 		private static CRandom _random = new CRandom();
 
@@ -197,7 +197,7 @@ namespace Example {
 		[EntryPoint]
 		private static void Main() {
 			LibcApi.pipe( _pipes );
-			IOHandle.Open( _nullDevice, "/dev/null", FctlFlags.O_RDONLY, 0 );
+			IOHandle.Open( _nullDevice, "/dev/null", FileOpenFlags.O_RDONLY, 0 );
 
 			if( Environment.CommandLine.Length == 1 ) { // no args
 			}
@@ -287,7 +287,7 @@ namespace Example {
 										continue;
 									}
 
-									var server = _servers[_random.NextInt( _servers.Count )];
+									var server = _servers[_random.NextUInt( _servers.Count )];
 
 									var clientSink = _sinks.Allocate();
 									clientSink->Handle = clientSocketHandle;
@@ -369,7 +369,7 @@ namespace Example {
 									goto remove_current_sink;
 
 								FrameHeader frame;
-								int readen;
+								uint readen;
 
 								var available = sink->Handle.AvailableBytes;
 								if( available == 0 ) // server closed connection
@@ -402,11 +402,12 @@ namespace Example {
 								switch( muxCommand ) {
 									case MuxCommand.None: {
 											while( available > 0 ) {
-												readen = LibcApi.splice( sink->Handle, null, _pipes[1], null, ( uint ) available, 0U );
+												var readResult = LibcApi.splice( sink->Handle, null, _pipes[1], null, available, 0U );
 
-												if( readen <= 0 ) // server closed connection
+												if( readResult <= 0 ) // server closed connection
 													goto remove_current_sink;
 
+												readen = ( uint ) readResult;
 												if( clientSink == null ) {
 													var written = LibcApi.splice( _pipes[0], null, _nullDevice, null, ( uint ) readen, 0U ); // drain backend data
 												}

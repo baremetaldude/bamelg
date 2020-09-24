@@ -17,7 +17,7 @@ namespace Platform.IO {
 	public class EventLoop {
 		protected bool _quitRequest;
 
-		/// @{ Events
+		#region Events
 		public KQueueHandle KQueue = new KQueueHandle();
 
 		private kevent[256] _signalledEvents;
@@ -26,7 +26,7 @@ namespace Platform.IO {
 		public void AddEvent( kevent& @event ) {
 			_eventChangeList.Add( @event );
 		}
-		/// @}
+		#endregion
 
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
@@ -45,7 +45,7 @@ namespace Platform.IO {
 
 		public int EventSourceCount { get { return _eventSources.Count; } }
 
-		/// @{ Dispatching
+		#region Dispatching
 		private enum DispatchingState {
 			None,
 			Async,
@@ -134,7 +134,7 @@ namespace Platform.IO {
 			Dispose();
 		}
 
-		/// @}
+		#endregion
 
 		// It can be implemented as interface, but class provides faster access to fields
 		public abstract class EventSource {
@@ -147,11 +147,11 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			/// @{ Can be overrided for faster access to Parent/EventHandle or to intercept these events
+			#region Can be overrided for faster access to Parent/EventHandle or to intercept these events
 			public virtual bool Register() { return Register( Parent ); }
 			// public virtual void NotifyEventModification() { NotifyEventModification( Parent, EventHandle ); }
 			public virtual bool Unregister() { return Unregister( Parent ); }
-			/// @}
+			#endregion
 
 			// MT-unsafe
 			public bool Register( EventLoop parent ) {
@@ -348,7 +348,7 @@ namespace Platform.IO {
 			if( _dispatchThread != Platform.Threading.Thread.CurrentThread ) _notificationEmitter.RequestUpdate();
 		}
 
-		/// @{ Tracing
+		#region Tracing
 		// private const string TraceConditionString = "TRACE_EVENT_LOOP";
 		private const string TraceConditionString = "DEBUG";
 
@@ -375,6 +375,6 @@ namespace Platform.IO {
 			Console.WriteLine( format );
 			Console.WriteLine( new ConsoleAttributes() );
 		}
-		/// @}
+		#endregion
 	}
 }

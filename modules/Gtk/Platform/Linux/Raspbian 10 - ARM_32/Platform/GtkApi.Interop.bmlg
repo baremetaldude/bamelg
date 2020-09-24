@@ -1888,7 +1888,7 @@ namespace Platform.Gtk {
 		public extern static Boolean32 gtk_list_store_iter_is_valid( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static void gtk_list_store_move_after( GtkListStore* store, GtkTreeIter& iter, GtkTreeIter& position );
 		public extern static void gtk_list_store_move_before( GtkListStore* store, GtkTreeIter& iter, GtkTreeIter& position );
-		public extern static GtkListStore* gtk_list_store_newv( int nColumns, GType* types );
+		public extern static GtkListStore* gtk_list_store_newv( uint nColumns, GType* types );
 		public extern static void gtk_list_store_prepend( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static Boolean32 gtk_list_store_remove( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static void gtk_list_store_reorder( GtkListStore* store, int* newOrder );
@@ -1994,10 +1994,10 @@ namespace Platform.Gtk {
 		public extern static void gtk_entry_set_icon_from_gicon( GtkEntry* entry, GtkEntryIconPosition iconPos, GIcon* icon );
 		public extern static void gtk_entry_set_icon_from_icon_name( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String iconName );
 		public extern static void gtk_entry_set_icon_from_pixbuf( GtkEntry* entry, GtkEntryIconPosition iconPos, GdkPixbuf* pixbuf );
-		public extern static void gtk_entry_set_icon_from_stock( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* stockId );
+		public extern static void gtk_entry_set_icon_from_stock( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String stockId );
 		public extern static void gtk_entry_set_icon_sensitive( GtkEntry* entry, GtkEntryIconPosition iconPos, Boolean32 sensitive );
-		public extern static void gtk_entry_set_icon_tooltip_markup( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* tooltip );
-		public extern static void gtk_entry_set_icon_tooltip_text( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* tooltip );
+		public extern static void gtk_entry_set_icon_tooltip_markup( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String tooltip );
+		public extern static void gtk_entry_set_icon_tooltip_text( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String tooltip );
 		public extern static void gtk_entry_set_inner_border( GtkEntry* entry, GtkBorder* border );
 		public extern static void gtk_entry_set_invisible_char( GtkEntry* entry, uint ch );
 		public extern static void gtk_entry_set_max_length( GtkEntry* entry, int max );
@@ -2649,10 +2649,10 @@ namespace Platform.Gtk {
 		[BackendHintReadNone]
 		public extern static GType gtk_image_menu_item_get_type();
 		public extern static Boolean32 gtk_image_menu_item_get_use_stock( GtkImageMenuItem* imageMenuItem );
-		public extern static GtkWidget* gtk_image_menu_item_new();
-		public extern static GtkWidget* gtk_image_menu_item_new_from_stock( CUtf8String stockId, GtkAccelGroup* accelGroup );
-		public extern static GtkWidget* gtk_image_menu_item_new_with_label( CUtf8String label );
-		public extern static GtkWidget* gtk_image_menu_item_new_with_mnemonic( CUtf8String label );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new();
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_from_stock( CUtf8String stockId, GtkAccelGroup* accelGroup );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_with_label( CUtf8String label );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_with_mnemonic( CUtf8String label );
 		public extern static void gtk_image_menu_item_set_accel_group( GtkImageMenuItem* imageMenuItem, GtkAccelGroup* accelGroup );
 		public extern static void gtk_image_menu_item_set_always_show_image( GtkImageMenuItem* imageMenuItem, Boolean32 alwaysShow );
 		public extern static void gtk_image_menu_item_set_image( GtkImageMenuItem* imageMenuItem, GtkWidget* image );
@@ -5835,6 +5835,7 @@ namespace Platform.Gtk {
 		public bool _cell_background_set { get { return ( cast<byte*>( &this )[36] & 32 ) != 0; } set { cast<byte*>( &this )[36] &= 223; cast<byte*>( &this )[36] |= cast<byte>( value ) << 5; } }
 		public bool _sensitive { get { return ( cast<byte*>( &this )[36] & 64 ) != 0; } set { cast<byte*>( &this )[36] &= 191; cast<byte*>( &this )[36] |= cast<byte>( value ) << 6; } }
 		public bool _editing { get { return ( cast<byte*>( &this )[36] & 128 ) != 0; } set { cast<byte*>( &this )[36] &= 127; cast<byte*>( &this )[36] |= cast<byte>( value ) << 7; } }
+		public uint ConnectSignalEditingStarted<TData>( Functors.Action<thistype*, GtkCellEditable*, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "editing-started", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
 	}
 	[ExplicitSize( Size = 120 )]
 	[Alignment( Boundary = 8 )]
@@ -6831,6 +6832,8 @@ namespace Platform.Gtk {
 		[ExplicitOffset( Offset = 148 )]
 		public int _width_chars;
 		public uint ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uint ConnectSignalPopulatePopup<TData>( Functors.Action<thistype*, GtkMenu*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "populate-popup", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uint ConnectSignalIconPress<TData>( Functors.Action<thistype*, GtkEntryIconPosition, GdkEvent*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "icon-press", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 4 )]
@@ -8291,7 +8294,7 @@ namespace Platform.Gtk {
 		public bool _has_after_previous { get { return ( cast<byte*>( &this )[102] & 16 ) != 0; } set { cast<byte*>( &this )[102] &= 239; cast<byte*>( &this )[102] |= cast<byte>( value ) << 4; } }
 		public bool _has_after_next { get { return ( cast<byte*>( &this )[102] & 32 ) != 0; } set { cast<byte*>( &this )[102] &= 223; cast<byte*>( &this )[102] |= cast<byte>( value ) << 5; } }
 		public bool _is_pix { get { return ( cast<byte*>( &this )[102] & 64 ) != 0; } set { cast<byte*>( &this )[102] &= 191; cast<byte*>( &this )[102] |= cast<byte>( value ) << 6; } }
-		public uint ConnectSignalSwitchPage<TData>( Functors.Action<thistype*, GtkNotebookPage*, uint, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "switch-page", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uint ConnectSignalSwitchPage<TData>( Functors.Action<thistype*, GtkWidget*, uint, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "switch-page", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
 	}
 	public partial struct GtkNotebookPage {
 	}
@@ -10737,6 +10740,7 @@ namespace Platform.Gtk {
 		public void* _user_data;
 		[ExplicitOffset( Offset = 28 )]
 		public Functors.Action<void*> _destroy;
+		public uint ConnectSignalChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
 	}
 	public partial struct GtkTreeSortable {
 	}

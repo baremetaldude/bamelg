@@ -40,7 +40,7 @@ namespace Example {
 				eventLoop.CatchExitSignals(); // convert signals to events
 
 				using( IOHandle gpioFile = IOHandle.Invalid ) {
-					var openStatus = IOHandle.Open( gpioFile, DefaultUapiDeviceName, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+					var openStatus = IOHandle.Open( gpioFile, DefaultUapiDeviceName, FileOpenFlags.O_RDONLY | FileOpenFlags.O_NONBLOCK, 0 );
 
 					if( openStatus ) {
 						var eventSink = new EventLoop.UapiGpioInputTraceEventSink( eventLoop );

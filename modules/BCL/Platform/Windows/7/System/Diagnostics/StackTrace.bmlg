@@ -18,17 +18,17 @@ namespace System.Diagnostics {
 			using( var framePage = Memory.CachedPages.PopScoped() ) {
 				var stack = ( void** ) framePage.Value;
 				// Debugger.Break();
-				var frameCount = Kernel32Api.RtlCaptureStackBackTrace( 0U, ( uint )( Memory.DefaultPageSize / sizeof( void* ) ), stack, null );
+				var frameCount = Kernel32Api.RtlCaptureStackBackTrace( 0U, Memory.DefaultPageSize / sizeof( void* ), stack, null );
 				// Debugger.Break();
 				// Console.WriteLine( "found {0} frames", frameCount );
 
 				var symbol = ( SYMBOL_INFO* ) symbolPage.Value;
 				Memory.Clear( symbolPage.Value, Memory.DefaultPageSize );
 
-				symbol->MaxNameLen = ( uint )( Memory.DefaultPageSize - sizeof( SYMBOL_INFO ) - 1 );
+				symbol->MaxNameLen = Memory.DefaultPageSize - sizeof( SYMBOL_INFO ) - 1;
 				symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
 
-				for( var i = 0; i < frameCount; i++ ) {
+				for( var i = 0U; i < frameCount; i++ ) {
 					DbgHelpApi.SymFromAddr( process, ( ulong ) stack[i], null, symbol );
 
 					Console.WriteLine( "[{0}] 0x{1} {2}", i, symbol->Address, new CString( &symbol->Name[0] ) );

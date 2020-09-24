@@ -67,12 +67,12 @@ namespace System.Web {
 			if( quoting ) _result.Append( '"' );
 		}
 
-		public void Value( char* value, int length ) {
+		public void Value( char* value, uint length ) {
 			TryInsertComma();
 			_result.EnsureCapacity( length + 2 );
 			_result.Append( '"' );
 
-			for( var i = 0; i < length; ++i ) {
+			for( var i = 0U; i < length; ++i ) {
 				var ch = value[i];
 
 				switch( ch ) {
@@ -96,7 +96,7 @@ namespace System.Web {
 
 		public void Value( string value ) {
 			if( value == null ) Null();
-			else Value( value.GetChars(), ( int ) value.Length );
+			else Value( value.GetChars(), value.Length );
 		}
 
 		public void Value( string format, vararg TypedReference parameters ) {

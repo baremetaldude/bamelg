@@ -151,7 +151,7 @@ namespace System {
 			parsedResult = default( thistype );
 
 			int days = 0, hours;
-			uint minutes, seconds, frac;
+			uint minutes, seconds = 0, frac;
 			long ticks = 0;
 
 			if( !int.TryFetch( parsePosition, remaining, hours ) || remaining == 0 ) return TextParsingStatus.Format;
@@ -166,19 +166,21 @@ namespace System {
 				case '.':
 					days = hours;
 					if( !int.TryFetch( parsePosition, remaining, hours ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( hours < 0 ) return TextParsingStatus.Overflow;
+					if( hours < 0 ) return TextParsingStatus.OutOfRange;
 					if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
 					goto case ':';
 
 				case ':':
-					if( hours >= 24 ) return TextParsingStatus.Overflow;
+					if( hours >= 24 ) return TextParsingStatus.OutOfRange;
 
-					if( !uint.TryFetch( parsePosition, remaining, minutes ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( minutes >= 60 ) return TextParsingStatus.Overflow;
+					if( !uint.TryFetch( parsePosition, remaining, minutes ) ) return TextParsingStatus.Format;
+					if( minutes >= 60 ) return TextParsingStatus.OutOfRange;
+					
+					if( remaining == 0 ) goto parsed;
 					if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
 
 					if( !uint.TryFetch( parsePosition, remaining, seconds ) ) return TextParsingStatus.Format;
-					if( seconds >= 60 ) return TextParsingStatus.Overflow;
+					if( seconds >= 60 ) return TextParsingStatus.OutOfRange;
 					if( remaining == 0 ) goto parsed;
 					if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
 
@@ -229,13 +231,5 @@ namespace System {
 		public static TextParsingStatus TryParse( Utf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
 		public static TextParsingStatus TryParse( Utf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
 		public static TextParsingStatus TryParse( Utf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
-
-		[UnitTest]
-		private static void ParseTest() {
-			Assert.IsTrue( new TimeSpan( 1, 2, 3 ) == TimeSpan.Parse( "1:2:3" ) );
-			Assert.IsTrue( new TimeSpan( 1, 2, 3, 4 ) == TimeSpan.Parse( "1.2:3:4" ) );
-			Assert.IsTrue( new TimeSpan( 1, 2, 3, 4, 567 ) == TimeSpan.Parse( "1.2:3:4.567" ) );
-			Assert.IsTrue( -new TimeSpan( 1, 2, 3, 4, 567 ) == TimeSpan.Parse( "-1.2:3:4.567" ) );
-		}
 	}
 }

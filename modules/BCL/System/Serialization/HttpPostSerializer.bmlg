@@ -15,7 +15,7 @@ namespace System.Serialization {
 	public static struct HttpPostSerializer {
 		public static void Deserialize( Binder.MapperCUtf16Span mapper, Binder.Context& context, CUtf16StringSpan name, StringBuilder value ) {
 			var mapping = mapper[name];
-			if( mapping == -1 ) {
+			if( mapping == uint.MaxValue ) {
 				context.BinderEvent.NotFound( name );
 				return;
 			}

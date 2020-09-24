@@ -1,0 +1,29 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+
+using Platform.IO;
+using Platform.Kernel;
+
+namespace System.IO {
+	public static partial struct File {
+		public static IStream _implOpenWrite( string filename ) { return _implOpenWrite( ( Utf8String ) filename ); }
+		public static IStream _implOpenWrite( Utf8String filename ) { return FileStream.CreateWriteStream( filename ); }
+
+		public static IStream _implOpenRead( string filename ) { return _implOpenRead( ( Utf8String ) filename ); }
+		public static IStream _implOpenRead( Utf8String filename ) { return FileStream.CreateReadStream( filename ); }
+
+		public static IStream _implOpenAppend( string filename ) { return _implOpenAppend( ( Utf8String ) filename ); }
+		public static IStream _implOpenAppend( Utf8String filename ) { return FileStream.CreateAppendStream( filename ); }
+
+		public static bool _implExists( string filename ) { return _implExists( ( Utf8String ) filename ); }
+		public static bool _implExists( Utf8String filename ) { return FileHandle.Exists( filename ); }
+
+		public static bool _implDelete( string filename ) { return _implDelete( ( Utf8String ) filename ); }
+		public static bool _implDelete( Utf8String filename ) { return FileHandle.Delete( filename ); }
+	}
+}

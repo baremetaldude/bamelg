@@ -142,7 +142,7 @@ namespace System.IO {
 					return SystemError.None;
 				}
 
-				/// @{ IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
+				#region IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
 
 				public SystemError ConnectNonBlocking( TimeSpan timeout, SocketHandle socket, sockaddr* address, int addressLength ) {
 					socket.EnsureNonBlocking();
@@ -163,17 +163,17 @@ namespace System.IO {
 					return errno;
 				}
 
-				public SystemError WriteNonBlocking( TimeSpan timeout, IOHandle socket, void* buffer, int count ) {
+				public SystemError WriteNonBlocking( TimeSpan timeout, IOHandle socket, void* buffer, uint count ) {
 					socket.EnsureNonBlocking();
 
-					var totalWritten = 0;
+					var totalWritten = 0u;
 
 				restart:
-					var written = LibcApi.write( socket, buffer, count );
+					var writeResult = LibcApi.write( socket, buffer, count );
 
-					if( written < 0 ) {
+					if( writeResult < 0 ) {
 						var errno = LibcApi.LastError;
-						TraceNonBlockingWrite( socket, errno, written, count, totalWritten );
+						TraceNonBlockingWrite( socket, errno, writeResult, count, totalWritten );
 
 						switch( errno ) {
 							case SystemError.EINTR: goto restart;
@@ -190,8 +190,10 @@ namespace System.IO {
 						}
 					}
 					else {
-						TraceNonBlockingWrite( socket, SystemError.None, written, count, totalWritten );
+						var written = ( uint ) writeResult;
+						TraceNonBlockingWrite( socket, SystemError.None, writeResult, count, totalWritten );
 
+						buffer = cast<byte*>( buffer ) + written;
 						totalWritten += written;
 						count -= written;
 						if( count > 0 && written > 0 ) goto restart; // ensure all bytes are send
@@ -200,14 +202,14 @@ namespace System.IO {
 					}
 				}
 
-				public SystemError WriteNonBlocking( TimeSpan timeout, IOHandle socket, iovec* segments, int segmentsCount ) {
+				public SystemError WriteNonBlocking( TimeSpan timeout, IOHandle socket, iovec* segments, uint segmentsCount ) {
 					socket.EnsureNonBlocking();
 
-					var totalWritten = 0;
+					var totalWritten = 0u;
 
 				restart:
-					var written = LibcApi.writev( socket, segments, segmentsCount );
-					if( written < 0 ) {
+					var writeResult = LibcApi.writev( socket, segments, segmentsCount );
+					if( writeResult < 0 ) {
 						var errno = LibcApi.LastError;
 
 						switch( errno ) {
@@ -225,6 +227,7 @@ namespace System.IO {
 						}
 					}
 					else {
+						var written = ( uint ) writeResult;
 						totalWritten += written;
 						if( written > 0 ) {
 							while( segmentsCount > 0 ) {
@@ -245,15 +248,15 @@ namespace System.IO {
 					}
 				}
 
-				public SystemError ReadNonBlocking( TimeSpan timeout, IOHandle socket, void* buffer, int count, int& totalReceived ) {
+				public SystemError ReadNonBlocking( TimeSpan timeout, IOHandle socket, void* buffer, uint count, uint& totalReceived ) {
 					socket.EnsureNonBlocking();
 
 				restart:
-					var readen = LibcApi.read( socket, buffer, count );
+					var readResult = LibcApi.read( socket, buffer, count );
 
-					if( readen < 0 ) {
+					if( readResult < 0 ) {
 						var errno = LibcApi.LastError;
-						TraceNonBlockingRead( socket, errno, readen, count, totalReceived );
+						TraceNonBlockingRead( socket, errno, readResult, count, totalReceived );
 
 						switch( errno ) {
 							case SystemError.EINTR:
@@ -261,14 +264,14 @@ namespace System.IO {
 
 							case SystemError.EAGAIN:
 							case SystemError.EINPROGRESS: {
-									if( readen == -1 ) {
+									if( readResult == -1 ) {
 										var waitResult = WaitForRead( timeout, socket );
 										if( waitResult != SystemError.None ) return waitResult;
 
 										goto restart;
 									}
 
-									totalReceived += readen;
+									totalReceived += ( uint ) readResult;
 									return SystemError.None;
 								}
 
@@ -277,16 +280,16 @@ namespace System.IO {
 						}
 					}
 					else {
-						TraceNonBlockingRead( socket, SystemError.None, readen, count, totalReceived );
+						TraceNonBlockingRead( socket, SystemError.None, readResult, count, totalReceived );
 
-						totalReceived += readen;
+						totalReceived += ( uint ) readResult;
 						return SystemError.None;
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ EventLoop support
+				#region EventLoop support
 
 				private FiberReadyEventSink _fiberReadyEventSink;
 				private FiberIOEventSink _fiberIOEventSink;
@@ -332,7 +335,7 @@ namespace System.IO {
 						base.Dispose();
 					}
 
-					public int RegisterHandle( FiberInfo* fiber, IOHandle handle, PollEvents events ) {
+					public uint RegisterHandle( FiberInfo* fiber, IOHandle handle, PollEvents events ) {
 						fiber->_waitHandle = handle;
 
 						var poolId = RegisterHandle( handle, events );
@@ -365,9 +368,9 @@ namespace System.IO {
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ Tracing
+				#region Tracing
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIONotify( FiberInfo* fiber, pollfd& @event ) {
@@ -384,20 +387,20 @@ namespace System.IO {
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
-				private void TraceNonBlockingWrite( IOHandle socket, SystemError errno, int written, int count, int bytesSended ) {
+				private void TraceNonBlockingWrite( IOHandle socket, SystemError errno, int writteResult, uint count, uint bytesSended ) {
 					if( !FiberManager?.Tracing ) return;
 
-					Trace.Write( "Fiber: [{0:D2}] Handle {1} write: errno={2} written={3} count={4} total={5}", *CurrentFiber, socket.ID, errno, written, count, bytesSended );
+					Trace.Write( "Fiber: [{0:D2}] Handle {1} write: errno={2} writteResult={3} count={4} total={5}", *CurrentFiber, socket.ID, errno, writteResult, count, bytesSended );
 				}
 
 				[Conditional( ConditionString = TraceConditionString )]
-				private void TraceNonBlockingRead( IOHandle socket, SystemError errno, int readen, int count, int bytesReceived ) {
+				private void TraceNonBlockingRead( IOHandle socket, SystemError errno, int readResult, uint count, uint bytesReceived ) {
 					if( !FiberManager?.Tracing ) return;
 
-					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
+					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readResult={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readResult, count, socket.AvailableBytes, bytesReceived );
 				}
 
-				/// @}
+				#endregion
 			}
 		}
 	}

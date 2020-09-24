@@ -17,7 +17,7 @@ namespace Example {
 			} ) {
 				eventLoop.CatchExitSignals(); // convert signals to events
 
-				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
+				// eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
 				eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from same thread" ) );
 
 				eventLoop.BeginInvoke( () => {
@@ -30,7 +30,7 @@ namespace Example {
 				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unseen alarm" );
 				} );
-				
+
 				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
 					eventLoop.RemoveAlarm( unseen );
 				} );

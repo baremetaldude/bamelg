@@ -39,11 +39,11 @@ namespace System {
 			byte[50] buffer;
 
 			IOHandle uptimeHandle;
-			var error = IOHandle.RawOpen( uptimeHandle, "/proc/uptime", FctlFlags.O_RDONLY, 0 );
+			var error = IOHandle.RawOpen( uptimeHandle, "/proc/uptime", FileOpenFlags.O_RDONLY, 0 );
 			if( error != SystemError.None ) return false;
 
 			using( uptimeHandle ) {
-				int readen;
+				uint readen;
 				error = uptimeHandle.RawRead( buffer, buffer.Length, readen );
 				if( error != SystemError.None ) return false;
 
@@ -135,7 +135,7 @@ namespace System {
 					return this;
 
 				case DateTimeKind.Local: {
-						var result = this - GetLocalFromUtcOffset( this );
+						var result = this - GetUtcFromLocalOffset( this );
 						result.Kind = DateTimeKind.Utc;
 						return result;
 					}
@@ -151,7 +151,15 @@ namespace System {
 			return this;
 		}
 
-		public static TimeSpan GetLocalFromUtcOffset( DateTime time ) { return TimeSpan.FromSeconds( timeval.GetCurrentTimezoneSecondsOffset( ( int ) time.ToUnixSeconds() ) ); }
+		public static TimeSpan GetLocalFromUtcOffset( DateTime time ) {
+			if( TimeZone.CurrentTimeZone != null ) return TimeZone.CurrentTimeZone.GetLocalTimeOffset( time );
+			return TimeSpan.FromSeconds( timeval.GetCurrentTimezoneSecondsOffset( ( intptr ) time.ToUnixSeconds() ) );
+		}
+
+		public static TimeSpan GetUtcFromLocalOffset( DateTime time ) {
+			if( TimeZone.CurrentTimeZone != null ) return TimeZone.CurrentTimeZone.GetUtcTimeOffset( time );
+			return TimeSpan.FromSeconds( timeval.GetCurrentTimezoneSecondsOffset( ( intptr ) time.ToUnixSeconds() ) );
+		}
 
 		public static explicit operator DateTime( timeval& value ) { return new DateTime( value.DateTimeTicks, DateTimeKind.Utc ); }
 		public static explicit operator DateTime( timespec& value ) { return new DateTime( value.DateTimeTicks, DateTimeKind.Utc ); }
