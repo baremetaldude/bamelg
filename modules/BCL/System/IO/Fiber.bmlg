@@ -68,10 +68,6 @@ namespace System.IO {
 			Assert.IsTrue( IsFiberExecuting );
 		}
 
-		public static DateTime Now {
-			get { EnsureFiberExecuting(); return FiberManager.Now; }
-		}
-
 		public static DateTime UtcNow {
 			get { EnsureFiberExecuting(); return FiberManager.UtcNow; }
 		}
@@ -101,6 +97,11 @@ namespace System.IO {
 				var currentFiber = FiberManager.CurrentFiber;
 				return currentFiber->IsCancellationPending;
 			}
+		}
+
+		public static void TerminateEventLoop() {
+			Assert.IsTrue( FiberManager != null );
+			FiberManager.CurrentEventLoop.RequestExit();
 		}
 
 		public static void RuntimeInitialize() {
@@ -219,7 +220,7 @@ namespace System.IO {
 			}
 
 			internal partial class Manager {
-				public DateTime Now, UtcNow, UnbiasedNow;
+				public DateTime UtcNow, UnbiasedNow;
 
 				internal FiberInfo MainFiber = new FiberInfo {
 					_stack = null,
@@ -460,7 +461,6 @@ namespace System.IO {
 				public void Dispatch() {
 					UnbiasedNow = DateTime.UnbiasedNow;
 					UtcNow = DateTime.UtcNow;
-					Now = UtcNow.ToLocalTime();
 
 					using( _readyListAsyncLock.LockRegion() )
 						if( _readyListAsync.Count > 0 ) {
@@ -536,18 +536,9 @@ namespace System.IO {
 
 					if( !Assert.IsTrue( time > TimeSpan.Zero ) ) return;
 
-					CurrentFiber->_alarmID = BeginTimeout( time, passedData => {
-						var currentFiber = bitcast<FiberInfo*>( passedData );
-						currentFiber->_alarmID = null;
-						currentFiber->Ready();
-					}, CurrentFiber );
-
+					BeginTimeout( time );
 					Suspend();
-
-					if( CurrentFiber->_alarmID != null ) {
-						EndTimeout( CurrentFiber->_alarmID );
-						CurrentFiber->_alarmID = null;
-					}
+					EndTimeout( time );
 				}
 
 				public static void BeginAsyncCompletion( AsyncCompletionRegionInfo* context ) { // called from original fiber

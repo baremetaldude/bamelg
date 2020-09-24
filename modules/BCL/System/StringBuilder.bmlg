@@ -661,14 +661,14 @@ namespace System {
 				var destinationPos = 0U;
 				var sourcePos = 0U;
 
-				if( find.Length == replace.Length ) { // "yo" --> "11"
+				if( find.Length == replace.Length ) { // "ab" --> "cd"
 					foreach( var interval in _copyInterval ) {
 						Memory.Copy( result + destinationPos + interval, replaceChars, replace.Length * sizeof( char ) );
 
 						destinationPos += interval + replace.Length;
 					}
 				}
-				else if( find.Length < replace.Length ) { // "yo" --> "trollolo"
+				else if( find.Length < replace.Length ) { // "ac" --> "cdefgh"
 					destinationPos = resultLength - copyLastCharacters;
 					sourcePos = Length - copyLastCharacters;
 
@@ -691,10 +691,112 @@ namespace System {
 						destinationPos += interval + replace.Length;
 					}
 				}
-				else if( find.Length > replace.Length ) { // "trollolo" --> "yo"
+				else if( find.Length > replace.Length ) { // "abcdefg" --> "hi"
 					foreach( var interval in _copyInterval ) {
 						Memory.Move( result + destinationPos, chars + sourcePos, interval * sizeof( char ) );
 						Memory.Copy( result + destinationPos + interval, replaceChars, replace.Length * sizeof( char ) );
+
+						destinationPos += interval + replace.Length;
+						sourcePos += interval + find.Length;
+					}
+
+					Memory.Move( result + destinationPos, chars + sourcePos, copyLastCharacters * sizeof( char ) );
+				}
+			}
+
+			Length = resultLength;
+		}
+
+		public void Replace( string find, StringBuilder replace ) {
+			if( find.IsNullOrEmpty ) return;
+
+			_copyInterval = _copyInterval ?? new List<uint>();
+			_copyInterval.Clear();
+
+			char* chars = &_text[0], findChars = find.GetChars(), replaceChars = replace.GetChars();
+			var lastPosition = 0U;
+			var copyLastCharacters = 0U;
+
+			for( var i = 0U; i < ( uint ) _length; ++i ) {
+				if( chars[i] == findChars[0] && i <= _length - find.Length ) {
+					for( var j = 1U; j < find.Length; ++j ) {
+						if( chars[i + j] != findChars[j] )
+							goto next_char;
+					}
+
+					_copyInterval.Add( lastPosition == 0 ? i : i + 1 - lastPosition - find.Length );
+					lastPosition = i + 1;
+
+					i += find.Length - 1;
+				}
+				else if( i + 1 == ( uint ) _length ) {
+					copyLastCharacters = _length - lastPosition - find.Length + 1;
+				}
+
+			next_char:
+				continue;
+			}
+
+			if( _copyInterval.Count == 0 ) return;
+
+			var resultLength = _length + ( ( int ) replace.Length - ( int ) find.Length ) * _copyInterval.Count;
+
+			if( resultLength > _text.Length ) { // relocation with replace
+				var newBuffer = new[GetNextBufferSize( resultLength )] char;
+				var result = &newBuffer[0];
+				var destinationPos = 0U;
+				var sourcePos = 0U;
+
+				foreach( var interval in _copyInterval ) {
+					Memory.Copy( result + destinationPos, chars + sourcePos, interval * sizeof( char ) );
+					Memory.Copy( result + destinationPos + interval, replaceChars, ( uint ) replace.Length * sizeof( char ) );
+
+					destinationPos += interval + replace.Length;
+					sourcePos += interval + find.Length;
+				}
+
+				Memory.Copy( result + destinationPos, chars + sourcePos, copyLastCharacters * sizeof( char ) );
+				_text = newBuffer;
+			}
+			else {
+				var result = &_text[0];
+				var destinationPos = 0U;
+				var sourcePos = 0U;
+
+				if( find.Length == replace.Length ) { // "yo" --> "11"
+					foreach( var interval in _copyInterval ) {
+						Memory.Copy( result + destinationPos + interval, replaceChars, ( uint ) replace.Length * sizeof( char ) );
+
+						destinationPos += interval + replace.Length;
+					}
+				}
+				else if( find.Length < replace.Length ) { // "yo" --> "trollolo"
+					destinationPos = resultLength - copyLastCharacters;
+					sourcePos = Length - copyLastCharacters;
+
+					Memory.Move( result + destinationPos, chars + sourcePos, copyLastCharacters * sizeof( char ) );
+
+					for( var i = _copyInterval.Count - 1; i >= 0; --i ) {
+						var interval = _copyInterval[i];
+
+						destinationPos -= interval + replace.Length;
+						sourcePos -= interval + find.Length;
+
+						Memory.Move( result + destinationPos, chars + sourcePos, interval * sizeof( char ) );
+					}
+
+					destinationPos = 0U;
+
+					foreach( var interval in _copyInterval ) {
+						Memory.Copy( result + destinationPos + interval, replaceChars, ( uint ) replace.Length * sizeof( char ) );
+
+						destinationPos += interval + replace.Length;
+					}
+				}
+				else if( find.Length > replace.Length ) { // "ZZZzzzZZZ" --> "z!"
+					foreach( var interval in _copyInterval ) {
+						Memory.Move( result + destinationPos, chars + sourcePos, interval * sizeof( char ) );
+						Memory.Copy( result + destinationPos + interval, replaceChars, ( uint ) replace.Length * sizeof( char ) );
 
 						destinationPos += interval + replace.Length;
 						sourcePos += interval + find.Length;

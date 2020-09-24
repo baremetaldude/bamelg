@@ -129,7 +129,7 @@ namespace Platform.IO {
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_RDONLY, 0 );
+			var error = IOHandle.Open( handle, name, FileOpenFlags.O_RDONLY, 0 );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -149,7 +149,7 @@ namespace Platform.IO {
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_WRONLY | ( truncateExistingData ? FctlFlags.O_TRUNC : ( FctlFlags ) 0 ), permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_WRONLY | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -171,7 +171,7 @@ namespace Platform.IO {
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_RDWR | ( truncateExistingData ? FctlFlags.O_TRUNC : ( FctlFlags ) 0 ), permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_RDWR | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -193,7 +193,7 @@ namespace Platform.IO {
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, ( createNew ? FctlFlags.O_CREAT : ( FctlFlags ) 0 ) | FctlFlags.O_WRONLY | FctlFlags.O_APPEND, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_WRONLY | FileOpenFlags.O_APPEND, permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -204,6 +204,50 @@ namespace Platform.IO {
 			_handle = bitcast<FileHandle>( handle );
 			Seek( 0, System.IO.SeekOrigin.End );
 			return true;
+		}
+
+		public bool OpenTemp( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FileOpenFlags.O_RDWR | FileOpenFlags.O_TMPFILE, permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			LibcApi.fchmod( handle, permission );
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public SystemError CreateHardLinkProcFs( CUtf8String path ) {
+		restart_linkat:
+			var result = LibcApi.linkat( LibcApi.AT_FDCWD, Utf8String.Format( "/proc/self/fd/{0}", _handle.ID ), LibcApi.AT_FDCWD, path, LinkatFlags.AT_SYMLINK_FOLLOW );
+			if( result != 0 ) {
+				var error = LibcApi.LastError;
+				if( OnLastError( "linkat", error ) == PlatformErrorAction.Restart ) goto restart_linkat;
+				return error;
+			}
+
+			return SystemError.None;
+		}
+
+		public SystemError CreateHardLinkPrivileged( CUtf8String path ) { // CAP_DAC_READ_SEARCH
+		restart_linkat:
+			var result = LibcApi.linkat( ( int ) _handle.ID, "", LibcApi.AT_FDCWD, path, LinkatFlags.AT_EMPTY_PATH );
+			if( result != 0 ) {
+				var error = LibcApi.LastError;
+				if( OnLastError( "linkat", error ) == PlatformErrorAction.Restart ) goto restart_linkat;
+				return error;
+			}
+
+			return SystemError.None;
 		}
 
 		public long Seek( long value ) {

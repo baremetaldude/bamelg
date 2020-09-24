@@ -172,7 +172,7 @@ namespace System.IO {
 					return Wait( timeout, handle, KEventFilter.EVFILT_WRITE );
 				}
 
-				/// @{ IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
+				#region IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
 
 				public SystemError ConnectNonBlocking( TimeSpan timeout, SocketHandle socket, sockaddr* address, int addressLength ) {
 					socket.EnsureNonBlocking();
@@ -314,9 +314,9 @@ namespace System.IO {
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ EventLoop support
+				#region EventLoop support
 
 				private FiberReadyEventSink _fiberReadyEventSink;
 				private FiberIOEventSink _fiberIOEventSink;
@@ -432,9 +432,9 @@ namespace System.IO {
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ Tracing
+				#region Tracing
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIONotify( FiberInfo* fiber, kevent& @event ) {
@@ -464,7 +464,7 @@ namespace System.IO {
 					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
 				}
 
-				/// @}
+				#endregion
 			}
 		}
 	}

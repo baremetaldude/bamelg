@@ -33,7 +33,7 @@ namespace System.IO {
 				public EventLoop CurrentEventLoop;
 				private FiberReadyEventSink _readySink;
 
-				/// @{ EventLoop support
+				#region EventLoop support
 				public void Attach( EventLoop eventLoop ) {
 					if( !Assert.IsTrue( CurrentEventLoop == null ) ) return;
 					CurrentEventLoop = eventLoop;
@@ -50,7 +50,7 @@ namespace System.IO {
 
 					CurrentEventLoop = null;
 				}
-				/// @}
+				#endregion
 
 				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeSpan interval, Functors.Action<void*> action, void* data ) {
 					return CurrentEventLoop.ScheduleUnbiased( interval, action, data );
@@ -582,7 +582,7 @@ namespace System.IO {
 					}
 				}
 
-				/// @{ Tracing
+				#region Tracing
 
 				// [Conditional( ConditionString = TraceConditionString )]
 				// private static void TraceIONotify( FiberInfo* fiber, epoll_event& @event ) {
@@ -604,7 +604,7 @@ namespace System.IO {
 				// 	Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", CurrentFiber->ID, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
 				// }
 
-				/// @}
+				#endregion
 			}
 		}
 	}

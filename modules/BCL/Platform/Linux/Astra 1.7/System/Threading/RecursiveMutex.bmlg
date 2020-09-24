@@ -1,0 +1,19 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System.Threading {
+	public partial struct RecursiveMutex {
+		private pthread_mutex_t _delegate = new pthread_mutex_t( MutexKind.PTHREAD_MUTEX_RECURSIVE );
+
+		private void _implInitialize() { }
+		private void _implDestroy() { }
+
+		private void _implLock() { _delegate.Lock(); }
+		private void _implUnlock() { _delegate.Unlock(); }
+	}
+}

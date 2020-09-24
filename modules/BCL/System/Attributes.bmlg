@@ -219,7 +219,7 @@ namespace System {
 	}
 
 	// Упраляет генерацией метаданных. По-умолчанию поля 'Properties', 'Fields', 'Methods', 'Constants'
-	[AttributeUsage( Targets = AttributeTargets.Struct | AttributeTargets.Class )]
+	[AttributeUsage( Targets = AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Enum )]
 	public struct ReflectionMetadataAttribute : Attribute {
 		public ReflectionMetadata Mask;
 	}
@@ -269,5 +269,15 @@ namespace System {
 	// Simplify error code checking by marking success error code values in enum
 	[AttributeUsage( Targets = AttributeTargets.Field )]
 	public struct ErrorCodeSuccessAttribute : Attribute {
+	}
+
+	[AttributeUsage( Targets = AttributeTargets.Class )]
+	public struct RelaxedReleaseAttribute : Attribute {
+	}
+
+	[AttributeUsage( Targets = AttributeTargets.Method )]
+	public struct MethodBoundaryActionAttribute : Attribute {
+		//	public void Enter() { }
+		//	public void Leave() { }
 	}
 }

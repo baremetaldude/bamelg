@@ -40,13 +40,29 @@ namespace Platform.Gdk {
 		~GdkThreadsUnlock() { GdkApi.gdk_threads_enter(); }
 	}
 
-	public partial struct GdkColor {
+	public partial struct GdkColor : IFormattable {
 		public static implicit operator GdkColor( RgbColor value ) {
-			return new GdkColor { red = ( ushort ) value.R << 8, green = ( ushort ) value.G << 8, blue = ( ushort ) value.B << 8 };
+			return new GdkColor { red = ( ushort )( value.R * 65535U / 255U ), green = ( ushort )( value.G * 65535U / 255U ), blue = ( ushort )( value.B * 65535U / 255U ), pixel = 0xFFFF };
+		}
+
+		public static explicit operator RgbColor( GdkColor value ) {
+			return new RgbColor { R = ( byte )( ( ( uint ) value.red + 128 ) * 255U / 65535U ), G = ( byte )( ( ( uint ) value.green + 128 ) * 255U / 65535U ), B = ( byte )( ( ( uint ) value.blue + 128 ) * 255U / 65535U ) };
 		}
 
 		public static implicit operator GdkColor( RgbFloatingColor value ) {
 			return new GdkColor { red = ( ushort )( value.R * 65535f ), green = ( ushort )( value.G * 65535f ), blue = ( ushort )( value.B * 65535f ) };
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			switch( format ) {
+				case "w":
+					builder.AppendFormat( "{{ red={0:X4} green={1:X4} blue={2:X4} pixel={3:X8} }}", red, green, blue, pixel );
+					break;
+
+				default:
+					builder.AppendFormat( "{{ red={0} green={1} blue={2} pixel={3} }}", red, green, blue, pixel );
+					break;
+			}
 		}
 	}
 

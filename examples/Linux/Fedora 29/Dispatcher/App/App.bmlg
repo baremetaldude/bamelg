@@ -19,7 +19,7 @@ namespace Example {
 			} ) {
 				eventLoop.CatchExitSignals(); // convert signals to events
 
-				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
+				// eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) ); not dispatched yet
 				eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from same thread" ) );
 
 				eventLoop.BeginInvoke( () => {
@@ -32,7 +32,7 @@ namespace Example {
 				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unseen alarm" );
 				} );
-				
+
 				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
 					eventLoop.RemoveAlarm( unseen );
 				} );
@@ -78,22 +78,22 @@ namespace Example {
 				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {
 					eventLoop.RequestExit();
 				} );
-				
+
 				eventLoop.BeginProcess( new ProcessStartInfo( "/bin/bash", "-c", "-x", "sleep 6" ), DPC.Create( () => {
 					Console.WriteLine( "External program exited" );
 				} ) );
-				
+
 				eventLoop.BeginProcess( new ProcessStartInfo( "/bin/bash", "-c", "-x", "sleep 60" ), DPC.Create( () => {
 					Console.WriteLine( "External program continue work after EventLoop.Dispatch()" );
 				} ) );
-				
+
 				eventLoop.BeginFork( () => {
 					Console.WriteLine( "BeginFork worker sleep for 3000" );
 					System.Threading.Thread.Sleep( 3000 );
 				}, DPC.Create( () => {
 					Console.WriteLine( "Fork execution completed!" );
 				} ) );
-				
+
 				eventLoop.BeginFork( () => {
 					Console.WriteLine( "BeginFork worker sleep for 30000" );
 					System.Threading.Thread.Sleep( 30000 );
@@ -102,6 +102,7 @@ namespace Example {
 				} ) );
 
 				eventLoop.Dispatch(); // wait until RequestExit
+				// eventLoop.BeginDispatch(); eventLoop.EndDispatch();
 			}
 		}
 	}

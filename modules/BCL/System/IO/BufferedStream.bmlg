@@ -48,6 +48,8 @@ namespace System.IO {
 				_bufferInfo = default( StreamingBufferInfo );
 			}
 
+			private long _position = 0;
+
 			public int Count { get { return _bufferInfo.AvailableToRead; } }
 			public int Capacity { get { return _buffer.Length; } }
 
@@ -63,6 +65,7 @@ namespace System.IO {
 				if( length <= _bufferInfo.AvailableToRead ) return &_buffer[_bufferInfo.Position];
 
 				Memory.Move( &_buffer[0], &_buffer[_bufferInfo.Position], ( uint ) _bufferInfo.AvailableToRead );
+				_position += _bufferInfo.Position;
 				_bufferInfo.Position = 0;
 
 				while( length > _bufferInfo.AvailableToRead ) {
@@ -133,6 +136,7 @@ namespace System.IO {
 				switch( flushKind ) {
 					case FlushKind.Read:
 						if( _bufferInfo.Position != 0 && _bufferInfo.AvailableToRead != 0 ) Memory.Move( &_buffer[0], &_buffer[_bufferInfo.Position], ( uint ) _bufferInfo.AvailableToRead );
+						_position += _bufferInfo.Position;
 						_bufferInfo.Position = 0;
 
 						if( _bufferInfo.AvailableToRead < _bufferInfo.Capacity ) {
@@ -149,7 +153,7 @@ namespace System.IO {
 			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
 			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
 
-			long IStream.Position { get { return 0; } }
+			long IStream.Position { get { return _position + _bufferInfo.Position; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
 			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
@@ -206,6 +210,7 @@ namespace System.IO {
 
 					if( _bufferInfo.Position == _bufferInfo.Capacity ) {
 						_stream.Write( &_buffer[0], _bufferInfo.Position );
+						_position += _bufferInfo.Position;
 						_bufferInfo.Position = 0;
 					}
 				}
@@ -225,6 +230,7 @@ namespace System.IO {
 					case FlushKind.SynchronizeWrite:
 						if( _bufferInfo.Position > 0 ) {
 							_stream.Write( &_buffer[0], _bufferInfo.Position );
+							_position += _bufferInfo.Position;
 							_bufferInfo.Position = 0;
 						}
 
@@ -242,7 +248,8 @@ namespace System.IO {
 			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
 			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
 
-			long IStream.Position { get { return 0; } }
+			private long _position = 0;
+			long IStream.Position { get { return _position + _bufferInfo.Position; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
 			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }

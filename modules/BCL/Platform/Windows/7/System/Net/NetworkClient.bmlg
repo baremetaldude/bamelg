@@ -16,7 +16,7 @@ namespace System.Net {
 		private NetworkStream _platformStream;
 
 		private void _implInitialize() {
-			_platformStream = new NetworkStream() { 
+			_platformStream = new NetworkStream() {
 				ErrorHandler = ErrorHandler
 			};
 		}
@@ -187,5 +187,10 @@ namespace System.Net {
 		}
 
 		protected virtual IPlatformErrorHandler ErrorHandler { get { return PlatformErrorHandlerNull.Instance; } }
+
+		public bool _implIsClosed() { return _platformStream.IsClosed(); }
+
+		private void _implEnableKeepAlive( TimeSpan timeout, TimeSpan interval, int count ) { _platformStream.EnableKeepAlive( timeout, interval ); }
+		private void _implDisableKeepAlive() { _platformStream.DisableKeepAlive(); }
 	}
 }

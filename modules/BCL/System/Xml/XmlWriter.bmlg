@@ -57,7 +57,6 @@ namespace System.Xml {
 		private void Cleanup() {
 			if( _writer != null ) {
 				FlushBuffered();
-				_writer.Flush( FlushKind.Write );
 				_writer = null;
 			}
 		}
@@ -274,8 +273,10 @@ namespace System.Xml {
 
 		public void WriteUnescaped( string escapedValue ) {
 			switch( _state ) {
-				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Start:
 				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
@@ -283,7 +284,26 @@ namespace System.Xml {
 			}
 		}
 
-		public void Write( TypedReference value, string format = "" ) {
+		public void WriteUnescaped( StringBuilder escapedValue ) {
+			switch( _state ) {
+				case State.Start:
+				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeDoubleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+			}
+		}
+
+		public void Write( TypedReference value ) {
+			StartWrite();
+
+			_formatter.Append( value );
+		}
+
+		public void WriteFormatted( TypedReference value, string format = "" ) {
 			StartWrite();
 
 			_formatter.Append( value, format );

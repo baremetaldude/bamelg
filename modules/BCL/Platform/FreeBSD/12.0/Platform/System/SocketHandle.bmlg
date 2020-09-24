@@ -124,7 +124,7 @@ namespace Platform.Libc {
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_TIMESTAMP, &result, sizeof( result ) ) );
 			}
 		}
-		
+
 		public bool ReusePort {
 			get {
 				Boolean32 result = false;
@@ -136,7 +136,7 @@ namespace Platform.Libc {
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_REUSEPORT, &result, sizeof( result ) ) );
 			}
 		}
-		
+
 		public int SendBufferSize {
 			get {
 				int result = 0;
@@ -161,8 +161,8 @@ namespace Platform.Libc {
 
 		public bool AttachAcceptFilter( CString name, CString parameter = "" ) {
 			var value = default( accept_filter_arg );
-			CString.Copy( new CString( &value.af_name[0] ), name );
-			CString.Copy( new CString( &value.af_arg[0] ), parameter );
+			System.Runtime.Memory.CopyToTerminatedBuffer( value.af_name, ( uint ) value.af_name.Length, name );
+			System.Runtime.Memory.CopyToTerminatedBuffer( value.af_arg, ( uint ) value.af_arg.Length, parameter );
 
 			if( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_ACCEPTFILTER, &value, sizeof( value ) ) < 0 ) {
 				var errno = LibcApi.LastError;

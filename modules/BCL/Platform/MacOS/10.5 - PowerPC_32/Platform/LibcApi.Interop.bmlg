@@ -1,0 +1,3579 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+namespace Platform.Libc {
+	[ExternLibrary( Image = "/usr/lib/libSystem.B.dylib" )]
+	public static partial struct LibcApi {
+		public extern static int madvise( void* p0, uintptr p1, int p2 );
+		public extern static int mincore( void* p0, uintptr p1, sbyte* p2 );
+		public extern static int minherit( void* p0, uintptr p1, int p2 );
+		public extern static int mlock( void* p0, uintptr p1 );
+		public extern static int mlockall( int p0 );
+		public extern static void* mmap( void* p0, uintptr p1, int p2, int p3, int p4, long p5 );
+		public extern static int mprotect( void* p0, uintptr p1, int p2 );
+		public extern static int msync( void* p0, uintptr p1, int p2 );
+		public extern static int munlock( void* p0, uintptr p1 );
+		public extern static int munlockall();
+		public extern static int munmap( void* p0, uintptr p1 );
+		public extern static int posix_madvise( void* p0, uintptr p1, int p2 );
+		public extern static int shm_unlink( sbyte* p0 );
+
+		public extern static int* __error();
+
+		public extern static int getiopolicy_np( int p0, int p1 );
+		public extern static int getpriority( int p0, uint p1 );
+		public extern static int getrlimit( int p0, rlimit* p1 );
+		public extern static int getrusage( int p0, rusage* p1 );
+		public extern static int setiopolicy_np( int p0, int p1, int p2 );
+		public extern static int setpriority( int p0, uint p1, int p2 );
+		public extern static int setrlimit( int p0, rlimit* p1 );
+
+		public extern static Functors.Action<int> signal( int p0, Functors.Action<int> p1 );
+
+		public extern static int accept( int p0, sockaddr* p1, uint* p2 );
+		public extern static int bind( int p0, sockaddr* p1, uint p2 );
+		public extern static int connect( int p0, sockaddr* p1, uint p2 );
+		public extern static int getpeername( int p0, sockaddr* p1, uint* p2 );
+		public extern static int getsockname( int p0, sockaddr* p1, uint* p2 );
+		public extern static int getsockopt( int p0, int p1, int p2, void* p3, uint* p4 );
+		public extern static int listen( int p0, int p1 );
+		public extern static void pfctlinput( int p0, sockaddr* p1 );
+		public extern static intptr recv( int p0, void* p1, uintptr p2, int p3 );
+		public extern static intptr recvfrom( int p0, void* p1, uintptr p2, int p3, sockaddr* p4, uint* p5 );
+		public extern static intptr recvmsg( int p0, msghdr* p1, int p2 );
+		public extern static intptr send( int p0, void* p1, uintptr p2, int p3 );
+		public extern static int sendfile( int p0, int p1, long p2, long* p3, sf_hdtr* p4, int p5 );
+		public extern static intptr sendmsg( int p0, msghdr* p1, int p2 );
+		public extern static intptr sendto( int p0, void* p1, uintptr p2, int p3, sockaddr* p4, uint p5 );
+		public extern static int setsockopt( int p0, int p1, int p2, void* p3, uint p4 );
+		public extern static int shutdown( int p0, int p1 );
+		public extern static int sockatmark( int p0 );
+		public extern static int socket( int p0, int p1, int p2 );
+		public extern static int socketpair( int p0, int p1, int p2, int* p3 );
+
+		public extern static int audit( void* p0, int p1 );
+		public extern static int auditctl( sbyte* p0 );
+		public extern static int auditon( int p0, void* p1, int p2 );
+		public extern static int getaudit( auditinfo* p0 );
+		public extern static int getaudit_addr( auditinfo_addr* p0, int p1 );
+		public extern static int getauid( uint* p0 );
+		public extern static int setaudit( auditinfo* p0 );
+		public extern static int setaudit_addr( auditinfo_addr* p0, int p1 );
+		public extern static int setauid( uint* p0 );
+
+		public extern static void closelog();
+		public extern static void openlog( sbyte* p0, int p1, int p2 );
+		public extern static int setlogmask( int p0 );
+		public extern static void vsyslog( int p0, sbyte* p1, sbyte* p2 );
+
+		public extern static int creat( sbyte* p0, ushort p1 );
+		public extern static filesec_t* filesec_dup( filesec_t* p0 );
+		public extern static void filesec_free( filesec_t* p0 );
+		public extern static int filesec_get_property( filesec_t* p0, filesec_property_t p1, void* p2 );
+		public extern static filesec_t* filesec_init();
+		public extern static int filesec_query_property( filesec_t* p0, filesec_property_t p1, int* p2 );
+		public extern static int filesec_set_property( filesec_t* p0, filesec_property_t p1, void* p2 );
+		public extern static int flock( int p0, int p1 );
+		public extern static int openx_np( sbyte* p0, int p1, filesec_t* p2 );
+
+		public extern static int poll( pollfd* p0, uint p1, int p2 );
+
+		public extern static int chflags( sbyte* p0, uint p1 );
+		public extern static int chmod( sbyte* p0, ushort p1 );
+		public extern static int chmodx_np( sbyte* p0, filesec_t* p1 );
+		public extern static int fchflags( int p0, uint p1 );
+		public extern static int fchmod( int p0, ushort p1 );
+		public extern static int fchmodx_np( int p0, filesec_t* p1 );
+		public extern static int fstat( int p0, stat* p1 );
+		public extern static int fstat64( int p0, stat64* p1 );
+		public extern static int fstatx_np( int p0, stat* p1, filesec_t* p2 );
+		public extern static int fstatx64_np( int p0, stat64* p1, filesec_t* p2 );
+		public extern static int lchflags( sbyte* p0, uint p1 );
+		public extern static int lchmod( sbyte* p0, ushort p1 );
+		public extern static int lstat( sbyte* p0, stat* p1 );
+		public extern static int lstat64( sbyte* p0, stat64* p1 );
+		public extern static int lstatx_np( sbyte* p0, stat* p1, filesec_t* p2 );
+		public extern static int lstatx64_np( sbyte* p0, stat64* p1, filesec_t* p2 );
+		public extern static int mkdir( sbyte* p0, ushort p1 );
+		public extern static int mkdirx_np( sbyte* p0, filesec_t* p1 );
+		public extern static int mkfifo( sbyte* p0, ushort p1 );
+		public extern static int mkfifox_np( sbyte* p0, filesec_t* p1 );
+		public extern static int mknod( sbyte* p0, ushort p1, int p2 );
+		public extern static int stat( sbyte* p0, stat* p1 );
+		public extern static int stat64( sbyte* p0, stat64* p1 );
+		public extern static int statx_np( sbyte* p0, stat* p1, filesec_t* p2 );
+		public extern static int statx64_np( sbyte* p0, stat64* p1, filesec_t* p2 );
+		public extern static ushort umask( ushort p0 );
+		public extern static int umaskx_np( filesec_t* p0 );
+
+		public extern static sbyte* asctime( tm* p0 );
+		public extern static sbyte* asctime_r( tm* p0, sbyte* p1 );
+		public extern static uintptr clock();
+		public extern static sbyte* ctime( intptr* p0 );
+		public extern static sbyte* ctime_r( intptr* p0, sbyte* p1 );
+		public extern static double difftime( intptr p0, intptr p1 );
+		public extern static tm* getdate( sbyte* p0 );
+		public extern static tm* gmtime( intptr* p0 );
+		public extern static tm* gmtime_r( intptr* p0, tm* p1 );
+		public extern static tm* localtime( intptr* p0 );
+		public extern static tm* localtime_r( intptr* p0, tm* p1 );
+		public extern static intptr mktime( tm* p0 );
+		public extern static int nanosleep( timespec* p0, timespec* p1 );
+		public extern static intptr posix2time( intptr p0 );
+		public extern static uintptr strftime( sbyte* p0, uintptr p1, sbyte* p2, tm* p3 );
+		public extern static sbyte* strptime( sbyte* p0, sbyte* p1, tm* p2 );
+		public extern static intptr time( intptr* p0 );
+		public extern static intptr time2posix( intptr p0 );
+		public extern static intptr timegm( tm* p0 );
+		public extern static intptr timelocal( tm* p0 );
+		public extern static void tzset();
+		public extern static void tzsetwall();
+
+		public extern static int adjtime( timeval* p0, timeval* p1 );
+		public extern static int futimes( int p0, timeval* p1 );
+		public extern static int getitimer( int p0, itimerval* p1 );
+		public extern static int gettimeofday( timeval* p0, void* p1 );
+		public extern static int lutimes( sbyte* p0, timeval* p1 );
+		public extern static int setitimer( int p0, itimerval* p1, itimerval* p2 );
+		public extern static int settimeofday( timeval* p0, timezone* p1 );
+		public extern static int utimes( sbyte* p0, timeval* p1 );
+
+		public extern static int select( int p0, fd_set* p1, fd_set* p2, fd_set* p3, timeval* p4 );
+
+		public extern static int uname( utsname* p0 );
+
+		public extern static int wait( int* p0 );
+		public extern static int wait3( int* p0, int p1, rusage* p2 );
+		public extern static int wait4( int p0, int* p1, int p2, rusage* p3 );
+		public extern static int waitid( idtype_t p0, uint p1, siginfo_t* p2, int p3 );
+		public extern static int waitpid( int p0, int* p1, int p2 );
+
+		public extern static uintptr times( tms* p0 );
+
+		public extern static int kevent( int kq, kevent* changelist, int nchanges, kevent* eventlist, int nevents, timespec* timeout );
+		public extern static int kqueue();
+
+		public extern static intptr readv( int p0, iovec* p1, int p2 );
+		public extern static intptr writev( int p0, iovec* p1, int p2 );
+
+		public extern static int inet6_opt_append( void* p0, uintptr p1, int p2, byte p3, uintptr p4, byte p5, void** p6 );
+		public extern static int inet6_opt_find( void* p0, uintptr p1, int p2, byte p3, uintptr* p4, void** p5 );
+		public extern static int inet6_opt_finish( void* p0, uintptr p1, int p2 );
+		public extern static int inet6_opt_get_val( void* p0, uintptr p1, void* p2, int p3 );
+		public extern static int inet6_opt_init( void* p0, uintptr p1 );
+		public extern static int inet6_opt_next( void* p0, uintptr p1, int p2, byte* p3, uintptr* p4, void** p5 );
+		public extern static int inet6_opt_set_val( void* p0, uintptr p1, void* p2, int p3 );
+		public extern static byte* inet6_option_alloc( cmsghdr* p0, int p1, int p2, int p3 );
+		public extern static int inet6_option_append( cmsghdr* p0, byte* p1, int p2, int p3 );
+		public extern static int inet6_option_find( cmsghdr* p0, byte** p1, int p2 );
+		public extern static int inet6_option_init( void* p0, cmsghdr** p1, int p2 );
+		public extern static int inet6_option_next( cmsghdr* p0, byte** p1 );
+		public extern static int inet6_option_space( int p0 );
+		public extern static int inet6_rth_add( void* p0, in6_addr* p1 );
+		public extern static in6_addr* inet6_rth_getaddr( void* p0, int p1 );
+		public extern static void* inet6_rth_init( void* p0, int p1, int p2, int p3 );
+		public extern static int inet6_rth_reverse( void* p0, void* p1 );
+		public extern static int inet6_rth_segments( void* p0 );
+		public extern static uintptr inet6_rth_space( int p0, int p1 );
+		public extern static int inet6_rthdr_add( cmsghdr* p0, in6_addr* p1, uint p2 );
+		public extern static in6_addr* inet6_rthdr_getaddr( cmsghdr* p0, int p1 );
+		public extern static int inet6_rthdr_getflags( cmsghdr* p0, int p1 );
+		public extern static cmsghdr* inet6_rthdr_init( void* p0, int p1 );
+		public extern static int inet6_rthdr_lasthop( cmsghdr* p0, uint p1 );
+		public extern static int inet6_rthdr_segments( cmsghdr* p0 );
+		public extern static uintptr inet6_rthdr_space( int p0, int p1 );
+
+		public extern static void freeifaddrs( ifaddrs* p0 );
+		public extern static int getifaddrs( ifaddrs** p0 );
+
+		public extern static void _exit( int p0 );
+		public extern static void _Exit( int p0 );
+		public extern static int access( sbyte* p0, int p1 );
+		public extern static int accessx_np( accessx_descriptor* p0, uintptr p1, int* p2, uint p3 );
+		public extern static int acct( sbyte* p0 );
+		public extern static int add_profil( sbyte* p0, uintptr p1, uintptr p2, uint p3 );
+		public extern static uint alarm( uint p0 );
+		public extern static void* brk( void* p0 );
+		public extern static int chdir( sbyte* p0 );
+		public extern static int chown( sbyte* p0, uint p1, uint p2 );
+		public extern static int chroot( sbyte* p0 );
+		public extern static int close( int p0 );
+		public extern static uintptr confstr( int p0, sbyte* p1, uintptr p2 );
+		public extern static sbyte* crypt( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* ctermid( sbyte* p0 );
+		public extern static int dup( int p0 );
+		public extern static int dup2( int p0, int p1 );
+		public extern static void endusershell();
+		public extern static int exchangedata( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static int execv( sbyte* p0, sbyte** p1 );
+		public extern static int execve( sbyte* p0, sbyte** p1, sbyte** p2 );
+		public extern static int execvp( sbyte* p0, sbyte** p1 );
+		public extern static int execvP( sbyte* p0, sbyte* p1, sbyte** p2 );
+		public extern static int fchdir( int p0 );
+		public extern static int fchown( int p0, uint p1, uint p2 );
+		public extern static sbyte* fflagstostr( uintptr p0 );
+		public extern static int fork();
+		public extern static intptr fpathconf( int p0, int p1 );
+		public extern static int fsctl( sbyte* p0, uintptr p1, void* p2, uintptr p3 );
+		public extern static int fsync( int p0 );
+		public extern static int ftruncate( int p0, long p1 );
+		public extern static int getattrlist( sbyte* p0, void* p1, void* p2, uintptr p3, uintptr p4 );
+		public extern static sbyte* getcwd( sbyte* p0, uintptr p1 );
+		public extern static int getdirentriesattr( int p0, void* p1, void* p2, uintptr p3, uintptr* p4, uintptr* p5, uintptr* p6, uintptr p7 );
+		public extern static int getdomainname( sbyte* p0, int p1 );
+		public extern static int getdtablesize();
+		public extern static uint getegid();
+		public extern static uint geteuid();
+		public extern static uint getgid();
+		public extern static int getgrouplist( sbyte* p0, int p1, int* p2, int* p3 );
+		public extern static int getgroups( int p0, uint* p1 );
+		public extern static intptr gethostid();
+		public extern static int gethostname( sbyte* p0, uintptr p1 );
+		public extern static sbyte* getlogin();
+		public extern static int getlogin_r( sbyte* p0, uintptr p1 );
+		public extern static ushort getmode( void* p0, ushort p1 );
+		public extern static int getopt( int p0, sbyte** p1, sbyte* p2 );
+		[BackendHintReadNone]
+		public extern static int getpagesize();
+		public extern static sbyte* getpass( sbyte* p0 );
+		public extern static int getpeereid( int p0, uint* p1, uint* p2 );
+		public extern static int getpgid( int p0 );
+		public extern static int getpgrp();
+		public extern static int getpid();
+		public extern static int getppid();
+		public extern static int getsgroups_np( int* p0, byte* p1 );
+		public extern static int getsid( int p0 );
+		public extern static int getsubopt( sbyte** p0, sbyte** p1, sbyte** p2 );
+		public extern static uint getuid();
+		public extern static sbyte* getusershell();
+		public extern static sbyte* getwd( sbyte* p0 );
+		public extern static int getwgroups_np( int* p0, byte* p1 );
+		public extern static int initgroups( sbyte* p0, int p1 );
+		public extern static int iruserok( uintptr p0, int p1, sbyte* p2, sbyte* p3 );
+		public extern static int iruserok_sa( void* p0, int p1, int p2, sbyte* p3, sbyte* p4 );
+		public extern static int isatty( int p0 );
+		public extern static int issetugid();
+		public extern static int lchown( sbyte* p0, uint p1, uint p2 );
+		public extern static int link( sbyte* p0, sbyte* p1 );
+		public extern static int lockf( int p0, int p1, long p2 );
+		public extern static long lseek( int p0, long p1, int p2 );
+		public extern static sbyte* mkdtemp( sbyte* p0 );
+		public extern static int mkstemp( sbyte* p0 );
+		public extern static int mkstemps( sbyte* p0, int p1 );
+		public extern static int nfssvc( int p0, void* p1 );
+		public extern static int nice( int p0 );
+		public extern static intptr pathconf( sbyte* p0, int p1 );
+		public extern static int pause();
+		public extern static int pipe( int* p0 );
+		public extern static intptr pread( int p0, void* p1, uintptr p2, long p3 );
+		public extern static int profil( sbyte* p0, uintptr p1, uintptr p2, uint p3 );
+		public extern static int pthread_getugid_np( uint* p0, uint* p1 );
+		public extern static int pthread_setugid_np( uint p0, uint p1 );
+		public extern static intptr pwrite( int p0, void* p1, uintptr p2, long p3 );
+		public extern static int rcmd( sbyte** p0, int p1, sbyte* p2, sbyte* p3, sbyte* p4, int* p5 );
+		public extern static int rcmd_af( sbyte** p0, int p1, sbyte* p2, sbyte* p3, sbyte* p4, int* p5, int p6 );
+		public extern static intptr read( int p0, void* p1, uintptr p2 );
+		public extern static intptr readlink( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static int reboot( int p0 );
+		public extern static int revoke( sbyte* p0 );
+		public extern static int rmdir( sbyte* p0 );
+		public extern static int rresvport( int* p0 );
+		public extern static int rresvport_af( int* p0, int p1 );
+		public extern static int ruserok( sbyte* p0, int p1, sbyte* p2, sbyte* p3 );
+		public extern static void* sbrk( int p0 );
+		public extern static int searchfs( sbyte* p0, void* p1, void* p2, uintptr p3, uintptr p4, void* p5 );
+		public extern static int setattrlist( sbyte* p0, void* p1, void* p2, uintptr p3, uintptr p4 );
+		public extern static int setdomainname( sbyte* p0, int p1 );
+		public extern static int setegid( uint p0 );
+		public extern static int seteuid( uint p0 );
+		public extern static int setgid( uint p0 );
+		public extern static int setgroups( int p0, uint* p1 );
+		public extern static void sethostid( intptr p0 );
+		public extern static int sethostname( sbyte* p0, int p1 );
+		public extern static int setlogin( sbyte* p0 );
+		public extern static void* setmode( sbyte* p0 );
+		public extern static int setpgid( int p0, int p1 );
+		public extern static int setpgrp();
+		public extern static int setregid( uint p0, uint p1 );
+		public extern static int setreuid( uint p0, uint p1 );
+		public extern static int setrgid( uint p0 );
+		public extern static int setruid( uint p0 );
+		public extern static int setsgroups_np( int p0, byte* p1 );
+		public extern static int setsid();
+		public extern static int setuid( uint p0 );
+		public extern static void setusershell();
+		public extern static int setwgroups_np( int p0, byte* p1 );
+		public extern static uint sleep( uint p0 );
+		public extern static int strtofflags( sbyte** p0, uintptr* p1, uintptr* p2 );
+		public extern static void swab( void* p0, void* p1, intptr p2 );
+		public extern static int swapon( sbyte* p0 );
+		public extern static int symlink( sbyte* p0, sbyte* p1 );
+		public extern static void sync();
+		public extern static intptr sysconf( int p0 );
+		public extern static int tcgetpgrp( int p0 );
+		public extern static int tcsetpgrp( int p0, int p1 );
+		public extern static int truncate( sbyte* p0, long p1 );
+		public extern static sbyte* ttyname( int p0 );
+		public extern static int ttyname_r( int p0, sbyte* p1, uintptr p2 );
+		public extern static int ttyslot();
+		public extern static uint ualarm( uint p0, uint p1 );
+		public extern static int undelete( sbyte* p0 );
+		public extern static int unlink( sbyte* p0 );
+		public extern static int usleep( uint p0 );
+		public extern static void* valloc( uintptr p0 );
+		public extern static int vfork();
+		public extern static intptr write( int p0, void* p1, uintptr p2 );
+
+		public extern static int pselect( int p0, fd_set* p1, fd_set* p2, fd_set* p3, timespec* p4, uint* p5 );
+
+		public extern static int dladdr( void* p0, dl_info* p1 );
+		public extern static int dlclose( void* handle );
+		public extern static sbyte* dlerror();
+		public extern static void* dlopen( sbyte* path, int mode );
+		public extern static bool dlopen_preflight( sbyte* path );
+		public extern static void* dlsym( void* handle, sbyte* symbol );
+
+		public extern static void _longjmp( int* p0, int p1 );
+		public extern static int _setjmp( int* p0 );
+		public extern static void longjmp( int* p0, int p1 );
+		public extern static void longjmperror();
+		public extern static int setjmp( int* p0 );
+		public extern static void siglongjmp( int* p0, int p1 );
+		public extern static int sigsetjmp( int* p0, int p1 );
+
+		public extern static uintptr cfgetispeed( termios* p0 );
+		public extern static uintptr cfgetospeed( termios* p0 );
+		public extern static void cfmakeraw( termios* p0 );
+		public extern static int cfsetispeed( termios* p0, uintptr p1 );
+		public extern static int cfsetospeed( termios* p0, uintptr p1 );
+		public extern static int cfsetspeed( termios* p0, uintptr p1 );
+		public extern static int tcdrain( int p0 );
+		public extern static int tcflow( int p0, int p1 );
+		public extern static int tcflush( int p0, int p1 );
+		public extern static int tcgetattr( int p0, termios* p1 );
+		public extern static int tcsendbreak( int p0, int p1 );
+		public extern static int tcsetattr( int p0, int p1, termios* p2 );
+
+		public extern static int tcgetsid( int p0 );
+
+		public extern static termtype* _nc_fallback( sbyte* p0 );
+		public extern static sbyte* _nc_first_name( sbyte* p0 );
+		public extern static int _nc_get_tty_mode( termios* buf );
+		public extern static int _nc_name_match( sbyte* p0, sbyte* p1, sbyte* p2 );
+		public extern static int _nc_read_entry( sbyte* p0, sbyte* p1, termtype* p2 );
+		public extern static int _nc_read_termcap_entry( sbyte* p0, termtype* p1 );
+		public extern static int _nc_set_tty_mode( termios* buf );
+		public extern static int del_curterm( term* p0 );
+		public extern static int putp( sbyte* p0 );
+		public extern static int restartterm( sbyte* p0, int p1, int* p2 );
+		public extern static term* set_curterm( term* p0 );
+		public extern static int setupterm( sbyte* p0, int p1, int* p2 );
+		public extern static int tgetent( sbyte* p0, sbyte* p1 );
+		public extern static int tgetflag( sbyte* p0 );
+		public extern static int tgetnum( sbyte* p0 );
+		public extern static sbyte* tgetstr( sbyte* p0, sbyte** p1 );
+		public extern static sbyte* tgoto( sbyte* p0, int p1, int p2 );
+		public extern static int tigetflag( sbyte* p0 );
+		public extern static int tigetnum( sbyte* p0 );
+		public extern static sbyte* tigetstr( sbyte* p0 );
+		public extern static int tputs( sbyte* p0, int p1, Functors.Func<int, int> p2 );
+
+		public extern static void endpwent();
+		public extern static passwd* getpwent();
+		public extern static passwd* getpwnam( sbyte* p0 );
+		public extern static int getpwnam_r( sbyte* p0, passwd* p1, sbyte* p2, uintptr p3, passwd** p4 );
+		public extern static passwd* getpwuid( uint p0 );
+		public extern static int getpwuid_r( uint p0, passwd* p1, sbyte* p2, uintptr p3, passwd** p4 );
+		public extern static void setpwent();
+
+		public extern static void endgrent();
+		public extern static group* getgrent();
+		public extern static group* getgrgid( uint p0 );
+		public extern static int getgrgid_r( uint p0, group* p1, sbyte* p2, uintptr p3, group** p4 );
+		public extern static group* getgrnam( sbyte* p0 );
+		public extern static int getgrnam_r( sbyte* p0, group* p1, sbyte* p2, uintptr p3, group** p4 );
+		public extern static void setgrent();
+		public extern static void setgrfile( sbyte* p0 );
+		public extern static int setgroupent( int p0 );
+
+		public extern static int __srget( FILE* p0 );
+		public extern static int __svfscanf( FILE* p0, sbyte* p1, sbyte* p2 );
+		public extern static int __swbuf( int p0, FILE* p1 );
+		public extern static void clearerr( FILE* p0 );
+		public extern static sbyte* ctermid_r( sbyte* p0 );
+		public extern static int fclose( FILE* p0 );
+		public extern static FILE* fdopen( int p0, sbyte* p1 );
+		public extern static int feof( FILE* p0 );
+		public extern static int ferror( FILE* p0 );
+		public extern static int fflush( FILE* p0 );
+		public extern static int fgetc( FILE* p0 );
+		public extern static sbyte* fgetln( FILE* p0, uintptr* p1 );
+		public extern static int fgetpos( FILE* p0, long* p1 );
+		public extern static sbyte* fgets( sbyte* p0, int p1, FILE* p2 );
+		public extern static int fileno( FILE* p0 );
+		public extern static void flockfile( FILE* p0 );
+		public extern static sbyte* fmtcheck( sbyte* p0, sbyte* p1 );
+		public extern static FILE* fopen( sbyte* p0, sbyte* p1 );
+		public extern static int fpurge( FILE* p0 );
+		public extern static int fputc( int p0, FILE* p1 );
+		public extern static int fputs( sbyte* p0, FILE* p1 );
+		public extern static uintptr fread( void* p0, uintptr p1, uintptr p2, FILE* p3 );
+		public extern static FILE* freopen( sbyte* p0, sbyte* p1, FILE* p2 );
+		public extern static int fseek( FILE* p0, intptr p1, int p2 );
+		public extern static int fseeko( FILE* p0, long p1, int p2 );
+		public extern static int fsetpos( FILE* p0, long* p1 );
+		public extern static intptr ftell( FILE* p0 );
+		public extern static long ftello( FILE* p0 );
+		public extern static int ftrylockfile( FILE* p0 );
+		public extern static void funlockfile( FILE* p0 );
+		public extern static FILE* funopen( void* p0, Functors.Func<void*, sbyte*, int, int> p1, Functors.Func<void*, sbyte*, int, int> p2, Functors.Func<void*, long, int, long> p3, Functors.Func<void*, int> p4 );
+		public extern static uintptr fwrite( void* p0, uintptr p1, uintptr p2, FILE* p3 );
+		public extern static int getc( FILE* p0 );
+		public extern static int getc_unlocked( FILE* p0 );
+		public extern static int getchar();
+		public extern static int getchar_unlocked();
+		public extern static int getw( FILE* p0 );
+		public extern static int pclose( FILE* p0 );
+		public extern static void perror( sbyte* p0 );
+		public extern static FILE* popen( sbyte* p0, sbyte* p1 );
+		public extern static int putc( int p0, FILE* p1 );
+		public extern static int putc_unlocked( int p0, FILE* p1 );
+		public extern static int putchar( int p0 );
+		public extern static int putchar_unlocked( int p0 );
+		public extern static int puts( sbyte* p0 );
+		public extern static int putw( int p0, FILE* p1 );
+		public extern static int remove( sbyte* p0 );
+		public extern static int rename( sbyte* p0, sbyte* p1 );
+		public extern static void rewind( FILE* p0 );
+		public extern static void setbuf( FILE* p0, sbyte* p1 );
+		public extern static void setbuffer( FILE* p0, sbyte* p1, int p2 );
+		public extern static int setlinebuf( FILE* p0 );
+		public extern static int setvbuf( FILE* p0, sbyte* p1, int p2, uintptr p3 );
+		public extern static FILE* tmpfile();
+		public extern static int ungetc( int p0, FILE* p1 );
+		public extern static int vasprintf( sbyte** p0, sbyte* p1, sbyte* p2 );
+		public extern static int vfprintf( FILE* p0, sbyte* p1, sbyte* p2 );
+		public extern static int vfscanf( FILE* p0, sbyte* p1, sbyte* p2 );
+		public extern static int vprintf( sbyte* p0, sbyte* p1 );
+		public extern static int vscanf( sbyte* p0, sbyte* p1 );
+		public extern static int vsnprintf( sbyte* p0, uintptr p1, sbyte* p2, sbyte* p3 );
+		public extern static int vsprintf( sbyte* p0, sbyte* p1, sbyte* p2 );
+		public extern static int vsscanf( sbyte* p0, sbyte* p1, sbyte* p2 );
+		public extern static FILE* zopen( sbyte* p0, sbyte* p1, int p2 );
+
+		public extern static intptr a64l( sbyte* p0 );
+		public extern static void abort();
+		[BackendHintReadNone]
+		public extern static int abs( int p0 );
+		public extern static uint arc4random();
+		public extern static void arc4random_addrandom( byte* dat, int datlen );
+		public extern static void arc4random_stir();
+		public extern static int atexit( Functors.Action p0 );
+		public extern static double atof( sbyte* p0 );
+		public extern static int atoi( sbyte* p0 );
+		public extern static intptr atol( sbyte* p0 );
+		public extern static long atoll( sbyte* p0 );
+		public extern static void* bsearch( void* p0, void* p1, uintptr p2, uintptr p3, Functors.Func<void*, void*, int> p4 );
+		public extern static void* calloc( uintptr p0, uintptr p1 );
+		public extern static sbyte* cgetcap( sbyte* p0, sbyte* p1, int p2 );
+		public extern static int cgetclose();
+		public extern static int cgetent( sbyte** p0, sbyte** p1, sbyte* p2 );
+		public extern static int cgetfirst( sbyte** p0, sbyte** p1 );
+		public extern static int cgetmatch( sbyte* p0, sbyte* p1 );
+		public extern static int cgetnext( sbyte** p0, sbyte** p1 );
+		public extern static int cgetnum( sbyte* p0, sbyte* p1, intptr* p2 );
+		public extern static int cgetset( sbyte* p0 );
+		public extern static int cgetstr( sbyte* p0, sbyte* p1, sbyte** p2 );
+		public extern static int cgetustr( sbyte* p0, sbyte* p1, sbyte** p2 );
+		public extern static int daemon( int p0, int p1 );
+		public extern static sbyte* devname( int p0, ushort p1 );
+		public extern static sbyte* devname_r( int p0, ushort p1, sbyte* buf, int len );
+		[BackendHintReadNone]
+		public extern static div_t div( int p0, int p1 );
+		public extern static double drand48();
+		public extern static sbyte* ecvt( double p0, int p1, int* p2, int* p3 );
+		public extern static double erand48( ushort* p0 );
+		public extern static void exit( int p0 );
+		public extern static sbyte* fcvt( double p0, int p1, int* p2, int* p3 );
+		public extern static void free( void* p0 );
+		public extern static sbyte* gcvt( double p0, int p1, sbyte* p2 );
+		public extern static sbyte* getbsize( int* p0, intptr* p1 );
+		public extern static sbyte* getenv( sbyte* p0 );
+		public extern static int getloadavg( double* p0, int p1 );
+		public extern static sbyte* getprogname();
+		public extern static int grantpt( int p0 );
+		public extern static int heapsort( void* p0, uintptr p1, uintptr p2, Functors.Func<void*, void*, int> p3 );
+		public extern static sbyte* initstate( uint p0, sbyte* p1, uintptr p2 );
+		public extern static intptr jrand48( ushort* p0 );
+		public extern static sbyte* l64a( intptr p0 );
+		[BackendHintReadNone]
+		public extern static intptr labs( intptr p0 );
+		public extern static void lcong48( ushort* p0 );
+		[BackendHintReadNone]
+		public extern static ldiv_t ldiv( intptr p0, intptr p1 );
+		[BackendHintReadNone]
+		public extern static long llabs( long p0 );
+		public extern static lldiv_t lldiv( long p0, long p1 );
+		public extern static intptr lrand48();
+		public extern static void* malloc( uintptr p0 );
+		public extern static int mblen( sbyte* p0, uintptr p1 );
+		public extern static uintptr mbstowcs( char* p0, sbyte* p1, uintptr p2 );
+		public extern static int mbtowc( char* p0, sbyte* p1, uintptr p2 );
+		public extern static int mergesort( void* p0, uintptr p1, uintptr p2, Functors.Func<void*, void*, int> p3 );
+		public extern static intptr mrand48();
+		public extern static intptr nrand48( ushort* p0 );
+		public extern static int posix_openpt( int p0 );
+		public extern static sbyte* ptsname( int p0 );
+		public extern static int putenv( sbyte* p0 );
+		public extern static void qsort( void* p0, uintptr p1, uintptr p2, Functors.Func<void*, void*, int> p3 );
+		public extern static void qsort_r( void* p0, uintptr p1, uintptr p2, void* p3, Functors.Func<void*, void*, void*, int> p4 );
+		public extern static int radixsort( byte** p0, int p1, byte* p2, uint p3 );
+		public extern static int rand();
+		public extern static int rand_r( uint* p0 );
+		public extern static intptr random();
+		public extern static void* realloc( void* p0, uintptr p1 );
+		public extern static void* reallocf( void* p0, uintptr p1 );
+		public extern static sbyte* realpath( sbyte* p0, sbyte* p1 );
+		public extern static ushort* seed48( ushort* p0 );
+		public extern static int setenv( sbyte* p0, sbyte* p1, int p2 );
+		public extern static void setprogname( sbyte* p0 );
+		public extern static sbyte* setstate( sbyte* p0 );
+		public extern static int sradixsort( byte** p0, int p1, byte* p2, uint p3 );
+		public extern static void srand( uint p0 );
+		public extern static void srand48( intptr p0 );
+		public extern static void sranddev();
+		public extern static void srandom( uint p0 );
+		public extern static void srandomdev();
+		public extern static double strtod( sbyte* p0, sbyte** p1 );
+		public extern static float strtof( sbyte* p0, sbyte** p1 );
+		public extern static intptr strtol( sbyte* p0, sbyte** p1, int p2 );
+		public extern static uint[4] strtold( sbyte* p0, sbyte** p1 );
+		public extern static long strtoll( sbyte* p0, sbyte** p1, int p2 );
+		public extern static long strtoq( sbyte* p0, sbyte** p1, int p2 );
+		public extern static uintptr strtoul( sbyte* p0, sbyte** p1, int p2 );
+		public extern static ulong strtoull( sbyte* p0, sbyte** p1, int p2 );
+		public extern static ulong strtouq( sbyte* p0, sbyte** p1, int p2 );
+		public extern static int system( sbyte* p0 );
+		public extern static int unlockpt( int p0 );
+		public extern static int unsetenv( sbyte* p0 );
+		public extern static uintptr wcstombs( sbyte* p0, char* p1, uintptr p2 );
+		public extern static int wctomb( sbyte* p0, char p1 );
+
+		public extern static int sched_get_priority_max( int p0 );
+		public extern static int sched_get_priority_min( int p0 );
+		public extern static int sched_yield();
+
+		public extern static int pthread_atfork( Functors.Action p0, Functors.Action p1, Functors.Action p2 );
+		public extern static int pthread_attr_destroy( pthread_attr_t* p0 );
+		public extern static int pthread_attr_getdetachstate( pthread_attr_t* p0, int* p1 );
+		public extern static int pthread_attr_getguardsize( pthread_attr_t* p0, uintptr* p1 );
+		public extern static int pthread_attr_getinheritsched( pthread_attr_t* p0, int* p1 );
+		public extern static int pthread_attr_getschedparam( pthread_attr_t* p0, sched_param* p1 );
+		public extern static int pthread_attr_getschedpolicy( pthread_attr_t* p0, int* p1 );
+		public extern static int pthread_attr_getscope( pthread_attr_t* p0, int* p1 );
+		public extern static int pthread_attr_getstack( pthread_attr_t* p0, void** p1, uintptr* p2 );
+		public extern static int pthread_attr_getstackaddr( pthread_attr_t* p0, void** p1 );
+		public extern static int pthread_attr_getstacksize( pthread_attr_t* p0, uintptr* p1 );
+		public extern static int pthread_attr_init( pthread_attr_t* p0 );
+		public extern static int pthread_attr_setdetachstate( pthread_attr_t* p0, int p1 );
+		public extern static int pthread_attr_setguardsize( pthread_attr_t* p0, uintptr p1 );
+		public extern static int pthread_attr_setinheritsched( pthread_attr_t* p0, int p1 );
+		public extern static int pthread_attr_setschedparam( pthread_attr_t* p0, sched_param* p1 );
+		public extern static int pthread_attr_setschedpolicy( pthread_attr_t* p0, int p1 );
+		public extern static int pthread_attr_setscope( pthread_attr_t* p0, int p1 );
+		public extern static int pthread_attr_setstack( pthread_attr_t* p0, void* p1, uintptr p2 );
+		public extern static int pthread_attr_setstackaddr( pthread_attr_t* p0, void* p1 );
+		public extern static int pthread_attr_setstacksize( pthread_attr_t* p0, uintptr p1 );
+		public extern static int pthread_cancel( pthread_t p0 );
+		public extern static int pthread_cond_broadcast( pthread_cond_t* p0 );
+		public extern static int pthread_cond_destroy( pthread_cond_t* p0 );
+		public extern static int pthread_cond_init( pthread_cond_t* p0, pthread_condattr_t* p1 );
+		public extern static int pthread_cond_signal( pthread_cond_t* p0 );
+		public extern static int pthread_cond_timedwait( pthread_cond_t* p0, pthread_mutex_t* p1, timespec* p2 );
+		public extern static int pthread_cond_wait( pthread_cond_t* p0, pthread_mutex_t* p1 );
+		public extern static int pthread_condattr_destroy( pthread_condattr_t* p0 );
+		public extern static int pthread_condattr_getpshared( pthread_condattr_t* p0, int* p1 );
+		public extern static int pthread_condattr_init( pthread_condattr_t* p0 );
+		public extern static int pthread_condattr_setpshared( pthread_condattr_t* p0, int p1 );
+		public extern static int pthread_detach( pthread_t p0 );
+		public extern static int pthread_equal( pthread_t p0, pthread_t p1 );
+		public extern static void pthread_exit( void* p0 );
+		public extern static int pthread_getconcurrency();
+		public extern static int pthread_getschedparam( pthread_t p0, int* p1, sched_param* p2 );
+		public extern static void* pthread_getspecific( pthread_key_t p0 );
+		public extern static int pthread_join( pthread_t p0, void** p1 );
+		public extern static int pthread_key_create( pthread_key_t* p0, Functors.Action<void*> p1 );
+		public extern static int pthread_key_delete( pthread_key_t p0 );
+		public extern static int pthread_mutex_destroy( pthread_mutex_t* p0 );
+		public extern static int pthread_mutex_getprioceiling( pthread_mutex_t* p0, int* p1 );
+		public extern static int pthread_mutex_init( pthread_mutex_t* p0, pthread_mutexattr_t* p1 );
+		public extern static int pthread_mutex_lock( pthread_mutex_t* p0 );
+		public extern static int pthread_mutex_setprioceiling( pthread_mutex_t* p0, int p1, int* p2 );
+		public extern static int pthread_mutex_trylock( pthread_mutex_t* p0 );
+		public extern static int pthread_mutex_unlock( pthread_mutex_t* p0 );
+		public extern static int pthread_mutexattr_destroy( pthread_mutexattr_t* p0 );
+		public extern static int pthread_mutexattr_getprioceiling( pthread_mutexattr_t* p0, int* p1 );
+		public extern static int pthread_mutexattr_getprotocol( pthread_mutexattr_t* p0, int* p1 );
+		public extern static int pthread_mutexattr_getpshared( pthread_mutexattr_t* p0, int* p1 );
+		public extern static int pthread_mutexattr_gettype( pthread_mutexattr_t* p0, int* p1 );
+		public extern static int pthread_mutexattr_init( pthread_mutexattr_t* p0 );
+		public extern static int pthread_mutexattr_setprioceiling( pthread_mutexattr_t* p0, int p1 );
+		public extern static int pthread_mutexattr_setprotocol( pthread_mutexattr_t* p0, int p1 );
+		public extern static int pthread_mutexattr_setpshared( pthread_mutexattr_t* p0, int p1 );
+		public extern static int pthread_mutexattr_settype( pthread_mutexattr_t* p0, int p1 );
+		public extern static int pthread_once( pthread_once_t* p0, Functors.Action p1 );
+		public extern static int pthread_rwlock_destroy( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlock_init( pthread_rwlock_t* p0, pthread_rwlockattr_t* p1 );
+		public extern static int pthread_rwlock_rdlock( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlock_tryrdlock( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlock_trywrlock( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlock_unlock( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlock_wrlock( pthread_rwlock_t* p0 );
+		public extern static int pthread_rwlockattr_destroy( pthread_rwlockattr_t* p0 );
+		public extern static int pthread_rwlockattr_getpshared( pthread_rwlockattr_t* p0, int* p1 );
+		public extern static int pthread_rwlockattr_init( pthread_rwlockattr_t* p0 );
+		public extern static int pthread_rwlockattr_setpshared( pthread_rwlockattr_t* p0, int p1 );
+		public extern static pthread_t pthread_self();
+		public extern static int pthread_setcancelstate( int p0, int* p1 );
+		public extern static int pthread_setcanceltype( int p0, int* p1 );
+		public extern static int pthread_setconcurrency( int p0 );
+		public extern static int pthread_setschedparam( pthread_t p0, int p1, sched_param* p2 );
+		public extern static int pthread_setspecific( pthread_key_t p0, void* p1 );
+		public extern static void pthread_testcancel();
+
+		public extern static DIR* __opendir2( sbyte* p0, int p1 );
+		public extern static int alphasort( void* p0, void* p1 );
+		public extern static int closedir( DIR* p0 );
+		public extern static int getdirentries( int p0, sbyte* p1, int p2, intptr* p3 );
+		public extern static DIR* opendir( sbyte* p0 );
+		public extern static dirent* readdir( DIR* p0 );
+		public extern static int readdir_r( DIR* p0, dirent* p1, dirent** p2 );
+		public extern static void rewinddir( DIR* p0 );
+		public extern static int scandir( sbyte* p0, dirent*** p1, Functors.Func<dirent*, int> p2, Functors.Func<void*, void*, int> p3 );
+		public extern static void seekdir( DIR* p0, intptr p1 );
+		public extern static intptr telldir( DIR* p0 );
+
+		public extern static int sem_close( int* p0 );
+		public extern static int sem_destroy( int* p0 );
+		public extern static int sem_getvalue( int* p0, int* p1 );
+		public extern static int sem_init( int* p0, int p1, uint p2 );
+		public extern static int sem_post( int* p0 );
+		public extern static int sem_trywait( int* p0 );
+		public extern static int sem_unlink( sbyte* p0 );
+		public extern static int sem_wait( int* p0 );
+
+		public extern static int getcontext( ucontext_t* p0 );
+		public extern static int setcontext( ucontext_t* p0 );
+		public extern static int swapcontext( ucontext_t* p0, ucontext_t* p1 );
+
+		public extern static Functors.Action<int> bsd_signal( int p0, Functors.Action<int> p1 );
+		public extern static int kill( int p0, int p1 );
+		public extern static int killpg( int p0, int p1 );
+		public extern static void psignal( uint p0, sbyte* p1 );
+		public extern static int pthread_kill( pthread_t p0, int p1 );
+		public extern static int pthread_sigmask( int p0, uint* p1, uint* p2 );
+		public extern static int raise( int p0 );
+		public extern static int sigaction( int p0, sigaction* p1, sigaction* p2 );
+		public extern static int sigaddset( uint* p0, int p1 );
+		public extern static int sigaltstack( stack_t* p0, stack_t* p1 );
+		public extern static int sigblock( int p0 );
+		public extern static int sigdelset( uint* p0, int p1 );
+		public extern static int sigemptyset( uint* p0 );
+		public extern static int sigfillset( uint* p0 );
+		public extern static int sighold( int p0 );
+		public extern static int sigignore( int p0 );
+		public extern static int siginterrupt( int p0, int p1 );
+		public extern static int sigismember( uint* p0, int p1 );
+		public extern static int sigpause( int p0 );
+		public extern static int sigpending( uint* p0 );
+		public extern static int sigprocmask( int p0, uint* p1, uint* p2 );
+		public extern static int sigrelse( int p0 );
+		public extern static Functors.Action<int> sigset( int p0, Functors.Action<int> p1 );
+		public extern static int sigsetmask( int p0 );
+		public extern static int sigsuspend( uint* p0 );
+		public extern static int sigvec( int p0, sigvec* p1, sigvec* p2 );
+		public extern static int sigwait( uint* p0, int* p1 );
+
+		public extern static int bcmp( void* p0, void* p1, uintptr p2 );
+		public extern static void bcopy( void* p0, void* p1, uintptr p2 );
+		public extern static void bzero( void* p0, uintptr p1 );
+		public extern static int ffs( int p0 );
+		public extern static int ffsl( intptr p0 );
+		public extern static int fls( int p0 );
+		public extern static int flsl( intptr p0 );
+		public extern static sbyte* index( sbyte* p0, int p1 );
+		public extern static void* memccpy( void* p0, void* p1, int p2, uintptr p3 );
+		public extern static void* memchr( void* p0, int p1, uintptr p2 );
+		public extern static void* memcpy( void* p0, void* p1, uintptr p2 );
+		public extern static void* memmove( void* p0, void* p1, uintptr p2 );
+		public extern static void* memset( void* p0, int p1, uintptr p2 );
+		public extern static void memset_pattern16( void* p0, void* p1, uintptr p2 );
+		public extern static void memset_pattern4( void* p0, void* p1, uintptr p2 );
+		public extern static void memset_pattern8( void* p0, void* p1, uintptr p2 );
+		public extern static sbyte* rindex( sbyte* p0, int p1 );
+		public extern static sbyte* stpcpy( sbyte* p0, sbyte* p1 );
+		public extern static int strcasecmp( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strcasestr( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strcat( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strchr( sbyte* p0, int p1 );
+		public extern static int strcmp( sbyte* p0, sbyte* p1 );
+		public extern static int strcoll( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strcpy( sbyte* p0, sbyte* p1 );
+		public extern static uintptr strcspn( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strdup( sbyte* p0 );
+		public extern static sbyte* strerror( int p0 );
+		public extern static int strerror_r( int p0, sbyte* p1, uintptr p2 );
+		public extern static uintptr strlcat( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static uintptr strlcpy( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static uintptr strlen( sbyte* p0 );
+		public extern static void strmode( int p0, sbyte* p1 );
+		public extern static int strncasecmp( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static sbyte* strncat( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static int strncmp( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static sbyte* strncpy( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static sbyte* strnstr( sbyte* p0, sbyte* p1, uintptr p2 );
+		public extern static sbyte* strpbrk( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strrchr( sbyte* p0, int p1 );
+		public extern static sbyte* strsep( sbyte** p0, sbyte* p1 );
+		public extern static sbyte* strsignal( int sig );
+		public extern static uintptr strspn( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strstr( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strtok( sbyte* p0, sbyte* p1 );
+		public extern static sbyte* strtok_r( sbyte* p0, sbyte* p1, sbyte** p2 );
+		public extern static uintptr strxfrm( sbyte* p0, sbyte* p1, uintptr p2 );
+	}
+	[ExternLibrary( Image = "/usr/lib/libgcc_s.1.dylib" )]
+	public static partial struct GccApi {
+	}
+	public enum AccessTest : int {
+		F_OK = 0,
+		X_OK = 1,
+		W_OK = 2,
+		R_OK = 4,
+	}
+	public enum ApplySignalCommand : uint {
+		SIG_BLOCK =   1,
+		SIG_UNBLOCK = 2,
+		SIG_SETMASK = 3,
+	}
+	public enum AuxVectorKind : int {
+		AT_IPC_MSG = 1,
+		AT_IPC_SEM = 2,
+		AT_IPC_SHM = 3,
+	}
+	public enum ConfigurationProperty : uint {
+		_PC_LINK_MAX =              1,
+		_PC_MAX_CANON =             2,
+		_PC_MAX_INPUT =             3,
+		_PC_NAME_MAX =              4,
+		_PC_PATH_MAX =              5,
+		_PC_PIPE_BUF =              6,
+		_PC_CHOWN_RESTRICTED =      7,
+		_PC_NO_TRUNC =              8,
+		_PC_VDISABLE =              9,
+		_PC_NAME_CHARS_MAX =       10,
+		_PC_CASE_SENSITIVE =       11,
+		_PC_CASE_PRESERVING =      12,
+		_PC_EXTENDED_SECURITY_NP = 13,
+		_PC_AUTH_OPAQUE_NP =       14,
+		_PC_2_SYMLINKS =           15,
+		_PC_ALLOC_SIZE_MIN =       16,
+		_PC_ASYNC_IO =             17,
+		_PC_FILESIZEBITS =         18,
+		_PC_PRIO_IO =              19,
+		_PC_REC_INCR_XFER_SIZE =   20,
+		_PC_REC_MAX_XFER_SIZE =    21,
+		_PC_REC_MIN_XFER_SIZE =    22,
+		_PC_REC_XFER_ALIGN =       23,
+		_PC_SYMLINK_MAX =          24,
+		_PC_SYNC_IO =              25,
+	}
+	public enum DirectoryEntryType : uint {
+		DT_UNKNOWN = 0,
+		DT_FIFO =    1,
+		DT_CHR =     2,
+		DT_DIR =     4,
+		DT_BLK =     6,
+		DT_REG =     8,
+		DT_LNK =    10,
+		DT_SOCK =   12,
+		DT_WHT =    14,
+	}
+	[Flags]
+	public enum DynamicLibraryLoadFlag : int {
+		None =            0,
+		RTLD_LAZY =       1,
+		RTLD_NOW =        2,
+		RTLD_LOCAL =      4,
+		RTLD_GLOBAL =     8,
+		RTLD_NOLOAD =    16,
+		RTLD_NODELETE = 128,
+		RTLD_FIRST =    256,
+	}
+	public enum FileDescriptorCommand : uint {
+		F_DUPFD =        0,
+		F_GETFD =        1,
+		F_SETFD =        2,
+		F_GETFL =        3,
+		F_SETFL =        4,
+		F_GETOWN =       5,
+		F_SETOWN =       6,
+		F_GETLK =        7,
+		F_SETLK =        8,
+		F_SETLKW =       9,
+		F_CHKCLEAN =    41,
+		F_PREALLOCATE = 42,
+		F_SETSIZE =     43,
+		F_RDADVISE =    44,
+		F_RDAHEAD =     45,
+	}
+	[Flags]
+	public enum FileOpenFlags : int {
+		O_RDONLY =          0,
+		O_WRONLY =          1,
+		O_RDWR =            2,
+		O_NDELAY =          4,
+		O_NONBLOCK =        4,
+		O_APPEND =          8,
+		FASYNC =           64,
+		O_SYNC =          128,
+		O_NOFOLLOW =      256,
+		O_CREAT =         512,
+		O_TRUNC =        1024,
+		O_EXCL =         2048,
+		O_NOCTTY =     131072,
+		O_DIRECTORY = 1048576,
+		O_ACCMODE =         3,
+	}
+	[Flags]
+	public enum FileDescriptorFlag : int {
+		None =       0,
+		FD_CLOEXEC = 1,
+	}
+	public enum filesec_property_t : uint {
+		FILESEC_OWNER =           1,
+		FILESEC_GROUP =           2,
+		FILESEC_UUID =            3,
+		FILESEC_MODE =            4,
+		FILESEC_ACL =             5,
+		FILESEC_GRPUUID =         6,
+		FILESEC_ACL_RAW =       100,
+		FILESEC_ACL_ALLOCSIZE = 101,
+	}
+	public enum FileSeekOrigin : int {
+		SEEK_SET = 0,
+		SEEK_CUR = 1,
+		SEEK_END = 2,
+	}
+	public enum idtype_t : uint {
+		P_ALL =  0,
+		P_PID =  1,
+		P_PGID = 2,
+	}
+	public enum FileDriverCommand : uint {
+		TIOCPKT_DATA =        0,
+		TIOCPKT_FLUSHREAD =   1,
+		TIOCPKT_FLUSHWRITE =  2,
+		TIOCPKT_STOP =        4,
+		TIOCPKT_START =       8,
+		TIOCPKT_NOSTOP =     16,
+		TIOCPKT_DOSTOP =     32,
+		FIOCLEX =     536897025,
+		FIONCLEX =    536897026,
+		TIOCEXCL =    536900621,
+		TIOCNXCL =    536900622,
+		TIOCSCTTY =   536900705,
+		TIOCNOTTY =   536900721,
+		TIOCCBRK =    536900730,
+		TIOCSBRK =    536900731,
+		FIONREAD =   1074030207,
+		TIOCGETD =   1074033690,
+		TIOCMGET =   1074033770,
+		TIOCOUTQ =   1074033779,
+		TIOCGPGRP =  1074033783,
+		TIOCGWINSZ = 1074295912,
+		TIOCSTI =    2147578994,
+		FIOASYNC =   2147772029,
+		FIONBIO =    2147772030,
+		TIOCSETD =   2147775515,
+		TIOCCONS =   2147775586,
+		TIOCMBIC =   2147775595,
+		TIOCMBIS =   2147775596,
+		TIOCMSET =   2147775597,
+		TIOCPKT =    2147775600,
+		TIOCSPGRP =  2147775606,
+		TIOCSWINSZ = 2148037735,
+	}
+	public enum IPProtocol : uint {
+		IPPROTO_HOPOPTS =    0,
+		IPPROTO_IP =         0,
+		IPPROTO_ICMP =       1,
+		IPPROTO_IGMP =       2,
+		IPPROTO_GGP =        3,
+		IPPROTO_IPIP =       4,
+		IPPROTO_IPV4 =       4,
+		IPPROTO_TCP =        6,
+		IPPROTO_ST =         7,
+		IPPROTO_EGP =        8,
+		IPPROTO_PIGP =       9,
+		IPPROTO_RCCMON =    10,
+		IPPROTO_NVPII =     11,
+		IPPROTO_PUP =       12,
+		IPPROTO_ARGUS =     13,
+		IPPROTO_EMCON =     14,
+		IPPROTO_XNET =      15,
+		IPPROTO_CHAOS =     16,
+		IPPROTO_UDP =       17,
+		IPPROTO_MUX =       18,
+		IPPROTO_MEAS =      19,
+		IPPROTO_HMP =       20,
+		IPPROTO_PRM =       21,
+		IPPROTO_IDP =       22,
+		IPPROTO_TRUNK1 =    23,
+		IPPROTO_TRUNK2 =    24,
+		IPPROTO_LEAF1 =     25,
+		IPPROTO_LEAF2 =     26,
+		IPPROTO_RDP =       27,
+		IPPROTO_IRTP =      28,
+		IPPROTO_TP =        29,
+		IPPROTO_BLT =       30,
+		IPPROTO_NSP =       31,
+		IPPROTO_INP =       32,
+		IPPROTO_SEP =       33,
+		IPPROTO_3PC =       34,
+		IPPROTO_IDPR =      35,
+		IPPROTO_XTP =       36,
+		IPPROTO_DDP =       37,
+		IPPROTO_CMTP =      38,
+		IPPROTO_TPXX =      39,
+		IPPROTO_IL =        40,
+		IPPROTO_IPV6 =      41,
+		IPPROTO_SDRP =      42,
+		IPPROTO_ROUTING =   43,
+		IPPROTO_FRAGMENT =  44,
+		IPPROTO_IDRP =      45,
+		IPPROTO_RSVP =      46,
+		IPPROTO_GRE =       47,
+		IPPROTO_MHRP =      48,
+		IPPROTO_BHA =       49,
+		IPPROTO_ESP =       50,
+		IPPROTO_AH =        51,
+		IPPROTO_INLSP =     52,
+		IPPROTO_MAXID =     52,
+		IPPROTO_SWIPE =     53,
+		IPPROTO_NHRP =      54,
+		IPPROTO_ICMPV6 =    58,
+		IPPROTO_NONE =      59,
+		IPPROTO_DSTOPTS =   60,
+		IPPROTO_AHIP =      61,
+		IPPROTO_CFTP =      62,
+		IPPROTO_HELLO =     63,
+		IPPROTO_SATEXPAK =  64,
+		IPPROTO_KRYPTOLAN = 65,
+		IPPROTO_RVD =       66,
+		IPPROTO_IPPC =      67,
+		IPPROTO_ADFS =      68,
+		IPPROTO_SATMON =    69,
+		IPPROTO_VISA =      70,
+		IPPROTO_IPCV =      71,
+		IPPROTO_CPNX =      72,
+		IPPROTO_CPHB =      73,
+		IPPROTO_WSN =       74,
+		IPPROTO_PVP =       75,
+		IPPROTO_BRSATMON =  76,
+		IPPROTO_ND =        77,
+		IPPROTO_WBMON =     78,
+		IPPROTO_WBEXPAK =   79,
+		IPPROTO_EON =       80,
+		IPPROTO_VMTP =      81,
+		IPPROTO_SVMTP =     82,
+		IPPROTO_VINES =     83,
+		IPPROTO_TTP =       84,
+		IPPROTO_IGP =       85,
+		IPPROTO_DGP =       86,
+		IPPROTO_TCF =       87,
+		IPPROTO_IGRP =      88,
+		IPPROTO_OSPFIGP =   89,
+		IPPROTO_SRPC =      90,
+		IPPROTO_LARP =      91,
+		IPPROTO_MTP =       92,
+		IPPROTO_AX25 =      93,
+		IPPROTO_IPEIP =     94,
+		IPPROTO_MICP =      95,
+		IPPROTO_SCCSP =     96,
+		IPPROTO_ETHERIP =   97,
+		IPPROTO_ENCAP =     98,
+		IPPROTO_APES =      99,
+		IPPROTO_GMTP =     100,
+		IPPROTO_PIM =      103,
+		IPPROTO_IPCOMP =   108,
+		IPPROTO_PGM =      113,
+		IPPROTO_DIVERT =   254,
+		IPPROTO_RAW =      255,
+		IPPROTO_MAX =      256,
+		IPPROTO_DONE =     257,
+	}
+	[Flags]
+	public enum KEventAction : ushort {
+		None =            0,
+		EV_ADD =          1,
+		EV_DELETE =       2,
+		EV_ENABLE =       4,
+		EV_DISABLE =      8,
+		EV_ONESHOT =     16,
+		EV_CLEAR =       32,
+		EV_RECEIPT =     64,
+		EV_FLAG0 =     4096,
+		EV_POLL =      4096,
+		EV_FLAG1 =     8192,
+		EV_OOBAND =    8192,
+		EV_ERROR =    16384,
+		EV_EOF =      32768,
+		EV_SYSFLAGS = 61440,
+	}
+	public enum KEventFilter : short {
+		EVFILT_FS =          -9,
+		EVFILT_MACHPORT =    -8,
+		EVFILT_TIMER =       -7,
+		EVFILT_SIGNAL =      -6,
+		EVFILT_PROC =        -5,
+		EVFILT_VNODE =       -4,
+		EVFILT_AIO =         -3,
+		EVFILT_WRITE =       -2,
+		EVFILT_READ =        -1,
+		EVFILT_SYSCOUNT =     9,
+		EVFILT_THREADMARKER = 9,
+	}
+	[Flags]
+	public enum KEventProcFilterFlags : uint {
+		None =                    0,
+		NOTE_TRACK =              1,
+		NOTE_TRACKERR =           2,
+		NOTE_CHILD =              4,
+		NOTE_EXEC =       536870912,
+		NOTE_FORK =      1073741824,
+		NOTE_EXIT =      2147483648,
+		NOTE_PCTRLMASK = 4293918720,
+		NOTE_PDATAMASK =    1048575,
+	}
+	[Flags]
+	public enum KEventVnodeFilterFlags : uint {
+		None =         0,
+		NOTE_DELETE =  1,
+		NOTE_WRITE =   2,
+		NOTE_EXTEND =  4,
+		NOTE_ATTRIB =  8,
+		NOTE_LINK =   16,
+		NOTE_RENAME = 32,
+		NOTE_REVOKE = 64,
+	}
+	public enum MemoryAdvise : int {
+		MADV_NORMAL =     0,
+		MADV_RANDOM =     1,
+		MADV_SEQUENTIAL = 2,
+		MADV_WILLNEED =   3,
+		MADV_DONTNEED =   4,
+		MADV_FREE =       5,
+	}
+	[Flags]
+	public enum MemoryMapFlags : int {
+		MAP_FILE =           0,
+		MAP_SHARED =         1,
+		MAP_COPY =           2,
+		MAP_PRIVATE =        2,
+		MAP_FIXED =         16,
+		MAP_RENAME =        32,
+		MAP_NORESERVE =     64,
+		MAP_RESERVED0080 = 128,
+		MAP_NOEXTEND =     256,
+		MAP_HASSEMAPHORE = 512,
+		MAP_NOCACHE =     1024,
+		MAP_ANON =        4096,
+	}
+	public enum MemoryMapProtection : int {
+		PROT_NONE =  0,
+		PROT_READ =  1,
+		PROT_WRITE = 2,
+		PROT_EXEC =  4,
+	}
+	[Flags]
+	public enum MessageFlags : uint {
+		None =    0,
+		MSG_OOB = 1,
+	}
+	[Flags]
+	public enum PollEvents : ushort {
+		None =         0,
+		POLLIN =       1,
+		POLLPRI =      2,
+		POLLOUT =      4,
+		POLLWRNORM =   4,
+		POLLERR =      8,
+		POLLHUP =     16,
+		POLLNVAL =    32,
+		POLLRDNORM =  64,
+		POLLRDBAND = 128,
+		POLLWRBAND = 256,
+	}
+	public enum ProcessShare : uint {
+		PTHREAD_PROCESS_SHARED =  1,
+		PTHREAD_PROCESS_PRIVATE = 2,
+	}
+	public enum ProtocolFamily : byte {
+		PF_UNSPEC =       0,
+		PF_LOCAL =        1,
+		PF_UNIX =         1,
+		PF_INET =         2,
+		PF_IMPLINK =      3,
+		PF_PUP =          4,
+		PF_CHAOS =        5,
+		PF_NS =           6,
+		PF_ISO =          7,
+		PF_OSI =          7,
+		PF_ECMA =         8,
+		PF_DATAKIT =      9,
+		PF_CCITT =       10,
+		PF_SNA =         11,
+		PF_DECnet =      12,
+		PF_DLI =         13,
+		PF_LAT =         14,
+		PF_HYLINK =      15,
+		PF_APPLETALK =   16,
+		PF_ROUTE =       17,
+		PF_LINK =        18,
+		PF_XTP =         19,
+		PF_COIP =        20,
+		PF_CNT =         21,
+		PF_RTIP =        22,
+		PF_IPX =         23,
+		PF_SIP =         24,
+		PF_PIP =         25,
+		PF_NDRV =        27,
+		PF_ISDN =        28,
+		PF_KEY =         29,
+		PF_INET6 =       30,
+		PF_NATM =        31,
+		PF_SYSTEM =      32,
+		PF_NETBIOS =     33,
+		PF_PPP =         34,
+		PF_RESERVED_36 = 36,
+		PF_MAX =         37,
+	}
+	public enum regs_saved_t : uint {
+		REGS_SAVED_NONE =   0,
+		REGS_SAVED_CALLER = 1,
+		REGS_SAVED_ALL =    2,
+	}
+	public enum ResourceLimit : int {
+		RLIMIT_CPU =     0,
+		RLIMIT_FSIZE =   1,
+		RLIMIT_DATA =    2,
+		RLIMIT_STACK =   3,
+		RLIMIT_CORE =    4,
+		RLIMIT_AS =      5,
+		RLIMIT_RSS =     5,
+		RLIMIT_MEMLOCK = 6,
+		RLIMIT_NPROC =   7,
+		RLIMIT_NOFILE =  8,
+	}
+	public enum ResourceUsageKind : int {
+		RUSAGE_CHILDREN = -1,
+		RUSAGE_SELF =      0,
+	}
+	public enum SignalCode : uint {
+		BUS_NOOP =            0,
+		CLD_NOOP =            0,
+		FPE_NOOP =            0,
+		ILL_NOOP =            0,
+		SEGV_NOOP =           0,
+		SIGEV_NONE =          0,
+		BUS_ADRALN =          1,
+		CLD_EXITED =          1,
+		FPE_FLTDIV =          1,
+		ILL_ILLOPC =          1,
+		POLL_IN =             1,
+		SA_ONSTACK =          1,
+		SEGV_MAPERR =         1,
+		SIG_BLOCK =           1,
+		SIGEV_SIGNAL =        1,
+		SIGHUP =              1,
+		SS_ONSTACK =          1,
+		SV_ONSTACK =          1,
+		TRAP_BRKPT =          1,
+		BUS_ADRERR =          2,
+		CLD_KILLED =          2,
+		FPE_FLTOVF =          2,
+		ILL_ILLTRP =          2,
+		POLL_OUT =            2,
+		SA_RESTART =          2,
+		SEGV_ACCERR =         2,
+		SIG_UNBLOCK =         2,
+		SIGINT =              2,
+		SV_INTERRUPT =        2,
+		TRAP_TRACE =          2,
+		BUS_OBJERR =          3,
+		CLD_DUMPED =          3,
+		FPE_FLTUND =          3,
+		ILL_PRVOPC =          3,
+		POLL_MSG =            3,
+		SIG_SETMASK =         3,
+		SIGEV_THREAD =        3,
+		SIGQUIT =             3,
+		CLD_TRAPPED =         4,
+		FPE_FLTRES =          4,
+		ILL_ILLOPN =          4,
+		POLL_ERR =            4,
+		SA_RESETHAND =        4,
+		SIGILL =              4,
+		SS_DISABLE =          4,
+		SV_RESETHAND =        4,
+		CLD_STOPPED =         5,
+		FPE_FLTINV =          5,
+		ILL_ILLADR =          5,
+		POLL_PRI =            5,
+		SIGTRAP =             5,
+		CLD_CONTINUED =       6,
+		FPE_FLTSUB =          6,
+		ILL_PRVREG =          6,
+		POLL_HUP =            6,
+		SIGABRT =             6,
+		SIGIOT =              6,
+		FPE_INTDIV =          7,
+		ILL_COPROC =          7,
+		SIGEMT =              7,
+		FPE_INTOVF =          8,
+		ILL_BADSTK =          8,
+		SA_NOCLDSTOP =        8,
+		SIGFPE =              8,
+		SV_NOCLDSTOP =        8,
+		SIGKILL =             9,
+		SIGBUS =             10,
+		SIGSEGV =            11,
+		SIGSYS =             12,
+		SIGPIPE =            13,
+		SIGALRM =            14,
+		SIGTERM =            15,
+		SA_NODEFER =         16,
+		SIGURG =             16,
+		SV_NODEFER =         16,
+		SIGSTOP =            17,
+		SIGTSTP =            18,
+		SIGCONT =            19,
+		SIGCHLD =            20,
+		SIGTTIN =            21,
+		SIGTTOU =            22,
+		SIGIO =              23,
+		SIGXCPU =            24,
+		SIGXFSZ =            25,
+		SIGVTALRM =          26,
+		SIGPROF =            27,
+		SIGWINCH =           28,
+		SIGINFO =            29,
+		SIGUSR1 =            30,
+		SIGUSR2 =            31,
+		SA_NOCLDWAIT =       32,
+		SA_SIGINFO =         64,
+		SV_SIGINFO =         64,
+		SA_USERSPACE_MASK = 127,
+		SA_USERTRAMP =      256,
+		SA_64REGSET =       512,
+		MINSIGSTKSZ =     32768,
+		SI_USER =         65537,
+		SI_QUEUE =        65538,
+		SI_TIMER =        65539,
+		SI_ASYNCIO =      65540,
+		SI_MESGQ =        65541,
+		SIGSTKSZ =       131072,
+	}
+	public enum SignalCodeBUS : uint {
+		BUS_NOOP =   0,
+		BUS_ADRALN = 1,
+		BUS_ADRERR = 2,
+		BUS_OBJERR = 3,
+	}
+	public enum SignalCodeCHLD : uint {
+		CLD_NOOP =      0,
+		CLD_EXITED =    1,
+		CLD_KILLED =    2,
+		CLD_DUMPED =    3,
+		CLD_TRAPPED =   4,
+		CLD_STOPPED =   5,
+		CLD_CONTINUED = 6,
+	}
+	public enum SignalCodeFPE : uint {
+		FPE_NOOP =   0,
+		FPE_FLTDIV = 1,
+		FPE_FLTOVF = 2,
+		FPE_FLTUND = 3,
+		FPE_FLTRES = 4,
+		FPE_FLTINV = 5,
+		FPE_FLTSUB = 6,
+		FPE_INTDIV = 7,
+		FPE_INTOVF = 8,
+	}
+	public enum SignalCodeILL : uint {
+		ILL_NOOP =   0,
+		ILL_ILLOPC = 1,
+		ILL_ILLTRP = 2,
+		ILL_PRVOPC = 3,
+		ILL_ILLOPN = 4,
+		ILL_ILLADR = 5,
+		ILL_PRVREG = 6,
+		ILL_COPROC = 7,
+		ILL_BADSTK = 8,
+	}
+	public enum SignalCodeOrigin : uint {
+		SI_USER =    65537,
+		SI_QUEUE =   65538,
+		SI_TIMER =   65539,
+		SI_ASYNCIO = 65540,
+		SI_MESGQ =   65541,
+	}
+	public enum SignalCodePOLL : uint {
+		POLL_IN =  1,
+		POLL_OUT = 2,
+		POLL_MSG = 3,
+		POLL_ERR = 4,
+		POLL_PRI = 5,
+		POLL_HUP = 6,
+	}
+	public enum SignalCodeSEGV : uint {
+		SEGV_NOOP =   0,
+		SEGV_MAPERR = 1,
+		SEGV_ACCERR = 2,
+	}
+	public enum SignalCodeTrap : uint {
+		TRAP_BRKPT = 1,
+		TRAP_TRACE = 2,
+	}
+	public enum SignalNotify : uint {
+		SIGEV_NONE =   0,
+		SIGEV_SIGNAL = 1,
+		SIGEV_THREAD = 3,
+	}
+	[Flags]
+	public enum SignalStackFlags : uint {
+		None =       0,
+		SS_ONSTACK = 1,
+		SS_DISABLE = 4,
+	}
+	public enum SocketControlMessage : uint {
+		SCM_RIGHTS =    1,
+		SCM_TIMESTAMP = 2,
+		SCM_CREDS =     3,
+	}
+	public enum SocketProperty : int {
+		SO_RESTRICT_DENYSET = -2147483648,
+		SO_DEBUG =                      1,
+		SO_RESTRICT_DENYIN =            1,
+		SO_ACCEPTCONN =                 2,
+		SO_RESTRICT_DENYOUT =           2,
+		SO_REUSEADDR =                  4,
+		SO_KEEPALIVE =                  8,
+		SO_DONTROUTE =                 16,
+		SO_BROADCAST =                 32,
+		SO_USELOOPBACK =               64,
+		SO_LINGER =                   128,
+		SO_OOBINLINE =                256,
+		SO_REUSEPORT =                512,
+		SO_TIMESTAMP =               1024,
+		SO_SNDBUF =                  4097,
+		SO_RCVBUF =                  4098,
+		SO_SNDLOWAT =                4099,
+		SO_RCVLOWAT =                4100,
+		SO_SNDTIMEO =                4101,
+		SO_RCVTIMEO =                4102,
+		SO_ERROR =                   4103,
+		SO_TYPE =                    4104,
+		SO_LABEL =                   4112,
+		SO_PEERLABEL =               4113,
+		SO_NREAD =                   4128,
+		SO_NKE =                     4129,
+		SO_NOSIGPIPE =               4130,
+		SO_NOADDRERR =               4131,
+		SO_NWRITE =                  4132,
+		SO_REUSESHAREUID =           4133,
+		SO_NOTIFYCONFLICT =          4134,
+		SO_LINGER_SEC =              4224,
+		SO_RESTRICTIONS =            4225,
+		SO_DONTTRUNC =               8192,
+		SO_WANTMORE =               16384,
+		SO_WANTOOBFLAG =            32768,
+	}
+	public enum SocketPropertyGroup : uint {
+		SOL_SOCKET = 65535,
+	}
+	public enum SocketPropertyTcp : int {
+		TCP_NODELAY =           1,
+		TCP_MAXSEG =            2,
+		TCP_MAX_SACK =          3,
+		TCP_MAXBURST =          4,
+		TCP_NOPUSH =            4,
+		TCP_NOOPT =             8,
+		TCP_MAX_WINSHIFT =     14,
+		TCP_KEEPALIVE =        16,
+		TCP_MAXOLEN =          40,
+		TCP_MAXHLEN =          60,
+		TCP_MINMSS =          216,
+		TCP_MSS =             512,
+		TCP_MINMSSOVERLOAD = 1000,
+		TCP_MAXWIN =        65535,
+	}
+	[Flags]
+	public enum SocketShutdownOptions : uint {
+		SHUT_RD =   0,
+		SHUT_WR =   1,
+		SHUT_RDWR = 2,
+	}
+	public enum SocketType : uint {
+		SOCK_STREAM =       1,
+		SOCK_DGRAM =        2,
+		SOCK_RAW =          3,
+		SOCK_RDM =          4,
+		SOCK_SEQPACKET =    5,
+		SOCK_MAXADDRLEN = 255,
+	}
+	public enum StatFlags : uint {
+		S_IXOTH =       1,
+		S_IWOTH =       2,
+		S_IROTH =       4,
+		S_IRWXO =       7,
+		S_IXGRP =       8,
+		S_IWGRP =      16,
+		S_IRGRP =      32,
+		S_IRWXG =      56,
+		S_IEXEC =      64,
+		S_IXUSR =      64,
+		S_IWRITE =    128,
+		S_IWUSR =     128,
+		S_IREAD =     256,
+		S_IRUSR =     256,
+		S_IRWXU =     448,
+		S_ISTXT =     512,
+		S_ISVTX =     512,
+		S_ISGID =    1024,
+		S_ISUID =    2048,
+		S_IFIFO =    4096,
+		S_IFCHR =    8192,
+		S_IFDIR =   16384,
+		S_IFBLK =   24576,
+		S_IFREG =   32768,
+		S_IFLNK =   40960,
+		S_IFSOCK =  49152,
+		S_IFWHT =   57344,
+		S_IFMT =    61440,
+		S_IFXATTR = 65536,
+	}
+	public enum SyslogFacility : uint {
+		LOG_KERN =         0,
+		LOG_USER =         8,
+		LOG_MAIL =        16,
+		LOG_DAEMON =      24,
+		LOG_AUTH =        32,
+		LOG_SYSLOG =      40,
+		LOG_LPR =         48,
+		LOG_NEWS =        56,
+		LOG_UUCP =        64,
+		LOG_CRON =        72,
+		LOG_AUTHPRIV =    80,
+		LOG_FTP =         88,
+		LOG_NETINFO =     96,
+		LOG_REMOTEAUTH = 104,
+		LOG_INSTALL =    112,
+		LOG_RAS =        120,
+		LOG_LOCAL0 =     128,
+		LOG_LOCAL1 =     136,
+		LOG_LOCAL2 =     144,
+		LOG_LOCAL3 =     152,
+		LOG_LOCAL4 =     160,
+		LOG_LOCAL5 =     168,
+		LOG_LOCAL6 =     176,
+		LOG_LOCAL7 =     184,
+	}
+	[Flags]
+	public enum SyslogOptions : uint {
+		None =        0,
+		LOG_PID =     1,
+		LOG_CONS =    2,
+		LOG_ODELAY =  4,
+		LOG_NDELAY =  8,
+		LOG_NOWAIT = 16,
+		LOG_PERROR = 32,
+	}
+	public enum SyslogPriority : uint {
+		LOG_EMERG =   0,
+		LOG_ALERT =   1,
+		LOG_CRIT =    2,
+		LOG_ERR =     3,
+		LOG_WARNING = 4,
+		LOG_NOTICE =  5,
+		LOG_INFO =    6,
+		LOG_DEBUG =   7,
+	}
+	public enum SystemCall : uint {
+		syscall =                     0,
+		exit =                        1,
+		fork =                        2,
+		read =                        3,
+		write =                       4,
+		open =                        5,
+		close =                       6,
+		wait4 =                       7,
+		link =                        9,
+		unlink =                     10,
+		chdir =                      12,
+		fchdir =                     13,
+		mknod =                      14,
+		chmod =                      15,
+		chown =                      16,
+		obreak =                     17,
+		getfsstat =                  18,
+		ogetfsstat =                 18,
+		getpid =                     20,
+		setuid =                     23,
+		getuid =                     24,
+		geteuid =                    25,
+		ptrace =                     26,
+		recvmsg =                    27,
+		sendmsg =                    28,
+		recvfrom =                   29,
+		accept =                     30,
+		getpeername =                31,
+		getsockname =                32,
+		access =                     33,
+		chflags =                    34,
+		fchflags =                   35,
+		sync =                       36,
+		kill =                       37,
+		getppid =                    39,
+		dup =                        41,
+		pipe =                       42,
+		getegid =                    43,
+		profil =                     44,
+		sigaction =                  46,
+		getgid =                     47,
+		sigprocmask =                48,
+		getlogin =                   49,
+		setlogin =                   50,
+		acct =                       51,
+		sigpending =                 52,
+		sigaltstack =                53,
+		ioctl =                      54,
+		reboot =                     55,
+		revoke =                     56,
+		symlink =                    57,
+		readlink =                   58,
+		execve =                     59,
+		umask =                      60,
+		chroot =                     61,
+		msync =                      65,
+		vfork =                      66,
+		sbrk =                       69,
+		sstk =                       70,
+		ovadvise =                   72,
+		munmap =                     73,
+		mprotect =                   74,
+		madvise =                    75,
+		mincore =                    78,
+		getgroups =                  79,
+		setgroups =                  80,
+		getpgrp =                    81,
+		setpgid =                    82,
+		setitimer =                  83,
+		swapon =                     85,
+		getitimer =                  86,
+		getdtablesize =              89,
+		dup2 =                       90,
+		fcntl =                      92,
+		select =                     93,
+		fsync =                      95,
+		setpriority =                96,
+		socket =                     97,
+		connect =                    98,
+		getpriority =               100,
+		bind =                      104,
+		setsockopt =                105,
+		listen =                    106,
+		sigsuspend =                111,
+		gettimeofday =              116,
+		getrusage =                 117,
+		getsockopt =                118,
+		readv =                     120,
+		writev =                    121,
+		settimeofday =              122,
+		fchown =                    123,
+		fchmod =                    124,
+		setreuid =                  126,
+		setregid =                  127,
+		rename =                    128,
+		flock =                     131,
+		mkfifo =                    132,
+		sendto =                    133,
+		shutdown =                  134,
+		socketpair =                135,
+		mkdir =                     136,
+		rmdir =                     137,
+		utimes =                    138,
+		futimes =                   139,
+		adjtime =                   140,
+		gethostuuid =               142,
+		setsid =                    147,
+		getpgid =                   151,
+		setprivexec =               152,
+		pread =                     153,
+		pwrite =                    154,
+		nfssvc =                    155,
+		statfs =                    157,
+		fstatfs =                   158,
+		unmount =                   159,
+		getfh =                     161,
+		quotactl =                  165,
+		mount =                     167,
+		csops =                     169,
+		table =                     170,
+		waitid =                    173,
+		add_profil =                176,
+		kdebug_trace =              180,
+		setgid =                    181,
+		setegid =                   182,
+		seteuid =                   183,
+		sigreturn =                 184,
+		chud =                      185,
+		stat =                      188,
+		fstat =                     189,
+		lstat =                     190,
+		pathconf =                  191,
+		fpathconf =                 192,
+		getrlimit =                 194,
+		setrlimit =                 195,
+		getdirentries =             196,
+		mmap =                      197,
+		lseek =                     199,
+		truncate =                  200,
+		ftruncate =                 201,
+		__sysctl =                  202,
+		mlock =                     203,
+		munlock =                   204,
+		undelete =                  205,
+		ATsocket =                  206,
+		ATgetmsg =                  207,
+		ATputmsg =                  208,
+		ATPsndreq =                 209,
+		ATPsndrsp =                 210,
+		ATPgetreq =                 211,
+		ATPgetrsp =                 212,
+		kqueue_from_portset_np =    214,
+		kqueue_portset_np =         215,
+		mkcomplex =                 216,
+		statv =                     217,
+		lstatv =                    218,
+		fstatv =                    219,
+		getattrlist =               220,
+		setattrlist =               221,
+		getdirentriesattr =         222,
+		exchangedata =              223,
+		searchfs =                  225,
+		delete =                    226,
+		copyfile =                  227,
+		poll =                      230,
+		watchevent =                231,
+		waitevent =                 232,
+		modwatch =                  233,
+		getxattr =                  234,
+		fgetxattr =                 235,
+		setxattr =                  236,
+		fsetxattr =                 237,
+		removexattr =               238,
+		fremovexattr =              239,
+		listxattr =                 240,
+		flistxattr =                241,
+		fsctl =                     242,
+		initgroups =                243,
+		posix_spawn =               244,
+		nfsclnt =                   247,
+		fhopen =                    248,
+		minherit =                  250,
+		semsys =                    251,
+		msgsys =                    252,
+		shmsys =                    253,
+		semctl =                    254,
+		semget =                    255,
+		semop =                     256,
+		msgctl =                    258,
+		msgget =                    259,
+		msgsnd =                    260,
+		msgrcv =                    261,
+		shmat =                     262,
+		shmctl =                    263,
+		shmdt =                     264,
+		shmget =                    265,
+		shm_open =                  266,
+		shm_unlink =                267,
+		sem_open =                  268,
+		sem_close =                 269,
+		sem_unlink =                270,
+		sem_wait =                  271,
+		sem_trywait =               272,
+		sem_post =                  273,
+		sem_getvalue =              274,
+		sem_init =                  275,
+		sem_destroy =               276,
+		open_extended =             277,
+		umask_extended =            278,
+		stat_extended =             279,
+		lstat_extended =            280,
+		fstat_extended =            281,
+		chmod_extended =            282,
+		fchmod_extended =           283,
+		access_extended =           284,
+		settid =                    285,
+		gettid =                    286,
+		setsgroups =                287,
+		getsgroups =                288,
+		setwgroups =                289,
+		getwgroups =                290,
+		mkfifo_extended =           291,
+		mkdir_extended =            292,
+		identitysvc =               293,
+		shared_region_check_np =    294,
+		shared_region_map_np =      295,
+		__pthread_mutex_destroy =   301,
+		__pthread_mutex_init =      302,
+		__pthread_mutex_lock =      303,
+		__pthread_mutex_trylock =   304,
+		__pthread_mutex_unlock =    305,
+		__pthread_cond_init =       306,
+		__pthread_cond_destroy =    307,
+		__pthread_cond_broadcast =  308,
+		__pthread_cond_signal =     309,
+		getsid =                    310,
+		settid_with_pid =           311,
+		__pthread_cond_timedwait =  312,
+		aio_fsync =                 313,
+		aio_return =                314,
+		aio_suspend =               315,
+		aio_cancel =                316,
+		aio_error =                 317,
+		aio_read =                  318,
+		aio_write =                 319,
+		lio_listio =                320,
+		__pthread_cond_wait =       321,
+		iopolicysys =               322,
+		mlockall =                  324,
+		munlockall =                325,
+		issetugid =                 327,
+		__pthread_kill =            328,
+		__pthread_sigmask =         329,
+		__sigwait =                 330,
+		__disable_threadsignal =    331,
+		__pthread_markcancel =      332,
+		__pthread_canceled =        333,
+		__semwait_signal =          334,
+		proc_info =                 336,
+		sendfile =                  337,
+		stat64 =                    338,
+		fstat64 =                   339,
+		lstat64 =                   340,
+		stat64_extended =           341,
+		lstat64_extended =          342,
+		fstat64_extended =          343,
+		getdirentries64 =           344,
+		statfs64 =                  345,
+		fstatfs64 =                 346,
+		getfsstat64 =               347,
+		__pthread_chdir =           348,
+		__pthread_fchdir =          349,
+		audit =                     350,
+		auditon =                   351,
+		getauid =                   353,
+		setauid =                   354,
+		getaudit =                  355,
+		setaudit =                  356,
+		getaudit_addr =             357,
+		setaudit_addr =             358,
+		auditctl =                  359,
+		bsdthread_create =          360,
+		bsdthread_terminate =       361,
+		kqueue =                    362,
+		kevent =                    363,
+		lchown =                    364,
+		stack_snapshot =            365,
+		bsdthread_register =        366,
+		workq_open =                367,
+		workq_ops =                 368,
+		__mac_execve =              380,
+		__mac_syscall =             381,
+		__mac_get_file =            382,
+		__mac_set_file =            383,
+		__mac_get_link =            384,
+		__mac_set_link =            385,
+		__mac_get_proc =            386,
+		__mac_set_proc =            387,
+		__mac_get_fd =              388,
+		__mac_set_fd =              389,
+		__mac_get_pid =             390,
+		__mac_get_lcid =            391,
+		__mac_get_lctx =            392,
+		__mac_set_lctx =            393,
+		setlcid =                   394,
+		getlcid =                   395,
+		read_nocancel =             396,
+		write_nocancel =            397,
+		open_nocancel =             398,
+		close_nocancel =            399,
+		wait4_nocancel =            400,
+		recvmsg_nocancel =          401,
+		sendmsg_nocancel =          402,
+		recvfrom_nocancel =         403,
+		accept_nocancel =           404,
+		msync_nocancel =            405,
+		fcntl_nocancel =            406,
+		select_nocancel =           407,
+		fsync_nocancel =            408,
+		connect_nocancel =          409,
+		sigsuspend_nocancel =       410,
+		readv_nocancel =            411,
+		writev_nocancel =           412,
+		sendto_nocancel =           413,
+		pread_nocancel =            414,
+		pwrite_nocancel =           415,
+		waitid_nocancel =           416,
+		poll_nocancel =             417,
+		msgsnd_nocancel =           418,
+		msgrcv_nocancel =           419,
+		sem_wait_nocancel =         420,
+		aio_suspend_nocancel =      421,
+		__sigwait_nocancel =        422,
+		__semwait_signal_nocancel = 423,
+		__mac_mount =               424,
+		__mac_get_mount =           425,
+		__mac_getfsstat =           426,
+		MAXSYSCALL =                427,
+	}
+	public enum SystemConfigurationProperty : uint {
+		_SC_ARG_MAX =                       1,
+		_SC_CHILD_MAX =                     2,
+		_SC_CLK_TCK =                       3,
+		_SC_NGROUPS_MAX =                   4,
+		_SC_OPEN_MAX =                      5,
+		_SC_JOB_CONTROL =                   6,
+		_SC_SAVED_IDS =                     7,
+		_SC_VERSION =                       8,
+		_SC_BC_BASE_MAX =                   9,
+		_SC_BC_DIM_MAX =                   10,
+		_SC_BC_SCALE_MAX =                 11,
+		_SC_BC_STRING_MAX =                12,
+		_SC_COLL_WEIGHTS_MAX =             13,
+		_SC_EXPR_NEST_MAX =                14,
+		_SC_LINE_MAX =                     15,
+		_SC_RE_DUP_MAX =                   16,
+		_SC_2_VERSION =                    17,
+		_SC_2_C_BIND =                     18,
+		_SC_2_C_DEV =                      19,
+		_SC_2_CHAR_TERM =                  20,
+		_SC_2_FORT_DEV =                   21,
+		_SC_2_FORT_RUN =                   22,
+		_SC_2_LOCALEDEF =                  23,
+		_SC_2_SW_DEV =                     24,
+		_SC_2_UPE =                        25,
+		_SC_STREAM_MAX =                   26,
+		_SC_TZNAME_MAX =                   27,
+		_SC_ASYNCHRONOUS_IO =              28,
+		_SC_PAGE_SIZE =                    29,
+		_SC_PAGESIZE =                     29,
+		_SC_MEMLOCK =                      30,
+		_SC_MEMLOCK_RANGE =                31,
+		_SC_MEMORY_PROTECTION =            32,
+		_SC_MESSAGE_PASSING =              33,
+		_SC_PRIORITIZED_IO =               34,
+		_SC_PRIORITY_SCHEDULING =          35,
+		_SC_REALTIME_SIGNALS =             36,
+		_SC_SEMAPHORES =                   37,
+		_SC_FSYNC =                        38,
+		_SC_SHARED_MEMORY_OBJECTS =        39,
+		_SC_SYNCHRONIZED_IO =              40,
+		_SC_TIMERS =                       41,
+		_SC_AIO_LISTIO_MAX =               42,
+		_SC_AIO_MAX =                      43,
+		_SC_AIO_PRIO_DELTA_MAX =           44,
+		_SC_DELAYTIMER_MAX =               45,
+		_SC_MQ_OPEN_MAX =                  46,
+		_SC_MAPPED_FILES =                 47,
+		_SC_RTSIG_MAX =                    48,
+		_SC_SEM_NSEMS_MAX =                49,
+		_SC_SEM_VALUE_MAX =                50,
+		_SC_SIGQUEUE_MAX =                 51,
+		_SC_TIMER_MAX =                    52,
+		_SC_IOV_MAX =                      56,
+		_SC_NPROCESSORS_CONF =             57,
+		_SC_NPROCESSORS_ONLN =             58,
+		_SC_2_PBS =                        59,
+		_SC_2_PBS_ACCOUNTING =             60,
+		_SC_2_PBS_CHECKPOINT =             61,
+		_SC_2_PBS_LOCATE =                 62,
+		_SC_2_PBS_MESSAGE =                63,
+		_SC_2_PBS_TRACK =                  64,
+		_SC_ADVISORY_INFO =                65,
+		_SC_BARRIERS =                     66,
+		_SC_CLOCK_SELECTION =              67,
+		_SC_CPUTIME =                      68,
+		_SC_FILE_LOCKING =                 69,
+		_SC_GETGR_R_SIZE_MAX =             70,
+		_SC_GETPW_R_SIZE_MAX =             71,
+		_SC_HOST_NAME_MAX =                72,
+		_SC_LOGIN_NAME_MAX =               73,
+		_SC_MONOTONIC_CLOCK =              74,
+		_SC_MQ_PRIO_MAX =                  75,
+		_SC_READER_WRITER_LOCKS =          76,
+		_SC_REGEXP =                       77,
+		_SC_SHELL =                        78,
+		_SC_SPAWN =                        79,
+		_SC_SPIN_LOCKS =                   80,
+		_SC_SPORADIC_SERVER =              81,
+		_SC_THREAD_ATTR_STACKADDR =        82,
+		_SC_THREAD_ATTR_STACKSIZE =        83,
+		_SC_THREAD_CPUTIME =               84,
+		_SC_THREAD_DESTRUCTOR_ITERATIONS = 85,
+		_SC_THREAD_KEYS_MAX =              86,
+		_SC_THREAD_PRIO_INHERIT =          87,
+		_SC_THREAD_PRIO_PROTECT =          88,
+		_SC_THREAD_PRIORITY_SCHEDULING =   89,
+		_SC_THREAD_PROCESS_SHARED =        90,
+		_SC_THREAD_SAFE_FUNCTIONS =        91,
+		_SC_THREAD_SPORADIC_SERVER =       92,
+		_SC_THREAD_STACK_MIN =             93,
+		_SC_THREAD_THREADS_MAX =           94,
+		_SC_TIMEOUTS =                     95,
+		_SC_THREADS =                      96,
+		_SC_TRACE =                        97,
+		_SC_TRACE_EVENT_FILTER =           98,
+		_SC_TRACE_INHERIT =                99,
+		_SC_TRACE_LOG =                   100,
+		_SC_TTY_NAME_MAX =                101,
+		_SC_TYPED_MEMORY_OBJECTS =        102,
+		_SC_V6_ILP32_OFF32 =              103,
+		_SC_V6_ILP32_OFFBIG =             104,
+		_SC_V6_LP64_OFF64 =               105,
+		_SC_V6_LPBIG_OFFBIG =             106,
+		_SC_ATEXIT_MAX =                  107,
+		_SC_XOPEN_CRYPT =                 108,
+		_SC_XOPEN_ENH_I18N =              109,
+		_SC_XOPEN_LEGACY =                110,
+		_SC_XOPEN_REALTIME =              111,
+		_SC_XOPEN_REALTIME_THREADS =      112,
+		_SC_XOPEN_SHM =                   113,
+		_SC_XOPEN_STREAMS =               114,
+		_SC_XOPEN_UNIX =                  115,
+		_SC_XOPEN_VERSION =               116,
+		_SC_IPV6 =                        118,
+		_SC_RAW_SOCKETS =                 119,
+		_SC_SYMLOOP_MAX =                 120,
+		_SC_XOPEN_XCU_VERSION =           121,
+		_SC_XBS5_ILP32_OFF32 =            122,
+		_SC_XBS5_ILP32_OFFBIG =           123,
+		_SC_XBS5_LP64_OFF64 =             124,
+		_SC_XBS5_LPBIG_OFFBIG =           125,
+		_SC_SS_REPL_MAX =                 126,
+		_SC_TRACE_EVENT_NAME_MAX =        127,
+		_SC_TRACE_NAME_MAX =              128,
+		_SC_TRACE_SYS_MAX =               129,
+		_SC_TRACE_USER_EVENT_MAX =        130,
+		_SC_PASS_MAX =                    131,
+	}
+	public enum SystemError : int {
+		[ErrorCodeSuccess]
+		None =             0,
+		EPERM =            1,
+		ENOENT =           2,
+		ESRCH =            3,
+		EINTR =            4,
+		EIO =              5,
+		ENXIO =            6,
+		E2BIG =            7,
+		ENOEXEC =          8,
+		EBADF =            9,
+		ECHILD =          10,
+		EDEADLK =         11,
+		ENOMEM =          12,
+		EACCES =          13,
+		EFAULT =          14,
+		ENOTBLK =         15,
+		EBUSY =           16,
+		EEXIST =          17,
+		EXDEV =           18,
+		ENODEV =          19,
+		ENOTDIR =         20,
+		EISDIR =          21,
+		EINVAL =          22,
+		ENFILE =          23,
+		EMFILE =          24,
+		ENOTTY =          25,
+		ETXTBSY =         26,
+		EFBIG =           27,
+		ENOSPC =          28,
+		ESPIPE =          29,
+		EROFS =           30,
+		EMLINK =          31,
+		EPIPE =           32,
+		EDOM =            33,
+		ERANGE =          34,
+		EAGAIN =          35,
+		EWOULDBLOCK =     35,
+		EINPROGRESS =     36,
+		EALREADY =        37,
+		ENOTSOCK =        38,
+		EDESTADDRREQ =    39,
+		EMSGSIZE =        40,
+		EPROTOTYPE =      41,
+		ENOPROTOOPT =     42,
+		EPROTONOSUPPORT = 43,
+		ESOCKTNOSUPPORT = 44,
+		ENOTSUP =         45,
+		EPFNOSUPPORT =    46,
+		EAFNOSUPPORT =    47,
+		EADDRINUSE =      48,
+		EADDRNOTAVAIL =   49,
+		ENETDOWN =        50,
+		ENETUNREACH =     51,
+		ENETRESET =       52,
+		ECONNABORTED =    53,
+		ECONNRESET =      54,
+		ENOBUFS =         55,
+		EISCONN =         56,
+		ENOTCONN =        57,
+		ESHUTDOWN =       58,
+		ETOOMANYREFS =    59,
+		ETIMEDOUT =       60,
+		ECONNREFUSED =    61,
+		ELOOP =           62,
+		ENAMETOOLONG =    63,
+		EHOSTDOWN =       64,
+		EHOSTUNREACH =    65,
+		ENOTEMPTY =       66,
+		EPROCLIM =        67,
+		EUSERS =          68,
+		EDQUOT =          69,
+		ESTALE =          70,
+		EREMOTE =         71,
+		EBADRPC =         72,
+		ERPCMISMATCH =    73,
+		EPROGUNAVAIL =    74,
+		EPROGMISMATCH =   75,
+		EPROCUNAVAIL =    76,
+		ENOLCK =          77,
+		ENOSYS =          78,
+		EFTYPE =          79,
+		EAUTH =           80,
+		ENEEDAUTH =       81,
+		EPWROFF =         82,
+		EDEVERR =         83,
+		EOVERFLOW =       84,
+		EBADEXEC =        85,
+		EBADARCH =        86,
+		ESHLIBVERS =      87,
+		EBADMACHO =       88,
+		ECANCELED =       89,
+		EIDRM =           90,
+		ENOMSG =          91,
+		EILSEQ =          92,
+		ENOATTR =         93,
+		EBADMSG =         94,
+		EMULTIHOP =       95,
+		ENODATA =         96,
+		ENOLINK =         97,
+		ENOSR =           98,
+		ENOSTR =          99,
+		EPROTO =         100,
+		ETIME =          101,
+		EOPNOTSUPP =     102,
+		ELAST =          103,
+		ENOPOLICY =      103,
+	}
+	[Flags]
+	public enum TerminalControlSignal : uint {
+		None =        0,
+		TIOCM_LE =    1,
+		TIOCM_DTR =   2,
+		TIOCM_RTS =   4,
+		TIOCM_ST =    8,
+		TIOCM_SR =   16,
+		TIOCM_CTS =  32,
+		TIOCM_CAR =  64,
+		TIOCM_CD =   64,
+		TIOCM_RI =  128,
+		TIOCM_RNG = 128,
+		TIOCM_DSR = 256,
+	}
+	public enum ThreadCancellationType : uint {
+		PTHREAD_CANCEL_ASYNCHRONOUS = 0,
+		PTHREAD_CANCEL_DISABLE =      0,
+		PTHREAD_CANCEL_ENABLE =       1,
+		PTHREAD_CANCEL_DEFERRED =     2,
+	}
+	[Flags]
+	public enum ThreadCreateFlags : int {
+		None =                  0,
+		PTHREAD_INHERIT_SCHED = 1,
+		PTHREAD_SCOPE_SYSTEM =  1,
+	}
+	public enum uio_rw : uint {
+		UIO_READ =  0,
+		UIO_WRITE = 1,
+	}
+	[Flags]
+	public enum WaitIdFlags : uint {
+		None =        0,
+		WEXITED =     4,
+		WSTOPPED =    8,
+		WCONTINUED = 16,
+		WNOWAIT =    32,
+	}
+	[Flags]
+	public enum WaitPidFlags : uint {
+		None =      0,
+		WNOHANG =   1,
+		WUNTRACED = 2,
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __darwin_pthread_handler_rec {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<void*> __routine;
+		[ExplicitOffset( Offset = 4 )]
+		public void* __arg;
+		[ExplicitOffset( Offset = 8 )]
+		public __darwin_pthread_handler_rec* __next;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __darwin_sigcontext {
+		[ExplicitOffset( Offset = 0 )]
+		public int __sc_onstack;
+		[ExplicitOffset( Offset = 4 )]
+		public int __sc_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public int __sc_ir;
+		[ExplicitOffset( Offset = 12 )]
+		public int __sc_psw;
+		[ExplicitOffset( Offset = 16 )]
+		public int __sc_sp;
+		[ExplicitOffset( Offset = 20 )]
+		public void* __sc_regs;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __darwin_sigcontext32 {
+		[ExplicitOffset( Offset = 0 )]
+		public int __sc_onstack;
+		[ExplicitOffset( Offset = 4 )]
+		public int __sc_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public int __sc_ir;
+		[ExplicitOffset( Offset = 12 )]
+		public int __sc_psw;
+		[ExplicitOffset( Offset = 16 )]
+		public int __sc_sp;
+		[ExplicitOffset( Offset = 20 )]
+		public void* __sc_regs;
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __darwin_sigcontext64 {
+		[ExplicitOffset( Offset = 0 )]
+		public int __sc_onstack;
+		[ExplicitOffset( Offset = 4 )]
+		public int __sc_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public long __sc_ir;
+		[ExplicitOffset( Offset = 16 )]
+		public long __sc_psw;
+		[ExplicitOffset( Offset = 24 )]
+		public long __sc_sp;
+		[ExplicitOffset( Offset = 32 )]
+		public void* __sc_regs;
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __mbstate_t {
+		[Overlapped( Offset = 0 )]
+		public sbyte[128] __mbstate8;
+		[Overlapped( Offset = 0 )]
+		public long _mbstateL;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __sbuf {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* _base;
+		[ExplicitOffset( Offset = 4 )]
+		public int _size;
+	}
+	public partial struct __sFILEX {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __sigaction {
+		[ExplicitOffset( Offset = 0 )]
+		public __sigaction_u __sigaction_u;
+		[ExplicitOffset( Offset = 4 )]
+		public Functors.Action<void*, int, int, siginfo_t*, void*> sa_tramp;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sa_mask;
+		[ExplicitOffset( Offset = 12 )]
+		public int sa_flags;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __sigaction_u {
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int> __sa_handler;
+		[Overlapped( Offset = 0 )]
+		public Functors.Action<int, siginfo_t*, void*> __sa_sigaction;
+	}
+	[ExplicitSize( Size = 544 )]
+	[Alignment( Boundary = 16 )]
+	public partial struct _jmp_buf {
+		[ExplicitOffset( Offset = 0 )]
+		public __darwin_sigcontext __sigcontext;
+		[ExplicitOffset( Offset = 24 )]
+		public uint __vmask;
+		[ExplicitOffset( Offset = 32 )]
+		public uint[128] __vreg;
+	}
+	public partial struct _telldir {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct accessx_descriptor {
+		[ExplicitOffset( Offset = 0 )]
+		public uint ad_name_offset;
+		[ExplicitOffset( Offset = 4 )]
+		public int ad_flags;
+		[ExplicitOffset( Offset = 8 )]
+		public int[2] ad_pad;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_evclass_map {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ec_number;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ec_class;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_mask {
+		[ExplicitOffset( Offset = 0 )]
+		public uint am_success;
+		[ExplicitOffset( Offset = 4 )]
+		public uint am_failure;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_qctrl {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr aq_hiwater;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr aq_lowater;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr aq_bufsz;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr aq_delay;
+		[ExplicitOffset( Offset = 16 )]
+		public int aq_minfree;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_record {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte used;
+		[ExplicitOffset( Offset = 4 )]
+		public int desc;
+		[ExplicitOffset( Offset = 8 )]
+		public UnnamedStruct_73890A39 token_q;
+		[ExplicitOffset( Offset = 16 )]
+		public byte* data;
+		[ExplicitOffset( Offset = 20 )]
+		public uintptr len;
+		[ExplicitOffset( Offset = 24 )]
+		public UnnamedStruct_73890A9C au_rec_q;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_tid {
+		[ExplicitOffset( Offset = 0 )]
+		public int port;
+		[ExplicitOffset( Offset = 4 )]
+		public uint machine;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_tid_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public int at_port;
+		[ExplicitOffset( Offset = 4 )]
+		public uint at_type;
+		[ExplicitOffset( Offset = 8 )]
+		public uint[4] at_addr;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct au_token {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* t_data;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr len;
+		[ExplicitOffset( Offset = 8 )]
+		public UnnamedStruct_73890956 tokens;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct audit_fstat {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong af_filesz;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong af_currsz;
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct audit_stat {
+		[ExplicitOffset( Offset = 0 )]
+		public uint as_version;
+		[ExplicitOffset( Offset = 4 )]
+		public uint as_numevent;
+		[ExplicitOffset( Offset = 8 )]
+		public int as_generated;
+		[ExplicitOffset( Offset = 12 )]
+		public int as_nonattring;
+		[ExplicitOffset( Offset = 16 )]
+		public int as_kernel;
+		[ExplicitOffset( Offset = 20 )]
+		public int as_audit;
+		[ExplicitOffset( Offset = 24 )]
+		public int as_auditctl;
+		[ExplicitOffset( Offset = 28 )]
+		public int as_enqueu;
+		[ExplicitOffset( Offset = 32 )]
+		public int as_written;
+		[ExplicitOffset( Offset = 36 )]
+		public int as_wblocked;
+		[ExplicitOffset( Offset = 40 )]
+		public int as_rblocked;
+		[ExplicitOffset( Offset = 44 )]
+		public int as_dropped;
+		[ExplicitOffset( Offset = 48 )]
+		public int as_totalsize;
+		[ExplicitOffset( Offset = 52 )]
+		public uint as_memused;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct auditinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public uint ai_auid;
+		[ExplicitOffset( Offset = 4 )]
+		public au_mask ai_mask;
+		[ExplicitOffset( Offset = 12 )]
+		public au_tid ai_termid;
+		[ExplicitOffset( Offset = 20 )]
+		public int ai_asid;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct auditinfo_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public uint ai_auid;
+		[ExplicitOffset( Offset = 4 )]
+		public au_mask ai_mask;
+		[ExplicitOffset( Offset = 12 )]
+		public au_tid_addr ai_termid;
+		[ExplicitOffset( Offset = 36 )]
+		public int ai_asid;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct auditpinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int ap_pid;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ap_auid;
+		[ExplicitOffset( Offset = 8 )]
+		public au_mask ap_mask;
+		[ExplicitOffset( Offset = 16 )]
+		public au_tid ap_termid;
+		[ExplicitOffset( Offset = 24 )]
+		public int ap_asid;
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct auditpinfo_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public int ap_pid;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ap_auid;
+		[ExplicitOffset( Offset = 8 )]
+		public au_mask ap_mask;
+		[ExplicitOffset( Offset = 16 )]
+		public au_tid_addr ap_termid;
+		[ExplicitOffset( Offset = 40 )]
+		public int ap_asid;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct clockinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int hz;
+		[ExplicitOffset( Offset = 4 )]
+		public int tick;
+		[ExplicitOffset( Offset = 8 )]
+		public int tickadj;
+		[ExplicitOffset( Offset = 12 )]
+		public int stathz;
+		[ExplicitOffset( Offset = 16 )]
+		public int profhz;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct cmsghdr {
+		[ExplicitOffset( Offset = 0 )]
+		public uint cmsg_len;
+		[ExplicitOffset( Offset = 4 )]
+		public int cmsg_level;
+		[ExplicitOffset( Offset = 8 )]
+		public int cmsg_type;
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct DIR {
+		[ExplicitOffset( Offset = 0 )]
+		public int __dd_fd;
+		[ExplicitOffset( Offset = 4 )]
+		public intptr __dd_loc;
+		[ExplicitOffset( Offset = 8 )]
+		public intptr __dd_size;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte* __dd_buf;
+		[ExplicitOffset( Offset = 16 )]
+		public int __dd_len;
+		[ExplicitOffset( Offset = 20 )]
+		public intptr __dd_seek;
+		[ExplicitOffset( Offset = 24 )]
+		public intptr __dd_rewind;
+		[ExplicitOffset( Offset = 28 )]
+		public int __dd_flags;
+		[ExplicitOffset( Offset = 32 )]
+		public pthread_mutex_t __dd_lock;
+		[ExplicitOffset( Offset = 76 )]
+		public _telldir* __dd_td;
+	}
+	[ExplicitSize( Size = 264 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct dirent {
+		[ExplicitOffset( Offset = 0 )]
+		public uint d_ino;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort d_reclen;
+		[ExplicitOffset( Offset = 6 )]
+		public byte d_type;
+		[ExplicitOffset( Offset = 7 )]
+		public byte d_namlen;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[256] d_name;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct div_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int quot;
+		[ExplicitOffset( Offset = 4 )]
+		public int rem;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct dl_info {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String dli_fname;
+		[ExplicitOffset( Offset = 4 )]
+		public void* dli_fbase;
+		[ExplicitOffset( Offset = 8 )]
+		public CUtf8String dli_sname;
+		[ExplicitOffset( Offset = 12 )]
+		public void* dli_saddr;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct fbootstraptransfer {
+		[ExplicitOffset( Offset = 0 )]
+		public long fbt_offset;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr fbt_length;
+		[ExplicitOffset( Offset = 12 )]
+		public void* fbt_buffer;
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct fd_set {
+		[ExplicitOffset( Offset = 0 )]
+		public int[32] fds_bits;
+	}
+	[ExplicitSize( Size = 88 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct FILE {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* _p;
+		[ExplicitOffset( Offset = 4 )]
+		public int _r;
+		[ExplicitOffset( Offset = 8 )]
+		public int _w;
+		[ExplicitOffset( Offset = 12 )]
+		public short _flags;
+		[ExplicitOffset( Offset = 14 )]
+		public short _file;
+		[ExplicitOffset( Offset = 16 )]
+		public __sbuf _bf;
+		[ExplicitOffset( Offset = 24 )]
+		public int _lbfsize;
+		[ExplicitOffset( Offset = 28 )]
+		public void* _cookie;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<void*, int> _close;
+		[ExplicitOffset( Offset = 36 )]
+		public Functors.Func<void*, sbyte*, int, int> _read;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<void*, long, int, long> _seek;
+		[ExplicitOffset( Offset = 44 )]
+		public Functors.Func<void*, sbyte*, int, int> _write;
+		[ExplicitOffset( Offset = 48 )]
+		public __sbuf _ub;
+		[ExplicitOffset( Offset = 56 )]
+		public __sFILEX* _extra;
+		[ExplicitOffset( Offset = 60 )]
+		public int _ur;
+		[ExplicitOffset( Offset = 64 )]
+		public byte[3] _ubuf;
+		[ExplicitOffset( Offset = 67 )]
+		public byte[1] _nbuf;
+		[ExplicitOffset( Offset = 68 )]
+		public __sbuf _lb;
+		[ExplicitOffset( Offset = 76 )]
+		public int _blksize;
+		[ExplicitOffset( Offset = 80 )]
+		public long _offset;
+	}
+	public partial struct filesec_t {
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct flock {
+		[ExplicitOffset( Offset = 0 )]
+		public long l_start;
+		[ExplicitOffset( Offset = 8 )]
+		public long l_len;
+		[ExplicitOffset( Offset = 16 )]
+		public int l_pid;
+		[ExplicitOffset( Offset = 20 )]
+		public short l_type;
+		[ExplicitOffset( Offset = 22 )]
+		public short l_whence;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct fsignatures {
+		[ExplicitOffset( Offset = 0 )]
+		public long fs_file_start;
+		[ExplicitOffset( Offset = 8 )]
+		public void* fs_blob_start;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr fs_blob_size;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct fstore {
+		[ExplicitOffset( Offset = 0 )]
+		public uint fst_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public int fst_posmode;
+		[ExplicitOffset( Offset = 8 )]
+		public long fst_offset;
+		[ExplicitOffset( Offset = 16 )]
+		public long fst_length;
+		[ExplicitOffset( Offset = 24 )]
+		public long fst_bytesalloc;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct group {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String gr_name;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte* gr_passwd;
+		[ExplicitOffset( Offset = 8 )]
+		public uint gr_gid;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte** gr_mem;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ifaddrs {
+		[ExplicitOffset( Offset = 0 )]
+		public ifaddrs* ifa_next;
+		[ExplicitOffset( Offset = 4 )]
+		public CUtf8String ifa_name;
+		[ExplicitOffset( Offset = 8 )]
+		public uint ifa_flags;
+		[ExplicitOffset( Offset = 12 )]
+		public sockaddr* ifa_addr;
+		[ExplicitOffset( Offset = 16 )]
+		public sockaddr* ifa_netmask;
+		[ExplicitOffset( Offset = 20 )]
+		public sockaddr* ifa_dstaddr;
+		[ExplicitOffset( Offset = 24 )]
+		public void* ifa_data;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct in_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public uint s_addr;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct in6_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public UnnamedUnion_AC891C69 __u6_addr;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct in6_pktinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public in6_addr ipi6_addr;
+		[ExplicitOffset( Offset = 16 )]
+		public uint ipi6_ifindex;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct iovec {
+		[ExplicitOffset( Offset = 0 )]
+		public void* iov_base;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr iov_len;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ip_mreq {
+		[ExplicitOffset( Offset = 0 )]
+		public in_addr imr_multiaddr;
+		[ExplicitOffset( Offset = 4 )]
+		public in_addr imr_interface;
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ip_opts {
+		[ExplicitOffset( Offset = 0 )]
+		public in_addr ip_dst;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[40] _ip_opts;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ipv6_mreq {
+		[ExplicitOffset( Offset = 0 )]
+		public in6_addr ipv6mr_multiaddr;
+		[ExplicitOffset( Offset = 16 )]
+		public uint ipv6mr_interface;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct itimerval {
+		[ExplicitOffset( Offset = 0 )]
+		public timeval it_interval;
+		[ExplicitOffset( Offset = 8 )]
+		public timeval it_value;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct kevent {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr ident;
+		[ExplicitOffset( Offset = 4 )]
+		public short filter;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort flags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint fflags;
+		[ExplicitOffset( Offset = 12 )]
+		public intptr data;
+		[ExplicitOffset( Offset = 16 )]
+		public void* udata;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct klist {
+		[ExplicitOffset( Offset = 0 )]
+		public knote* slh_first;
+	}
+	public partial struct knote {
+	}
+	public partial struct label {
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ldiv_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr quot;
+		[ExplicitOffset( Offset = 4 )]
+		public intptr rem;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct linger {
+		[ExplicitOffset( Offset = 0 )]
+		public int l_onoff;
+		[ExplicitOffset( Offset = 4 )]
+		public int l_linger;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct lldiv_t {
+		[ExplicitOffset( Offset = 0 )]
+		public long quot;
+		[ExplicitOffset( Offset = 8 )]
+		public long rem;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct log2phys {
+		[ExplicitOffset( Offset = 0 )]
+		public uint l2p_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public long l2p_contigbytes;
+		[ExplicitOffset( Offset = 12 )]
+		public long l2p_devoffset;
+	}
+	[ExplicitSize( Size = 1032 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct mcontext_t {
+		[ExplicitOffset( Offset = 0 )]
+		public __darwin_ppc_exception_state __es;
+		[ExplicitOffset( Offset = 32 )]
+		public __darwin_ppc_thread_state __ss;
+		[ExplicitOffset( Offset = 192 )]
+		public __darwin_ppc_float_state __fs;
+		[ExplicitOffset( Offset = 456 )]
+		public __darwin_ppc_vector_state __vs;
+	}
+	[ExplicitSize( Size = 1176 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct mcontext64_t {
+		[ExplicitOffset( Offset = 0 )]
+		public __darwin_ppc_exception_state64 __es;
+		[ExplicitOffset( Offset = 32 )]
+		public __darwin_ppc_thread_state64 __ss;
+		[ExplicitOffset( Offset = 336 )]
+		public __darwin_ppc_float_state __fs;
+		[ExplicitOffset( Offset = 600 )]
+		public __darwin_ppc_vector_state __vs;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct msghdr {
+		[ExplicitOffset( Offset = 0 )]
+		public void* msg_name;
+		[ExplicitOffset( Offset = 4 )]
+		public uint msg_namelen;
+		[ExplicitOffset( Offset = 8 )]
+		public iovec* msg_iov;
+		[ExplicitOffset( Offset = 12 )]
+		public int msg_iovlen;
+		[ExplicitOffset( Offset = 16 )]
+		public void* msg_control;
+		[ExplicitOffset( Offset = 20 )]
+		public uint msg_controllen;
+		[ExplicitOffset( Offset = 24 )]
+		public int msg_flags;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ostat {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort st_dev;
+		[ExplicitOffset( Offset = 4 )]
+		public uint st_ino;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort st_mode;
+		[ExplicitOffset( Offset = 10 )]
+		public ushort st_nlink;
+		[ExplicitOffset( Offset = 12 )]
+		public ushort st_uid;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort st_gid;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort st_rdev;
+		[ExplicitOffset( Offset = 20 )]
+		public int st_size;
+		[ExplicitOffset( Offset = 24 )]
+		public timespec st_atimespec;
+		[ExplicitOffset( Offset = 32 )]
+		public timespec st_mtimespec;
+		[ExplicitOffset( Offset = 40 )]
+		public timespec st_ctimespec;
+		[ExplicitOffset( Offset = 48 )]
+		public int st_blksize;
+		[ExplicitOffset( Offset = 52 )]
+		public int st_blocks;
+		[ExplicitOffset( Offset = 56 )]
+		public uint st_flags;
+		[ExplicitOffset( Offset = 60 )]
+		public uint st_gen;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct passwd {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String pw_name;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte* pw_passwd;
+		[ExplicitOffset( Offset = 8 )]
+		public uint pw_uid;
+		[ExplicitOffset( Offset = 12 )]
+		public uint pw_gid;
+		[ExplicitOffset( Offset = 16 )]
+		public intptr pw_change;
+		[ExplicitOffset( Offset = 20 )]
+		public sbyte* pw_class;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte* pw_gecos;
+		[ExplicitOffset( Offset = 28 )]
+		public sbyte* pw_dir;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte* pw_shell;
+		[ExplicitOffset( Offset = 36 )]
+		public intptr pw_expire;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pollfd {
+		[ExplicitOffset( Offset = 0 )]
+		public int fd;
+		[ExplicitOffset( Offset = 4 )]
+		public short events;
+		[ExplicitOffset( Offset = 6 )]
+		public short revents;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_attr_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[36] __opaque;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_cond_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[24] __opaque;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_condattr_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[4] __opaque;
+	}
+	[Alignment( Boundary = 4 )]
+	[PrimitiveType( Size = sizeof( uintptr ) )]
+	public partial struct pthread_key_t {
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_mutex_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[40] __opaque;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_mutexattr_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[8] __opaque;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_once_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[4] __opaque;
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_rwlock_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[124] __opaque;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_rwlockattr_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[12] __opaque;
+	}
+	[ExplicitSize( Size = 604 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pthread_t {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr __sig;
+		[ExplicitOffset( Offset = 4 )]
+		public __darwin_pthread_handler_rec* __cleanup_stack;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[596] __opaque;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct radvisory {
+		[ExplicitOffset( Offset = 0 )]
+		public long ra_offset;
+		[ExplicitOffset( Offset = 8 )]
+		public int ra_count;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct rlimit {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong rlim_cur;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong rlim_max;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct rusage {
+		[ExplicitOffset( Offset = 0 )]
+		public timeval ru_utime;
+		[ExplicitOffset( Offset = 8 )]
+		public timeval ru_stime;
+		[ExplicitOffset( Offset = 16 )]
+		public intptr ru_maxrss;
+		[ExplicitOffset( Offset = 20 )]
+		public intptr ru_ixrss;
+		[ExplicitOffset( Offset = 24 )]
+		public intptr ru_idrss;
+		[ExplicitOffset( Offset = 28 )]
+		public intptr ru_isrss;
+		[ExplicitOffset( Offset = 32 )]
+		public intptr ru_minflt;
+		[ExplicitOffset( Offset = 36 )]
+		public intptr ru_majflt;
+		[ExplicitOffset( Offset = 40 )]
+		public intptr ru_nswap;
+		[ExplicitOffset( Offset = 44 )]
+		public intptr ru_inblock;
+		[ExplicitOffset( Offset = 48 )]
+		public intptr ru_oublock;
+		[ExplicitOffset( Offset = 52 )]
+		public intptr ru_msgsnd;
+		[ExplicitOffset( Offset = 56 )]
+		public intptr ru_msgrcv;
+		[ExplicitOffset( Offset = 60 )]
+		public intptr ru_nsignals;
+		[ExplicitOffset( Offset = 64 )]
+		public intptr ru_nvcsw;
+		[ExplicitOffset( Offset = 68 )]
+		public intptr ru_nivcsw;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sched_param {
+		[ExplicitOffset( Offset = 0 )]
+		public int sched_priority;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte[4] __opaque;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sf_hdtr {
+		[ExplicitOffset( Offset = 0 )]
+		public iovec* headers;
+		[ExplicitOffset( Offset = 4 )]
+		public int hdr_cnt;
+		[ExplicitOffset( Offset = 8 )]
+		public iovec* trailers;
+		[ExplicitOffset( Offset = 12 )]
+		public int trl_cnt;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigaction {
+		[ExplicitOffset( Offset = 0 )]
+		public __sigaction_u __sigaction_u;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sa_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public int sa_flags;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigevent {
+		[ExplicitOffset( Offset = 0 )]
+		public int sigev_notify;
+		[ExplicitOffset( Offset = 4 )]
+		public int sigev_signo;
+		[ExplicitOffset( Offset = 8 )]
+		public sigval sigev_value;
+		[ExplicitOffset( Offset = 12 )]
+		public Functors.Action<sigval> sigev_notify_function;
+		[ExplicitOffset( Offset = 16 )]
+		public pthread_attr_t* sigev_notify_attributes;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct siginfo_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int si_signo;
+		[ExplicitOffset( Offset = 4 )]
+		public int si_errno;
+		[ExplicitOffset( Offset = 8 )]
+		public int si_code;
+		[ExplicitOffset( Offset = 12 )]
+		public int si_pid;
+		[ExplicitOffset( Offset = 16 )]
+		public uint si_uid;
+		[ExplicitOffset( Offset = 20 )]
+		public int si_status;
+		[ExplicitOffset( Offset = 24 )]
+		public void* si_addr;
+		[ExplicitOffset( Offset = 28 )]
+		public sigval si_value;
+		[ExplicitOffset( Offset = 32 )]
+		public intptr si_band;
+		[ExplicitOffset( Offset = 36 )]
+		public uintptr[7] __pad;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigstack {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte* ss_sp;
+		[ExplicitOffset( Offset = 4 )]
+		public int ss_onstack;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigval {
+		[Overlapped( Offset = 0 )]
+		public int sival_int;
+		[Overlapped( Offset = 0 )]
+		public void* sival_ptr;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigvec {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<int> sv_handler;
+		[ExplicitOffset( Offset = 4 )]
+		public int sv_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public int sv_flags;
+	}
+	[ExplicitSize( Size = 16 )]
+	public partial struct sockaddr {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sa_len;
+		[ExplicitOffset( Offset = 1 )]
+		public byte sa_family;
+		[ExplicitOffset( Offset = 2 )]
+		public sbyte[14] sa_data;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sockaddr_in {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sin_len;
+		[ExplicitOffset( Offset = 1 )]
+		public byte sin_family;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sin_port;
+		[ExplicitOffset( Offset = 4 )]
+		public in_addr sin_addr;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[8] sin_zero;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sockaddr_in6 {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sin6_len;
+		[ExplicitOffset( Offset = 1 )]
+		public byte sin6_family;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sin6_port;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sin6_flowinfo;
+		[ExplicitOffset( Offset = 8 )]
+		public in6_addr sin6_addr;
+		[ExplicitOffset( Offset = 24 )]
+		public uint sin6_scope_id;
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sockaddr_storage {
+		[ExplicitOffset( Offset = 0 )]
+		public byte ss_len;
+		[ExplicitOffset( Offset = 1 )]
+		public byte ss_family;
+		[ExplicitOffset( Offset = 2 )]
+		public sbyte[6] __ss_pad1;
+		[ExplicitOffset( Offset = 8 )]
+		public long __ss_align;
+		[ExplicitOffset( Offset = 16 )]
+		public sbyte[112] __ss_pad2;
+	}
+	[ExplicitSize( Size = 106 )]
+	public partial struct sockaddr_un {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sun_len;
+		[ExplicitOffset( Offset = 1 )]
+		public byte sun_family;
+		[ExplicitOffset( Offset = 2 )]
+		public sbyte[104] sun_path;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct sockproto {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sp_family;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sp_protocol;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct stack_t {
+		[ExplicitOffset( Offset = 0 )]
+		public void* ss_sp;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr ss_size;
+		[ExplicitOffset( Offset = 8 )]
+		public int ss_flags;
+	}
+	[ExplicitSize( Size = 96 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct stat {
+		[ExplicitOffset( Offset = 0 )]
+		public int st_dev;
+		[ExplicitOffset( Offset = 4 )]
+		public uint st_ino;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort st_mode;
+		[ExplicitOffset( Offset = 10 )]
+		public ushort st_nlink;
+		[ExplicitOffset( Offset = 12 )]
+		public uint st_uid;
+		[ExplicitOffset( Offset = 16 )]
+		public uint st_gid;
+		[ExplicitOffset( Offset = 20 )]
+		public int st_rdev;
+		[ExplicitOffset( Offset = 24 )]
+		public timespec st_atimespec;
+		[ExplicitOffset( Offset = 32 )]
+		public timespec st_mtimespec;
+		[ExplicitOffset( Offset = 40 )]
+		public timespec st_ctimespec;
+		[ExplicitOffset( Offset = 48 )]
+		public long st_size;
+		[ExplicitOffset( Offset = 56 )]
+		public long st_blocks;
+		[ExplicitOffset( Offset = 64 )]
+		public int st_blksize;
+		[ExplicitOffset( Offset = 68 )]
+		public uint st_flags;
+		[ExplicitOffset( Offset = 72 )]
+		public uint st_gen;
+		[ExplicitOffset( Offset = 76 )]
+		public int st_lspare;
+		[ExplicitOffset( Offset = 80 )]
+		public long[2] st_qspare;
+	}
+	[ExplicitSize( Size = 108 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct stat64 {
+		[ExplicitOffset( Offset = 0 )]
+		public int st_dev;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort st_mode;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort st_nlink;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong st_ino;
+		[ExplicitOffset( Offset = 16 )]
+		public uint st_uid;
+		[ExplicitOffset( Offset = 20 )]
+		public uint st_gid;
+		[ExplicitOffset( Offset = 24 )]
+		public int st_rdev;
+		[ExplicitOffset( Offset = 28 )]
+		public timespec st_atimespec;
+		[ExplicitOffset( Offset = 36 )]
+		public timespec st_mtimespec;
+		[ExplicitOffset( Offset = 44 )]
+		public timespec st_ctimespec;
+		[ExplicitOffset( Offset = 52 )]
+		public timespec st_birthtimespec;
+		[ExplicitOffset( Offset = 60 )]
+		public long st_size;
+		[ExplicitOffset( Offset = 68 )]
+		public long st_blocks;
+		[ExplicitOffset( Offset = 76 )]
+		public int st_blksize;
+		[ExplicitOffset( Offset = 80 )]
+		public uint st_flags;
+		[ExplicitOffset( Offset = 84 )]
+		public uint st_gen;
+		[ExplicitOffset( Offset = 88 )]
+		public int st_lspare;
+		[ExplicitOffset( Offset = 92 )]
+		public long[2] st_qspare;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct tcphdr {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort th_sport;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort th_dport;
+		[ExplicitOffset( Offset = 4 )]
+		public uint th_seq;
+		[ExplicitOffset( Offset = 8 )]
+		public uint th_ack;
+		public uint th_off { get { return cast<byte*>( &this )[12] & 15; } set { cast<byte*>( &this )[12] &= 240; cast<byte*>( &this )[12] |= ( cast<byte>( value ) & 15 ); } }
+		public uint th_x2 { get { return cast<byte*>( &this )[12] >> 4; } set { cast<byte*>( &this )[12] &= 15; cast<byte*>( &this )[12] |= ( cast<byte>( value ) & 240 ) << 4; } }
+		[ExplicitOffset( Offset = 13 )]
+		public byte th_flags;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort th_win;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort th_sum;
+		[ExplicitOffset( Offset = 18 )]
+		public ushort th_urp;
+	}
+	[ExplicitSize( Size = 140 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct term {
+		[ExplicitOffset( Offset = 0 )]
+		public termtype type;
+		[ExplicitOffset( Offset = 40 )]
+		public short Filedes;
+		[ExplicitOffset( Offset = 44 )]
+		public termios Ottyb;
+		[ExplicitOffset( Offset = 88 )]
+		public termios Nttyb;
+		[ExplicitOffset( Offset = 132 )]
+		public int _baudrate;
+		[ExplicitOffset( Offset = 136 )]
+		public CUtf8String _termname;
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct termios {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr c_iflag;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr c_oflag;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr c_cflag;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr c_lflag;
+		[ExplicitOffset( Offset = 16 )]
+		public byte[20] c_cc;
+		[ExplicitOffset( Offset = 36 )]
+		public uintptr c_ispeed;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr c_ospeed;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct termtype {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String term_names;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte* str_table;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte* Booleans;
+		[ExplicitOffset( Offset = 12 )]
+		public short* Numbers;
+		[ExplicitOffset( Offset = 16 )]
+		public sbyte** Strings;
+		[ExplicitOffset( Offset = 20 )]
+		public sbyte* ext_str_table;
+		[ExplicitOffset( Offset = 24 )]
+		public sbyte** ext_Names;
+		[ExplicitOffset( Offset = 28 )]
+		public ushort num_Booleans;
+		[ExplicitOffset( Offset = 30 )]
+		public ushort num_Numbers;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort num_Strings;
+		[ExplicitOffset( Offset = 34 )]
+		public ushort ext_Booleans;
+		[ExplicitOffset( Offset = 36 )]
+		public ushort ext_Numbers;
+		[ExplicitOffset( Offset = 38 )]
+		public ushort ext_Strings;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct timespec {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr tv_sec;
+		[ExplicitOffset( Offset = 4 )]
+		public intptr tv_nsec;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct timeval {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr tv_sec;
+		[ExplicitOffset( Offset = 4 )]
+		public int tv_usec;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct timezone {
+		[ExplicitOffset( Offset = 0 )]
+		public int tz_minuteswest;
+		[ExplicitOffset( Offset = 4 )]
+		public int tz_dsttime;
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct tm {
+		[ExplicitOffset( Offset = 0 )]
+		public int tm_sec;
+		[ExplicitOffset( Offset = 4 )]
+		public int tm_min;
+		[ExplicitOffset( Offset = 8 )]
+		public int tm_hour;
+		[ExplicitOffset( Offset = 12 )]
+		public int tm_mday;
+		[ExplicitOffset( Offset = 16 )]
+		public int tm_mon;
+		[ExplicitOffset( Offset = 20 )]
+		public int tm_year;
+		[ExplicitOffset( Offset = 24 )]
+		public int tm_wday;
+		[ExplicitOffset( Offset = 28 )]
+		public int tm_yday;
+		[ExplicitOffset( Offset = 32 )]
+		public int tm_isdst;
+		[ExplicitOffset( Offset = 36 )]
+		public intptr tm_gmtoff;
+		[ExplicitOffset( Offset = 40 )]
+		public sbyte* tm_zone;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct tms {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr tms_utime;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr tms_stime;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr tms_cutime;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr tms_cstime;
+	}
+	[ExplicitSize( Size = 1064 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ucontext_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int uc_onstack;
+		[ExplicitOffset( Offset = 4 )]
+		public uint uc_sigmask;
+		[ExplicitOffset( Offset = 8 )]
+		public stack_t uc_stack;
+		[ExplicitOffset( Offset = 20 )]
+		public ucontext_t* uc_link;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr uc_mcsize;
+		[ExplicitOffset( Offset = 28 )]
+		public mcontext_t* uc_mcontext;
+		[ExplicitOffset( Offset = 32 )]
+		public mcontext_t __mcontext_data;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ucontext64_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int uc_onstack;
+		[ExplicitOffset( Offset = 4 )]
+		public uint uc_sigmask;
+		[ExplicitOffset( Offset = 8 )]
+		public stack_t uc_stack;
+		[ExplicitOffset( Offset = 20 )]
+		public ucontext64_t* uc_link;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr uc_mcsize;
+		[ExplicitOffset( Offset = 28 )]
+		public mcontext64_t* uc_mcontext64;
+	}
+	[ExplicitSize( Size = 136 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct ucred {
+		[ExplicitOffset( Offset = 0 )]
+		public UnnamedStruct_3D2FA627 cr_link;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr cr_ref;
+		[ExplicitOffset( Offset = 12 )]
+		public uint cr_uid;
+		[ExplicitOffset( Offset = 16 )]
+		public uint cr_ruid;
+		[ExplicitOffset( Offset = 20 )]
+		public uint cr_svuid;
+		[ExplicitOffset( Offset = 24 )]
+		public short cr_ngroups;
+		[ExplicitOffset( Offset = 28 )]
+		public uint[16] cr_groups;
+		[ExplicitOffset( Offset = 92 )]
+		public uint cr_rgid;
+		[ExplicitOffset( Offset = 96 )]
+		public uint cr_svgid;
+		[ExplicitOffset( Offset = 100 )]
+		public uint cr_gmuid;
+		[ExplicitOffset( Offset = 104 )]
+		public auditinfo cr_au;
+		[ExplicitOffset( Offset = 128 )]
+		public label* cr_label;
+		[ExplicitOffset( Offset = 132 )]
+		public int cr_flags;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct udphdr {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort uh_sport;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort uh_dport;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort uh_ulen;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort uh_sum;
+	}
+	[ExplicitSize( Size = 1280 )]
+	public partial struct utsname {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte[256] sysname;
+		[ExplicitOffset( Offset = 256 )]
+		public sbyte[256] nodename;
+		[ExplicitOffset( Offset = 512 )]
+		public sbyte[256] release;
+		[ExplicitOffset( Offset = 768 )]
+		public sbyte[256] version;
+		[ExplicitOffset( Offset = 1024 )]
+		public sbyte[256] machine;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct wait {
+		[Overlapped( Offset = 0 )]
+		public int w_status;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_9C9B2EB8 w_T;
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_9C9B32F9 w_S;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct winsize {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ws_row;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort ws_col;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort ws_xpixel;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort ws_ypixel;
+	}
+	[ExplicitSize( Size = 76 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct xucred {
+		[ExplicitOffset( Offset = 0 )]
+		public uint cr_version;
+		[ExplicitOffset( Offset = 4 )]
+		public uint cr_uid;
+		[ExplicitOffset( Offset = 8 )]
+		public short cr_ngroups;
+		[ExplicitOffset( Offset = 12 )]
+		public uint[16] cr_groups;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_3D2FA627 {
+		[ExplicitOffset( Offset = 0 )]
+		public ucred* tqe_next;
+		[ExplicitOffset( Offset = 4 )]
+		public ucred** tqe_prev;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_73890956 {
+		[ExplicitOffset( Offset = 0 )]
+		public au_token* tqe_next;
+		[ExplicitOffset( Offset = 4 )]
+		public au_token** tqe_prev;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_73890A39 {
+		[ExplicitOffset( Offset = 0 )]
+		public au_token* tqh_first;
+		[ExplicitOffset( Offset = 4 )]
+		public au_token** tqh_last;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_73890A9C {
+		[ExplicitOffset( Offset = 0 )]
+		public au_record* le_next;
+		[ExplicitOffset( Offset = 4 )]
+		public au_record** le_prev;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_9C9B2EB8 {
+		public uint w_Filler { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); } }
+		public uint w_Retcode { get { return cast<byte*>( &this )[2]; } set { cast<byte*>( &this )[2] = cast<byte>( value ); } }
+		public bool w_Coredump { get { return ( cast<byte*>( &this )[3] & 1 ) != 0; } set { cast<byte*>( &this )[3] &= 254; cast<byte*>( &this )[3] |= cast<byte>( value ) << 0; } }
+		public uint w_Termsig { get { return cast<byte*>( &this )[3] >> 1; } set { cast<byte*>( &this )[3] &= 1; cast<byte*>( &this )[3] |= ( cast<byte>( value ) & 254 ) << 1; } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_9C9B32F9 {
+		public uint w_Filler { get { return cast<byte*>( &this )[0] | cast<ushort>( cast<byte*>( &this )[1] ) << 8; } set { cast<byte*>( &this )[0] = cast<byte>( value ); cast<byte*>( &this )[1] = cast<byte>( value >> 8 ); } }
+		public uint w_Stopsig { get { return cast<byte*>( &this )[2]; } set { cast<byte*>( &this )[2] = cast<byte>( value ); } }
+		public uint w_Stopval { get { return cast<byte*>( &this )[3]; } set { cast<byte*>( &this )[3] = cast<byte>( value ); } }
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_AC891C69 {
+		[Overlapped( Offset = 0 )]
+		public byte[16] __u6_addr8;
+		[Overlapped( Offset = 0 )]
+		public ushort[8] __u6_addr16;
+		[Overlapped( Offset = 0 )]
+		public uint[4] __u6_addr32;
+	}
+}

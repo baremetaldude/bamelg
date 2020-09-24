@@ -1,0 +1,38 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+using Platform.Sctp;
+
+namespace Platform.Kernel {
+	public struct SocketHandleSCTP : SocketHandle, IFormattable {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public sctp_initmsg InitMessage {
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SCTP, ( int ) sctp_optname.SCTP_INITMSG, &value, sizeof( value ) ) );
+			}
+		}
+
+		public sctp_event_subscribe Events {
+			set {
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SCTP, ( int ) sctp_optname.SCTP_EVENTS, &value, sizeof( value ) ) );
+			}
+		}
+
+		protected new void DumpRelevantData( StringBuilder builder ) {
+			base.DumpRelevantData( builder );
+		}
+
+		public new void ToString( StringBuilder builder, string format ) {
+			builder.Append( "{" );
+			DumpRelevantData( builder );
+			builder.Append( " }" );
+		}
+	}
+}

@@ -32,8 +32,8 @@ namespace System {
 				case "xterm-16color":
 					IsTerminalSupports16Color = true;
 					break;
-					
-				case "xterm-256color": 
+
+				case "xterm-256color":
 					IsTerminalSupports16Color = IsTerminalSupports256Color = true;
 					break;
 			}
@@ -67,17 +67,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertSbcsCharactersToUtf8( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertSbcsCharactersToUtf8( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					}
 				}
 			}
 		}
@@ -102,17 +99,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertUtf16CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertUtf16CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					}
 				}
 			}
 		}
@@ -127,17 +121,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertUtf32CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertUtf32CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( int ) segment.Count ) );
+					}
 				}
 			}
 		}

@@ -257,6 +257,14 @@ namespace System.Hash {
 			return result ^ 0xFFFFFFFF;
 		}
 
+		public static uint ComputeFor0x1EDC6F41( uint crc, void* data, int length ) {
+			var buffer = ( byte* ) data;
+			while( length-- != 0 )
+				crc = Crc32tableFor0x1EDC6F41[( byte )( crc ^ *buffer++ )] ^ ( crc >> 8 );
+
+			return crc;
+		}
+
 		public static uint ComputeFor0x1EDC6F41( void* data, int length ) asm {
 			X86_32 {
 				feature( SSE4_2 ) {
@@ -297,14 +305,130 @@ namespace System.Hash {
 
 				iterateLastBytes:
 					add ecx, 4
-					jmp iterate1b
 
 				iterate1b:
 					crc32 eax, byte ptr [edx]
 					inc edx
 					loop iterate1b
+
 				exit:
 					retn
+				}
+			}
+			X86_64 {
+				feature( SSE4_2 ) {
+					if( System.Runtime.CompilerServices.CompilerInfo.CurrentPlatform == System.Runtime.CompilerServices.PlatformID.Windows ) {
+						// 'data' comes in RCX
+						// 'length' comes in RDX
+						xor rax, rax
+						cmp rdx, 0
+						jle exit
+
+						mov R8, rcx
+						and R8, 3
+						jz mainIteration
+
+						neg R8
+						add R8, 4
+						sub rdx, R8
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+					alignFirstBytes:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec R8
+						jnz alignFirstBytes
+
+					mainIteration:
+						sub rdx, 4
+						jl iterateLastBytes
+
+						crc32 eax, dword ptr [rcx]
+						jz exit
+
+						add rcx, 4
+						jmp mainIteration
+
+					iterateLastBytes:
+						add rdx, 4
+
+					iterate1b:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec rdx
+						jnz iterate1b
+
+					exit:
+						retn
+
+					firstBytesOnly2:
+						add R8, rdx
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec R8
+						jnz firstBytesOnly
+
+						retn
+					}
+					else {
+						// 'data' comes in 'rdi'
+						// 'length' comes in 'rsi'
+						xor rax, rax
+						cmp rsi, 0
+						jle exit
+
+						mov rcx, rdi
+						and rcx, 7
+						jz mainIteration
+
+						neg rcx
+						add rcx, 8
+						sub rsi, rcx
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+					alignFirstBytes:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rcx
+						jnz alignFirstBytes
+
+					mainIteration:
+						sub rsi, 8
+						jl iterateLastBytes
+
+						crc32 rax, qword ptr [rdi]
+						jz exit
+
+						add rdi, 8
+						jmp mainIteration
+
+					iterateLastBytes:
+						add rsi, 8
+
+					iterate1b:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rsi
+						jnz iterate1b
+
+					exit:
+						retn
+
+					firstBytesOnly2:
+						add rcx, rsi
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rcx
+						jnz firstBytesOnly
+
+						retn
+					}
 				}
 			}
 			default {
@@ -342,14 +466,6 @@ namespace System.Hash {
 
 				return crc;
 			}
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			var test = ( SbcsString ) "x^32 + x^26 + x^23 + x^22 + x^16 + x^12 + x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1";
-
-			Assert.AreEqual( 2238396088U, ComputeFor0x04C11DB7( test.GetChars() + 1, test.Length - 2 ) );
-			Assert.AreEqual( 1877612752U, ComputeFor0x1EDC6F41( test.GetChars() + 1, ( int ) test.Length - 2 ) );
 		}
 	}
 }

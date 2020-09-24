@@ -1623,7 +1623,7 @@ namespace Platform.Libc {
 		STT_SPARC_REGISTER = 13,
 		STT_HIPROC =         15,
 	}
-	public enum FctlCommand : uint {
+	public enum FileDescriptorCommand : uint {
 		F_DUPFD =         0,
 		F_GETFD =         1,
 		F_SETFD =         2,
@@ -1643,65 +1643,11 @@ namespace Platform.Libc {
 		F_RDAHEAD =      16,
 	}
 	[Flags]
-	public enum FctlFlags : int {
-		O_RDONLY =         0,
-		O_WRONLY =         1,
-		O_RDWR =           2,
-		O_NDELAY =         4,
-		O_NONBLOCK =       4,
-		O_APPEND =         8,
-		FASYNC =          64,
-		O_SYNC =         128,
-		O_NOFOLLOW =     256,
-		O_CREAT =        512,
-		O_TRUNC =       1024,
-		O_EXCL =        2048,
-		O_NOCTTY =     32768,
-		O_DIRECT =     65536,
-		O_DIRECTORY = 131072,
-		O_ACCMODE =        3,
-	}
-	[Flags]
-	public enum FileDescriptorFlag : int {
+	public enum FileDescriptorFlags : int {
 		None =       0,
 		FD_CLOEXEC = 1,
 	}
-	public enum FileSeekOrigin : int {
-		SEEK_SET =  0,
-		SEEK_CUR =  1,
-		SEEK_END =  2,
-		SEEK_DATA = 3,
-		SEEK_HOLE = 4,
-	}
-	public enum FPResult : uint {
-		FP_FAST_FMAF =         1,
-		FP_INFINITE =          1,
-		FP_NAN =               2,
-		FP_NORMAL =            4,
-		FP_SUBNORMAL =         8,
-		FP_ZERO =             16,
-		FP_ILOGBNAN = 2147483647,
-		FP_ILOGB0 =   2147483649,
-	}
-	public enum idtype : uint {
-		P_PID =     0,
-		P_PPID =    1,
-		P_PGID =    2,
-		P_SID =     3,
-		P_CID =     4,
-		P_UID =     5,
-		P_GID =     6,
-		P_ALL =     7,
-		P_LWPID =   8,
-		P_TASKID =  9,
-		P_PROJID = 10,
-		P_POOLID = 11,
-		P_JAILID = 12,
-		P_CTID =   13,
-		P_CPUID =  14,
-		P_PSETID = 15,
-	}
-	public enum IoctlCommand : uint {
+	public enum FileDriverCommand : uint {
 		TIOCPKT_DATA =        0,
 		TIOCPKT_FLUSHREAD =   1,
 		TIOCPKT_FLUSHWRITE =  2,
@@ -1735,6 +1681,68 @@ namespace Platform.Libc {
 		TIOCPKT =    2147775600,
 		TIOCSPGRP =  2147775606,
 		TIOCSWINSZ = 2148037735,
+	}
+	[Flags]
+	public enum FileOpenFlags : int {
+		O_RDONLY =         0,
+		O_WRONLY =         1,
+		O_RDWR =           2,
+		O_NDELAY =         4,
+		O_NONBLOCK =       4,
+		O_APPEND =         8,
+		O_ASYNC =         64,
+		O_SYNC =         128,
+		O_NOFOLLOW =     256,
+		O_CREAT =        512,
+		O_TRUNC =       1024,
+		O_EXCL =        2048,
+		O_NOCTTY =     32768,
+		O_DIRECT =     65536,
+		O_DIRECTORY = 131072,
+		O_CLOEXEC =  1048576,
+	}
+	public enum FileSeekOrigin : int {
+		SEEK_SET =  0,
+		SEEK_CUR =  1,
+		SEEK_END =  2,
+		SEEK_DATA = 3,
+		SEEK_HOLE = 4,
+	}
+	[Flags]
+	public enum FileStatusFlags : int {
+		None =         0,
+		O_NONBLOCK =   4,
+		O_APPEND =     8,
+		O_ASYNC =     64,
+		O_DIRECT = 65536,
+	}
+	public enum FPResult : uint {
+		FP_FAST_FMAF =         1,
+		FP_INFINITE =          1,
+		FP_NAN =               2,
+		FP_NORMAL =            4,
+		FP_SUBNORMAL =         8,
+		FP_ZERO =             16,
+		FP_ILOGBNAN = 2147483647,
+		FP_ILOGB0 =   2147483649,
+	}
+	public enum idtype : uint {
+		P_PID =     0,
+		P_PPID =    1,
+		P_PGID =    2,
+		P_SID =     3,
+		P_CID =     4,
+		P_UID =     5,
+		P_GID =     6,
+		P_ALL =     7,
+		P_LWPID =   8,
+		P_TASKID =  9,
+		P_PROJID = 10,
+		P_POOLID = 11,
+		P_JAILID = 12,
+		P_CTID =   13,
+		P_CPUID =  14,
+		P_PSETID = 15,
 	}
 	public enum IPProtocol : uint {
 		IPPROTO_HOPOPTS =        0,
@@ -1927,6 +1935,11 @@ namespace Platform.Libc {
 		NOTE_LINK =   16,
 		NOTE_RENAME = 32,
 		NOTE_REVOKE = 64,
+	}
+	[Flags]
+	public enum LinkatFlags : uint {
+		None =                 0,
+		AT_SYMLINK_FOLLOW = 1024,
 	}
 	public enum MemoryAdvise : int {
 		MADV_NORMAL =     0,

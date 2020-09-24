@@ -48,16 +48,28 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public int Send( sockaddr_in& address, void* buffer, int count ) {
-			int result = 0;
-			LibcApi.AssertErrno( result = LibcApi.sendto( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
-			return result;
+		public SystemError Send( sockaddr_in& address, void* buffer, int count, int& written = nullref ) {
+			var totalWritten = LibcApi.sendto( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) );
+			if( totalWritten < 0 ) {
+				var lastError = LibcApi.LastError;
+				if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+				if( written != nullref ) written = 0;
+				return lastError;
+			}
+
+			if( written != nullref ) written = totalWritten;
+			return SystemError.None;
 		}
 
-		public int Receive( sockaddr_in& address, void* buffer, int count ) {
-			int result = 0;
-			LibcApi.AssertErrno( result = LibcApi.recvfrom( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
-			return result;
+		public SystemError Receive( sockaddr_in& address, void* buffer, int count ) {
+			int readen = LibcApi.recvfrom( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) );
+			if( readen < 0 ) {
+				var lastError = LibcApi.LastError;
+				if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+				return lastError;
+			}
+
+			return SystemError.None;
 		}
 
 		protected new void DumpRelevantData( StringBuilder builder ) {

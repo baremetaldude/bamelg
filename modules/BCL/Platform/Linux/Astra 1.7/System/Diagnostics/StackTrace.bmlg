@@ -1,0 +1,28 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+
+using Platform.Libc;
+
+namespace System.Diagnostics {
+	public class StackTrace {
+		public static void Print() {
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( void** ) page.Value;
+				var bufferLength = ( int ) Memory.DefaultPageSize / sizeof( void* );
+
+				var count = LibcApi.backtrace( &buffer[0], bufferLength );
+				var strings = LibcApi.backtrace_symbols( &buffer[0], count );
+
+				for( var i = 1; i < count; i++ )
+					Console.WriteLine( strings[i] );
+
+				LibcApi.free( strings );
+			}
+		}
+	}
+}

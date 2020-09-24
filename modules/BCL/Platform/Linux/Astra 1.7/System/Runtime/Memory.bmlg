@@ -1,0 +1,81 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System.Runtime {
+	public static partial struct Memory {
+		private const int PlatformAllocationAlignment = 8;
+
+		private static MemoryMapProtection MapProtectionProperties( PageProperties properties ) {
+			var result = MemoryMapProtection.PROT_NONE;
+			if( ( properties & PageProperties.Read ) != 0 ) result |= MemoryMapProtection.PROT_READ;
+			if( ( properties & PageProperties.Write ) != 0 ) result |= MemoryMapProtection.PROT_WRITE;
+			if( ( properties & PageProperties.Execute ) != 0 ) result |= MemoryMapProtection.PROT_EXEC;
+			return result;
+		}
+
+		private static MemoryMapFlags MapAllocationProperties( PageProperties properties ) {
+			var result = ( MemoryMapFlags ) 0;
+			if( ( properties & PageProperties.Shared ) == 0 ) result |= MemoryMapFlags.MAP_PRIVATE | MemoryMapFlags.MAP_ANONYMOUS;
+			return result;
+		}
+
+		private static void* _implAllocatePages( int count, PageProperties properties ) {
+			var allocationLength = DefaultPageSize * count;
+
+			var result = ( byte* ) LibcApi.mmap( null, ( uint ) allocationLength, MapProtectionProperties( properties ), MapAllocationProperties( properties ), IOHandle.Invalid, 0 );
+			if( result == ( byte* ) -1 ) LibcApi.AssertErrno( -1 );
+
+			return result;
+		}
+
+		private static void _implModifyPages( void* ptr, int count, PageProperties properties ) {
+			var allocationLength = DefaultPageSize * count;
+
+			LibcApi.AssertErrno( LibcApi.mprotect( ptr, ( uint ) allocationLength, MapProtectionProperties( properties ) ) );
+		}
+
+		private static void _implFreePages( void* ptr, int count ) {
+			var allocationLength = DefaultPageSize * count;
+
+			LibcApi.AssertErrno( LibcApi.munmap( ptr, ( uint ) allocationLength ) );
+		}
+
+		private static void _implDecommitPages( void* ptr, int count ) {
+			_implModifyPages( ptr, count, Memory.PageProperties.None );
+		}
+
+		private static void* _implAllocate( uint size ) {
+			return LibcApi.malloc( size );
+		}
+
+		private static void* _implAllocateClear( uint size ) {
+			return LibcApi.calloc( 1U, size );
+		}
+
+		private static void* _implAllocateAligned( uint size, uint align ) {
+			void* result;
+			LibcApi.posix_memalign( &result, Math.Max( align, DefaultAllocationAlignment ), size );
+			return result;
+		}
+
+		private static void* _implAllocateAlignedClear( uint size, uint align ) {
+			var result = _implAllocateAligned( size, align );
+			Clear( result, size );
+			return result;
+		}
+
+		private static void _implFree( void* memory ) {
+			LibcApi.free( memory );
+		}
+
+		private static void _implFreeAligned( void* memory ) {
+			_implFree( memory ); // 'posix_memalign' result freed by 'free'
+		}
+	}
+}

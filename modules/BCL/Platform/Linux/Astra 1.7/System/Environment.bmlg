@@ -1,0 +1,36 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System {
+	public static partial struct Environment {
+		public static void DefaultEnvironmentVariable( Utf8String variable, Utf8String value ) {
+			LibcApi.setenv( variable, value, 0 );
+		}
+
+		public static void SetEnvironmentVariable( Utf8String variable, Utf8String value ) {
+			LibcApi.setenv( variable, value, 1 );
+		}
+
+		public static CUtf8String GetEnvironmentVariable( Utf8String variable ) {
+			return LibcApi.getenv( variable );
+		}
+
+		public const string NewLine = "\n";
+
+		public static Utf8String[] CommandLine;
+		public static int ExitCode = 0;
+
+		public static int _implProcessorCount() {
+			return ( int ) LibcApi.sysconf( SystemConfigurationProperty._SC_NPROCESSORS_ONLN );
+		}
+
+		private static void _implAbort() {
+			Platform.Libc.LibcApi._exit( ExitCode );
+		}
+	}
+}

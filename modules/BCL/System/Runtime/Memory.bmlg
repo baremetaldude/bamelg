@@ -73,7 +73,7 @@ namespace System.Runtime {
 			TrackAlignedAllocation( result, size, align );
 			return result;
 		}
-		
+
 		public static void* Allocate( uint size ) {
 			var result = _implAllocate( size );
 			TrackAllocation( result, size );
@@ -462,7 +462,7 @@ namespace System.Runtime {
 
 		public static bool IsCleared( void* source, uint count ) {
 			var ptr = ( byte* ) source;
-			
+
 			while( count-- != 0 ) {
 				if( *ptr++ != 0 )
 					return false;
@@ -470,7 +470,7 @@ namespace System.Runtime {
 
 			return true;
 		}
-		
+
 		public functor void MemoryAction( void* object );
 
 		public static void PerformFunctorOnStructArray( void* arrayStart, int elementSize, int elementsCount, MemoryAction @functor ) {

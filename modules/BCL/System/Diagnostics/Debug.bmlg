@@ -11,16 +11,28 @@ namespace System.Diagnostics {
 		[Conditional( ConditionString = "DEBUG" )]
 		public static void Fail( string message, [In] CallerContext& callercontext = nullref ) {
 			Assert.Fail( message, callercontext );
+
+			// if( !Assert.Fail( message, callercontext ) )
+			//	if( Debugger.IsAttached )
+			//		Debugger.Break();
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
 		public static void Assert( bool expression, [In] CallerContext& callercontext = nullref ) {
 			Assert.IsTrue( expression, null, callercontext );
+
+			// if( !Assert.IsTrue( expression, null, callercontext ) )
+			//	if( Debugger.IsAttached )
+			//		Debugger.Break();
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
 		public static void Assert( bool expression, string message, [In] CallerContext& callercontext = nullref ) {
 			Assert.IsTrue( expression, message, callercontext );
+
+			// if( !Assert.IsTrue( expression, message, callercontext ) )
+			//	if( Debugger.IsAttached )
+			//		Debugger.Break();
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]

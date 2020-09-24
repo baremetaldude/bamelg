@@ -93,7 +93,7 @@ namespace Platform.IO {
 		public void RequestUpdateEventList() { if( !DispatchThread.IsCurrent ) _notificationEmitter.RequestUpdate(); }
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
-		/// @{ Dispatching
+		#region Dispatching
 		public Utf8String ThreadName;
 		public Platform.Libc.pthread_t DispatchThread = Platform.Libc.pthread_t.CurrentThread;
 
@@ -119,7 +119,7 @@ namespace Platform.IO {
 				var @this = info->Item1;
 
 				pthread_t.Name = @this.ThreadName;
-				@this.DispatchThread = pthread_t.CurrentThread;
+				atomic( @this.DispatchThread = Platform.Libc.pthread_t.CurrentThread, Relaxed );
 				info->Item2->Post(); // info dies now
 
 				@this.Dispatch();
@@ -312,7 +312,7 @@ namespace Platform.IO {
 			return polledDescriptors;
 		}
 
-		/// @}
+		#endregion
 
 		public abstract class EventSink {
 			public EventLoop Parent; ///< Event loop holding/polling this EventSink
@@ -722,11 +722,12 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		public override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return DispatchThread != pthread_t.Invalid; } }
 
 		#endregion
 
-		#region tracing
+		#region Tracing
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchStarted() {

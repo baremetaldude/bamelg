@@ -13,7 +13,10 @@ namespace System {
 		public const char MaxValue = ( char ) 0x7FFF;
 		public const char MinValue = ( char ) ~MaxValue;
 
-		public string ToString() { return PrimitiveTypesFormatter.FormatChar( this ); }
+		public SbcsString ToSbcsString() { return PrimitiveTypesFormatter.FormatCharSbcs( this ); }
+		public Utf8String ToUtf8String() { return PrimitiveTypesFormatter.FormatCharUtf8( this ); }
+		public Utf16String ToString() { return PrimitiveTypesFormatter.FormatCharUtf16( this ); }
+		public Utf32String ToUtf32String() { return PrimitiveTypesFormatter.FormatCharUtf32( this ); }
 
 		public uint GetHashCode() { return this; }
 		public int CompareTo( char value ) { return value == this ? 0 : this > value ? 1 : -1; }
@@ -119,24 +122,24 @@ namespace System {
 		public static short Parse( Utf16String input ) { return PrimitiveTypesParser.ParseInt16( input.GetChars(), input.Length ); }
 		public static short Parse( Utf32String input ) { return PrimitiveTypesParser.ParseInt16( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, short& value ) { return PrimitiveTypesParser.TryParseInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, short& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] short& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -175,24 +178,24 @@ namespace System {
 		public static ushort Parse( Utf16String input ) { return PrimitiveTypesParser.ParseUInt16( input.GetChars(), input.Length ); }
 		public static ushort Parse( Utf32String input ) { return PrimitiveTypesParser.ParseUInt16( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( SbcsString input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CString input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, ushort& value ) { return PrimitiveTypesParser.TryParseUInt16( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, ushort& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt16( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -231,24 +234,24 @@ namespace System {
 		public static int Parse( Utf16String input ) { return PrimitiveTypesParser.ParseInt32( input.GetChars(), input.Length ); }
 		public static int Parse( Utf32String input ) { return PrimitiveTypesParser.ParseInt32( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, int& value ) { return PrimitiveTypesParser.TryParseInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, int& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -287,24 +290,24 @@ namespace System {
 		public static uint Parse( Utf16String input ) { return PrimitiveTypesParser.ParseUInt32( input.GetChars(), input.Length ); }
 		public static uint Parse( Utf32String input ) { return PrimitiveTypesParser.ParseUInt32( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, uint& value ) { return PrimitiveTypesParser.TryParseUInt32( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, uint& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt32( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -343,24 +346,24 @@ namespace System {
 		public static long Parse( Utf16String input ) { return PrimitiveTypesParser.ParseInt64( input.GetChars(), input.Length ); }
 		public static long Parse( Utf32String input ) { return PrimitiveTypesParser.ParseInt64( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, long& value ) { return PrimitiveTypesParser.TryParseInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, long& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -399,24 +402,24 @@ namespace System {
 		public static ulong Parse( Utf16String input ) { return PrimitiveTypesParser.ParseUInt64( input.GetChars(), input.Length ); }
 		public static ulong Parse( Utf32String input ) { return PrimitiveTypesParser.ParseUInt64( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, ulong& value ) { return PrimitiveTypesParser.TryParseUInt64( input.GetChars(), input.Length, value ); }
 
-		public static bool TryFetch( byte*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( char*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
-		public static bool TryFetch( uint*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( byte*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( char*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
+		public static TextParsingStatus TryFetch( uint*& input, uint& remaining, ulong& value, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { return PrimitiveTypesParser.TryFetchUInt64( input, remaining, value, trimLeadingWhitespace, trimTrailingWhitespace ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 
@@ -440,34 +443,129 @@ namespace System {
 	public sealed partial struct LittleEndianUInt128 {
 	}
 
+	// public sealed partial struct LittleEndianHalfIEEE754 {
+	// 	public const ushort SignMask = 0x8000;
+	// 	public const ushort ExponentMask = 0x7C00;
+	// 	public const ushort SignificandMask = 0x03FF;
+
+	// 	public const short ExponentBits = 5;
+	// 	public const short SignificandBits = 10;
+	// 	public const short ExponentBias = 15;
+
+	// 	public const float16 NaN = bitcast<float16>( 0xFE00 );
+	// 	public const float16 PositiveNaN = bitcast<float16>( 0x7E00 );
+	// 	public const float16 NegativeNaN = bitcast<float16>( 0xFE00 );
+
+	// 	public const float16 MaxValue = bitcast<float16>( 0x7BFF );
+	// 	public const float16 MinValue = bitcast<float16>( 0xFBFF );
+	// 	public const float16 PositiveInfinity = bitcast<float16>( 0x7C00 );
+	// 	public const float16 NegativeInfinity = bitcast<float16>( 0xFC00 );
+
+	// 	private ushort_littleendian _raw { get { return bitcast<ushort_littleendian>( this ); } }
+	// 	private short_littleendian _rawSigned { get { return bitcast<short_littleendian>( this ); } }
+
+	// 	public bool IsNegative {
+	// 		get { return _rawSigned < 0; }
+	// 	}
+
+	// 	public short NormalizedSignificand {
+	// 		get { return ( short )( ( _raw & SignificandMask ) | ( SignificandMask + 1 ) ); }
+	// 	}
+
+	// 	public short Exponent {
+	// 		get { return BiasedExponent - ExponentBias; }
+	// 	}
+
+	// 	public short BiasedExponent {
+	// 		get { return ( short )( ( _raw & ExponentMask ) >> SignificandBits ); }
+	// 	}
+
+	// 	public bool IsSpecial {
+	// 		get { return ( _raw & ~SignMask ) >= ExponentMask; }
+	// 	}
+
+	// 	public bool IsNaN {
+	// 		get { return ( _raw & ~SignMask ) > ExponentMask; }
+	// 	}
+
+	// 	public bool IsInfinity {
+	// 		get { return ( _raw & ExponentMask ) == ExponentMask; }
+	// 	}
+
+	// 	public bool IsPositiveInfinity {
+	// 		get { return _raw == ExponentMask; }
+	// 	}
+
+	// 	public bool IsNegativeInfinity {
+	// 		get { return _raw == ( ExponentMask | SignMask ); }
+	// 	}
+
+	// 	public bool IsSubnormal {
+	// 		get {
+	// 			var value = _raw & ~SignMask;
+	// 			return ( value - 1 ) < SignificandMask;
+	// 		}
+	// 	}
+
+	// 	public bool IsSubnormalOrZero {
+	// 		get { return ( _raw & ExponentMask ) == 0; }
+	// 	}
+
+
+	// 	public bool MayHaveFractionalPart {
+	// 		get { return Exponent < SignificandBits; }
+	// 	}
+
+	// 	public uint GetHashCode() { return ( ushort ) _raw; }
+
+	// 	public static bool AreEqual( thistype left, thistype right, short tolerance ) {
+	// 		short value1 = left._rawSigned;
+	// 		short value2 = right._rawSigned;
+
+	// 		if( value1 < 0 ) value1 = short.MinValue - value1;
+	// 		if( value2 < 0 ) value1 = short.MinValue - value2;
+
+	// 		return Math.Abs( value1 - value2 ) <= tolerance;
+	// 	}
+	// }
+
 	public sealed partial struct LittleEndianSingleIEEE754 {
 		public const uint SignMask = 0x80000000;
 		public const uint ExponentMask = 0x7F800000;
-		public const uint MantissaMask = 0x007FFFFF;
+		public const uint SignificandMask = 0x007FFFFF;
 
-		public const int ExponentBits = 8;
-		public const int MantissaBits = 23;
-		public const int ExponentBias = 127;
+		public const byte ExponentBits = 8;
+		public const byte SignificandBits = 23;
+		public const byte ExponentBias = 127;
 
 		public const float NaN = bitcast<float>( 0xFFC00000U );
+
 		public const float MaxValue = bitcast<float>( 0x7F7FFFFFU );
 		public const float MinValue = bitcast<float>( 0xFF7FFFFFU );
-		public const float PositiveInfinity = bitcast<float>( 0xFF800000U );
-		public const float NegativeInfinity = bitcast<float>( 0x7F800000U );
+		public const float PositiveInfinity = bitcast<float>( 0x7F800000U );
+		public const float NegativeInfinity = bitcast<float>( 0xFF800000U );
 
 		private uint_littleendian _raw { get { return bitcast<uint_littleendian>( this ); } }
 		private int_littleendian _rawSigned { get { return bitcast<int_littleendian>( this ); } }
 
-		public uint Mantissa {
-			get { return _raw & MantissaMask; }
+		public bool IsNegative {
+			get { return _rawSigned < 0; }
 		}
 
-		public int Exponent {
-			get { return BiasedExponent - ExponentBias; }
+		public uint Significand {
+			get { return _raw & SignificandMask; }
 		}
 
-		public int BiasedExponent {
-			get { return ( int )( ( _raw & ExponentMask ) >> MantissaBits ); }
+		public uint NormalizedSignificand {
+			get { return ( _raw & SignificandMask ) | ( SignificandMask + 1 ); }
+		}
+
+		public short Exponent {
+			get { return ( short ) BiasedExponent - ExponentBias; }
+		}
+
+		public byte BiasedExponent {
+			get { return ( byte )( _raw >> SignificandBits ); }
 		}
 
 		public bool IsSpecial {
@@ -490,23 +588,34 @@ namespace System {
 			get { return _raw == ( ExponentMask | SignMask ); }
 		}
 
-		public bool IsDenormalized {
+		public bool IsSubnormal {
 			get {
 				var value = _raw & ~SignMask;
-				return ( value - 1 ) < MantissaMask;
+				return ( value - 1 ) < SignificandMask;
 			}
 		}
 
-		public bool IsDenormalizedOrZero {
+		public bool IsSubnormalOrZero {
 			get { return ( _raw & ExponentMask ) == 0; }
 		}
 
-
-		public bool MayHaveFractionalPart {
-			get { return Exponent < MantissaBits; }
+		public bool IsZero {
+			get { return ( _raw & ~SignMask ) == 0; }
 		}
 
-		public uint GetHashCode() { return ( uint ) _raw; }
+		public bool IsPositiveZero {
+			get { return _raw == 0; }
+		}
+
+		public bool IsNegativeZero {
+			get { return _raw == SignMask; }
+		}
+
+		public bool MayHaveFractionalPart {
+			get { return Exponent < SignificandBits; }
+		}
+
+		public uint GetHashCode() { return _raw; }
 
 		public static bool AreEqual( thistype left, thistype right, int tolerance ) {
 			int value1 = left._rawSigned;
@@ -533,23 +642,23 @@ namespace System {
 		public static float Parse( Utf16String input ) { return PrimitiveTypesParser.ParseSingleIEEE754( input.GetChars(), input.Length ); }
 		public static float Parse( Utf32String input ) { return PrimitiveTypesParser.ParseSingleIEEE754( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
-	
+
 		public SbcsString ToSbcsString() { return PrimitiveTypesFormatter.FormatFloatingPointSbcs( this ); }
 		public Utf8String ToUtf8String() { return PrimitiveTypesFormatter.FormatFloatingPointUtf8( this ); }
 		public Utf16String ToString() { return PrimitiveTypesFormatter.FormatFloatingPointUtf16( this ); }
@@ -564,14 +673,14 @@ namespace System {
 	public sealed partial struct LittleEndianDoubleIEEE754 {
 		public const ulong SignMask = 0x8000000000000000;
 		public const ulong ExponentMask = 0x7FF0000000000000;
-		public const ulong ExponentShift = BitOperations.CountTrailingZeros( ExponentMask );
-		public const ulong MantissaMask = 0x000FFFFFFFFFFFFF;
+		public const ulong SignificandMask = 0x000FFFFFFFFFFFFF;
 
-		public const int ExponentBits = 11;
-		public const int MantissaBits = 52;
-		public const int ExponentBias = 1023;
+		public const byte ExponentBits = 11;
+		public const byte SignificandBits = 52;
+		public const ushort ExponentBias = 1023;
 
 		public const double NaN = bitcast<double>( 0xFFF8000000000000 );
+
 		public const double MaxValue = bitcast<double>( 0x7FEFFFFFFFFFFFFF );
 		public const double MinValue = bitcast<double>( 0xFFEFFFFFFFFFFFFF );
 		public const double PositiveInfinity = bitcast<double>( 0x7FF0000000000000 );
@@ -580,16 +689,24 @@ namespace System {
 		private ulong_littleendian _raw { get { return bitcast<ulong_littleendian>( this ); } }
 		private long_littleendian _rawSigned { get { return bitcast<long_littleendian>( this ); } }
 
-		public ulong Mantissa {
-			get { return _raw & MantissaMask; }
+		public bool IsNegative {
+			get { return _rawSigned < 0; }
 		}
 
-		public int Exponent {
-			get { return BiasedExponent - ExponentBias; }
+		public ulong Significand {
+			get { return _raw & SignificandMask; }
 		}
 
-		public int BiasedExponent {
-			get { return ( int )( ( _raw & ExponentMask ) >> MantissaBits ); }
+		public ulong NormalizedSignificand {
+			get { return ( _raw & SignificandMask ) | ( SignificandMask + 1 ); }
+		}
+
+		public short Exponent {
+			get { return ( short ) ( BiasedExponent - ExponentBias ); }
+		}
+
+		public ushort BiasedExponent {
+			get { return ( ushort )( ( _raw >> SignificandBits ) & ( ExponentMask >> SignificandBits ) ); }
 		}
 
 		public bool IsSpecial {
@@ -612,14 +729,14 @@ namespace System {
 			get { return _raw == ( ExponentMask | SignMask ); }
 		}
 
-		public bool IsDenormalized {
+		public bool IsSubnormal {
 			get {
 				var value = _raw & ~SignMask;
-				return ( value - 1 ) < MantissaMask;
+				return ( value - 1 ) < SignificandMask;
 			}
 		}
 
-		public bool IsDenormalizedOrZero {
+		public bool IsSubnormalOrZero {
 			get { return ( _raw & ExponentMask ) == 0; }
 		}
 
@@ -636,7 +753,7 @@ namespace System {
 		}
 
 		public bool MayHaveFractionalPart {
-			get { return Exponent < MantissaBits; }
+			get { return Exponent < SignificandBits; }
 		}
 
 		public uint GetHashCode() { return _raw.GetHashCode(); }
@@ -666,20 +783,20 @@ namespace System {
 		public static double Parse( Utf16String input ) { return PrimitiveTypesParser.ParseDoubleIEEE754( input.GetChars(), input.Length ); }
 		public static double Parse( Utf32String input ) { return PrimitiveTypesParser.ParseDoubleIEEE754( input.GetChars(), input.Length ); }
 
-		public static bool TryParse( CString input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CString input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( CStringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf8StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( CUtf16StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( CUtf32StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CStringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
 
-		public static bool TryParse( SbcsString input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf8String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
-		public static bool TryParse( Utf16String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
-		public static bool TryParse( Utf32String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( SbcsString input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, double& value ) { return PrimitiveTypesParser.TryParseDoubleIEEE754( input.GetChars(), input.Length, value ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
 

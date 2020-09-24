@@ -1,0 +1,41 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct SocketHandleRaw : SocketHandle, IFormattable {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SocketHandleRaw() {
+			LibcApi.Assert( this = bitcast<SocketHandleRaw>( LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_RAW, IPProtocol.IPPROTO_ICMP ) ) );
+		}
+
+		public int Send( sockaddr_in& address, void* buffer, int count ) {
+			int result = 0;
+			LibcApi.AssertErrno( result = LibcApi.sendto( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
+			return result;
+		}
+
+		public int Receive( sockaddr_in& address, void* buffer, int count ) {
+			int result = 0;
+			LibcApi.AssertErrno( result = LibcApi.recvfrom( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
+			return result;
+		}
+
+		protected new void DumpRelevantData( StringBuilder builder ) {
+			base.DumpRelevantData( builder );
+		}
+
+		public new void ToString( StringBuilder builder, string format ) {
+			builder.Append( "{" );
+			DumpRelevantData( builder );
+			builder.Append( " }" );
+		}
+	}
+}

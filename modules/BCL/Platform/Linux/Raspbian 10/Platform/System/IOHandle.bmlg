@@ -20,7 +20,7 @@ namespace Platform.Kernel {
 			this = bitcast<IOHandle>( handle );
 		}
 
-		public static SystemError Open( IOHandle& result, CUtf8String name, FctlFlags flags, int permissions ) {
+		public static SystemError Open( IOHandle& result, CUtf8String name, FileOpenFlags flags, int permissions ) {
 			var resultCode = result.OpenBlocking( name, flags, permissions );
 			if( !result.IsValid ) return resultCode;
 			return SystemError.None;
@@ -57,24 +57,26 @@ namespace Platform.Kernel {
 		}
 
 		// \param source must be mmap'able
-		public SystemError SendFile( TimeSpan timeout, IOHandle source, intptr offset, intptr length, intptr& transferred ) {
+		public SystemError SendFile( TimeSpan timeout, IOHandle source, intptr offset, intptr length, intptr& transferred, bool setBlocking = true ) {
 			if( Fiber.IsFiberExecuting ) {
 				using( Fiber.AsyncCompletionRegion() ) {
-					// @{ IsNonBlocking = false;
-					FctlFlags options;
-					if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
-						return LibcApi.LastError;
+					FileStatusFlags options;
+					if( setBlocking ) { // NOTE this can affect parallel reads
+						if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
+							return LibcApi.LastError;
 
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), false );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+						if( BitOperations.MaskTest( options.Value(), FileStatusFlags.O_NONBLOCK.Value() ) ) {
+							// &= ~O_NONBLOCK
+							LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), false ) ) );
+						}
+						else setBlocking = false;
+					}
 
 					var result = SendFile( timeout, source, offset, length, transferred );
 
-					// @{ IsNonBlocking = true;
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), true );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+					if( setBlocking ) {
+						LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
+					}
 
 					return result;
 				}
@@ -83,16 +85,12 @@ namespace Platform.Kernel {
 				using( new AlarmRegion( timeout ) ) {
 					transferred = 0;
 
-					// int totalSyscalls = 0;
-					// finally { Console.WriteLine( "totalSyscalls={0}", totalSyscalls ); }
-
 					for( ; ; ) {
 						intptr currentOffset = offset;
 						var result = LibcApi.sendfile( this, source, &currentOffset, ( uintptr ) length );
 						intptr written = currentOffset - offset;
 						offset = currentOffset;
 						transferred += written;
-						// ++totalSyscalls;
 
 						if( result <= 0 ) return LibcApi.LastError;
 						if( transferred >= length ) return SystemError.None;
@@ -101,24 +99,26 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public SystemError ReceiveFile( TimeSpan timeout, IOHandleBlocking destination, intptr offset, intptr length, intptr& transferred ) {
+		public SystemError ReceiveFile( TimeSpan timeout, IOHandleBlocking destination, intptr offset, intptr length, intptr& transferred, bool setBlocking = true ) {
 			if( Fiber.IsFiberExecuting ) {
 				using( Fiber.AsyncCompletionRegion() ) {
-					// @{ IsNonBlocking = false;
-					FctlFlags options;
-					if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
-						return LibcApi.LastError;
+					FileStatusFlags options;
+					if( setBlocking ) { // NOTE this can affect parallel writes
+						if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
+							return LibcApi.LastError;
 
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), false );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+						if( BitOperations.MaskTest( options.Value(), FileStatusFlags.O_NONBLOCK.Value() ) ) {
+							// &= ~O_NONBLOCK
+							LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), false ) ) );
+						}
+						else setBlocking = false;
+					}
 
 					var result = ReceiveFile( timeout, destination, offset, length, transferred );
 
-					// @{ IsNonBlocking = true;
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), true );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+					if( setBlocking ) {
+						LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
+					}
 
 					return result;
 				}
@@ -137,25 +137,25 @@ namespace Platform.Kernel {
 
 					int prevRcvLowWatermark = 0;
 
-					// SO_RCVLOWAT didnt work with splice
 					// var isTcpSocket = LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) == 0;
 					// finally {
-					//	if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) );
+					// 	if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) );
 					// }
 
 					var pipeSize = pipes[PipeHandle.WriteEnd].PipeSize;
+					long offset2 = offset;
 
 					for( ; ; ) {
 						var fillPipeSize = ( int ) Math.Min( length - transferred, pipeSize );
 						// if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &fillPipeSize, sizeof( fillPipeSize ) ) );
+
 						var flags = SpliceFlags.SPLICE_F_MOVE;
-						if( transferred + fillPipeSize > length ) flags |= SpliceFlags.SPLICE_F_MORE;
+						if( transferred + fillPipeSize < length ) flags |= SpliceFlags.SPLICE_F_MORE;
 
 						var fillPipeResult = LibcApi.splice( this, null, pipes[PipeHandle.WriteEnd], null, ( uint ) fillPipeSize, flags );
 						if( fillPipeResult <= 0 ) return LibcApi.LastError;
 						var readen = fillPipeResult;
 
-						long offset2 = offset;
 						var drainPipeResult = LibcApi.splice( pipes[PipeHandle.ReadEnd], null, destination, &offset2, ( uint ) readen, flags );
 						if( drainPipeResult <= 0 ) return LibcApi.LastError;
 						var written = drainPipeResult;
@@ -282,7 +282,7 @@ namespace Platform.Kernel {
 			}
 		}
 
-		protected SystemError OpenBlocking( CUtf8String name, FctlFlags flags, int permissions ) {
+		protected SystemError OpenBlocking( CUtf8String name, FileOpenFlags flags, int permissions ) {
 			var result = SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() ) {
@@ -404,7 +404,7 @@ namespace Platform.Kernel {
 				return RawRead( buffer, bufferLength, transmitted, fullBlock );
 		}
 
-		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlFlags flags, SymlinkFollowOption symlinkFollowOption ) {
+		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption symlinkFollowOption ) {
 			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.openat( parent, name, flags, symlinkFollowOption ) );
 				if( !IsValid ) return LibcApi.LastError;
@@ -414,46 +414,46 @@ namespace Platform.Kernel {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.FD_CLOEXEC ) != 0;
+				return ( options & FileDescriptorFlags.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.FD_CLOEXEC.Value(), value );
+				options = ( FileDescriptorFlags ) BitOperations.MaskSet( options.Value(), FileDescriptorFlags.FD_CLOEXEC.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFD, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFD, options ) );
 			}
 		}
 
 		public bool IsNonBlocking {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.O_NONBLOCK ) != 0;
+				return ( options & FileStatusFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
+				options = ( FileStatusFlags ) BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
 			}
 		}
 
 		public int AvailableBytes {
 			get {
 				int result;
-				LibcApi.AssertErrno( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &result ) );
+				LibcApi.AssertErrno( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &result ) );
 				return result;
 			}
 		}
@@ -482,7 +482,7 @@ namespace Platform.Kernel {
 			builder.AppendFormat( " ID={0} nonblock={1} cloexec={2}", ID, IsNonBlocking, IsClosedOnExec );
 
 			int availableBytes;
-			if( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
+			if( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
 			else builder.AppendFormat( " AvailableBytes={0}", "---" );
 		}
 

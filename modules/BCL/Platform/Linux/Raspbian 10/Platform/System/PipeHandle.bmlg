@@ -22,11 +22,11 @@ namespace Platform.Kernel {
 		public int PipeSize {
 			get {
 				int result;
-				LibcApi.AssertErrno( result = LibcApi.fcntl( this, FctlCommand.F_GETPIPE_SZ, 0 ) );
+				LibcApi.AssertErrno( result = LibcApi.fcntl( this, FileDescriptorCommand.F_GETPIPE_SZ, 0 ) );
 				return result;
 			}
 			set {
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETPIPE_SZ, ( FctlFlags ) value ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETPIPE_SZ, value ) );
 			}
 		}
 

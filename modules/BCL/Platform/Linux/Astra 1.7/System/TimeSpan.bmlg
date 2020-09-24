@@ -1,0 +1,14 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System {
+	public partial struct TimeSpan {
+		public static explicit operator TimeSpan( timeval& value ) { return new TimeSpan( value.TimeSpanTicks ); }
+		public static explicit operator TimeSpan( timespec& value ) { return new TimeSpan( value.TimeSpanTicks ); }
+	}
+}

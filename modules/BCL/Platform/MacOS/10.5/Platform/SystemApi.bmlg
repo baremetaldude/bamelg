@@ -215,8 +215,8 @@ namespace Platform.Syscalls {
 		public extern static int fchmod( IOHandle handle, Permission permission );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=open
-		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
-		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlFlags flags, SymlinkFollowOption option );
+		public extern static IOHandle open( CUtf8String name, FileOpenFlags flags, int permissions );
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption option );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=close
 		public extern static int close( IOHandle handle );
@@ -242,8 +242,8 @@ namespace Platform.Syscalls {
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=ioctl
 		public extern static int ioctl( IOHandle handle, Ioctls option, void* result );
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=fcntl
-		// public extern static int fcntl( IOHandle handle, FctlCommand option );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
+		// public extern static int fcntl( IOHandle handle, FileDescriptorCommand option );
+		public extern static int fcntl( IOHandle handle, FileDescriptorCommand option, int value );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=kqueue
 		public extern static KQueueHandle kqueue();
@@ -479,7 +479,7 @@ namespace Platform.Syscalls {
 			this = SystemApi.kqueue();
 		}
 
-		/// @{ For debugging purposes only. You must aggreagte changed events before wait in 'kevent()'
+		#region For debugging purposes only. You must aggreagte changed events before wait in 'kevent()'
 		public void Modify( kevent* newEvents, int length ) {
 			Assert.Syscall( SystemApi.kevent( this, newEvents, length, null, 0, nullref ) );
 		}
@@ -488,7 +488,7 @@ namespace Platform.Syscalls {
 			Modify( newEvents, ( int ) newEvents.Length );
 		}
 
-		/// @}
+		#endregion
 	}
 
 	public partial struct kevent : IFormattable {
@@ -575,39 +575,39 @@ namespace Platform.Syscalls {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlFlags options;
-				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileOpenFlags options;
+				if( !Assert.Syscall( options = ( FileOpenFlags ) SystemApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.FD_CLOEXEC ) != 0;
+				return ( options & FileOpenFlags.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileOpenFlags options;
+				if( !Assert.Syscall( options = ( FileOpenFlags ) SystemApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.FD_CLOEXEC.Value(), value );
+				options = ( FileOpenFlags ) BitOperations.MaskSet( options.Value(), FileOpenFlags.FD_CLOEXEC.Value(), value );
 
-				Assert.Syscall( SystemApi.fcntl( this, FctlCommand.F_SETFD, options ) );
+				Assert.Syscall( SystemApi.fcntl( this, FileDescriptorCommand.F_SETFD, options ) );
 			}
 		}
 
 		public bool IsNonBlocking {
 			get {
-				FctlFlags options;
-				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileOpenFlags options;
+				if( !Assert.Syscall( options = ( FileOpenFlags ) SystemApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.O_NONBLOCK ) != 0;
+				return ( options & FileOpenFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !Assert.Syscall( options = ( FctlFlags ) SystemApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileOpenFlags options;
+				if( !Assert.Syscall( options = ( FileOpenFlags ) SystemApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
+				options = ( FileOpenFlags ) BitOperations.MaskSet( options.Value(), FileOpenFlags.O_NONBLOCK.Value(), value );
 
-				Assert.Syscall( SystemApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+				Assert.Syscall( SystemApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
 			}
 		}
 
@@ -715,7 +715,7 @@ namespace Platform.Syscalls {
 	public struct FileHandle : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public FileHandle( CUtf8String name, FctlFlags flags, int permissions ) {
+		public FileHandle( CUtf8String name, FileOpenFlags flags, int permissions ) {
 			Assert.Syscall( this = bitcast<FileHandle>( SystemApi.open( name, flags, permissions ) ) );
 		}
 

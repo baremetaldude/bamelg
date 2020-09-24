@@ -250,19 +250,28 @@ namespace Platform.Kernel {
 			return LibcApi.setsockopt( this, SocketPropertyGroup.SOL_IP, 35, &mreq, sizeof( mreq ) ) >= 0; // IP_ADD_MEMBERSHIP
 		}
 
+		public bool AddMulticastMembership( IPv6Address multicast, uint @interface ) {
+			var mreq = new ipv6_mreq {
+				ipv6mr_multiaddr = ( in6_addr ) multicast,
+				ipv6mr_interface = @interface
+			};
+
+			return LibcApi.setsockopt( this, SocketPropertyGroup.SOL_IP, 20, &mreq, sizeof( mreq ) ) >= 0; // IPV6_JOIN_GROUP
+		}
+
 		protected new void DumpRelevantData( StringBuilder builder ) {
 			base.DumpRelevantData( builder );
 
-			builder.Concat( " IsListening=", IsListening );
-			builder.Concat( " SendBufferSize=", SendBufferSize );
-			builder.Concat( " ReceiveBufferSize=", ReceiveBufferSize );
-			builder.Concat( " IsTimpestampEnabled=", IsTimpestampEnabled );
-			builder.Concat( " IsRouteDisabled=", IsRouteDisabled );
-			builder.Concat( " IsDebugged=", IsDebugged );
-			builder.Concat( " IsBroadcast=", IsBroadcast );
-			builder.Concat( " ReuseAddress=", ReuseAddress );
-			builder.Concat( " ReadTimeout=", ReadTimeout );
-			builder.Concat( " WriteTimeout=", WriteTimeout );
+			builder.Append( " IsListening=" ); builder.Append( IsListening );
+			builder.Append( " SendBufferSize=" ); builder.Append( SendBufferSize );
+			builder.Append( " ReceiveBufferSize=" ); builder.Append( ReceiveBufferSize );
+			builder.Append( " IsTimpestampEnabled=" ); builder.Append( IsTimpestampEnabled );
+			builder.Append( " IsRouteDisabled=" ); builder.Append( IsRouteDisabled );
+			builder.Append( " IsDebugged=" ); builder.Append( IsDebugged );
+			builder.Append( " IsBroadcast=" ); builder.Append( IsBroadcast );
+			builder.Append( " ReuseAddress=" ); builder.Append( ReuseAddress );
+			builder.Append( " ReadTimeout=" ); builder.Append( ReadTimeout );
+			builder.Append( " WriteTimeout=" ); builder.Append( WriteTimeout );
 		}
 
 		protected SystemError ConnectNonBlocking( TimeSpan timeout, sockaddr* address, int addressLength ) {

@@ -50,7 +50,7 @@ namespace System {
 
 			private int _digitsLen;
 			private int _offset;
-			private int _decPointPos;
+			internal int _decPointPos;
 
 			internal byte[340] _buffer; // с запасом для double e+307 в FixedPoint форме
 			internal int _writeIndex;
@@ -85,16 +85,16 @@ namespace System {
 			}
 
 			private void RoundPos( int pos ) {
-				RoundBits( _digitsLen - pos );
+				RoundBits( _digitsLen - pos, 5U );
 			}
 
 			private bool RoundDecimal( int decimals ) {
-				return RoundBits( _digitsLen - _decPointPos - decimals );
+				return RoundBits( _digitsLen - _decPointPos - decimals, 5U );
 			}
 
 			internal bool _verbatimOutput = false;
 
-			private bool RoundBits( int shift ) {
+			private bool RoundBits( int shift, uint overflow ) {
 				if( shift <= 0 )
 					return false;
 
@@ -122,7 +122,7 @@ namespace System {
 				uint rem16 = v & 0xF;
 				_value[0] = ( v ^ rem16 ) << shift;
 				bool res = false;
-				if( rem16 >= 0x5 ) {
+				if( rem16 >= overflow ) {
 					_value[0] |= ( int ) 0x99999999 >> ( 28 - shift );
 					AddOneToDecHex();
 					int newlen = DecHexLen();
@@ -906,16 +906,65 @@ namespace System {
 				return true;
 			}
 
+			internal void FormatFixedPoint10( int precision ) {
+				if( !_positive )
+					Append( '-' );
+
+				if( precision >= 0 ) _decPointPos -= precision;
+				else {
+					precision = 4;
+					_decPointPos -= precision;
+					// _decPointPos -= precision;
+					//	_decPointPos -= Math.Min( -precision, CountTrailingZeros() );
+				}
+
+				AppendIntegerString( 1 );
+
+				if( precision == 0 ) { }
+				// else if( precision > 0 ) {
+				else {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				// }
+				// else if( _digitsLen > _decPointPos ) {
+				//	Append( '.' );
+				//	AppendDigits( 0, _digitsLen - _decPointPos );
+				// }
+			}
+
 			public void ApplyFormat( string format ) {
 				switch( _specifier ) {
-					// case 'C': return FormatCurrency( _precision );
+					case 'Q': FormatFixedPoint10( _precision ); break;
 					case 'D': FormatDecimal( _precision ); break;
 					case 'E': FormatExponential( _precision ); break;
 					case 'F': FormatFixedPoint( IntegerDigits, _precision ); break;
 					case 'G': FormatGeneral( _precision ); break;
 
 					case 'N': FormatNumber( _precision ); break;
-					// case 'P': return FormatPercent( _precision );
+					case 'X': FormatHexadecimal(); break;
+					case 'B': FormatBinary(); break;
+
+					default:
+					// if( _isCustomFormat )
+					//	return FormatCustom( format );
+
+						Assert.Fail( "The specified format '" + format + "' is invalid" );
+						break;
+				}
+			}
+
+			public void ApplyFloatingFormat( string format ) {
+				switch( _specifier ) {
+					// case 'C': return FormatCurrency( _precision );
+					case 'D': FormatFixedPoint( _precision, 0 ); break;
+					case 'E': FormatExponential( _precision ); break;
+					case 'F': FormatFixedPoint( IntegerDigits, _precision ); break;
+					case 'T': TruncateFixedPoint( IntegerDigits, _precision ); break;
+					case 'P': FormatFixedPointHalfTowardsPositiveInfinity( IntegerDigits, _precision ); break;
+					case 'G': FormatGeneral( _precision ); break;
+
+					case 'N': FormatNumber( _precision ); break;
 					case 'X': FormatHexadecimal(); break;
 					case 'B': FormatBinary(); break;
 
@@ -1004,20 +1053,58 @@ namespace System {
 			public void FormatBinary() {
 			}
 
-			public void FormatFixedPoint( int minIntegerLength, int precision ) {
-				if( precision == -1 )
-					precision = 2;
+			public void TruncateFixedPoint( int minIntegerLength, int precision ) {
+				if( !_positive )
+					Append( '-' );
 
-				RoundDecimal( precision );
+				AppendIntegerString( minIntegerLength );
+
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
+				}
+			}
+
+			public void FormatFixedPoint( int minIntegerLength, int precision ) {
+				RoundDecimal( Math.Abs( precision ) );
 
 				if( !_positive )
 					Append( '-' );
 
 				AppendIntegerString( minIntegerLength );
 
-				if( precision > 0 ) {
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
 					Append( '.' );
 					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
+				}
+			}
+
+			public void FormatFixedPointHalfTowardsPositiveInfinity( int minIntegerLength, int precision ) {
+				RoundBits( _digitsLen - _decPointPos - Math.Abs( precision ), _positive ? 5U : 6U );
+
+				if( !_positive )
+					Append( '-' );
+
+				AppendIntegerString( minIntegerLength );
+
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
 				}
 			}
 
@@ -1158,9 +1245,10 @@ namespace System {
 		public static Utf16String FormatBoolUtf16( bool value ) { return value ? ( Utf16String ) "true" : ( Utf16String ) "false"; }
 		public static Utf32String FormatBoolUtf32( bool value ) { return value ? ( Utf32String ) "true" : ( Utf32String ) "false"; }
 
-		public static string FormatChar( char value ) {
-			return new string( value, 1 );
-		}
+		public static SbcsString FormatCharSbcs( char value ) { return SbcsString.FromUtf16( Environment.DefaultCodePage, &value, 1 ); }
+		public static Utf8String FormatCharUtf8( char value ) { return Utf8String.FromUtf16( &value, 1 ); }
+		public static Utf16String FormatCharUtf16( char value ) { return new string( value, 1 ); }
+		public static Utf32String FormatCharUtf32( char value ) { return Utf32String.FromUtf16( &value, 1 ); }
 
 		public static SbcsString FormatInt8Sbcs( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatInt8Utf8( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf8String(); }
@@ -1242,15 +1330,15 @@ namespace System {
 		public static Utf16String FormatUInt64Utf16( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt64Utf32( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatFloatingPointSbcs( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFloatingPointUtf8( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFloatingPointUtf16( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFloatingPointUtf32( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFloatingPointSbcs( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatFloatingPointSbcs( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFloatingPointUtf8( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFloatingPointUtf16( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFloatingPointUtf32( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFloatingPointSbcs( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf32String(); }
 
 		public static string FormatInt8Hex( sbyte value ) {
 			Instance.Init();
@@ -1300,8 +1388,8 @@ namespace System {
 		public static void FormatInteger( StringBuilder builder, uint value, string format ) { Instance.Init( format, ( uint ) value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
 		public static void FormatInteger( StringBuilder builder, long value, string format ) { Instance.Init( format, ( long ) value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
 		public static void FormatInteger( StringBuilder builder, ulong value, string format ) { Instance.Init( format, ( ulong ) value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatFloatingPoint( StringBuilder builder, float value, string format ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatFloatingPoint( StringBuilder builder, double value, string format ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, float value, string format ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, double value, string format ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); Instance.AppendTo( builder ); }
 
 		public static void FormatFixedPoint( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
 		public static void FormatFixedPoint( StringBuilder builder, float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
@@ -1317,6 +1405,36 @@ namespace System {
 		public static Utf8String FormatFixedPointUtf8( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
 		public static Utf16String FormatFixedPointUtf16( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatFixedPointUtf32( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static void TruncateFixedPoint( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+
+		public static SbcsString TruncateFixedPointSbcs( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String TruncateFixedPointUtf8( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String TruncateFixedPointUtf16( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String TruncateFixedPointUtf32( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static SbcsString TruncateFixedPointSbcs( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String TruncateFixedPointUtf8( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String TruncateFixedPointUtf16( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String TruncateFixedPointUtf32( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+
+		public static SbcsString FormatFixedPointRoundHalfTowardsPositiveInfinitySbcs( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf8( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf16( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf32( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatFixedPointRoundHalfTowardsPositiveInfinitySbcs( double value, int minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf8( double value, int minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf16( double value, int minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf32( double value, int minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf32String(); }
 
 		public static string FormatUInt8Hex( byte value ) { return FormatInt8Hex( bitcast<sbyte>( value ) ); }
 		public static string FormatUInt16Hex( ushort value ) { return FormatInt16Hex( bitcast<short>( value ) ); }
@@ -1340,15 +1458,17 @@ namespace System {
 		private static byte[24] _12hourMapping = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public static void FormatDateTime( StringBuilder builder, DateTime value, string format ) {
-			int year, dayOfYear, month, day;
-
 			switch( format ) {
 				case "u":
 				case "U":
 					value = value.ToUniversalTime();
 					break;
+
+				case "x": builder.Append( value.Ticks, "x16" ); return;
+				case "X": builder.Append( value.Ticks, "X16" ); return;
 			}
 
+			int year, dayOfYear, month, day;
 			value.GetDateValues( year, dayOfYear, month, day );
 
 			var hour = value.Hour;
@@ -1703,6 +1823,76 @@ namespace System {
 						builder.Append( second, "D2" );
 						return;
 
+					case "ts1": // bamelg-specific, sortable long time, "14:33:21.1"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000000 % 10 );
+						return;
+
+					case "ts2": // bamelg-specific, sortable long time, "14:33:21.12"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100000 % 100, "D2" );
+						return;
+
+					case "ts3": // bamelg-specific, sortable long time, "14:33:21.123"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10000 % 1000, "D3" );
+						return;
+
+					case "ts4": // bamelg-specific, sortable long time, "14:33:21.1234"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000 % 10000, "D4" );
+						return;
+
+					case "ts5": // bamelg-specific, sortable long time, "14:33:21.12345"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100 % 100000, "D5" );
+						return;
+
+					case "ts6": // bamelg-specific, sortable long time, "14:33:21.123456"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10 % 1000000, "D6" );
+						return;
+
+					case "ts7": // bamelg-specific, sortable long time, "14:33:21.1234567"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks % 10000000, "D7" );
+						return;
+
 					// month + day
 					case "M":
 					case "m":
@@ -1958,6 +2148,118 @@ namespace System {
 						builder.Append( ':' );
 						builder.Append( second, "D2" );
 						return;
+
+					case "s1": // bamelg-specific sortable, "2013-01-05T14:33:21.7"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000000 % 10 );
+						return;
+
+					case "s2": // bamelg-specific sortable, "2013-01-05T14:33:21.78"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100000 % 100, "D2" );
+						return;
+
+					case "s3": // bamelg-specific sortable, "2013-01-05T14:33:21.789"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10000 % 1000, "D3" );
+						return;
+
+					case "s4": // bamelg-specific sortable, "2013-01-05T14:33:21.7890"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000 % 10000, "D4" );
+						return;
+
+					case "s5": // bamelg-specific sortable, "2013-01-05T14:33:21.78901"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100 % 100000, "D5" );
+						return;
+
+					case "s6": // bamelg-specific sortable, "2013-01-05T14:33:21.789012"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10 % 1000000, "D6" );
+						return;
+
+					case "s7": // bamelg-specific sortable, "2013-01-05T14:33:21.7890123"
+						builder.Append( year );
+						builder.Append( '-' );
+						builder.Append( month, "D2" );
+						builder.Append( '-' );
+						builder.Append( day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks % 10000000, "D7" );
+						return;
 				}
 			else {
 				++customFormatStartPos;
@@ -2092,7 +2394,9 @@ namespace System {
 									continue;
 								}
 								else {
+									System.Diagnostics.Debug.Assert( value.Kind != DateTimeKind.Local );
 									var offset = DateTime.GetLocalFromUtcOffset( value );
+
 									if( offset >= TimeSpan.Zero ) builder.Append( '+' );
 									builder.Append( offset.Hours, "D2" );
 									builder.Append( ':' );
@@ -2174,33 +2478,35 @@ namespace System {
 		}
 
 		public static void FormatTimeSpan( StringBuilder builder, TimeSpan value, string format ) {
-			if( value.Ticks < 0 ) {
-				builder.Append( '-' );
-				value.Ticks = -value.Ticks;
-			}
-
-			var days = value.Days;
-
 			switch( format ) {
 				case "":
-				case "c":
-					if( days != 0 ) {
-						builder.Append( days );
-						builder.Append( '.' );
-					}
+				case "c": {
+						if( value.Ticks < 0 ) {
+							builder.Append( '-' );
+							value.Ticks = -value.Ticks;
+						}
 
-					builder.Append( value.Hours, "D2" );
-					builder.Append( ':' );
-					builder.Append( value.Minutes, "D2" );
-					builder.Append( ':' );
-					builder.Append( value.Seconds, "D2" );
+						var days = value.Days;
+						if( days != 0 ) {
+							builder.Append( days );
+							builder.Append( '.' );
+						}
 
-					if( value.MicrosecondsWithMilliseconds != 0 ) {
-						builder.Append( '.' );
-						builder.Append( value.MicrosecondsWithMilliseconds, "D6" );
-					}
+						builder.Append( value.Hours, "D2" );
+						builder.Append( ':' );
+						builder.Append( value.Minutes, "D2" );
+						builder.Append( ':' );
+						builder.Append( value.Seconds, "D2" );
 
-					break;
+						if( value.MicrosecondsWithMilliseconds != 0 ) {
+							builder.Append( '.' );
+							builder.Append( value.MicrosecondsWithMilliseconds, "D6" );
+						}
+					} break;
+
+				case "x": builder.Append( value.Ticks, "x16" ); break;
+				case "X": builder.Append( value.Ticks, "X16" ); break;
+
 				default: builder.Append( "Invalid format!" ); break;
 			}
 		}
@@ -2289,100 +2595,6 @@ namespace System {
 				yield return new MemorySegment<uint>( ( uint* ) buffer, printed * 2 );
 				if( checkwrap( length -= printed ) ) break;
 			}
-		}
-
-		[UnitTest]
-		public static void UnitTest() {
-			var& cc = CultureInfo.Current;
-
-			Assert.AreEqual( "NaN", FormatDoubleIEEE754Utf16( double.NaN ) );
-			Assert.AreEqual( "Infinity", FormatDoubleIEEE754Utf16( double.PositiveInfinity ) );
-			Assert.AreEqual( "-Infinity", FormatDoubleIEEE754Utf16( double.NegativeInfinity ) );
-
-			Assert.AreEqual( "0F", FormatInt8Hex( ( sbyte ) 15 ) );
-			Assert.AreEqual( "000F", FormatInt16Hex( ( short ) 15 ) );
-			Assert.AreEqual( "0000000F", FormatInt32Hex( ( int ) 15 ) );
-			Assert.AreEqual( "000000000000000F", FormatInt64Hex( ( long ) 15 ) );
-
-			Assert.AreEqual( "7F", FormatInt8Hex( sbyte.MaxValue ) );
-			Assert.AreEqual( "FF", FormatUInt8Hex( byte.MaxValue ) );
-			Assert.AreEqual( "7FFF", FormatInt16Hex( short.MaxValue ) );
-			Assert.AreEqual( "FFFF", FormatUInt16Hex( ushort.MaxValue ) );
-			Assert.AreEqual( "7FFFFFFF", FormatInt32Hex( int.MaxValue ) );
-			Assert.AreEqual( "FFFFFFFF", FormatUInt32Hex( uint.MaxValue ) );
-			Assert.AreEqual( "7FFFFFFFFFFFFFFF", FormatInt64Hex( long.MaxValue ) );
-			Assert.AreEqual( "FFFFFFFFFFFFFFFF", FormatUInt64Hex( ulong.MaxValue ) );
-
-			Assert.AreEqual( sbyte.MaxValue.ToString(), FormatInt8Utf16( sbyte.MaxValue ) );
-			Assert.AreEqual( sbyte.MinValue.ToString(), FormatInt8Utf16( sbyte.MinValue ) );
-			Assert.AreEqual( byte.MaxValue.ToString(), FormatUInt8Utf16( byte.MaxValue ) );
-			Assert.AreEqual( byte.MinValue.ToString(), FormatUInt8Utf16( byte.MinValue ) );
-
-			Assert.AreEqual( short.MaxValue.ToString(), FormatInt16Utf16( short.MaxValue ) );
-			Assert.AreEqual( short.MinValue.ToString(), FormatInt16Utf16( short.MinValue ) );
-			Assert.AreEqual( ushort.MaxValue.ToString(), FormatUInt16Utf16( ushort.MaxValue ) );
-			Assert.AreEqual( ushort.MinValue.ToString(), FormatUInt16Utf16( ushort.MinValue ) );
-
-			Assert.AreEqual( int.MaxValue.ToString(), FormatInt32Utf16( int.MaxValue ) );
-			Assert.AreEqual( int.MinValue.ToString(), FormatInt32Utf16( int.MinValue ) );
-			Assert.AreEqual( uint.MaxValue.ToString(), FormatUInt32Utf16( uint.MaxValue ) );
-			Assert.AreEqual( uint.MinValue.ToString(), FormatUInt32Utf16( uint.MinValue ) );
-
-			Assert.AreEqual( 0.01.ToString(), FormatDoubleIEEE754Utf16( 0.01 ) );
-			Assert.AreEqual( ( -10.01 ).ToString(), FormatDoubleIEEE754Utf16( -10.01 ) );
-
-			Assert.AreEqual( long.MaxValue.ToString(), FormatInt64Utf16( long.MaxValue ) );
-			Assert.AreEqual( long.MinValue.ToString(), FormatInt64Utf16( long.MinValue ) );
-			Assert.AreEqual( ulong.MaxValue.ToString(), FormatUInt64Utf16( ulong.MaxValue ) );
-			Assert.AreEqual( ulong.MinValue.ToString(), FormatUInt64Utf16( ulong.MinValue ) );
-
-			var time = new DateTime( 2013, 1, 5, 14, 33, 21, 456, DateTimeKind.Utc );
-
-			Assert.AreEqual( "2013-01-05T14:33:21", string.Format( "{0:s}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21", string.Format( "{0:S}", time ) );
-			Assert.AreEqual( "Sat, 05 Jan 2013 14:33:21 GMT", string.Format( "{0:r}", time ) );
-			Assert.AreEqual( "Sat, 05 Jan 2013 14:33:21 GMT", string.Format( "{0:R}", time ) );
-			Assert.AreEqual( "2013-01-05T14:33:21.4560000", string.Format( "{0:o}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21.4560000", string.Format( "{0:O}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21Z", string.Format( "{0:u}", time ) );
-			Assert.AreEqual( "4 45 456 4560 45600 456000 4560000", string.Format( "{0:f ff fff ffff fffff ffffff fffffff}", time ) );
-			Assert.AreEqual( "13 13 2013 2013 02013 002013", string.Format( "{0:y yy yyy yyyy yyyyy yyyyyy}", time ) );
-			Assert.AreEqual( "21 21", string.Format( "{0:s ss}", time ) );
-
-			CultureInfo.Current = CultureInfo.EN;
-			Assert.AreEqual( "1/5/2013", string.Format( "{0:d}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013", string.Format( "{0:D}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33 PM", string.Format( "{0:f}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33:21 PM", string.Format( "{0:F}", time ) );
-			Assert.AreEqual( "1/5/2013 2:33 PM", string.Format( "{0:g}", time ) );
-			Assert.AreEqual( "1/5/2013 2:33:21 PM", string.Format( "{0:G}", time ) );
-			Assert.AreEqual( "2:33 PM", string.Format( "{0:t}", time ) );
-			Assert.AreEqual( "2:33:21 PM", string.Format( "{0:T}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33:21 PM", string.Format( "{0:U}", time ) );
-			Assert.AreEqual( "January, 2013", string.Format( "{0:y}", time ) );
-			Assert.AreEqual( "January 05", string.Format( "{0:m}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:TS}", time ) );
-			Assert.AreEqual( "5 05 Sat Saturday", string.Format( "{0:d dd ddd dddd}", time ) );
-			Assert.AreEqual( "1/01/Jan/January", string.Format( "{0:M/MM/MMM/MMMM}", time ) );
-			Assert.AreEqual( "2:02", string.Format( "{0:h:hh}", time ) );
-
-			CultureInfo.Current = CultureInfo.RU;
-			Assert.AreEqual( "05.01.2013", string.Format( "{0:d}", time ) );
-			Assert.AreEqual( "5 января 2013 г.", string.Format( "{0:D}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33", string.Format( "{0:f}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33:21", string.Format( "{0:F}", time ) );
-			Assert.AreEqual( "05.01.2013 14:33", string.Format( "{0:g}", time ) );
-			Assert.AreEqual( "05.01.2013 14:33:21", string.Format( "{0:G}", time ) );
-			Assert.AreEqual( "14:33", string.Format( "{0:t}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:T}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33:21", string.Format( "{0:U}", time ) );
-			Assert.AreEqual( "января 05", string.Format( "{0:m}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:TS}", time ) );
-			Assert.AreEqual( "5 05 Сб суббота", string.Format( "{0:d dd ddd dddd}", time ) );
-			Assert.AreEqual( "1.01.янв.Январь", string.Format( "{0:M/MM/MMM/MMMM}", time ) );
-			Assert.AreEqual( "2:02", string.Format( "{0:h:hh}", time ) );
-
-			CultureInfo.Current = cc;
 		}
 
 		internal static byte[16] HexDigitsLower = { ( byte ) '0', ( byte ) '1', ( byte ) '2', ( byte ) '3', ( byte ) '4', ( byte ) '5', ( byte ) '6', ( byte ) '7', ( byte ) '8', ( byte ) '9', ( byte ) 'a', ( byte ) 'b', ( byte ) 'c', ( byte ) 'd', ( byte ) 'e', ( byte ) 'f' };
