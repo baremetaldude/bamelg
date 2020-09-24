@@ -1,0 +1,24 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Serialization;
+
+namespace System {
+	public sealed partial struct DateTimeUTC : IBinarySerializable, ITextSerializable, IFormattable {
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadDateTimeUTC(); }
+
+		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "S" ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { var s = TryParse<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); Console.WriteLine( s ); }
+
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, Ticks, DateTimeKind.Utc, format ?? "G" ); }
+
+		public DateTimeLocal ToLocalTime() { DateTimeLocal result; Assert.IsTrue( Convert.TryConvert( &result, this ) ); return result; }
+
+		public static DateTimeUTC UtcNow { get { return ( thistype ) TimeStamp.UTC.Now; } }
+	}
+}

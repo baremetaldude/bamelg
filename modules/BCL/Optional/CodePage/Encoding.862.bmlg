@@ -1,0 +1,413 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Text {
+	public partial struct Encoding {
+		public static struct CP862 {
+			public static readonly char[256] ToUtf16 = {
+				    '\0', '\x0001', '\x0002', '\x0003', '\x0004', '\x0005', '\x0006',     '\a',     '\b',     '\t',     '\n',     '\v',     '\f',     '\r', '\x000E', '\x000F',
+				'\x0010', '\x0011', '\x0012', '\x0013', '\x0014', '\x0015', '\x0016', '\x0017', '\x0018', '\x0019', '\x001C', '\x001B', '\x007F', '\x001D', '\x001E', '\x001F',
+				     ' ',      '!',      '"',      '#',      '$',      '%',      '&',     '\'',      '(',      ')',      '*',      '+',      ',',      '-',      '.',      '/',
+				     '0',      '1',      '2',      '3',      '4',      '5',      '6',      '7',      '8',      '9',      ':',      ';',      '<',      '=',      '>',      '?',
+				     '@',      'A',      'B',      'C',      'D',      'E',      'F',      'G',      'H',      'I',      'J',      'K',      'L',      'M',      'N',      'O',
+				     'P',      'Q',      'R',      'S',      'T',      'U',      'V',      'W',      'X',      'Y',      'Z',      '[',     '\\',      ']',      '^',      '_',
+				     '`',      'a',      'b',      'c',      'd',      'e',      'f',      'g',      'h',      'i',      'j',      'k',      'l',      'm',      'n',      'o',
+				     'p',      'q',      'r',      's',      't',      'u',      'v',      'w',      'x',      'y',      'z',      '{',      '|',      '}',      '~', '\x001A',
+				     'א',      'ב',      'ג',      'ד',      'ה',      'ו',      'ז',      'ח',      'ט',      'י',      'ך',      'כ',      'ל',      'ם',      'מ',      'ן',
+				     'נ',      'ס',      'ע',      'ף',      'פ',      'ץ',      'צ',      'ק',      'ר',      'ש',      'ת',      '¢',      '£',      '¥',      '₧',      'ƒ',
+				     'á',      'í',      'ó',      'ú',      'ñ',      'Ñ',      'ª',      'º',      '¿',      '⌐',      '¬',      '½',      '¼',      '¡', '\x00AB', '\x00BB',
+				     '░',      '▒',      '▓',      '│',      '┤',      '╡',      '╢',      '╖',      '╕',      '╣',      '║',      '╗',      '╝',      '╜',      '╛',      '┐',
+				     '└',      '┴',      '┬',      '├',      '─',      '┼',      '╞',      '╟',      '╚',      '╔',      '╩',      '╦',      '╠',      '═',      '╬',      '╧',
+				     '╨',      '╤',      '╥',      '╙',      '╘',      '╒',      '╓',      '╫',      '╪',      '┘',      '┌',      '█',      '▄',      '▌',      '▐',      '▀',
+				     'α',      'ß',      'Γ',      'π',      'Σ',      'σ',      'μ',      'τ',      'Φ',      'Θ',      'Ω',      'δ',      '∞',      'φ',      'ε',      '∩',
+				     '≡',      '±',      '≥',      '≤',      '⌠',      '⌡',      '÷',      '≈',      '°',      '∙',      '·',      '√',      'ⁿ',      '²',      '■', '\x00A0'
+			};
+
+			public static char* GetConversionTable() { return &ToUtf16[0]; }
+
+			public static void GetBytes( char* chars, uintptr charCount, byte* bytes, uintptr byteCount ) {
+				var count = Math.Min( charCount, byteCount );
+				for( var i = 0U; i < count; ++i ) {
+					var @char = ( ushort ) chars[i];
+					var @byte = ( byte ) @char;
+					if( @char >= 26 )
+						switch( @char ) {
+							case 0x1B:
+							case 0x1D:
+							case 0x1E:
+							case 0x1F:
+							case 0x20:
+							case 0x21:
+							case 0x22:
+							case 0x23:
+							case 0x24:
+							case 0x25:
+							case 0x26:
+							case 0x27:
+							case 0x28:
+							case 0x29:
+							case 0x2A:
+							case 0x2B:
+							case 0x2C:
+							case 0x2D:
+							case 0x2E:
+							case 0x2F:
+							case 0x30:
+							case 0x31:
+							case 0x32:
+							case 0x33:
+							case 0x34:
+							case 0x35:
+							case 0x36:
+							case 0x37:
+							case 0x38:
+							case 0x39:
+							case 0x3A:
+							case 0x3B:
+							case 0x3C:
+							case 0x3D:
+							case 0x3E:
+							case 0x3F:
+							case 0x40:
+							case 0x41:
+							case 0x42:
+							case 0x43:
+							case 0x44:
+							case 0x45:
+							case 0x46:
+							case 0x47:
+							case 0x48:
+							case 0x49:
+							case 0x4A:
+							case 0x4B:
+							case 0x4C:
+							case 0x4D:
+							case 0x4E:
+							case 0x4F:
+							case 0x50:
+							case 0x51:
+							case 0x52:
+							case 0x53:
+							case 0x54:
+							case 0x55:
+							case 0x56:
+							case 0x57:
+							case 0x58:
+							case 0x59:
+							case 0x5A:
+							case 0x5B:
+							case 0x5C:
+							case 0x5D:
+							case 0x5E:
+							case 0x5F:
+							case 0x60:
+							case 0x61:
+							case 0x62:
+							case 0x63:
+							case 0x64:
+							case 0x65:
+							case 0x66:
+							case 0x67:
+							case 0x68:
+							case 0x69:
+							case 0x6A:
+							case 0x6B:
+							case 0x6C:
+							case 0x6D:
+							case 0x6E:
+							case 0x6F:
+							case 0x70:
+							case 0x71:
+							case 0x72:
+							case 0x73:
+							case 0x74:
+							case 0x75:
+							case 0x76:
+							case 0x77:
+							case 0x78:
+							case 0x79:
+							case 0x7A:
+							case 0x7B:
+							case 0x7C:
+							case 0x7D:
+							case 0x7E:
+								break;
+
+							case 0x1A: @byte = 0x7F; break;
+							case 0x1C: @byte = 0x1A; break;
+							case 0x7F: @byte = 0x1C; break;
+							case 0xA0: @byte = 0xFF; break;
+							case 0xA1: @byte = 0xAD; break;
+							case 0xA2: @byte = 0x9B; break;
+							case 0xA3: @byte = 0x9C; break;
+							case 0xA5: @byte = 0x9D; break;
+							case 0xA7: @byte = 0x15; break;
+							case 0xAA: @byte = 0xA6; break;
+							case 0xAB: @byte = 0xAE; break;
+							case 0xAC: @byte = 0xAA; break;
+							case 0xB0: @byte = 0xF8; break;
+							case 0xB1: @byte = 0xF1; break;
+							case 0xB2: @byte = 0xFD; break;
+							case 0xB6: @byte = 0x14; break;
+							case 0xB7: @byte = 0xFA; break;
+							case 0xBA: @byte = 0xA7; break;
+							case 0xBB: @byte = 0xAF; break;
+							case 0xBC: @byte = 0xAC; break;
+							case 0xBD: @byte = 0xAB; break;
+							case 0xBF: @byte = 0xA8; break;
+							case 0xD1: @byte = 0xA5; break;
+							case 0xDF: @byte = 0xE1; break;
+							case 0xE1: @byte = 0xA0; break;
+							case 0xED: @byte = 0xA1; break;
+							case 0xF1: @byte = 0xA4; break;
+							case 0xF3: @byte = 0xA2; break;
+							case 0xF7: @byte = 0xF6; break;
+							case 0xFA: @byte = 0xA3; break;
+							case 0x192: @byte = 0x9F; break;
+							case 0x393: @byte = 0xE2; break;
+							case 0x398: @byte = 0xE9; break;
+							case 0x3A3: @byte = 0xE4; break;
+							case 0x3A6: @byte = 0xE8; break;
+							case 0x3A9: @byte = 0xEA; break;
+							case 0x3B1: @byte = 0xE0; break;
+							case 0x3B4: @byte = 0xEB; break;
+							case 0x3B5: @byte = 0xEE; break;
+							case 0x3BC: @byte = 0xE6; break;
+							case 0x3C0: @byte = 0xE3; break;
+							case 0x3C3: @byte = 0xE5; break;
+							case 0x3C4: @byte = 0xE7; break;
+							case 0x3C6: @byte = 0xED; break;
+							case 0x5D0: @byte = 0x80; break;
+							case 0x5D1: @byte = 0x81; break;
+							case 0x5D2: @byte = 0x82; break;
+							case 0x5D3: @byte = 0x83; break;
+							case 0x5D4: @byte = 0x84; break;
+							case 0x5D5: @byte = 0x85; break;
+							case 0x5D6: @byte = 0x86; break;
+							case 0x5D7: @byte = 0x87; break;
+							case 0x5D8: @byte = 0x88; break;
+							case 0x5D9: @byte = 0x89; break;
+							case 0x5DA: @byte = 0x8A; break;
+							case 0x5DB: @byte = 0x8B; break;
+							case 0x5DC: @byte = 0x8C; break;
+							case 0x5DD: @byte = 0x8D; break;
+							case 0x5DE: @byte = 0x8E; break;
+							case 0x5DF: @byte = 0x8F; break;
+							case 0x5E0: @byte = 0x90; break;
+							case 0x5E1: @byte = 0x91; break;
+							case 0x5E2: @byte = 0x92; break;
+							case 0x5E3: @byte = 0x93; break;
+							case 0x5E4: @byte = 0x94; break;
+							case 0x5E5: @byte = 0x95; break;
+							case 0x5E6: @byte = 0x96; break;
+							case 0x5E7: @byte = 0x97; break;
+							case 0x5E8: @byte = 0x98; break;
+							case 0x5E9: @byte = 0x99; break;
+							case 0x5EA: @byte = 0x9A; break;
+							case 0x2022: @byte = 0x07; break;
+							case 0x203C: @byte = 0x13; break;
+							case 0x207F: @byte = 0xFC; break;
+							case 0x20A7: @byte = 0x9E; break;
+							case 0x2190: @byte = 0x1B; break;
+							case 0x2191: @byte = 0x18; break;
+							case 0x2192: @byte = 0x1A; break;
+							case 0x2193: @byte = 0x19; break;
+							case 0x2194: @byte = 0x1D; break;
+							case 0x2195: @byte = 0x12; break;
+							case 0x21A8: @byte = 0x17; break;
+							case 0x2219: @byte = 0xF9; break;
+							case 0x221A: @byte = 0xFB; break;
+							case 0x221E: @byte = 0xEC; break;
+							case 0x221F: @byte = 0x1C; break;
+							case 0x2229: @byte = 0xEF; break;
+							case 0x2248: @byte = 0xF7; break;
+							case 0x2261: @byte = 0xF0; break;
+							case 0x2264: @byte = 0xF3; break;
+							case 0x2265: @byte = 0xF2; break;
+							case 0x2302: @byte = 0x7F; break;
+							case 0x2310: @byte = 0xA9; break;
+							case 0x2320: @byte = 0xF4; break;
+							case 0x2321: @byte = 0xF5; break;
+							case 0x2500: @byte = 0xC4; break;
+							case 0x2502: @byte = 0xB3; break;
+							case 0x250C: @byte = 0xDA; break;
+							case 0x2510: @byte = 0xBF; break;
+							case 0x2514: @byte = 0xC0; break;
+							case 0x2518: @byte = 0xD9; break;
+							case 0x251C: @byte = 0xC3; break;
+							case 0x2524: @byte = 0xB4; break;
+							case 0x252C: @byte = 0xC2; break;
+							case 0x2534: @byte = 0xC1; break;
+							case 0x253C: @byte = 0xC5; break;
+							case 0x2550: @byte = 0xCD; break;
+							case 0x2551: @byte = 0xBA; break;
+							case 0x2552: @byte = 0xD5; break;
+							case 0x2553: @byte = 0xD6; break;
+							case 0x2554: @byte = 0xC9; break;
+							case 0x2555: @byte = 0xB8; break;
+							case 0x2556: @byte = 0xB7; break;
+							case 0x2557: @byte = 0xBB; break;
+							case 0x2558: @byte = 0xD4; break;
+							case 0x2559: @byte = 0xD3; break;
+							case 0x255A: @byte = 0xC8; break;
+							case 0x255B: @byte = 0xBE; break;
+							case 0x255C: @byte = 0xBD; break;
+							case 0x255D: @byte = 0xBC; break;
+							case 0x255E: @byte = 0xC6; break;
+							case 0x255F: @byte = 0xC7; break;
+							case 0x2560: @byte = 0xCC; break;
+							case 0x2561: @byte = 0xB5; break;
+							case 0x2562: @byte = 0xB6; break;
+							case 0x2563: @byte = 0xB9; break;
+							case 0x2564: @byte = 0xD1; break;
+							case 0x2565: @byte = 0xD2; break;
+							case 0x2566: @byte = 0xCB; break;
+							case 0x2567: @byte = 0xCF; break;
+							case 0x2568: @byte = 0xD0; break;
+							case 0x2569: @byte = 0xCA; break;
+							case 0x256A: @byte = 0xD8; break;
+							case 0x256B: @byte = 0xD7; break;
+							case 0x256C: @byte = 0xCE; break;
+							case 0x2580: @byte = 0xDF; break;
+							case 0x2584: @byte = 0xDC; break;
+							case 0x2588: @byte = 0xDB; break;
+							case 0x258C: @byte = 0xDD; break;
+							case 0x2590: @byte = 0xDE; break;
+							case 0x2591: @byte = 0xB0; break;
+							case 0x2592: @byte = 0xB1; break;
+							case 0x2593: @byte = 0xB2; break;
+							case 0x25A0: @byte = 0xFE; break;
+							case 0x25AC: @byte = 0x16; break;
+							case 0x25B2: @byte = 0x1E; break;
+							case 0x25BA: @byte = 0x10; break;
+							case 0x25BC: @byte = 0x1F; break;
+							case 0x25C4: @byte = 0x11; break;
+							case 0x25CB: @byte = 0x09; break;
+							case 0x25D8: @byte = 0x08; break;
+							case 0x25D9: @byte = 0x0A; break;
+							case 0x263A: @byte = 0x01; break;
+							case 0x263B: @byte = 0x02; break;
+							case 0x263C: @byte = 0x0F; break;
+							case 0x2640: @byte = 0x0C; break;
+							case 0x2642: @byte = 0x0B; break;
+							case 0x2660: @byte = 0x06; break;
+							case 0x2663: @byte = 0x05; break;
+							case 0x2665: @byte = 0x03; break;
+							case 0x2666: @byte = 0x04; break;
+							case 0x266A: @byte = 0x0D; break;
+							case 0x266B: @byte = 0x0E; break;
+							case 0xFF01: @byte = 0x21; break;
+							case 0xFF02: @byte = 0x22; break;
+							case 0xFF03: @byte = 0x23; break;
+							case 0xFF04: @byte = 0x24; break;
+							case 0xFF05: @byte = 0x25; break;
+							case 0xFF06: @byte = 0x26; break;
+							case 0xFF07: @byte = 0x27; break;
+							case 0xFF08: @byte = 0x28; break;
+							case 0xFF09: @byte = 0x29; break;
+							case 0xFF0A: @byte = 0x2A; break;
+							case 0xFF0B: @byte = 0x2B; break;
+							case 0xFF0C: @byte = 0x2C; break;
+							case 0xFF0D: @byte = 0x2D; break;
+							case 0xFF0E: @byte = 0x2E; break;
+							case 0xFF0F: @byte = 0x2F; break;
+							case 0xFF10: @byte = 0x30; break;
+							case 0xFF11: @byte = 0x31; break;
+							case 0xFF12: @byte = 0x32; break;
+							case 0xFF13: @byte = 0x33; break;
+							case 0xFF14: @byte = 0x34; break;
+							case 0xFF15: @byte = 0x35; break;
+							case 0xFF16: @byte = 0x36; break;
+							case 0xFF17: @byte = 0x37; break;
+							case 0xFF18: @byte = 0x38; break;
+							case 0xFF19: @byte = 0x39; break;
+							case 0xFF1A: @byte = 0x3A; break;
+							case 0xFF1B: @byte = 0x3B; break;
+							case 0xFF1C: @byte = 0x3C; break;
+							case 0xFF1D: @byte = 0x3D; break;
+							case 0xFF1E: @byte = 0x3E; break;
+							case 0xFF1F: @byte = 0x3F; break;
+							case 0xFF20: @byte = 0x40; break;
+							case 0xFF21: @byte = 0x41; break;
+							case 0xFF22: @byte = 0x42; break;
+							case 0xFF23: @byte = 0x43; break;
+							case 0xFF24: @byte = 0x44; break;
+							case 0xFF25: @byte = 0x45; break;
+							case 0xFF26: @byte = 0x46; break;
+							case 0xFF27: @byte = 0x47; break;
+							case 0xFF28: @byte = 0x48; break;
+							case 0xFF29: @byte = 0x49; break;
+							case 0xFF2A: @byte = 0x4A; break;
+							case 0xFF2B: @byte = 0x4B; break;
+							case 0xFF2C: @byte = 0x4C; break;
+							case 0xFF2D: @byte = 0x4D; break;
+							case 0xFF2E: @byte = 0x4E; break;
+							case 0xFF2F: @byte = 0x4F; break;
+							case 0xFF30: @byte = 0x50; break;
+							case 0xFF31: @byte = 0x51; break;
+							case 0xFF32: @byte = 0x52; break;
+							case 0xFF33: @byte = 0x53; break;
+							case 0xFF34: @byte = 0x54; break;
+							case 0xFF35: @byte = 0x55; break;
+							case 0xFF36: @byte = 0x56; break;
+							case 0xFF37: @byte = 0x57; break;
+							case 0xFF38: @byte = 0x58; break;
+							case 0xFF39: @byte = 0x59; break;
+							case 0xFF3A: @byte = 0x5A; break;
+							case 0xFF3B: @byte = 0x5B; break;
+							case 0xFF3C: @byte = 0x5C; break;
+							case 0xFF3D: @byte = 0x5D; break;
+							case 0xFF3E: @byte = 0x5E; break;
+							case 0xFF3F: @byte = 0x5F; break;
+							case 0xFF40: @byte = 0x60; break;
+							case 0xFF41: @byte = 0x61; break;
+							case 0xFF42: @byte = 0x62; break;
+							case 0xFF43: @byte = 0x63; break;
+							case 0xFF44: @byte = 0x64; break;
+							case 0xFF45: @byte = 0x65; break;
+							case 0xFF46: @byte = 0x66; break;
+							case 0xFF47: @byte = 0x67; break;
+							case 0xFF48: @byte = 0x68; break;
+							case 0xFF49: @byte = 0x69; break;
+							case 0xFF4A: @byte = 0x6A; break;
+							case 0xFF4B: @byte = 0x6B; break;
+							case 0xFF4C: @byte = 0x6C; break;
+							case 0xFF4D: @byte = 0x6D; break;
+							case 0xFF4E: @byte = 0x6E; break;
+							case 0xFF4F: @byte = 0x6F; break;
+							case 0xFF50: @byte = 0x70; break;
+							case 0xFF51: @byte = 0x71; break;
+							case 0xFF52: @byte = 0x72; break;
+							case 0xFF53: @byte = 0x73; break;
+							case 0xFF54: @byte = 0x74; break;
+							case 0xFF55: @byte = 0x75; break;
+							case 0xFF56: @byte = 0x76; break;
+							case 0xFF57: @byte = 0x77; break;
+							case 0xFF58: @byte = 0x78; break;
+							case 0xFF59: @byte = 0x79; break;
+							case 0xFF5A: @byte = 0x7A; break;
+							case 0xFF5B: @byte = 0x7B; break;
+							case 0xFF5C: @byte = 0x7C; break;
+							case 0xFF5D: @byte = 0x7D; break;
+							case 0xFF5E: @byte = 0x7E; break;
+							case 0xFFE8: @byte = 0xB3; break;
+							case 0xFFE9: @byte = 0x1B; break;
+							case 0xFFEA: @byte = 0x18; break;
+							case 0xFFEB: @byte = 0x1A; break;
+							case 0xFFEC: @byte = 0x19; break;
+							case 0xFFED: @byte = 0xFE; break;
+							case 0xFFEE: @byte = 0x09; break;
+							default: @byte = ( byte ) '?'; break;
+						}
+
+					bytes[i] = @byte;
+				}
+
+				if( count < byteCount ) bytes[count] = 0;
+			}
+		}
+	}
+}

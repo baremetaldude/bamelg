@@ -3,8 +3,6 @@
 //
 // See license at http://bamelg.com/license.txt
 //
-// Bit twiddling hacks come from http://graphics.stanford.edu/~seander/bithacks.html
-//
 
 using System;
 using System.Reflection;
@@ -25,310 +23,2031 @@ namespace System {
 		}
 
 		private static partial struct Impl {
-			private static float _0_5f = 0.5f;
-			private static float _m0_5f = -0.5f;
+			#region Default hardware-assisted rounding with platform defined tie-breaking rules
 
-			private static double _0_5 = 0.5;
-			private static double _m0_5 = -0.5;
-
-			public static long RoundHalfToEvenInt64( double value ) asm {
+			public static sbyte RoundHalfToInt8( float value ) asm {
 				X86_32 {
-					fld qword ptr [esp + 4]
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					retn
-				}
-				X86_64 {
 					feature( SSE4_1 ) {
-						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
-						cvttsd2si rax, xmm1
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
 
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						movss xmm0, dword ptr [esp + 4]
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 128
+						jge overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor al, 0x7F
 						retn
 					}
 					default {
-						movq qword ptr [rsp - 8], xmm0
-						fld qword ptr [rsp - 8]
-						fistp qword ptr [rsp - 8]
-						mov rax, qword ptr [rsp - 8]
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
 
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						fld dword ptr [esp + 4]
+						fistp word ptr [esp + 4]
+						mov ax, word ptr [esp + 4]
+
+						cmp ax, 128
+						jge overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor al, 0x7F
 						retn
 					}
-				}
-				default {
-					return Fallback.RoundHalfToEvenInt64( value );
-				}
-			}
-
-			public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) asm {
-				X86_32 {
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fadd dword ptr [[_0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					retn
-				}
-				default {
-					return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value + 0.5 ), 1 );
-				}
-			}
-
-			public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) asm {
-				X86_32 {
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fsubr dword ptr [[_0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					not eax
-					not edx
-
-					add eax, 1
-					adc edx, 0
-
-					retn
-				}
-				default {
-					return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( 0.5 - value - value ), 1 );
-				}
-			}
-
-			public static long RoundHalfAwayFromZeroToInt64( double value ) asm {
-				X86_32 {
-					// xor eax, eax
-					// mov edx, dword ptr [esp + 8]
-
-					// and edx, 0x7FFFFFFF
-					// cmp edx, 0x000FFFFF
-					// setg al
-
-					add dword ptr [esp + 4], 1
-					adc dword ptr [esp + 8], 0
-
-					fld qword ptr [esp + 4]
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					retn
-				}
-				default {
-					return RoundHalfToEvenInt64( bitcast<double>( bitcast<ulong>( value ) + 1 ) );
-				}
-			}
-
-			public static long RoundHalfTowardsZeroToInt64( double value ) asm {
-				X86_32 {
-					xor eax, eax
-					mov edx, dword ptr [esp + 8]
-
-					and edx, 0x7FFFFFFF
-					cmp edx, 0x000FFFFF
-					setg al
-
-					sub dword ptr [esp + 4], eax
-					sbb dword ptr [esp + 8], 0
-
-					fld qword ptr [esp + 4]
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					retn
-				}
-				default {
-					return RoundHalfToEvenInt64( value.IsDenormalizedOrZero ? value : bitcast<double>( bitcast<ulong>( value ) - 1 ) );
-				}
-			}
-
-			// aka 'floor'/'round down'
-			public static long RoundTowardsMinusInfinityInt64( double value ) asm {
-				X86_32 {
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fsub dword ptr [[_0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					retn
-				}
-				default {
-					return BitOperations.SignedShiftRight( RoundHalfToEvenInt64( value + value - 0.5 ), 1 );
-				}
-			}
-
-			// aka 'ceil'/'round up'
-			public static long RoundTowardsPlusInfinityInt64( double value ) asm {
-				X86_32 {
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fsubr dword ptr [[_m0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					not eax
-					not edx
-
-					add eax, 1
-					adc edx, 0
-
-					retn
-				}
-				default {
-					return -BitOperations.SignedShiftRight( RoundHalfToEvenInt64( -0.5 - value - value ), 1 );
-				}
-			}
-
-			public static long TruncateToInt64( float value ) { return TruncateToInt64( ( double ) value ); }
-
-			// 'ceil' for negative numbers
-			// 'floor' for positive numbers
-			public static long TruncateToInt64( double value ) asm {
-				// X86_32 {
-				// 	test byte ptr [esp + 11], 0x80
-				// 	jnz negative
-
-				// 	fld qword ptr [esp + 4]
-				// 	fadd st0, st0
-				// 	fsub dword ptr [[_0_5f]]
-
-				// 	fistp qword ptr [esp + 4]
-
-				// 	mov eax, dword ptr [esp + 4]
-				// 	mov edx, dword ptr [esp + 8]
-
-				// 	sar edx, 1
-				// 	rcr eax, 1
-
-				// 	retn
-
-				// negative:
-				// 	fld qword ptr [esp + 4]
-				// 	fadd st0, st0
-				// 	fsubr dword ptr [[_m0_5f]]
-
-				// 	fistp qword ptr [esp + 4]
-
-				// 	mov eax, dword ptr [esp + 4]
-				// 	mov edx, dword ptr [esp + 8]
-
-				// 	sar edx, 1
-				// 	rcr eax, 1
-
-				// 	not eax
-				// 	not edx
-
-				// 	add eax, 1
-				// 	adc edx, 0
-
-				// 	retn
-				// }
-				// X86_64 {
-				// 	cvttsd2si rax, xmm0
-
-				// 	retn
-				// }
-				default {
-					return ( long ) value;
-				}
-			}
-
-			public static long RoundAwayFromZeroToInt64( float value ) { return RoundAwayFromZeroToInt64( ( double ) value ); }
-
-			// 'floor' for negative numbers
-			// 'ceil' for positive numbers
-			public static long RoundAwayFromZeroToInt64( double value ) asm {
-				X86_32 {
-					test byte ptr [esp + 11], 0x80
-					jnz negative
-
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fsubr dword ptr [[_m0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					not eax
-					not edx
-
-					add eax, 1
-					adc edx, 0
-
-					retn
-
-				negative:
-					fld qword ptr [esp + 4]
-					fadd st0, st0
-					fsub dword ptr [[_0_5f]]
-
-					fistp qword ptr [esp + 4]
-
-					mov eax, dword ptr [esp + 4]
-					mov edx, dword ptr [esp + 8]
-
-					sar edx, 1
-					rcr eax, 1
-
-					retn
 				}
 				X86_64 {
 					feature( SSE4_1 ) {
-						xorpd xmm1, xmm1
+						movd ecx, xmm0
+						movd eax, xmm0
+						shr eax, const( float.SignificandBits )
 
-						comisd xmm0, xmm1
-						jb negative
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
 
-						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundUp )
-						cvttsd2si rax, xmm1
-						retn
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
 
-					negative:
-						roundsd xmm1, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundDown )
-						cvttsd2si rax, xmm1
+						cmp eax, 128
+						jge overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor al, 0x7F
 						retn
 					}
 				}
 				default {
-					return value < 0 ? RoundTowardsMinusInfinityInt64( value ) : RoundTowardsPlusInfinityInt64( value );
+					return RoundHalfToEvenToInt8( value );
 				}
 			}
+
+			public static byte RoundHalfToUInt8( float value ) asm {
+				X86_32 {
+					feature( SSE4_1 ) {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						movss xmm0, dword ptr [esp + 4]
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 255
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not al
+						retn
+					}
+					default {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						fld dword ptr [esp + 4]
+						fistp word ptr [esp + 4]
+						mov ax, word ptr [esp + 4]
+
+						cmp ax, 255
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not al
+						retn
+					}
+				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						movd ecx, xmm0
+						movd eax, xmm0
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 255
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not al
+						retn
+					}
+				}
+				default {
+					return RoundHalfToEvenToUInt8( value );
+				}
+			}
+
+			public static short RoundHalfToInt16( float value ) asm {
+				X86_32 {
+					feature( SSE4_1 ) {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						movss xmm0, dword ptr [esp + 4]
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 32768
+						jge overflow
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor ax, 0x7FFF
+						retn
+					}
+					default {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						fld dword ptr [esp + 4]
+						fistp dword ptr [esp + 4]
+						mov eax, dword ptr [esp + 4]
+
+						cmp eax, 32768
+						jge overflow
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor ax, 0x7FFF
+						retn
+					}
+				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						movd ecx, xmm0
+						movd eax, xmm0
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 32768
+						jge overflow
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor ax, 0x7FFF
+						retn
+					}
+				}
+				default {
+					return RoundHalfToEvenToInt16( value );
+				}
+			}
+
+			public static ushort RoundHalfToUInt16( float value ) asm {
+				X86_32 {
+					feature( SSE4_1 ) {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						movss xmm0, dword ptr [esp + 4]
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 65535
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not ax
+						retn
+					}
+					default {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						fld dword ptr [esp + 4]
+						fistp dword ptr [esp + 4]
+						mov eax, dword ptr [esp + 4]
+
+						cmp eax, 65535
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not ax
+						retn
+					}
+				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						movd ecx, xmm0
+						movd eax, xmm0
+						sar eax, const( float.SignificandBits )
+
+						cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+						jae overflow
+
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						cmp eax, 65535
+						ja overflow
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						not ax
+						retn
+					}
+				}
+				default {
+					return RoundHalfToEvenToUInt16( value );
+				}
+			}
+
+			public static int RoundHalfToInt32( float value ) asm {
+				X86_32 {
+					feature( SSE4_1 ) {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						movss xmm0, dword ptr [esp + 4]
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor eax, 0x7FFFFFFF
+						retn
+					}
+					default {
+						mov ecx, dword ptr [esp + 4]
+						mov eax, ecx
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						fld dword ptr [esp + 4]
+						fistp dword ptr [esp + 4]
+						mov eax, dword ptr [esp + 4]
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor eax, 0x7FFFFFFF
+						retn
+					}
+				}
+				X86_64 {
+					feature( SSE4_1 ) {
+						movd ecx, xmm0
+						movd eax, xmm0
+						shr eax, const( float.SignificandBits )
+
+						cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+						jae overflow
+
+						roundss xmm0, xmm0, const( System.Runtime.X86_32.SSE4RoundingMode.RoundToNearest )
+						cvttss2si eax, xmm0
+
+						ret
+
+					overflow:
+						mov eax, ecx
+						sar eax, 31
+						xor eax, 0x7FFFFFFF
+						retn
+					}
+				}
+				default {
+					return RoundHalfToEvenToInt32( value );
+				}
+			}
+
+			public static uint RoundHalfToUInt32( float value ) asm {
+				X86_32 {
+					sub esp, 8
+					mov ecx, dword ptr [esp + 12]
+					mov eax, ecx
+					sar eax, const( float.SignificandBits )
+
+					cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 )
+					jae overflow
+
+					fld dword ptr [esp + 12]
+					fistp qword ptr [esp]
+
+					mov eax, dword ptr [esp]
+					add esp, 8
+					ret
+
+				overflow:
+					mov eax, ecx
+					sar eax, 31
+					not eax
+					add esp, 8
+					retn
+				}
+				default {
+					return RoundHalfToEvenToUInt32( value );
+				}
+			}
+
+			public static long RoundHalfToInt64( float value ) asm {
+				X86_32 {
+					sub esp, 8
+					mov ecx, dword ptr [esp + 12]
+					mov eax, ecx
+					shr eax, const( float.SignificandBits )
+
+					cmp al, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+					jae overflow
+
+					fld dword ptr [esp + 12]
+					fistp qword ptr [esp]
+
+					mov eax, dword ptr [esp]
+					mov edx, dword ptr [esp + 4]
+
+					add esp, 8
+					ret
+
+				overflow:
+					mov eax, ecx
+					sar eax, 31
+					mov edx, eax
+					not eax
+					xor edx, 0x7FFFFFFF
+					add esp, 8
+					retn
+				}
+				default {
+					return RoundHalfToEvenToInt64( value );
+				}
+			}
+
+			public static ulong RoundHalfToUInt64( float value ) asm {
+				X86_32 {
+					sub esp, 8
+					mov ecx, dword ptr [esp + 12]
+					mov eax, ecx
+					sar eax, const( float.SignificandBits )
+
+					cmp ax, const( float.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+					ja overflow
+					je slow_path
+
+					fld dword ptr [esp + 12]
+					fistp qword ptr [esp]
+
+					mov eax, dword ptr [esp]
+					mov edx, dword ptr [esp + 4]
+
+					add esp, 8
+					ret
+
+				slow_path:
+					mov edx, ecx
+					xor eax, eax
+					shl edx, 8
+					bts edx, 31
+
+					add esp, 8
+					retn
+
+				overflow:
+					mov eax, ecx
+					sar eax, 31
+					not eax
+					mov edx, eax
+
+					add esp, 8
+					retn
+				}
+				default {
+					return RoundHalfToEvenToUInt64( value );
+				}
+			}
+
+			public static int RoundHalfToInt32( double value ) asm {
+				X86_32 {
+					mov ecx, dword ptr [esp + 8]
+					mov eax, ecx
+					shr eax, const( double.SignificandBits - 32 )
+					and ax, const( double.ExponentMask >> double.SignificandBits )
+
+					cmp ax, const( double.ExponentBias + thismethod.ReturnType.InstanceSize * 8 - 1 )
+					jae overflow
+
+					fld qword ptr [esp + 4]
+					fistp dword ptr [esp + 4]
+					mov eax, dword ptr [esp + 4]
+					ret
+
+				overflow:
+					sar ecx, 31
+					xor ecx, 0x7FFFFFFF
+					mov eax, ecx
+					retn
+				}
+				default {
+					return RoundHalfToEvenToInt32( value );
+				}
+			}
+
+			#endregion
+
+			#region RoundHalfToEven
+
+			public static float RoundHalfToEven( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+					return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				}
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( ( float.SignificandMask / 2 ) >> exponent ) + ( ( bitcast<uint>( value ) >> ( float.SignificandBits - exponent ) ) & 1 ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfToEvenSigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask / 2 ) >> exponent ) + ( ( significand >> ( float.SignificandBits - exponent ) ) & 1 ) ) >> ( float.SignificandBits - exponent );
+
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfToEvenUnsigned<T>( float value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask / 2 ) >> exponent ) + ( ( significand >> ( float.SignificandBits - exponent ) ) & 1 ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundHalfToEven( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+					return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				}
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( ( double.SignificandMask / 2 ) >> exponent ) + ( ( bitcast<ulong>( value ) >> ( double.SignificandBits - exponent ) ) & 1 ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfToEvenSigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask / 2 ) >> exponent ) + ( ( significand >> ( double.SignificandBits - exponent ) ) & 1 ) ) >> ( double.SignificandBits - exponent );
+
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfToEvenUnsigned<T>( double value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask / 2 ) >> exponent ) + ( ( significand >> ( double.SignificandBits - exponent ) ) & 1 ) ) >> ( double.SignificandBits - exponent );
+
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundHalfToEvenToInt8( float value ) { return RoundHalfToEvenSigned<sbyte>( value ); }
+			public static short RoundHalfToEvenToInt16( float value ) { return RoundHalfToEvenSigned<short>( value ); }
+			public static int RoundHalfToEvenToInt32( float value ) { return RoundHalfToEvenSigned<int>( value ); }
+			public static long RoundHalfToEvenToInt64( float value ) { return RoundHalfToEvenSigned<long>( value ); }
+
+			public static byte RoundHalfToEvenToUInt8( float value ) { return RoundHalfToEvenUnsigned<byte>( value ); }
+			public static ushort RoundHalfToEvenToUInt16( float value ) { return RoundHalfToEvenUnsigned<ushort>( value ); }
+			public static uint RoundHalfToEvenToUInt32( float value ) { return RoundHalfToEvenUnsigned<uint>( value ); }
+			public static ulong RoundHalfToEvenToUInt64( float value ) { return RoundHalfToEvenUnsigned<ulong>( value ); }
+
+			public static sbyte RoundHalfToEvenToInt8( double value ) { return RoundHalfToEvenSigned<sbyte>( value ); }
+			public static short RoundHalfToEvenToInt16( double value ) { return RoundHalfToEvenSigned<short>( value ); }
+			public static int RoundHalfToEvenToInt32( double value ) { return RoundHalfToEvenSigned<int>( value ); }
+			public static long RoundHalfToEvenToInt64( double value ) { return RoundHalfToEvenSigned<long>( value ); }
+
+			public static byte RoundHalfToEvenToUInt8( double value ) { return RoundHalfToEvenUnsigned<byte>( value ); }
+			public static ushort RoundHalfToEvenToUInt16( double value ) { return RoundHalfToEvenUnsigned<ushort>( value ); }
+			public static uint RoundHalfToEvenToUInt32( double value ) { return RoundHalfToEvenUnsigned<uint>( value ); }
+			public static ulong RoundHalfToEvenToUInt64( double value ) { return RoundHalfToEvenUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundHalfToOdd
+
+			public static float RoundHalfToOdd( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( ( float.SignificandMask / 2 + 1 ) >> exponent ) - ( ( bitcast<uint>( value ) >> ( float.SignificandBits - exponent ) ) & 1 ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfToOddSigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask / 2 + 1 ) >> exponent ) - ( ( significand >> ( float.SignificandBits - exponent ) ) & 1 ) ) >> ( float.SignificandBits - exponent );
+
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfToOddUnsigned<T>( float value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask / 2 + 1 ) >> exponent ) - ( ( significand >> ( float.SignificandBits - exponent ) ) & 1 ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundHalfToOdd( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( ( double.SignificandMask / 2 + 1 ) >> exponent ) - ( ( bitcast<ulong>( value ) >> ( double.SignificandBits - exponent ) ) & 1 ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfToOddSigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask / 2 + 1 ) >> exponent ) - ( ( significand >> ( double.SignificandBits - exponent ) ) & 1 ) ) >> ( double.SignificandBits - exponent );
+
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfToOddUnsigned<T>( double value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask / 2 + 1 ) >> exponent ) - ( ( significand >> ( double.SignificandBits - exponent ) ) & 1 ) ) >> ( double.SignificandBits - exponent );
+
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundHalfToOddToInt8( float value ) { return RoundHalfToOddSigned<sbyte>( value ); }
+			public static short RoundHalfToOddToInt16( float value ) { return RoundHalfToOddSigned<short>( value ); }
+			public static int RoundHalfToOddToInt32( float value ) { return RoundHalfToOddSigned<int>( value ); }
+			public static long RoundHalfToOddToInt64( float value ) { return RoundHalfToOddSigned<long>( value ); }
+
+			public static byte RoundHalfToOddToUInt8( float value ) { return RoundHalfToOddUnsigned<byte>( value ); }
+			public static ushort RoundHalfToOddToUInt16( float value ) { return RoundHalfToOddUnsigned<ushort>( value ); }
+			public static uint RoundHalfToOddToUInt32( float value ) { return RoundHalfToOddUnsigned<uint>( value ); }
+			public static ulong RoundHalfToOddToUInt64( float value ) { return RoundHalfToOddUnsigned<ulong>( value ); }
+
+			public static sbyte RoundHalfToOddToInt8( double value ) { return RoundHalfToOddSigned<sbyte>( value ); }
+			public static short RoundHalfToOddToInt16( double value ) { return RoundHalfToOddSigned<short>( value ); }
+			public static int RoundHalfToOddToInt32( double value ) { return RoundHalfToOddSigned<int>( value ); }
+			public static long RoundHalfToOddToInt64( double value ) { return RoundHalfToOddSigned<long>( value ); }
+
+			public static byte RoundHalfToOddToUInt8( double value ) { return RoundHalfToOddUnsigned<byte>( value ); }
+			public static ushort RoundHalfToOddToUInt16( double value ) { return RoundHalfToOddUnsigned<ushort>( value ); }
+			public static uint RoundHalfToOddToUInt32( double value ) { return RoundHalfToOddUnsigned<uint>( value ); }
+			public static ulong RoundHalfToOddToUInt64( double value ) { return RoundHalfToOddUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundHalfTowardsPositiveInfinity
+
+			public static float RoundHalfTowardsPositiveInfinity( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ) return bitcast<float>( bitcast<uint>( 1f ) << ( ( bitcast<uint>( value ) & float.SignMask ) >> 28 ) );
+					return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				}
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( ( ( float.SignificandMask / 2 + 1 ) - ( ( bitcast<uint>( value ) & float.SignMask ) >> ( float.SignificandBits + float.ExponentBits ) ) ) >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsPositiveInfinitySigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( T ) - 1 ) : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( isNegative ? 0x3FFFFF : 0x400000 ) >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			public static double RoundHalfTowardsPositiveInfinity( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ) return bitcast<double>( bitcast<ulong>( 1.0 ) << ( BitOperations.SignedShiftRight( bitcast<ulong>( value ), 63 ) & 11 ) );
+					return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				}
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( ( ( double.SignificandMask / 2 + 1 ) - ( ( bitcast<ulong>( value ) & double.SignMask ) >> ( double.SignificandBits + double.ExponentBits ) ) ) >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsPositiveInfinitySigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( T ) - 1 ) : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( isNegative ? 0x7FFFFFFFFFFFFL : 0x8000000000000L ) >> exponent ) ) >> ( double.SignificandBits - exponent );
+
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			public static sbyte RoundHalfTowardsPositiveInfinityToInt8( float value ) { return RoundHalfTowardsPositiveInfinitySigned<sbyte>( value ); }
+			public static short RoundHalfTowardsPositiveInfinityToInt16( float value ) { return RoundHalfTowardsPositiveInfinitySigned<short>( value ); }
+			public static int RoundHalfTowardsPositiveInfinityToInt32( float value ) { return RoundHalfTowardsPositiveInfinitySigned<int>( value ); }
+			public static long RoundHalfTowardsPositiveInfinityToInt64( float value ) { return RoundHalfTowardsPositiveInfinitySigned<long>( value ); }
+
+			public static byte RoundHalfTowardsPositiveInfinityToUInt8( float value ) { return RoundHalfAwayFromZeroToUInt8( value ); }
+			public static ushort RoundHalfTowardsPositiveInfinityToUInt16( float value ) { return RoundHalfAwayFromZeroToUInt16( value ); }
+			public static uint RoundHalfTowardsPositiveInfinityToUInt32( float value ) { return RoundHalfAwayFromZeroToUInt32( value ); }
+			public static ulong RoundHalfTowardsPositiveInfinityToUInt64( float value ) { return RoundHalfAwayFromZeroToUInt64( value ); }
+
+			public static sbyte RoundHalfTowardsPositiveInfinityToInt8( double value ) { return RoundHalfTowardsPositiveInfinitySigned<sbyte>( value ); }
+			public static short RoundHalfTowardsPositiveInfinityToInt16( double value ) { return RoundHalfTowardsPositiveInfinitySigned<short>( value ); }
+			public static int RoundHalfTowardsPositiveInfinityToInt32( double value ) { return RoundHalfTowardsPositiveInfinitySigned<int>( value ); }
+			public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) { return RoundHalfTowardsPositiveInfinitySigned<long>( value ); }
+
+			public static byte RoundHalfTowardsPositiveInfinityToUInt8( double value ) { return RoundHalfAwayFromZeroToUInt8( value ); }
+			public static ushort RoundHalfTowardsPositiveInfinityToUInt16( double value ) { return RoundHalfAwayFromZeroToUInt16( value ); }
+			public static uint RoundHalfTowardsPositiveInfinityToUInt32( double value ) { return RoundHalfAwayFromZeroToUInt32( value ); }
+			public static ulong RoundHalfTowardsPositiveInfinityToUInt64( double value ) { return RoundHalfAwayFromZeroToUInt64( value ); }
+
+			#endregion
+
+			#region RoundHalfTowardsNegativeInfinity
+
+			public static float RoundHalfTowardsNegativeInfinity( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ) return bitcast<float>( bitcast<uint>( -1f ) & BitOperations.SignedShiftRight( bitcast<uint>( value ), 31 ) );
+					return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				}
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( ( ( float.SignificandMask / 2 ) + ( ( bitcast<uint>( value ) & float.SignMask ) >> ( float.SignificandBits + float.ExponentBits ) ) ) >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsNegativeInfinitySigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( T ) - 1 : ( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( isNegative ? 0x400000 : 0x3FFFFF ) >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			public static double RoundHalfTowardsNegativeInfinity( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ) return bitcast<double>( bitcast<ulong>( -1.0 ) & BitOperations.SignedShiftRight( bitcast<ulong>( value ), 63 ) );
+					return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				}
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( ( ( double.SignificandMask / 2 ) + ( ( bitcast<ulong>( value ) & double.SignMask ) >> ( double.SignificandBits + double.ExponentBits ) ) ) >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsNegativeInfinitySigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( T ) - 1 : ( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( isNegative ? 0x8000000000000L : 0x7FFFFFFFFFFFFL ) >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			public static sbyte RoundHalfTowardsNegativeInfinityToInt8( float value ) { return RoundHalfTowardsNegativeInfinitySigned<sbyte>( value ); }
+			public static short RoundHalfTowardsNegativeInfinityToInt16( float value ) { return RoundHalfTowardsNegativeInfinitySigned<short>( value ); }
+			public static int RoundHalfTowardsNegativeInfinityToInt32( float value ) { return RoundHalfTowardsNegativeInfinitySigned<int>( value ); }
+			public static long RoundHalfTowardsNegativeInfinityToInt64( float value ) { return RoundHalfTowardsNegativeInfinitySigned<long>( value ); }
+
+			public static byte RoundHalfTowardsNegativeInfinityToUInt8( float value ) { return RoundHalfTowardsZeroToUInt8( value ); }
+			public static ushort RoundHalfTowardsNegativeInfinityToUInt16( float value ) { return RoundHalfTowardsZeroToUInt16( value ); }
+			public static uint RoundHalfTowardsNegativeInfinityToUInt32( float value ) { return RoundHalfTowardsZeroToUInt32( value ); }
+			public static ulong RoundHalfTowardsNegativeInfinityToUInt64( float value ) { return RoundHalfTowardsZeroToUInt64( value ); }
+
+			public static sbyte RoundHalfTowardsNegativeInfinityToInt8( double value ) { return RoundHalfTowardsNegativeInfinitySigned<sbyte>( value ); }
+			public static short RoundHalfTowardsNegativeInfinityToInt16( double value ) { return RoundHalfTowardsNegativeInfinitySigned<short>( value ); }
+			public static int RoundHalfTowardsNegativeInfinityToInt32( double value ) { return RoundHalfTowardsNegativeInfinitySigned<int>( value ); }
+			public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) { return RoundHalfTowardsNegativeInfinitySigned<long>( value ); }
+
+			public static byte RoundHalfTowardsNegativeInfinityToUInt8( double value ) { return RoundHalfTowardsZeroToUInt8( value ); }
+			public static ushort RoundHalfTowardsNegativeInfinityToUInt16( double value ) { return RoundHalfTowardsZeroToUInt16( value ); }
+			public static uint RoundHalfTowardsNegativeInfinityToUInt32( double value ) { return RoundHalfTowardsZeroToUInt32( value ); }
+			public static ulong RoundHalfTowardsNegativeInfinityToUInt64( double value ) { return RoundHalfTowardsZeroToUInt64( value ); }
+
+			#endregion
+
+			#region RoundHalfTowardsZero
+
+			public static float RoundHalfTowardsZero( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+					return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				}
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( float.SignificandMask >> 1 >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsZeroSigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( float.SignificandMask >> 1 >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfTowardsZeroUnsigned<T>( float value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<uint>( value ) & float.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( float.SignificandMask >> 1 >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundHalfTowardsZero( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) {
+					if( ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+					return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				}
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( double.SignificandMask >> 1 >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfTowardsZeroSigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( isNegative ? ( T ) - 1 : ( T ) 1 );
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( double.SignificandMask >> 1 >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfTowardsZeroUnsigned<T>( double value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return ( bitcast<ulong>( value ) & double.SignificandMask ) == 0 ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = ( significand + ( double.SignificandMask >> 1 >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundHalfTowardsZeroToInt8( float value ) { return RoundHalfTowardsZeroSigned<sbyte>( value ); }
+			public static short RoundHalfTowardsZeroToInt16( float value ) { return RoundHalfTowardsZeroSigned<short>( value ); }
+			public static int RoundHalfTowardsZeroToInt32( float value ) { return RoundHalfTowardsZeroSigned<int>( value ); }
+			public static long RoundHalfTowardsZeroToInt64( float value ) { return RoundHalfTowardsZeroSigned<long>( value ); }
+
+			public static byte RoundHalfTowardsZeroToUInt8( float value ) { return RoundHalfTowardsZeroUnsigned<byte>( value ); }
+			public static ushort RoundHalfTowardsZeroToUInt16( float value ) { return RoundHalfTowardsZeroUnsigned<ushort>( value ); }
+			public static uint RoundHalfTowardsZeroToUInt32( float value ) { return RoundHalfTowardsZeroUnsigned<uint>( value ); }
+			public static ulong RoundHalfTowardsZeroToUInt64( float value ) { return RoundHalfTowardsZeroUnsigned<ulong>( value ); }
+
+			public static sbyte RoundHalfTowardsZeroToInt8( double value ) { return RoundHalfTowardsZeroSigned<sbyte>( value ); }
+			public static short RoundHalfTowardsZeroToInt16( double value ) { return RoundHalfTowardsZeroSigned<short>( value ); }
+			public static int RoundHalfTowardsZeroToInt32( double value ) { return RoundHalfTowardsZeroSigned<int>( value ); }
+			public static long RoundHalfTowardsZeroToInt64( double value ) { return RoundHalfTowardsZeroSigned<long>( value ); }
+
+			public static byte RoundHalfTowardsZeroToUInt8( double value ) { return RoundHalfTowardsZeroUnsigned<byte>( value ); }
+			public static ushort RoundHalfTowardsZeroToUInt16( double value ) { return RoundHalfTowardsZeroUnsigned<ushort>( value ); }
+			public static uint RoundHalfTowardsZeroToUInt32( double value ) { return RoundHalfTowardsZeroUnsigned<uint>( value ); }
+			public static ulong RoundHalfTowardsZeroToUInt64( double value ) { return RoundHalfTowardsZeroUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundHalfAwayFromZero
+
+			public static float RoundHalfAwayFromZero( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent == -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( ( float.SignificandMask + 1 ) >> 1 >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfAwayFromZeroSigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( T ) - 1 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask + 1 ) >> 1 >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfAwayFromZeroUnsigned<T>( float value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( ( float.SignificandMask + 1 ) >> 1 >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundHalfAwayFromZero( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent == -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( ( double.SignificandMask + 1 ) >> 1 >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundHalfAwayFromZeroSigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return isNegative ? ( T ) - 1 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask + 1 ) >> 1 >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundHalfAwayFromZeroUnsigned<T>( double value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent < -1 ) return 0;
+				if( exponent == -1 ) return 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = ( significand + ( ( double.SignificandMask + 1 ) >> 1 >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundHalfAwayFromZeroToInt8( float value ) { return RoundHalfAwayFromZeroSigned<sbyte>( value ); }
+			public static short RoundHalfAwayFromZeroToInt16( float value ) { return RoundHalfAwayFromZeroSigned<short>( value ); }
+			public static int RoundHalfAwayFromZeroToInt32( float value ) { return RoundHalfAwayFromZeroSigned<int>( value ); }
+			public static long RoundHalfAwayFromZeroToInt64( float value ) { return RoundHalfAwayFromZeroSigned<long>( value ); }
+
+			public static byte RoundHalfAwayFromZeroToUInt8( float value ) { return RoundHalfAwayFromZeroUnsigned<byte>( value ); }
+			public static ushort RoundHalfAwayFromZeroToUInt16( float value ) { return RoundHalfAwayFromZeroUnsigned<ushort>( value ); }
+			public static uint RoundHalfAwayFromZeroToUInt32( float value ) { return RoundHalfAwayFromZeroUnsigned<uint>( value ); }
+			public static ulong RoundHalfAwayFromZeroToUInt64( float value ) { return RoundHalfAwayFromZeroUnsigned<ulong>( value ); }
+
+			public static sbyte RoundHalfAwayFromZeroToInt8( double value ) { return RoundHalfAwayFromZeroSigned<sbyte>( value ); }
+			public static short RoundHalfAwayFromZeroToInt16( double value ) { return RoundHalfAwayFromZeroSigned<short>( value ); }
+			public static int RoundHalfAwayFromZeroToInt32( double value ) { return RoundHalfAwayFromZeroSigned<int>( value ); }
+			public static long RoundHalfAwayFromZeroToInt64( double value ) { return RoundHalfAwayFromZeroSigned<long>( value ); }
+
+			public static byte RoundHalfAwayFromZeroToUInt8( double value ) { return RoundHalfAwayFromZeroUnsigned<byte>( value ); }
+			public static ushort RoundHalfAwayFromZeroToUInt16( double value ) { return RoundHalfAwayFromZeroUnsigned<ushort>( value ); }
+			public static uint RoundHalfAwayFromZeroToUInt32( double value ) { return RoundHalfAwayFromZeroUnsigned<uint>( value ); }
+			public static ulong RoundHalfAwayFromZeroToUInt64( double value ) { return RoundHalfAwayFromZeroUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundTowardsPositiveInfinity
+
+			public static float RoundTowardsPositiveInfinity( float value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return bitcast<float>( bitcast<uint>( 1f ) << ( ( bitcast<uint>( value ) & float.SignMask ) >> 28 ) );
+				if( exponent < float.SignificandBits ) {
+					if( isNegative ) return bitcast<float>( bitcast<uint>( value ) & ~( float.SignificandMask >> exponent ) );
+					else return bitcast<float>( ( bitcast<uint>( value ) + ( float.SignificandMask >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+				}
+
+				return value;
+			}
+
+			private static T RoundTowardsPositiveInfinitySigned<T>( float value ) {
+				// if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) 0 : value.IsZero ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						if( isNegative ) {
+							var result = significand >> ( float.SignificandBits - exponent );
+							return -( T ) result;
+						}
+						else {
+							var result = significand + ( float.SignificandMask >> exponent ) >> ( float.SignificandBits - exponent );
+							if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+							return ( T ) result;
+						}
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsPositiveInfinityUnsigned<T>( float value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( float.SignificandMask >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundTowardsPositiveInfinity( double value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return bitcast<double>( bitcast<ulong>( 1.0 ) << ( BitOperations.SignedShiftRight( bitcast<ulong>( value ), 63 ) & 11 ) );
+				if( exponent < double.SignificandBits ) {
+					if( isNegative ) return bitcast<double>( bitcast<ulong>( value ) & ~( double.SignificandMask >> exponent ) );
+					else return bitcast<double>( ( bitcast<ulong>( value ) + ( double.SignificandMask >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+				}
+
+				return value;
+			}
+
+			private static T RoundTowardsPositiveInfinitySigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) 0 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						if( isNegative ) {
+							var result = significand >> ( double.SignificandBits - exponent );
+							return -( T ) result;
+						}
+						else {
+							var result = significand + ( double.SignificandMask >> exponent ) >> ( double.SignificandBits - exponent );
+							if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+							return ( T ) result;
+						}
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsPositiveInfinityUnsigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = significand + ( double.SignificandMask >> exponent ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundTowardsPositiveInfinityToInt8( float value ) { return RoundTowardsPositiveInfinitySigned<sbyte>( value ); }
+			public static short RoundTowardsPositiveInfinityToInt16( float value ) { return RoundTowardsPositiveInfinitySigned<short>( value ); }
+			public static int RoundTowardsPositiveInfinityToInt32( float value ) { return RoundTowardsPositiveInfinitySigned<int>( value ); }
+			public static long RoundTowardsPositiveInfinityToInt64( float value ) { return RoundTowardsPositiveInfinitySigned<long>( value ); }
+
+			public static byte RoundTowardsPositiveInfinityToUInt8( float value ) { return RoundTowardsPositiveInfinityUnsigned<byte>( value ); }
+			public static ushort RoundTowardsPositiveInfinityToUInt16( float value ) { return RoundTowardsPositiveInfinityUnsigned<ushort>( value ); }
+			public static uint RoundTowardsPositiveInfinityToUInt32( float value ) { return RoundTowardsPositiveInfinityUnsigned<uint>( value ); }
+			public static ulong RoundTowardsPositiveInfinityToUInt64( float value ) { return RoundTowardsPositiveInfinityUnsigned<ulong>( value ); }
+
+			public static sbyte RoundTowardsPositiveInfinityToInt8( double value ) { return RoundTowardsPositiveInfinitySigned<sbyte>( value ); }
+			public static short RoundTowardsPositiveInfinityToInt16( double value ) { return RoundTowardsPositiveInfinitySigned<short>( value ); }
+			public static int RoundTowardsPositiveInfinityToInt32( double value ) { return RoundTowardsPositiveInfinitySigned<int>( value ); }
+			public static long RoundTowardsPositiveInfinityToInt64( double value ) { return RoundTowardsPositiveInfinitySigned<long>( value ); }
+
+			public static byte RoundTowardsPositiveInfinityToUInt8( double value ) { return RoundTowardsPositiveInfinityUnsigned<byte>( value ); }
+			public static ushort RoundTowardsPositiveInfinityToUInt16( double value ) { return RoundTowardsPositiveInfinityUnsigned<ushort>( value ); }
+			public static uint RoundTowardsPositiveInfinityToUInt32( double value ) { return RoundTowardsPositiveInfinityUnsigned<uint>( value ); }
+			public static ulong RoundTowardsPositiveInfinityToUInt64( double value ) { return RoundTowardsPositiveInfinityUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundTowardsNegativeInfinity
+
+			public static float RoundTowardsNegativeInfinity( float value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? -1f : 0f;
+				if( exponent < float.SignificandBits ) {
+					if( isNegative ) return bitcast<float>( ( bitcast<uint>( value ) + ( float.SignificandMask >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+					else return bitcast<float>( bitcast<uint>( value ) & ~( float.SignificandMask >> exponent ) );
+				}
+
+				return value;
+			}
+
+			private static T RoundTowardsNegativeInfinitySigned<T>( float value ) {
+				if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) - 1 : ( T ) 0;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						if( isNegative ) {
+							var result = ( significand + ( float.SignificandMask >> exponent ) ) >> ( float.SignificandBits - exponent );
+							return -( T ) result;
+						}
+						else {
+							var result = significand >> ( float.SignificandBits - exponent );
+							return ( T ) result;
+						}
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsNegativeInfinityUnsigned<T>( float value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 0;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = significand >> ( float.SignificandBits - exponent );
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundTowardsNegativeInfinity( double value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? -1.0 : 0.0;
+				if( exponent < double.SignificandBits ) {
+					if( isNegative ) return bitcast<double>( ( bitcast<ulong>( value ) + ( double.SignificandMask >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+					else return bitcast<double>( bitcast<ulong>( value ) & ~( double.SignificandMask >> exponent ) );
+				}
+
+				return value;
+			}
+
+			private static T RoundTowardsNegativeInfinitySigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) - 1 : ( T ) 0;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						if( isNegative ) {
+							var result = ( significand + ( double.SignificandMask >> exponent ) ) >> ( double.SignificandBits - exponent );
+							return -( T ) result;
+						}
+						else {
+							var result = significand >> ( double.SignificandBits - exponent );
+							return ( T ) result;
+						}
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsNegativeInfinityUnsigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 0;
+				else if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = significand >> ( double.SignificandBits - exponent );
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundTowardsNegativeInfinityToInt8( float value ) { return RoundTowardsNegativeInfinitySigned<sbyte>( value ); }
+			public static short RoundTowardsNegativeInfinityToInt16( float value ) { return RoundTowardsNegativeInfinitySigned<short>( value ); }
+			public static int RoundTowardsNegativeInfinityToInt32( float value ) { return RoundTowardsNegativeInfinitySigned<int>( value ); }
+			public static long RoundTowardsNegativeInfinityToInt64( float value ) { return RoundTowardsNegativeInfinitySigned<long>( value ); }
+
+			public static byte RoundTowardsNegativeInfinityToUInt8( float value ) { return RoundTowardsNegativeInfinityUnsigned<byte>( value ); }
+			public static ushort RoundTowardsNegativeInfinityToUInt16( float value ) { return RoundTowardsNegativeInfinityUnsigned<ushort>( value ); }
+			public static uint RoundTowardsNegativeInfinityToUInt32( float value ) { return RoundTowardsNegativeInfinityUnsigned<uint>( value ); }
+			public static ulong RoundTowardsNegativeInfinityToUInt64( float value ) { return RoundTowardsNegativeInfinityUnsigned<ulong>( value ); }
+
+			public static sbyte RoundTowardsNegativeInfinityToInt8( double value ) { return RoundTowardsNegativeInfinitySigned<sbyte>( value ); }
+			public static short RoundTowardsNegativeInfinityToInt16( double value ) { return RoundTowardsNegativeInfinitySigned<short>( value ); }
+			public static int RoundTowardsNegativeInfinityToInt32( double value ) { return RoundTowardsNegativeInfinitySigned<int>( value ); }
+			public static long RoundTowardsNegativeInfinityToInt64( double value ) { return RoundTowardsNegativeInfinitySigned<long>( value ); }
+
+			public static byte RoundTowardsNegativeInfinityToUInt8( double value ) { return RoundTowardsNegativeInfinityUnsigned<byte>( value ); }
+			public static ushort RoundTowardsNegativeInfinityToUInt16( double value ) { return RoundTowardsNegativeInfinityUnsigned<ushort>( value ); }
+			public static uint RoundTowardsNegativeInfinityToUInt32( double value ) { return RoundTowardsNegativeInfinityUnsigned<uint>( value ); }
+			public static ulong RoundTowardsNegativeInfinityToUInt64( double value ) { return RoundTowardsNegativeInfinityUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundAwayFromZero
+
+			public static float RoundAwayFromZero( float value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 )
+					return bitcast<float>( bitcast<uint>( value ) & float.SignMask | bitcast<uint>( 1f ) );
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( ( bitcast<uint>( value ) + ( float.SignificandMask >> exponent ) ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundAwayFromZeroSigned<T>( float value ) {
+				if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) - 1 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( float.SignificandMask >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundAwayFromZeroUnsigned<T>( float value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = ( significand + ( float.SignificandMask >> exponent ) ) >> ( float.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundAwayFromZero( double value ) {
+				if( value.IsSpecial ) return value;
+				if( value.IsZero ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 )
+					return bitcast<double>( bitcast<ulong>( value ) & double.SignMask | bitcast<ulong>( 1.0 ) );
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( ( bitcast<ulong>( value ) + ( double.SignificandMask >> exponent ) ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundAwayFromZeroSigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return isNegative ? ( T ) - 1 : ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = ( significand + ( double.SignificandMask >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue && !isNegative ) return T.MaxValue;
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundAwayFromZeroUnsigned<T>( double value ) {
+				if( value.IsZero ) return ( T ) 0;
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return ( T ) 1;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = ( significand + ( double.SignificandMask >> exponent ) ) >> ( double.SignificandBits - exponent );
+						if( result > T.MaxValue ) return T.MaxValue;
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundAwayFromZeroToInt8( float value ) { return RoundAwayFromZeroSigned<sbyte>( value ); }
+			public static short RoundAwayFromZeroToInt16( float value ) { return RoundAwayFromZeroSigned<short>( value ); }
+			public static int RoundAwayFromZeroToInt32( float value ) { return RoundAwayFromZeroSigned<int>( value ); }
+			public static long RoundAwayFromZeroToInt64( float value ) { return RoundAwayFromZeroSigned<long>( value ); }
+
+			public static byte RoundAwayFromZeroToUInt8( float value ) { return RoundAwayFromZeroUnsigned<byte>( value ); }
+			public static ushort RoundAwayFromZeroToUInt16( float value ) { return RoundAwayFromZeroUnsigned<ushort>( value ); }
+			public static uint RoundAwayFromZeroToUInt32( float value ) { return RoundAwayFromZeroUnsigned<uint>( value ); }
+			public static ulong RoundAwayFromZeroToUInt64( float value ) { return RoundAwayFromZeroUnsigned<ulong>( value ); }
+
+			public static sbyte RoundAwayFromZeroToInt8( double value ) { return RoundAwayFromZeroSigned<sbyte>( value ); }
+			public static short RoundAwayFromZeroToInt16( double value ) { return RoundAwayFromZeroSigned<short>( value ); }
+			public static int RoundAwayFromZeroToInt32( double value ) { return RoundAwayFromZeroSigned<int>( value ); }
+			public static long RoundAwayFromZeroToInt64( double value ) { return RoundAwayFromZeroSigned<long>( value ); }
+
+			public static byte RoundAwayFromZeroToUInt8( double value ) { return RoundAwayFromZeroUnsigned<byte>( value ); }
+			public static ushort RoundAwayFromZeroToUInt16( double value ) { return RoundAwayFromZeroUnsigned<ushort>( value ); }
+			public static uint RoundAwayFromZeroToUInt32( double value ) { return RoundAwayFromZeroUnsigned<uint>( value ); }
+			public static ulong RoundAwayFromZeroToUInt64( double value ) { return RoundAwayFromZeroUnsigned<ulong>( value ); }
+
+			#endregion
+
+			#region RoundTowardsZero
+
+			public static float RoundTowardsZero( float value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return bitcast<float>( bitcast<uint>( value ) & float.SignMask );
+				if( exponent < float.SignificandBits )
+					return bitcast<float>( bitcast<uint>( value ) & ~( float.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundTowardsZeroSigned<T>( float value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return 0;
+				if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return isNegative ? -( T ) result : ( T ) result;
+						}
+					}
+					else {
+						var result = significand >> ( float.SignificandBits - exponent );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsZeroUnsigned<T>( float value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return 0;
+				if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= float.SignificandBits ) {
+						if( exponent - float.SignificandBits < 8 ) {
+							var result = significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+						else {
+							var result = ( ulong ) significand << ( exponent - float.SignificandBits );
+							return ( T ) result;
+						}
+					}
+					else {
+						var result = significand >> ( float.SignificandBits - exponent );
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static double RoundTowardsZero( double value ) {
+				if( value.IsSpecial ) return value;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return bitcast<double>( bitcast<ulong>( value ) & double.SignMask );
+				if( exponent < double.SignificandBits )
+					return bitcast<double>( bitcast<ulong>( value ) & ~( double.SignificandMask >> exponent ) );
+
+				return value;
+			}
+
+			private static T RoundTowardsZeroSigned<T>( double value ) {
+				var isNegative = value.IsNegative;
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return 0;
+				else if( exponent < ( short ) sizeof( T ) * 8 - 1 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+					else {
+						var result = significand >> ( double.SignificandBits - exponent );
+						return isNegative ? -( T ) result : ( T ) result;
+					}
+				}
+
+				return isNegative ? T.MinValue : T.MaxValue;
+			}
+
+			private static T RoundTowardsZeroUnsigned<T>( double value ) {
+				if( value.IsNegative ) return T.MinValue;
+
+				var exponent = value.Exponent;
+
+				if( exponent <= -1 ) return 0;
+				else if( exponent < ( short ) sizeof( T ) * 8 ) {
+					var significand = value.NormalizedSignificand;
+
+					if( exponent >= double.SignificandBits ) {
+						var result = significand << ( exponent - double.SignificandBits );
+						return ( T ) result;
+					}
+					else {
+						var result = significand >> ( double.SignificandBits - exponent );
+						return ( T ) result;
+					}
+				}
+
+				return T.MaxValue;
+			}
+
+			public static sbyte RoundTowardsZeroToInt8( float value ) { return RoundTowardsZeroSigned<sbyte>( value ); }
+			public static short RoundTowardsZeroToInt16( float value ) { return RoundTowardsZeroSigned<short>( value ); }
+			public static int RoundTowardsZeroToInt32( float value ) { return RoundTowardsZeroSigned<int>( value ); }
+			public static long RoundTowardsZeroToInt64( float value ) { return RoundTowardsZeroSigned<long>( value ); }
+
+			public static byte RoundTowardsZeroToUInt8( float value ) { return RoundTowardsZeroUnsigned<byte>( value ); }
+			public static ushort RoundTowardsZeroToUInt16( float value ) { return RoundTowardsZeroUnsigned<ushort>( value ); }
+			public static uint RoundTowardsZeroToUInt32( float value ) { return RoundTowardsZeroUnsigned<uint>( value ); }
+			public static ulong RoundTowardsZeroToUInt64( float value ) { return RoundTowardsZeroUnsigned<ulong>( value ); }
+
+			public static sbyte RoundTowardsZeroToInt8( double value ) { return RoundTowardsZeroSigned<sbyte>( value ); }
+			public static short RoundTowardsZeroToInt16( double value ) { return RoundTowardsZeroSigned<short>( value ); }
+			public static int RoundTowardsZeroToInt32( double value ) { return RoundTowardsZeroSigned<int>( value ); }
+			public static long RoundTowardsZeroToInt64( double value ) { return RoundTowardsZeroSigned<long>( value ); }
+
+			public static byte RoundTowardsZeroToUInt8( double value ) { return RoundTowardsZeroUnsigned<byte>( value ); }
+			public static ushort RoundTowardsZeroToUInt16( double value ) { return RoundTowardsZeroUnsigned<ushort>( value ); }
+			public static uint RoundTowardsZeroToUInt32( double value ) { return RoundTowardsZeroUnsigned<uint>( value ); }
+			public static ulong RoundTowardsZeroToUInt64( double value ) { return RoundTowardsZeroUnsigned<ulong>( value ); }
+
+			#endregion
 		}
 	}
 }

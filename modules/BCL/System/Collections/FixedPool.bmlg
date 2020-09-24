@@ -8,45 +8,45 @@ using System.Diagnostics;
 
 namespace System.Collections {
 	// Designed for small structs. O(1) insertion and removal
-	// Object locations/addresses not changed (important for struct types!) while adding new elements
+	// Object locations not changed while adding/removing new elements
 	public class FixedPool<T> {
 		private uint _version;
 
-		private int _maxElements;
+		private uint _maxElements;
 
 		public T[] Elements;
-		private int[] AvailableIndices;
-		private int* FreeIndexPtr;
+		private uint[] AvailableIndices;
+		private uint* FreeIndexPtr, IndexRemapper;
 
-		public FixedPool( int maxElements ) {
+		public FixedPool( uint maxElements ) {
 			Assert.IsTrue( typeof( T ).IsStruct ); // Pool<T> designed to be used with structs
 
 			_maxElements = maxElements;
 
 			Elements = new[maxElements] T;
-			AvailableIndices = new[maxElements] int;
+			AvailableIndices = new[maxElements * 2] uint;
 			FreeIndexPtr = &AvailableIndices[0];
+			IndexRemapper = &AvailableIndices[maxElements];
 
-			for( var i = 0; i < _maxElements; ++i )
-				AvailableIndices[i] = i;
+			for( var i = 0U; i < _maxElements; ++i ) AvailableIndices[i] = i;
+			InitializeRemapper();
 
-			var tailPadding = System.Runtime.Memory.GetTailPadding( ( uint ) typeof( T ).InstanceSize, typeof( T ).InstanceAlignment );
-			Valgrind.MempoolCreate( &Elements[0], ( int ) tailPadding, false );
+			var tailPadding = System.Runtime.Memory.GetTailPadding( typeof( T ).InstanceSize, typeof( T ).InstanceAlignment );
+			Valgrind.MempoolCreate( &Elements[0], tailPadding, false );
 		}
 
 		~FixedPool() {
 			if( OnFinalize != null ) {
+				var version = _version;
 				var count = Count;
 
-				for( var j = 0; j < count; ++j ) {
-					var value = &Elements[AvailableIndices[j]];
+				for( var j = 0U; j < count; ++j ) {
+					CommonCollectionOperations.VersionCheck( version == _version );
 
-					VerifyOwning( value );
-					var index = value - &Elements[0];
-					VerifyFree( ( int ) index );
-					OnFinalize( *value );
+					VerifyFree( AvailableIndices[j] );
+					OnFinalize( Elements[AvailableIndices[j]] );
 
-					// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.10.1
+					// Valgrind.MempoolFree( &Elements[0], &Elements[AvailableIndices[j]] ); this client request buggy even for valgrind 3.10.1
 				}
 			}
 
@@ -66,20 +66,20 @@ namespace System.Collections {
 			var version = _version;
 			var count = Count;
 
-			for( var j = 0; j < count; ++j ) {
-				CommonCollectionOperations.VersionCheck( version != _version );
-
+			for( var j = 0U; j < count; ++j ) {
+				CommonCollectionOperations.VersionCheck( version == _version );
 				yield return &Elements[AvailableIndices[j]];
 			}
 		}
 
-		public int Count { get { return ( int )( FreeIndexPtr - &AvailableIndices[0] ); } }
-		public int FreeElementsCount { get { return ( int )( _maxElements - Count ); } }
+		public uint Count { get { return ( uint )( FreeIndexPtr - &AvailableIndices[0] ); } }
+		public uint FreeElementsCount { get { return _maxElements - Count; } }
 
 		public T* TryAllocate() {
-			if( FreeElementsCount <= 0 ) return null;
+			if( FreeElementsCount == 0 ) return null;
 
 			var index = *FreeIndexPtr;
+			IndexRemapper[index] = Count;
 			++FreeIndexPtr;
 
 			var result = &Elements[index];
@@ -91,46 +91,39 @@ namespace System.Collections {
 		}
 
 		public void Free( T* value ) {
-			VerifyOwning( value );
-			var index = value - &Elements[0];
-			VerifyFree( ( int ) index );
-			if( OnFinalize != null ) OnFinalize( *value );
+			var index = ( uint )( value - &Elements[0] );
+			if( *( FreeIndexPtr - 1 ) != index ) {
+				var replacement = IndexRemapper[index];
+				AvailableIndices[replacement] = *( FreeIndexPtr - 1 );
+				IndexRemapper[*( FreeIndexPtr - 1 )] = replacement;
+			}
 
+			VerifyFree( index );
+			if( OnFinalize != null ) OnFinalize( *value );
 			// Valgrind.MempoolFree( &Elements[0], value ); this client request buggy even for valgrind 3.10.1
 
 			--FreeIndexPtr;
-			*FreeIndexPtr = ( int ) index;
+			*FreeIndexPtr = index;
 			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
-		private void VerifyOwning( T* value ) {
-			Assert.IsTrue( IsOwned( value ) );
+		private void InitializeRemapper() {
+			for( var i = _maxElements; i < _maxElements * 2; ++i ) AvailableIndices[i] = uint.MaxValue;
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
-		private void VerifyFree( int value ) {
-			var freePtr = FreeIndexPtr;
-			var freeCount = FreeElementsCount;
+		private void VerifyFree( uint index ) {
+			Debug.Assert( index < _maxElements );
+			if( IndexRemapper[index] == uint.MaxValue ) Debug.Fail( "Object already freed!" );
 
-			for( var i = 0; i < freeCount; ++i ) {
-				if( freePtr[i] == value ) {
-					Assert.Fail( "Object already freed!" );
-					return;
-				}
-			}
+			IndexRemapper[index] = uint.MaxValue;
 		}
 
-		private bool IsOwned( T* value ) {
-			var index = value - &Elements[0];
+		public uint IndexOf( T* value ) {
+			var index = ( uint )( value - &Elements[0] );
 
-			return ( index >= 0 ) & ( index < _maxElements );
-		}
-
-		public int IndexOf( T* value ) {
-			var index = ( int )( value - &Elements[0] );
-
-			return ( index >= 0 ) & ( index < _maxElements ) ? index : -1;
+			return index < _maxElements ? index : uint.MaxValue;
 		}
 	}
 }

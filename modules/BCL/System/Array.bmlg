@@ -16,29 +16,28 @@ namespace System {
 	// 24: dimension length 3
 	// 28: element1
 	public class Array {
-		public readonly int Length;
+		public readonly uint Length;
 		public readonly Reflection.Type& ElementType;
-		public readonly int Dimensions;
+		public readonly uint Dimensions;
 
 		~Array() {
 			var align = ElementType.InstanceAlignment;
-			var dimensionsSize = sizeof( uint ) * ( uint ) Dimensions;
-			var elementSize = Memory.GetStride( ( uint ) ElementType.InstanceSize, align );
+			var dimensionsSize = sizeof( uint ) * Dimensions;
+			var elementSize = Memory.GetStride( ElementType.InstanceSize, align );
 			var headerSize = Memory.GetStride( sizeof( Array ) + dimensionsSize, align ); // align first element
 
 			if( ElementType.IsClass | ElementType.IsDynamicArray | ElementType.IsDelegate )
 				Memory.PerformFunctorOnClassArray( bitcast<byte*>( this ) + headerSize, Length, bitcast<Functors.Action<void*>>( new Functors.Action<RuntimeObjectBase>( RuntimeObjectBase.ReleaseReference ) ) );
 			else if( ElementType.IsStruct )
-				Memory.PerformFunctorOnStructArray( bitcast<byte*>( this ) + headerSize, ( int ) elementSize, Length, ElementType.Destructor );
+				Memory.PerformFunctorOnStructArray( bitcast<byte*>( this ) + headerSize, elementSize, Length, ElementType.Destructor );
 			else if( ElementType.IsInterface )
-				Memory.PerformFunctorOnStructArray( bitcast<byte*>( this ) + headerSize, ( int ) elementSize, Length, bitcast<Functors.Action<void*>>( new Functors.Action<InterfaceInstance&>( InterfaceInstance.ReleaseReference ) ) );
+				Memory.PerformFunctorOnStructArray( bitcast<byte*>( this ) + headerSize, elementSize, Length, bitcast<Functors.Action<void*>>( new Functors.Action<InterfaceInstance&>( InterfaceInstance.ReleaseReference ) ) );
 		}
 
-		public int GetLength( int dimension ) {
-			Debug.Assert( dimension >= 0 );
+		public uint GetLength( uint dimension ) {
 			Debug.Assert( dimension < Dimensions );
 
-			return cast<int*>( bitcast<byte*>( this ) + sizeof( Array ) )[dimension];
+			return cast<uint*>( bitcast<byte*>( this ) + sizeof( Array ) )[dimension];
 		}
 
 		public new Reflection.Type& GetType() {
@@ -47,8 +46,8 @@ namespace System {
 
 		public void* GetData() {
 			var align = ElementType.InstanceAlignment;
-			var dimensionsSize = sizeof( uint ) * ( uint ) Dimensions;
-			var elementSize = Memory.GetStride( ( uint ) ElementType.InstanceSize, align );
+			var dimensionsSize = sizeof( uint ) * Dimensions;
+			var elementSize = Memory.GetStride( ElementType.InstanceSize, align );
 			var headerSize = Memory.GetStride( sizeof( Array ) + dimensionsSize, align ); // align first element
 
 			return bitcast<byte*>( this ) + headerSize;

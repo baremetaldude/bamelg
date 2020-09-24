@@ -13,31 +13,31 @@ namespace System {
 	/// Assert.Verify() - checks assert expression in any build and print diagnostic info for DEBUG build
 	/// Assert.IsTrue()/IsFalse()/AreEqual() - checks assert expression and print diagnostic info for any build
 	public static partial struct Assert {
-		public static bool AreEqual( SbcsString expected, SbcsString actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<SbcsString>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf8String expected, Utf8String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf8String>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf16String expected, Utf16String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf16String>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf32String expected, Utf32String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf32String>( expected, actual, callercontext ); }
+		public static bool AreEqual( SbcsString expected, SbcsString actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<SbcsString>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( Utf8String expected, Utf8String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf8String>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( Utf16String expected, Utf16String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf16String>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( Utf32String expected, Utf32String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf32String>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( bool expected, bool actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<bool>( expected, actual, callercontext ); }
+		public static bool AreEqual( bool expected, bool actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<bool>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( Guid expected, Guid actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Guid>( expected, actual, callercontext ); }
+		public static bool AreEqual( Guid expected, Guid actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Guid>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( float expected, float actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<float>( expected, actual, callercontext ); }
-		public static bool AreEqual( double expected, double actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<double>( expected, actual, callercontext ); }
+		public static bool AreEqual( float expected, float actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<float>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( double expected, double actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<double>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( sbyte expected, sbyte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<sbyte>( expected, actual, callercontext ); }
-		public static bool AreEqual( byte expected, byte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<byte>( expected, actual, callercontext ); }
+		public static bool AreEqual( sbyte expected, sbyte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<sbyte>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( byte expected, byte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<byte>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( short expected, short actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<short>( expected, actual, callercontext ); }
-		public static bool AreEqual( ushort expected, ushort actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ushort>( expected, actual, callercontext ); }
+		public static bool AreEqual( short expected, short actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<short>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( ushort expected, ushort actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ushort>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( int expected, int actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<int>( expected, actual, callercontext ); }
-		public static bool AreEqual( uint expected, uint actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<uint>( expected, actual, callercontext ); }
+		public static bool AreEqual( int expected, int actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<int>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( uint expected, uint actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<uint>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( long expected, long actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<long>( expected, actual, callercontext ); }
-		public static bool AreEqual( ulong expected, ulong actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ulong>( expected, actual, callercontext ); }
+		public static bool AreEqual( long expected, long actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<long>( expected, actual, null, callercontext ); }
+		public static bool AreEqual( ulong expected, ulong actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ulong>( expected, actual, null, callercontext ); }
 
-		public static bool AreEqual( void* expected, void* actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<void*>( expected, actual, callercontext ); }
+		public static bool AreEqual( void* expected, void* actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<void*>( expected, actual, null, callercontext ); }
 
 		public static bool AreEqual( Type& expected, Type& actual, [In] CallerContext& callercontext = nullref ) {
 			if( &expected == &actual ) return true;
@@ -56,6 +56,44 @@ namespace System {
 			return false;
 		}
 
+		public static bool AreExact( float expected, float actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<uint>( expected ) == bitcast<uint>( actual ) ) return true;
+
+			Console.Write( "Assertion failed: " );
+			Console.Write( context.Expression );
+			Console.Write( " expected '" );
+			Console.Write( "{0:@F}", expected );
+			Console.Write( "' but actual is '" );
+			Console.Write( "{0:@F}", actual );
+			Console.Write( "' at line " );
+			Console.Write( context.Row );
+
+			PrintContextInfo( context );
+			Console.WriteLine();
+			return false;
+		}
+
+		public static bool AreExact( double expected, double actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<ulong>( expected ) == bitcast<ulong>( actual ) ) return true;
+
+			Console.Write( "Assertion failed: " );
+			Console.Write( context.Expression );
+			Console.Write( " expected '" );
+			Console.Write( "{0:@F}", expected );
+			Console.Write( "'/" );
+			Console.WriteHex( bitcast<ulong>( expected ) );
+			Console.Write( " but actual is '" );
+			Console.Write( "{0:@F}", actual );
+			Console.Write( "'/" );
+			Console.WriteHex( bitcast<ulong>( actual ) );
+			Console.Write( " at line " );
+			Console.Write( context.Row );
+
+			PrintContextInfo( context );
+			Console.WriteLine();
+			return false;
+		}
+
 		public static bool Verify( bool expression, [In] CallerContext& callercontext = nullref ) {
 			if( expression ) return true;
 
@@ -66,13 +104,18 @@ namespace System {
 		public static bool IsTrue( bool expression, string message = null, [In] CallerContext& callercontext = nullref ) {
 			if( expression ) return true;
 
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+			if( callercontext != nullref )
+				Console.Write( callercontext );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+			if( message != null ) {
+				Console.Write( "Assertion failed: " );
+				Console.Write( message );
+				Console.WriteLine( "." );
+			}
+			else {
+				Console.WriteLine( "Assertion failed." );
+			}
+
 			return false;
 		}
 
@@ -125,6 +168,8 @@ namespace System {
 		public static bool NotImplemented( Utf8String message, [In] CallerContext& callercontext = nullref ) {
 			Console.Write( "Assertion failed: " );
 			Console.Write( message );
+			Console.Write( ". " );
+			Console.Write( callercontext.Expression );
 			Console.Write( " at line " );
 			Console.Write( callercontext.Row );
 
@@ -133,24 +178,38 @@ namespace System {
 			return false;
 		}
 
-		public static bool Fail( Utf8String message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool Fail( [In] CallerContext& callercontext = nullref ) {
+			if( callercontext != nullref )
+				Console.Write( callercontext );
 
-			PrintContextInfo( callercontext );
+			Console.WriteLine( "Assertion failed." );
+			return false;
+		}
+
+		public static bool Fail( Utf8String message, [In] CallerContext& callercontext = nullref ) {
+			if( callercontext != nullref )
+				Console.Write( callercontext );
+
+			Console.Write( "Assertion failed: " );
+			if( message != null ) {
+				Console.Write( message );
+				Console.Write( ". " );
+			}
+
 			Console.WriteLine();
 			return false;
 		}
 
 		public static bool Fail( string message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+			if( callercontext != nullref )
+				Console.Write( callercontext );
 
-			PrintContextInfo( callercontext );
+			Console.Write( "Assertion failed: " );
+			if( message != null ) {
+				Console.Write( message );
+				Console.Write( ". " );
+			}
+
 			Console.WriteLine();
 			return false;
 		}

@@ -152,6 +152,20 @@ namespace System {
 			}
 		}
 
+		public static void Write( TimeDuration value ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( value );
+				PlatformWrite( builder.Value.GetTextSpan(), false );
+			}
+		}
+
+		public static void WriteLine( TimeDuration value ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				builder.Value.Append( value );
+				PlatformWrite( builder.Value.GetTextSpan(), true );
+			}
+		}
+
 		public static void Write( void* value ) {
 			WriteHex( ( intptr ) value );
 		}
@@ -186,15 +200,33 @@ namespace System {
 		public static void WriteLine( float value ) { PrimitiveTypesFormatter.Instance.Init(); PrimitiveTypesFormatter.Instance.FormatSingleIEEE754( value ); WriteLine( PrimitiveTypesFormatter.Instance.GetTextBuffer() ); }
 		public static void WriteLine( double value ) { PrimitiveTypesFormatter.Instance.Init(); PrimitiveTypesFormatter.Instance.FormatDoubleIEEE754( value ); WriteLine( PrimitiveTypesFormatter.Instance.GetTextBuffer() ); }
 
-		public static void WriteHex( TypedReference value ) { WriteHex( value.Address, ( uint ) value.Type.InstanceSize ); }
-		public static void WriteHexLine( TypedReference value ) { WriteHexLine( value.Address, ( uint ) value.Type.InstanceSize ); }
+		public static void WriteHex( TypedReference value ) { WriteHex( value.Address, value.Type.InstanceSize ); }
+		public static void WriteHexLine( TypedReference value ) { WriteHexLine( value.Address, value.Type.InstanceSize ); }
+
+		public static void WriteHex( CStringSpan value ) { WriteHex( value.Location, value.Length ); }
+		public static void WriteHexLine( CStringSpan value ) { WriteHexLine( value.Location, value.Length ); }
+
+		public static void WriteHex( SbcsString value ) { WriteHex( value.GetChars(), value.Length ); }
+		public static void WriteHexLine( SbcsString value ) { WriteHexLine( value.GetChars(), value.Length ); }
+
+		public static void WriteHex( byte[] value ) { if( value == null ) return; WriteHex( &value[0], value.Length ); }
+		public static void WriteHexLine( byte[] value ) { if( value == null ) return; WriteHexLine( &value[0], value.Length ); }
+
+		public static void WriteHex( sbyte[] value ) { if( value == null ) return; WriteHex( &value[0], value.Length ); }
+		public static void WriteHexLine( sbyte[] value ) { if( value == null ) return; WriteHexLine( &value[0], value.Length ); }
+
+		public static void WriteHex( ArraySegment<byte>& value ) { WriteHex( &value.Array[value.Offset], value.Count ); }
+		public static void WriteHexLine( ArraySegment<byte>& value ) { WriteHexLine( &value.Array[value.Offset], value.Count ); }
+
+		public static void WriteHex( ArraySegment<sbyte>& value ) { WriteHex( &value.Array[value.Offset], value.Count ); }
+		public static void WriteHexLine( ArraySegment<sbyte>& value ) { WriteHexLine( &value.Array[value.Offset], value.Count ); }
 
 		public static void WriteHex( void* memory, uintptr length ) {
 			if( length == 0 ) return;
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize;
+				var bufferLength = Memory.DefaultPageSize;
 
 				switch( DefaultConsoleEncoding ) {
 					case ConsoleEncoding.CodePage: {
@@ -236,7 +268,7 @@ namespace System {
 			*data++ = ( byte ) '0';
 			*data++ = ( byte ) 'x';
 
-			for( int i = 0; i < sizeof( T ) * 2; ++i )
+			for( var i = 0U; i < sizeof( T ) * 2; ++i )
 				*data++ = PrimitiveTypesFormatter.HexDigitsUpper[cast<int>( value <<<= 4 ) & 0xF];
 
 			PlatformWrite( new CUtf8StringSpan( buffer, 2U + ( uint ) sizeof( T ) * 2U ), newLine );
@@ -280,22 +312,13 @@ namespace System {
 		public static OutputAttributesScope AttributedRegion( RgbColor foregroundColor ) { return new OutputAttributesScope( new Console.OutputAttributes() { ForegroundColor = foregroundColor } ); }
 		public static OutputAttributesScope AttributedRegion( Console.OutputAttributes& attrbutes ) { return new OutputAttributesScope( attrbutes ); }
 
-		private static void PrintDefaultColorsLab( RgbColor* colors, int count ) {
-			Console.WriteLine( "private static ColorValue.Lab[{0}] DefaultLabColors = new ColorValue.Lab[{0}] {{", count );
-			for( var i = 0; i < count; ++i ) {
-				var color = ( ColorValue.Lab ) ( ColorValue.Xyz ) ( ColorValue.Rgb ) colors[i];
-				Console.WriteLine( "\tnew ColorValue.Lab {{ L = {0}, A = {1}, B = {2} }},", color.L, color.A, color.B );
-			}
-			Console.WriteLine( "};" );
-		}
-
-		internal static int CreateIndexedColor( ColorValue.Lab* colors, int count, RgbColor& color ) {
+		internal static uint CreateIndexedColor( ColorValue.Lab* colors, uint count, RgbColor& color ) {
 			var labColor = ( ColorValue.Lab ) ( ColorValue.Xyz ) ( ColorValue.Rgb ) color;
 
 			double delta = double.MaxValue;
-			int result = 0;
+			uint result = 0;
 
-			for( var i = 0; i < count; ++i ) {
+			for( var i = 0U; i < count; ++i ) {
 				var currentDelta = Math.Abs( ColorValue.Lab.DiffCIE94( colors[i], labColor ) );
 				if( currentDelta < delta ) {
 					delta = currentDelta;
@@ -328,11 +351,11 @@ namespace System {
 			private RgbColor _foregroundColor = RgbColor.White;
 			private RgbColor _backgroundColor = RgbColor.Black;
 
-			public RgbColor ForegroundColor { get { return _foregroundColor; } set { _foregroundColor = value; DefaultForegroundColor = false; OnForegroundColorChanged(); } }
-			public RgbColor BackgroundColor { get { return _backgroundColor; } set { _backgroundColor = value; DefaultBackgroundColor = false; OnBackgroundColorChanged(); } }
+			public RgbColor ForegroundColor { get { return _foregroundColor; } set { _foregroundColor = value; DefaultForegroundColor = false; ForegroundColorIndex = uint.MaxValue; } }
+			public RgbColor BackgroundColor { get { return _backgroundColor; } set { _backgroundColor = value; DefaultBackgroundColor = false; BackgroundColorIndex = uint.MaxValue; } }
 
-			public int ForegroundColorIndex = -1;
-			public int BackgroundColorIndex = -1;
+			public uint ForegroundColorIndex = uint.MaxValue;
+			public uint BackgroundColorIndex = uint.MaxValue;
 
 			public bool DefaultForegroundColor { get; set; }
 			public bool DefaultBackgroundColor { get; set; }

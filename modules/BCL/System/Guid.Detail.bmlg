@@ -193,7 +193,12 @@ namespace System {
 			}
 		}
 
-		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint textLength, Guid& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetch<TElement>( TElement* text, uint textLength, Guid& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+			// if( text == null || textLength == 0 ) {
+			// 	parsedResult = Guid.Empty;
+			// 	return Convert.ConversionResult.EmptyValue;
+			// }
+
 			var data = ( byte* ) &parsedResult;
 			var result = false;
 
@@ -338,15 +343,7 @@ namespace System {
 
 			if( !result && readen != nullref ) readen = 0;
 
-			return result ? TextParsingStatus.OK : TextParsingStatus.Format;
-		}
-
-		[UnitTest]
-		public static void ParseTest() {
-			var guid = Guid.Parse( "ce9515ab-60b0-473e-81b6-59b19300c988" );
-			Assert.AreEqual( guid, Guid.Parse( "{ce9515ab-60b0-473e-81b6-59b19300c988}" ) );
-			Assert.AreEqual( guid, Guid.Parse( "(ce9515ab-60b0-473e-81b6-59b19300c988)" ) );
-			Assert.AreEqual( guid, Guid.Parse( "ce9515ab60b0473e81b659b19300c988" ) );
+			return result ? Convert.ConversionResult.OK : Convert.ConversionResult.IncompatibleValue;
 		}
 	}
 }

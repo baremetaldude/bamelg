@@ -8,28 +8,31 @@ namespace System.Collections {
 	public class IndexedSet<TKey, TValue> {
 		private uint _version;
 
-		private int[] _buckets;
+		private uint[] _buckets;
 		private Element[] _items;
 
 		private readonly bool _allowDuplicates;
 
-		private int _count;
-		private int _freeCount, _freeFirst;
+		private uint _count;
+		private uint _freeCount, _freeFirst;
 
 		private readonly Functors.Func<TValue, TKey> _keySelector;
 
 		public IndexedSet( Functors.Func<TValue, TKey> keySelector )
 			: this( true, keySelector ) {
+			Initialize( 3 );
 		}
 
 		public IndexedSet( bool allowKeyDuplicates, Functors.Func<TValue, TKey> keySelector0 ) {
 			_allowDuplicates = allowKeyDuplicates;
 			_keySelector = keySelector0;
+
+			Initialize( 3 );
 		}
 
 		public IndexedSet( IndexedSet<TKey, TValue> value ) {
 			_allowDuplicates = value._allowDuplicates;
-			_buckets = new[value._buckets.Length] int;
+			_buckets = new[value._buckets.Length] uint;
 			_items = new[value._items.Length] Element;
 			_count = value._count;
 			_freeCount = value._freeCount;
@@ -37,7 +40,7 @@ namespace System.Collections {
 			_keySelector = value._keySelector;
 
 			CommonCollectionOperations.Copy<Element>( &_items[0], &value._items[0], _items.Length );
-			CommonCollectionOperations.Copy<int>( &_buckets[0], &value._buckets[0], _buckets.Length );
+			CommonCollectionOperations.Copy<uint>( &_buckets[0], &value._buckets[0], _buckets.Length );
 		}
 
 		public void Add( TValue value ) {
@@ -50,79 +53,70 @@ namespace System.Collections {
 		public void Clear() {
 			if( _count <= 0 ) return;
 
-			for( var i = 0; i < _buckets.Length; ++i )
-				_buckets[i] = -1;
+			for( var i = 0U; i < _buckets.Length; ++i )
+				_buckets[i] = uint.MaxValue;
 
 			CommonCollectionOperations.Clear<Element>( &_items[0], _count );
 
-			_freeFirst = -1;
+			_freeFirst = uint.MaxValue;
 			_count = 0;
 			_freeCount = 0;
 			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
-		public bool ContainsKey( TKey key ) { return FindKey( key ) >= 0; }
-		public bool ContainsValue( TValue value ) { return FindValue( value ) >= 0; }
+		public bool ContainsKey( TKey key ) { return FindKey( key ) != uint.MaxValue; }
+		public bool ContainsValue( TValue value ) { return FindValue( value ) != uint.MaxValue; }
 
-		private int FindValue( TValue value ) {
-			int previous;
-			return FindValue( value, previous );
-		}
-
-		private int FindValue( TValue value, int& previous ) {
-			previous = -1;
+		private uint FindValue( TValue value ) {
 			var key = _keySelector( value );
+			var hash = ( int ) key.GetHashCode() & 0x7FFFFFFF;
 
-			if( _buckets != null ) {
-				var hash = key.GetHashCode() & 0x7FFFFFFF;
+			for( var i = _buckets[hash % _buckets.Length]; i != uint.MaxValue; i = _items[i]._next )
+				if( _items[i]._hash == hash && _items[i]._value == value )
+					return i;
 
-				for( var i = _buckets[hash % _buckets.Length]; i >= 0; previous = i, i = _items[i]._next )
-					if( _items[i]._hash == hash && _items[i]._value == value )
-						return i;
-			}
-
-			return -1;
+			return uint.MaxValue;
 		}
 
-		private int FindKey( TKey key ) {
-			int previous;
-			return FindKey( key, previous );
+		private uint FindValue( TValue value, uint& previous ) {
+			previous = uint.MaxValue;
+			var key = _keySelector( value );
+			var hash = ( int ) key.GetHashCode() & 0x7FFFFFFF;
+
+			for( var i = _buckets[hash % _buckets.Length]; i != uint.MaxValue; previous = i, i = _items[i]._next )
+				if( _items[i]._hash == hash && _items[i]._value == value )
+					return i;
+
+			return uint.MaxValue;
 		}
 
-		private int FindKey( TKey key, int& previous ) {
-			previous = -1;
+		private uint FindKey( TKey key ) {
+			var hash = ( int ) key.GetHashCode() & 0x7FFFFFFF;
 
-			if( _buckets != null ) {
-				var hash = key.GetHashCode() & 0x7FFFFFFF;
+			for( var i = _buckets[hash % _buckets.Length]; i != uint.MaxValue; i = _items[i]._next )
+				if( _items[i]._hash == hash && _keySelector( _items[i]._value ) == key )
+					return i;
 
-				for( var i = _buckets[hash % _buckets.Length]; i >= 0; previous = i, i = _items[i]._next )
-					if( _items[i]._hash == hash && _keySelector( _items[i]._value ) == key )
-						return i;
-			}
-
-			return -1;
+			return uint.MaxValue;
 		}
 
 		public LookupEnumerator Retrieve( TKey key ) { return new LookupEnumerator( this, key ); }
 
-		private void Initialize( int capacity ) {
+		private void Initialize( uint capacity ) {
 			var prime = PrimeNumber.GetClosestPrime( capacity );
 
-			_buckets = new[prime] int;
-			for( var i = 0; i < _buckets.Length; ++i )
-				_buckets[i] = -1;
+			_buckets = new[prime] uint;
+			for( var i = 0U; i < _buckets.Length; ++i )
+				_buckets[i] = uint.MaxValue;
 
 			_items = new[prime] Element;
-			_freeFirst = -1;
+			_freeFirst = uint.MaxValue;
 		}
 
 		private void Insert( TValue value ) {
-			int freeIndex;
+			uint freeIndex;
 
 			var key = _keySelector( value );
-
-			if( _buckets == null )
-				Initialize( 0 );
 
 			var hash = ( int ) key.GetHashCode() & 0x7FFFFFFF;
 			var index = hash % _buckets.Length;
@@ -157,24 +151,22 @@ namespace System.Collections {
 		public bool Remove( TValue value ) {
 			var key = _keySelector( value );
 
-			if( _buckets != null ) {
-				int previous;
-				var i = FindValue( value, previous );
+			uint previous;
+			var i = FindValue( value, previous );
 
-				if( i >= 0 ) {
-					if( previous < 0 ) _buckets[( key.GetHashCode() & 0x7FFFFFFF ) % _buckets.Length] = _items[i]._next;
-					else _items[previous]._next = _items[i]._next;
+			if( i != uint.MaxValue ) {
+				if( previous == uint.MaxValue ) _buckets[( key.GetHashCode() & 0x7FFFFFFF ) % _buckets.Length] = _items[i]._next;
+				else _items[previous]._next = _items[i]._next;
 
-					_items[i]._hash = -1;
-					_items[i]._next = _freeFirst;
-					_items[i]._value = default( TValue );
+				_items[i]._hash = -1;
+				_items[i]._next = _freeFirst;
+				_items[i]._value = default( TValue );
 
-					_freeFirst = i;
-					++_freeCount;
-					CommonCollectionOperations.UpdateVersion( &_version );
+				_freeFirst = i;
+				++_freeCount;
+				CommonCollectionOperations.UpdateVersion( &_version );
 
-					return true;
-				}
+				return true;
 			}
 
 			return false;
@@ -183,14 +175,12 @@ namespace System.Collections {
 		private void Resize() {
 			var prime = PrimeNumber.GetClosestPrime( _count * 2 );
 
-			var buckets0 = new[prime] int;
-			for( var i = 0; i < prime; ++i )
-				buckets0[i] = -1;
+			var buckets0 = new[prime] uint default( uint.MaxValue );
 
 			var items = new[prime] Element;
 			CommonCollectionOperations.Copy<Element>( &items[0], &_items[0], _count );
 
-			for( var j = 0; j < _count; ++j ) {
+			for( var j = 0U; j < _count; ++j ) {
 				var index = items[j]._hash % prime;
 				items[j]._next = buckets0[index];
 				buckets0[index] = j;
@@ -204,13 +194,13 @@ namespace System.Collections {
 
 		public Enumerator GetEnumerator() { return new Enumerator( this ); }
 
-		public int Count { get { return _count - _freeCount; } }
+		public uint Count { get { return _count - _freeCount; } }
 
 		public TValue this[TKey key] {
 			get {
 				var index = FindKey( key );
 
-				if( index >= 0 )
+				if( index != uint.MaxValue )
 					return _items[index]._value;
 
 				return default( TValue );
@@ -219,14 +209,15 @@ namespace System.Collections {
 
 		public struct Element {
 			public TValue _value;
-			public int _hash, _next;
+			public int _hash;
+			public uint _next;
 		}
 
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private readonly IndexedSet<TKey, TValue> _map;
 			private readonly uint _version;
-			private int _index;
+			private uint _index;
 			private TValue _current;
 
 			internal Enumerator( IndexedSet<TKey, TValue> map ) {
@@ -259,7 +250,6 @@ namespace System.Collections {
 			public TValue Current { get { return _current; } }
 
 			void Reset() {
-				_version = _map._version;
 				_index = 0;
 				_current = default( TValue );
 			}
@@ -269,7 +259,7 @@ namespace System.Collections {
 		public struct ReversedEnumerator {
 			private readonly declaringtype _map;
 			private readonly uint _version;
-			private int _index;
+			private uint _index;
 			private TValue _current;
 
 			internal ReversedEnumerator( declaringtype map ) {
@@ -282,7 +272,7 @@ namespace System.Collections {
 			public bool MoveNext() {
 				CommonCollectionOperations.VersionCheck( _version == _map._version );
 
-				while( _index >= 0 ) {
+				while( _index != uint.MaxValue ) {
 					if( _map._items[_index]._hash >= 0 ) {
 						_current = _map._items[_index]._value;
 						--_index;
@@ -291,7 +281,7 @@ namespace System.Collections {
 					--_index;
 				}
 
-				_index = -1;
+				_index = uint.MaxValue;
 				_current = default( TValue );
 				return false;
 			}
@@ -305,7 +295,7 @@ namespace System.Collections {
 		public struct LookupEnumerator {
 			private readonly declaringtype _map;
 			private readonly uint _version;
-			private int _index;
+			private uint _index;
 
 			private TKey _retrieveKey;
 			private int _retrieveHash;
@@ -315,7 +305,7 @@ namespace System.Collections {
 			public LookupEnumerator( declaringtype map, TKey key ) {
 				_current = default( TValue );
 				_map = map;
-				_index = -1;
+				_index = uint.MaxValue;
 
 				_retrieveKey = key;
 				_retrieveHash = ( int ) key.GetHashCode() & 0x7FFFFFFF;
@@ -336,7 +326,7 @@ namespace System.Collections {
 				if( _map != null ) {
 					CommonCollectionOperations.VersionCheck( _version == _map._version );
 
-					for( ; _index >= 0; _index = _map._items[_index]._next )
+					for( ; _index != uint.MaxValue; _index = _map._items[_index]._next )
 						if( _map._items[_index]._hash == _retrieveHash && _map._keySelector( _map._items[_index]._value ) == _retrieveKey ) {
 							_current = _map._items[_index]._value;
 							_index = _map._items[_index]._next;
@@ -348,8 +338,6 @@ namespace System.Collections {
 			}
 
 			public void Reset() {
-				_version = _map._version;
-
 				if( _map != null && _map._buckets != null )
 					_index = _map._buckets[_retrieveHash % _map._buckets.Length];
 			}

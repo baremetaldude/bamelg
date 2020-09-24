@@ -1,0 +1,19 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System.Diagnostics {
+	public static partial struct Debugger {
+		public static void _implBreak() {
+			pthread_t.CurrentThread.Signal( SignalCode.SIGTRAP );
+		}
+
+		private static bool _isAttached() {
+			return _isTracerProcessAttached();
+		}
+	}
+}

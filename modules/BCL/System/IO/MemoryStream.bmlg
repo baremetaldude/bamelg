@@ -18,10 +18,10 @@ namespace System.IO {
 		private byte[] _buffer;
 		private bool _expandable = false;
 
-		private int _flushGrow;
+		private uint _flushGrow;
 
-		public MemoryStream( int capacity = 4096 * 2, int flushGrow = 4096 ) {
-			if( !Assert.IsTrue( capacity > 0 ) ) capacity = 1;
+		public MemoryStream( uint capacity = 4096U * 2, uint flushGrow = 4096 ) {
+			if( capacity == 0 ) capacity = 1;
 
 			_flushGrow = flushGrow;
 			_expandable = true;
@@ -44,12 +44,10 @@ namespace System.IO {
 			_bufferInfo.Position = 0;
 		}
 
-		public MemoryStream( byte[] buffer, int start, int length ) {
-			if( !Assert.IsTrue( start >= 0 ) ) { start = 0; }
-			if( !Assert.IsTrue( start < buffer.Length ) ) { start = buffer.Length - 1; }
-			if( !Assert.IsTrue( length >= 0 ) ) { length = 0; }
-			if( !Assert.IsTrue( length <= buffer.Length ) ) { length = 0; }
-			if( !Assert.IsTrue( start + length <= buffer.Length ) ) { length = buffer.Length - start; }
+		public MemoryStream( byte[] buffer, uint start, uint length ) {
+			// if( !Assert.IsTrue( start < buffer.Length ) ) { start = buffer.Length - 1; }
+			// if( !Assert.IsTrue( length <= buffer.Length ) ) { length = 0; }
+			// if( !Assert.IsTrue( start + length <= buffer.Length ) ) { length = buffer.Length - start; }
 
 			_flushGrow = 0;
 			_expandable = false;
@@ -66,8 +64,8 @@ namespace System.IO {
 			_flushGrow = 0;
 
 			_bufferInfo.Start = ( byte* ) segment.Start;
-			_bufferInfo.Capacity = ( int ) segment.Count;
-			_bufferInfo.AvailableToRead = ( int ) segment.Count;
+			_bufferInfo.Capacity = ( uint ) segment.Count;
+			_bufferInfo.AvailableToRead = ( uint ) segment.Count;
 		}
 
 		public long Position {
@@ -77,21 +75,21 @@ namespace System.IO {
 
 		long IStream.Position { get { return Position; } }
 
-		public int Length {
+		public uint Length {
 			get { return _bufferInfo.Position + _bufferInfo.AvailableToRead; }
 		}
 
-		public int Capacity {
+		public uint Capacity {
 			get { return _bufferInfo.Capacity; }
 			set {
-				if( !Assert.IsTrue( value >= 0 ) ) return;
-				if( !Assert.IsTrue( value >= Length ) ) return;
+				if( value < Length ) return;
+
 				if( _bufferInfo.Capacity == value ) return;
 
 				if( _expandable ) {
 					var newBuffer = new[value] byte;
 
-					Memory.Copy( &newBuffer[0], _bufferInfo.Start, ( uint ) Math.Min( Length, value ) );
+					Memory.Copy( &newBuffer[0], _bufferInfo.Start, Math.Min( Length, value ) );
 
 					_buffer = newBuffer;
 					_bufferInfo.Start = &newBuffer[0];
@@ -112,16 +110,12 @@ namespace System.IO {
 		public void* GetBufferStart() { return _bufferInfo.Start; }
 		public void* GetBufferCurrent() { return _bufferInfo.Start + _bufferInfo.Position; }
 
-		public void EnsureFreeSpace( int size ) {
-			if( !Assert.IsTrue( size >= 0 ) ) return;
-
+		public void EnsureFreeSpace( uint size ) {
 			EnsureCapacity( size + _bufferInfo.Position );
 		}
 
-		public void EnsureCapacity( int size ) {
+		public void EnsureCapacity( uint size ) {
 			if( _expandable ) {
-				if( !Assert.IsTrue( size >= 0 ) ) return;
-
 				var newCapacity = _bufferInfo.Capacity;
 				while( newCapacity < size ) newCapacity *= 2;
 				Capacity = newCapacity;
@@ -133,10 +127,8 @@ namespace System.IO {
 		}
 
 		// Reserves 'count' bytes for write. Changes stream position, expands buffer if necessary
-		public void* Reserve( int count ) {
-			if( !Assert.IsTrue( count >= 0 ) ) return _bufferInfo.WriteBufferStart;
-
-			var resultPosition = 0;
+		public void* Reserve( uint count ) {
+			var resultPosition = 0U;
 			if( !Assert.IsFalse( checkwrap( resultPosition = _bufferInfo.Position + count ) ) ) return null;
 
 			if( resultPosition > Capacity ) EnsureCapacity( resultPosition );
@@ -147,12 +139,11 @@ namespace System.IO {
 			return result;
 		}
 
-		public int TruncateStart( int count ) {
-			if( !Assert.IsTrue( count >= 0 ) ) return 0;
+		public uint TruncateStart( uint count ) {
 			if( _bufferInfo.AvailableToRead == 0 || count == 0 ) return 0;
 
 			if( count < _bufferInfo.AvailableToRead ) {
-				Memory.Move( _bufferInfo.Start, _bufferInfo.Start + count, ( uint )( _bufferInfo.AvailableToRead - count ) );
+				Memory.CopyOverlapped( _bufferInfo.Start, _bufferInfo.Start + count, _bufferInfo.AvailableToRead - count );
 				_bufferInfo.Position = Math.Max( 0, _bufferInfo.Position - count );
 				_bufferInfo.AvailableToRead -= count;
 			}
@@ -166,7 +157,9 @@ namespace System.IO {
 		}
 
 		public long Seek( long offset, SeekOrigin origin ) {
-			var newPosition = ( int ) offset;
+			if( !Assert.IsTrue( offset >= -( int ) _bufferInfo.Capacity && offset <= _bufferInfo.Capacity ) ) return 0;
+
+			var newPosition = offset;
 			var bufferedReadEnd = _bufferInfo.Position + _bufferInfo.AvailableToRead;
 
 			[CheckAllEnumValues]
@@ -179,11 +172,11 @@ namespace System.IO {
 			if( !Assert.IsTrue( newPosition >= 0 && newPosition <= _bufferInfo.Capacity ) ) return 0;
 
 			if( newPosition <= bufferedReadEnd )
-				_bufferInfo.AvailableToRead = bufferedReadEnd - newPosition;
+				_bufferInfo.AvailableToRead = ( uint )( bufferedReadEnd - newPosition );
 			else
-				_bufferInfo.AvailableToRead = 0;
+				_bufferInfo.AvailableToRead = 0U;
 
-			_bufferInfo.Position = newPosition;
+			_bufferInfo.Position = ( uint ) newPosition;
 			return newPosition;
 		}
 
@@ -191,41 +184,43 @@ namespace System.IO {
 			if( _bufferInfo.Position == 0 ) return new[0] byte;
 
 			var result = new[_bufferInfo.Position] byte;
-			Memory.Copy( &result[0], _bufferInfo.Start, ( uint ) result.Length );
+			Memory.Copy( &result[0], _bufferInfo.Start, result.Length );
 			return result;
 		}
 
 		public ArraySegment<byte> GetWrittenSegment() {
-			return new ArraySegment<byte>( _buffer, 0, ( uint ) _bufferInfo.Position );
+			return new ArraySegment<byte>( _buffer, 0, _bufferInfo.Position );
 		}
 
-		public int Read( [Out] void* buffer, int count ) {
+		public uint Read( [Out] void* buffer, uint count ) {
 			if( !Assert.IsTrue( buffer != null ) ) return 0;
-			if( !Assert.IsTrue( count >= 0 ) ) return 0;
+			if( count == 0 ) return 0;
 
 			if( _bufferInfo.AvailableToRead == 0 ) return 0;
 
 			count = Math.Min( count, _bufferInfo.AvailableToRead );
-			Memory.Copy( buffer, _bufferInfo.ReadBufferStart, ( uint ) count );
+			Memory.Copy( buffer, _bufferInfo.ReadBufferStart, count );
 			_bufferInfo.OnReadPerformed( count );
 
 			return count;
 		}
 
-		public void Write( [In] void* buffer, int count ) {
-			if( !Assert.IsTrue( buffer != null ) ) return;
-			if( !Assert.IsTrue( count >= 0 ) ) return;
+		public uint Write( [In] void* buffer, uint count ) {
+			if( !Assert.IsTrue( buffer != null ) ) return 0;
+			if( count == 0 ) return 0;
 
-			var resultPosition = 0;
-			if( !Assert.IsFalse( checkwrap( resultPosition = _bufferInfo.Position + count ) ) ) return;
+			var resultPosition = 0U;
+			if( !Assert.IsFalse( checkwrap( resultPosition = _bufferInfo.Position + count ) ) ) return 0;
 
 			if( resultPosition > Capacity ) {
 				EnsureCapacity( resultPosition );
 				count = Math.Min( count, _bufferInfo.AvailableToWrite );
 			}
 
-			Memory.Copy( _bufferInfo.WriteBufferStart, buffer, ( uint ) count );
+			Memory.Copy( _bufferInfo.WriteBufferStart, buffer, count );
 			_bufferInfo.OnWritePerformed( count );
+
+			return count;
 		}
 
 		/// Read from source [ Position; Position + AvailableToRead ) and write to this stream
@@ -241,8 +236,33 @@ namespace System.IO {
 			Write( source._bufferInfo.Start, readen );
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+		uint IStream.Read( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var readen = Read( segment.Start, ( uint ) segment.Count );
+				result += readen;
+
+				if( readen != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var written = Write( segment.Start, ( uint ) segment.Count );
+				result += written;
+
+				if( written != segment.Count )
+					break;
+			}
+
+			return result;
+		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			switch( flushKind ) {
@@ -259,11 +279,11 @@ namespace System.IO {
 			}
 		}
 
-		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 
 		// Usage: 'using( new TraceScope( this, thismethod ) ) {'
 		private struct TraceScope {

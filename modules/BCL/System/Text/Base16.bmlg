@@ -1,0 +1,1870 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Reference: https://github.com/aklomp/base64
+//
+
+using System.IO;
+using System.Runtime;
+
+namespace System.Text {
+	public struct Base16 {
+		#region Simple API
+
+		/// \return number of characters to represent 'byteLength' bytes
+		public static uint GetEncodedLength( uint byteLength ) {
+			return byteLength * 2;
+		}
+
+		/// \return number of characters written
+		public static uint Encode( byte* destination, uint destinationLength, void* source, uint sourceLength ) {
+			uint bytesReaden, charsWritten;
+			new Encoder().Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+			return charsWritten;
+		}
+
+		/// \return number of characters written
+		public static uint Encode( char* destination, uint destinationLength, void* source, uint sourceLength ) {
+			uint bytesReaden, charsWritten;
+			new Encoder().Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+			return charsWritten;
+		}
+
+		/// \return number of characters written
+		public static uint Encode( uint* destination, uint destinationLength, void* source, uint sourceLength ) {
+			uint bytesReaden, charsWritten;
+			new Encoder().Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+			return charsWritten;
+		}
+
+		[Flags]
+		public enum DecodeOptions : byte {
+			None,
+
+			SkipWhitespace,
+			SkipCurlyBraces,
+			SkipParenthesis,
+		}
+
+		public static uint Decode( void* destination, uint destinationLength, byte* source, uint sourceLength, DecodeOptions options = DecodeOptions.None ) {
+			var decoder = new Decoder();
+			uint charsReaden, bytesWritten;
+			decoder.Decode( destination, destinationLength, source, sourceLength, charsReaden, bytesWritten, options );
+			return bytesWritten;
+		}
+
+		#endregion
+
+		#region BCL interop API
+
+		public static SbcsString EncodeToSbcsString( void* source, uint sourceLength ) {
+			var destinationLength = GetEncodedLength( sourceLength );
+
+			var result = new SbcsString.Builder( destinationLength );
+			Encode( result.GetChars(), destinationLength, source, sourceLength );
+			return result.Detach();
+		}
+
+		public static SbcsString EncodeToSbcsString( CStringSpan& text ) { return EncodeToSbcsString( text.Location, text.Length ); }
+		public static SbcsString EncodeToSbcsString( CUtf8StringSpan& text ) { return EncodeToSbcsString( text.Location, text.ByteLength ); }
+
+		public static Utf8String EncodeToUtf8String( void* source, uint sourceLength ) {
+			var destinationLength = GetEncodedLength( sourceLength );
+
+			var result = new Utf8String.Builder( destinationLength );
+			Encode( result.GetChars(), destinationLength, source, sourceLength );
+			return result.Detach();
+		}
+
+		public static Utf8String EncodeToUtf8String( CStringSpan& text ) { return EncodeToUtf8String( text.Location, text.Length ); }
+		public static Utf8String EncodeToUtf8String( CUtf8StringSpan& text ) { return EncodeToUtf8String( text.Location, text.ByteLength ); }
+
+		public static Utf16String EncodeToUtf16String( void* source, uint sourceLength ) {
+			var destinationLength = GetEncodedLength( sourceLength );
+
+			var result = new Utf16String.Builder( destinationLength );
+			Encode( result.GetChars(), destinationLength, source, sourceLength );
+			return result.Detach();
+		}
+
+		public static Utf16String EncodeToUtf16String( CStringSpan& text ) { return EncodeToUtf16String( text.Location, text.Length ); }
+		public static Utf16String EncodeToUtf16String( CUtf8StringSpan& text ) { return EncodeToUtf16String( text.Location, text.ByteLength ); }
+
+		public static Utf32String EncodeToUtf32String( void* source, uint sourceLength ) {
+			var destinationLength = GetEncodedLength( sourceLength );
+
+			var result = new Utf32String.Builder( destinationLength );
+			Encode( result.GetChars(), destinationLength, source, sourceLength );
+			return result.Detach();
+		}
+
+		public static Utf16String EncodeToUtf32String( CStringSpan& text ) { return EncodeToUtf16String( text.Location, text.Length ); }
+		public static Utf16String EncodeToUtf32String( CUtf8StringSpan& text ) { return EncodeToUtf16String( text.Location, text.ByteLength ); }
+
+		public static uint Encode( StringBuilder builder, CStringSpan& text ) { return Encode( builder, text.Location, text.Length ); }
+		public static uint Encode( StringBuilder builder, CUtf8StringSpan& text ) { return Encode( builder, text.Location, text.ByteLength ); }
+
+		/// \return number of characters written
+		public static uint Encode( StringBuilder builder, void* source, uint sourceLength ) {
+			var destinationLength = GetEncodedLength( sourceLength );
+			var destination = builder.ProvideAppendLocation( destinationLength );
+
+			var charsWritten = Encode( destination, destinationLength, source, sourceLength );
+			return charsWritten;
+		}
+
+		public static uint Decode( void* destination, uint destinationLength, SbcsString source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.Length, options ); }
+		public static uint Decode( void* destination, uint destinationLength, CString source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.Length, options ); }
+		public static uint Decode( void* destination, uint destinationLength, CStringSpan source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.Length, options ); }
+
+		public static uint Decode( void* destination, uint destinationLength, Utf8String source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.ByteLength, options ); }
+		public static uint Decode( void* destination, uint destinationLength, CUtf8String source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.ByteLength, options ); }
+		public static uint Decode( void* destination, uint destinationLength, CUtf8StringSpan source, DecodeOptions options = DecodeOptions.None ) { return Decode( destination, destinationLength, source.GetChars(), source.ByteLength, options ); }
+
+		public static SbcsString DecodeToSbcsString( byte* source, uint sourceLength, DecodeOptions options = DecodeOptions.None ) {
+			if( sourceLength <= 1 ) return null;
+
+			uint charsReaden, bytesWritten;
+			var decoder = new Decoder();
+
+			decoder.Inspect( source, sourceLength, charsReaden, bytesWritten, options );
+			var destinationLength = bytesWritten;
+
+			var result = new SbcsString.Builder( destinationLength );
+			var destination = result.GetChars();
+
+			decoder.Reset();
+			if( !decoder.Decode( destination, destinationLength, source, sourceLength, charsReaden, bytesWritten, options ) )
+				return null;
+
+			return result.Detach();
+		}
+
+		public static SbcsString DecodeToSbcsString( SbcsString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.Length, options ); }
+		public static SbcsString DecodeToSbcsString( CString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.Length, options ); }
+		public static SbcsString DecodeToSbcsString( CStringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.Length, options ); }
+
+		public static SbcsString DecodeToSbcsString( Utf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.ByteLength, options ); }
+		public static SbcsString DecodeToSbcsString( CUtf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.ByteLength, options ); }
+		public static SbcsString DecodeToSbcsString( CUtf8StringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToSbcsString( source.GetChars(), source.ByteLength, options ); }
+
+		public static Utf8String DecodeToUtf8String( byte* source, uint sourceLength, DecodeOptions options = DecodeOptions.None ) {
+			if( sourceLength <= 1 ) return null;
+
+			uint charsReaden, bytesWritten;
+			var decoder = new Decoder();
+
+			decoder.Inspect( source, sourceLength, charsReaden, bytesWritten, options );
+			var destinationLength = bytesWritten;
+
+			var result = new Utf8String.Builder( destinationLength );
+			var destination = result.GetChars();
+
+			decoder.Reset();
+			if( !decoder.Decode( destination, destinationLength, source, sourceLength, charsReaden, bytesWritten, options ) )
+				return null;
+
+			return result.Detach();
+		}
+
+		public static byte[] DecodeToArray( SbcsString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.Length, options ); }
+		public static byte[] DecodeToArray( CString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.Length, options ); }
+		public static byte[] DecodeToArray( CStringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.Length, options ); }
+
+		public static byte[] DecodeToArray( Utf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.ByteLength, options ); }
+		public static byte[] DecodeToArray( CUtf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.ByteLength, options ); }
+		public static byte[] DecodeToArray( CUtf8StringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToArray( source.GetChars(), source.ByteLength, options ); }
+
+		public static byte[] DecodeToArray( byte* source, uint sourceLength, DecodeOptions options = DecodeOptions.None ) {
+			if( sourceLength <= 1 ) return null;
+
+			uint charsReaden, bytesWritten;
+			var decoder = new Decoder();
+
+			decoder.Inspect( source, sourceLength, charsReaden, bytesWritten, options );
+			var destinationLength = bytesWritten;
+
+			var result = new[destinationLength] byte;
+
+			decoder.Reset();
+			if( !decoder.Decode( &result[0], destinationLength, source, sourceLength, charsReaden, bytesWritten, options ) )
+				return null;
+
+			return result;
+		}
+
+		public static Utf8String DecodeToUtf8String( SbcsString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.Length, options ); }
+		public static Utf8String DecodeToUtf8String( CString source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.Length, options ); }
+		public static Utf8String DecodeToUtf8String( CStringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.Length, options ); }
+
+		public static Utf8String DecodeToUtf8String( Utf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.ByteLength, options ); }
+		public static Utf8String DecodeToUtf8String( CUtf8String source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.ByteLength, options ); }
+		public static Utf8String DecodeToUtf8String( CUtf8StringSpan source, DecodeOptions options = DecodeOptions.None ) { return DecodeToUtf8String( source.GetChars(), source.ByteLength, options ); }
+
+		#endregion
+
+		#region Streaming API
+
+		public static yield<MemorySegment<byte>> StreamEncode( byte* destination, uint destinationLength, void* source, uint sourceLength ) {
+			if( destinationLength < 2 ) yield break;
+
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			while( sourceLength > 0 ) {
+				encoder.Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+				yield return new MemorySegment<byte>( destination, charsWritten );
+
+				source = ( byte* ) source + bytesReaden;
+				if( checkwrap( sourceLength -= bytesReaden ) ) break;
+			}
+
+			{
+				charsWritten = encoder.Finish( destination, destinationLength );
+				if( charsWritten != 0 ) yield return new MemorySegment<byte>( destination, charsWritten );
+			}
+		}
+
+		public static yield<MemorySegment<char>> StreamEncode( char* destination, uint destinationLength, void* source, uint sourceLength ) {
+			if( destinationLength < 2 ) yield break;
+
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			while( sourceLength > 0 ) {
+				encoder.Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+				yield return new MemorySegment<char>( destination, charsWritten );
+
+				source = ( byte* ) source + bytesReaden;
+				if( checkwrap( sourceLength -= bytesReaden ) ) break;
+			}
+
+			{
+				charsWritten = encoder.Finish( destination, destinationLength );
+				if( charsWritten != 0 ) yield return new MemorySegment<char>( destination, charsWritten );
+			}
+		}
+
+		public static yield<MemorySegment<uint>> StreamEncode( uint* destination, uint destinationLength, void* source, uint sourceLength ) {
+			if( destinationLength < 2 ) yield break;
+
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			while( sourceLength > 0 ) {
+				encoder.Encode( destination, destinationLength, source, sourceLength, bytesReaden, charsWritten );
+				yield return new MemorySegment<uint>( destination, charsWritten );
+
+				source = ( byte* ) source + bytesReaden;
+				if( checkwrap( sourceLength -= bytesReaden ) ) break;
+			}
+
+			{
+				charsWritten = encoder.Finish( destination, destinationLength );
+				if( charsWritten != 0 ) yield return new MemorySegment<uint>( destination, charsWritten );
+			}
+		}
+
+		public static uint Encode( ITextWriter writer, void* memory, uint length ) {
+			if( length == 0 ) return 0;
+			uint charsWritten = 0;
+
+			using( var page = System.Runtime.Memory.CachedPages.PopScoped() ) {
+				var buffer = ( char* ) page.Value;
+				var bufferLength = System.Runtime.Memory.DefaultPageSize / sizeof( *buffer );
+
+				foreach( var segment in StreamEncode( buffer, bufferLength, memory, length ) ) {
+					writer.Write( new CUtf16StringSpan( segment.Start, ( uint ) segment.Count ) );
+					charsWritten += ( uint ) segment.Count;
+				}
+			}
+
+			return charsWritten;
+		}
+
+		public static uint Encode( ITextWriter writer, CStringSpan& text ) { return Encode( writer, text.Location, text.Length ); }
+		public static uint Encode( ITextWriter writer, CUtf8StringSpan& text ) { return Encode( writer, text.Location, text.ByteLength ); }
+
+		public static uint Encode( ITextWriter writer, IStream reader ) {
+			if( reader == null ) return 0;
+			uint totalCharsWritten = 0;
+
+			StreamingBufferInfo* readBuffer;
+			var readStream = reader.GetBufferedReadStream( readBuffer );
+
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			using( var page = System.Runtime.Memory.CachedPages.PopScoped() ) {
+				var writeBuffer = ( char* ) page.Value;
+				var writeBufferLength = System.Runtime.Memory.DefaultPageSize / sizeof( *writeBuffer );
+
+				for( ; ; ) {
+					if( readBuffer->AvailableToRead < readBuffer->Capacity / 2 ) readStream.Flush( FlushKind.Read );
+					if( readBuffer->AvailableToRead == 0 ) break;
+
+					encoder.Encode( writeBuffer, writeBufferLength, readBuffer->ReadBufferStart, readBuffer->AvailableToRead, bytesReaden, charsWritten );
+					writer.Write( new CUtf16StringSpan( writeBuffer, charsWritten ) );
+					readBuffer->OnReadPerformed( bytesReaden );
+
+					totalCharsWritten += charsWritten;
+				}
+			}
+
+			return charsWritten;
+		}
+
+		public static uint Encode( IStream destination, void* memory, uint length ) {
+			if( length == 0 ) return 0;
+			uint totalCharsWritten = 0;
+
+			StreamingBufferInfo* writeBuffer;
+			var writeStream = destination.GetBufferedWriteStream( writeBuffer );
+
+			var sourceMemory = ( byte* ) memory;
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			while( length > 0 ) {
+				encoder.Encode( writeBuffer->WriteBufferStart, writeBuffer->AvailableToWrite, sourceMemory, length, bytesReaden, charsWritten );
+
+				writeBuffer->OnWritePerformed( charsWritten );
+				sourceMemory += bytesReaden;
+				length -= bytesReaden;
+
+				writeStream.Flush( FlushKind.Write );
+
+				totalCharsWritten += charsWritten;
+			}
+
+			return charsWritten;
+		}
+
+		public static uint Encode( IStream destination, IStream source ) {
+			if( source == null || destination == null ) return 0;
+
+			uint totalCharsWritten = 0;
+
+			StreamingBufferInfo* readBuffer;
+			var readStream = source.GetBufferedReadStream( readBuffer );
+
+			StreamingBufferInfo* writeBuffer;
+			var writeStream = destination.GetBufferedWriteStream( writeBuffer );
+
+			var encoder = new Encoder();
+			uint bytesReaden, charsWritten;
+			for( ; ; ) {
+				if( readBuffer->AvailableToRead < readBuffer->Capacity / 2 ) readStream.Flush( FlushKind.Read );
+				if( readBuffer->AvailableToRead == 0 ) break;
+
+				encoder.Encode( writeBuffer->WriteBufferStart, writeBuffer->AvailableToWrite, readBuffer->ReadBufferStart, readBuffer->AvailableToRead, bytesReaden, charsWritten );
+
+				readBuffer->OnReadPerformed( bytesReaden );
+				writeBuffer->OnWritePerformed( charsWritten );
+				totalCharsWritten += charsWritten;
+
+				writeStream.Flush( FlushKind.Write );
+			}
+
+			{
+				charsWritten = encoder.Finish( writeBuffer->WriteBufferStart, writeBuffer->AvailableToWrite );
+				if( charsWritten != 0 ) {
+					writeBuffer->OnWritePerformed( charsWritten );
+					totalCharsWritten += charsWritten;
+
+					writeStream.Flush( FlushKind.Write );
+				}
+			}
+
+			return totalCharsWritten;
+		}
+
+		public static yield<MemorySegment<byte>> StreamDecode( void* destination, uint destinationLength, byte* source, uint sourceLength, DecodeOptions options = DecodeOptions.None ) {
+			if( destinationLength == 0 ) yield break;
+
+			var decoder = new Decoder();
+
+			while( sourceLength > 0 ) {
+				uint charsReaden, bytesWritten;
+				if( !decoder.Decode( destination, destinationLength, source, sourceLength, charsReaden, bytesWritten, options ) ) break;
+
+				if( bytesWritten == 0 ) break;
+
+				yield return new MemorySegment<byte>( ( byte* ) destination, bytesWritten );
+
+				source = ( byte* ) source + charsReaden;
+				sourceLength -= charsReaden;
+			}
+		}
+
+		#endregion
+
+		public struct Encoder {
+			public bool HasBufferedNibble { get { return LowNibble < 0x80; } }
+			public byte LowNibble;
+
+			public Encoder() {
+				Reset();
+			}
+
+			private void Reset() {
+				LowNibble = 0x80;
+			}
+
+			public void Encode( byte* destination, uint destinationLength, void* source, uint sourceLength, uint& bytesReaden, uint& charsWritten ) {
+				if( sourceLength == 0 || destinationLength == 0 ) {
+				skip_encoding:
+					bytesReaden = 0;
+					charsWritten = 0;
+					return;
+				}
+
+				var input = ( byte* ) source;
+				var inputEnd = input + sourceLength;
+				var output = destination;
+				uint written = 0;
+
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+					}
+					else goto skip_encoding;
+				}
+
+				while( input < inputEnd ) {
+					if( destinationLength >= 2 ) {
+						var @byte = *input++;
+
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte & 0xF];
+					}
+					else if( destinationLength >= 1 ) {
+						var @byte = *input++;
+
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						LowNibble = @byte & 0xF;
+						break;
+					}
+					else
+						break;
+				}
+
+				bytesReaden = ( uint )( input - ( byte* ) source );
+				charsWritten = ( uint )( output - destination );
+			}
+
+			/// \return number of characters written
+			public uint Finish( byte* destination, uint destinationLength ) {
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*destination++ = PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+						return 1;
+					}
+				}
+
+				return 0;
+			}
+
+			public void Encode( char* destination, uint destinationLength, void* source, uint sourceLength, uint& bytesReaden, uint& charsWritten ) {
+				if( sourceLength == 0 || destinationLength == 0 ) {
+				skip_encoding:
+					bytesReaden = 0;
+					charsWritten = 0;
+					return;
+				}
+
+				var input = ( byte* ) source;
+				var inputEnd = input + sourceLength;
+				var output = destination;
+				uint written = 0;
+
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*output++ = ( char ) PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+					}
+					else goto skip_encoding;
+				}
+
+				while( input < inputEnd ) {
+					if( destinationLength >= 2 ) {
+						var @byte = *input++;
+
+						*output++ = ( char ) PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						*output++ = ( char ) PrimitiveTypesFormatter.HexDigitsUpper[@byte & 0xF];
+					}
+					else if( destinationLength >= 1 ) {
+						var @byte = *input++;
+
+						*output++ = ( char ) PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						LowNibble = @byte & 0xF;
+					}
+					else
+						break;
+				}
+
+				bytesReaden = ( uint )( input - ( byte* ) source );
+				charsWritten = ( uint )( output - destination );
+			}
+
+			/// \return number of characters written
+			public uint Finish( char* destination, uint destinationLength ) {
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*destination++ = ( char ) PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+						return 1;
+					}
+				}
+
+				return 0;
+			}
+
+			/// \return number of characters written
+			public void Encode( uint* destination, uint destinationLength, void* source, uint sourceLength, uint& bytesReaden, uint& charsWritten ) {
+				if( sourceLength == 0 || destinationLength == 0 ) {
+				skip_encoding:
+					bytesReaden = 0;
+					charsWritten = 0;
+					return;
+				}
+
+				var input = ( byte* ) source;
+				var inputEnd = input + sourceLength;
+				var output = destination;
+				uint written = 0;
+
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+					}
+					else goto skip_encoding;
+				}
+
+				while( input < inputEnd ) {
+					if( destinationLength >= 2 ) {
+						var @byte = *input++;
+
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte & 0xF];
+					}
+					else if( destinationLength >= 1 ) {
+						var @byte = *input++;
+
+						*output++ = PrimitiveTypesFormatter.HexDigitsUpper[@byte >> 4];
+						LowNibble = @byte & 0xF;
+					}
+					else
+						break;
+				}
+
+				bytesReaden = ( uint )( input - ( byte* ) source );
+				charsWritten = ( uint )( output - destination );
+			}
+
+			/// \return number of characters written
+			public uint Finish( uint* destination, uint destinationLength ) {
+				if( HasBufferedNibble ) {
+					if( destinationLength >= 1 ) {
+						*destination++ = PrimitiveTypesFormatter.HexDigitsUpper[LowNibble];
+						LowNibble = 0x80;
+						return 1;
+					}
+				}
+
+				return 0;
+			}
+		}
+
+		public struct Decoder {
+			public bool HasBufferedNibble { get { return HighNibble < 0x80; } }
+			public byte HighNibble;
+
+			public Decoder() {
+				Reset();
+			}
+
+			public void Reset() {
+				HighNibble = 0x80;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Inspect( byte* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				bytesWritten = 0;
+
+				var input = source;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								return false;
+						}
+
+						++bytesWritten;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				for( ; ; ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+					++bytesWritten;
+				}
+
+				charsReaden = ( uint )( input - source );
+				return true;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Inspect( char* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				bytesWritten = 0;
+
+				var input = source;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+							case '\x1680':
+							case '\x180E':
+							case '\x2000':
+							case '\x2001':
+							case '\x2002':
+							case '\x2003':
+							case '\x2004':
+							case '\x2005':
+							case '\x2006':
+							case '\x2007':
+							case '\x2008':
+							case '\x2009':
+							case '\x200A':
+							case '\x2028':
+							case '\x2029':
+							case '\x202F':
+							case '\x205F':
+							case '\x3000':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								return false;
+						}
+
+						++bytesWritten;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				for( ; ; ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+					++bytesWritten;
+				}
+
+				charsReaden = ( uint )( input - source );
+				return true;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Inspect( uint* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				bytesWritten = 0;
+
+				var input = source;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+							case '\x1680':
+							case '\x180E':
+							case '\x2000':
+							case '\x2001':
+							case '\x2002':
+							case '\x2003':
+							case '\x2004':
+							case '\x2005':
+							case '\x2006':
+							case '\x2007':
+							case '\x2008':
+							case '\x2009':
+							case '\x200A':
+							case '\x2028':
+							case '\x2029':
+							case '\x202F':
+							case '\x205F':
+							case '\x3000':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								return false;
+						}
+
+						++bytesWritten;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				for( ; ; ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							return false;
+					}
+
+					++bytesWritten;
+				}
+
+				charsReaden = ( uint )( input - source );
+				return true;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Decode( void* destination, uint destinationLength, byte* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				if( destinationLength == 0 ) {
+					charsReaden = 0;
+					bytesWritten = 0;
+					return true;
+				}
+
+				var input = source;
+				var output = ( byte* ) destination;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								bytesWritten = ( uint )( output - ( byte* ) destination );
+								return false;
+						}
+
+						*output++ = ( HighNibble << 4 ) | low;
+						--destinationLength;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				while( destinationLength != 0 ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+					*output++ = ( high << 4 ) | low;
+					--destinationLength;
+				}
+
+				charsReaden = ( uint )( input - source );
+				bytesWritten = ( uint )( output - ( byte* ) destination );
+
+				return true;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Decode( void* destination, uint destinationLength, char* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				if( destinationLength == 0 ) {
+					charsReaden = 0;
+					bytesWritten = 0;
+					return true;
+				}
+
+				var input = source;
+				var output = ( byte* ) destination;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+							case '\x1680':
+							case '\x180E':
+							case '\x2000':
+							case '\x2001':
+							case '\x2002':
+							case '\x2003':
+							case '\x2004':
+							case '\x2005':
+							case '\x2006':
+							case '\x2007':
+							case '\x2008':
+							case '\x2009':
+							case '\x200A':
+							case '\x2028':
+							case '\x2029':
+							case '\x202F':
+							case '\x205F':
+							case '\x3000':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								bytesWritten = ( uint )( output - ( byte* ) destination );
+								return false;
+						}
+
+						*output++ = ( HighNibble << 4 ) | low;
+						--destinationLength;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				while( destinationLength != 0 ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+					*output++ = ( high << 4 ) | low;
+					--destinationLength;
+				}
+
+				charsReaden = ( uint )( input - source );
+				bytesWritten = ( uint )( output - ( byte* ) destination );
+
+				return true;
+			}
+
+			// \return true if all input bytes are correct
+			public bool Decode( void* destination, uint destinationLength, uint* source, uint sourceLength, uint& charsReaden, uint& bytesWritten, DecodeOptions options ) {
+				var skipWhitespace = ( options & DecodeOptions.SkipWhitespace ) != 0;
+				var skipCurlyBraces = ( options & DecodeOptions.SkipCurlyBraces ) != 0;
+				var skipParenthesis = ( options & DecodeOptions.SkipParenthesis ) != 0;
+
+				if( destinationLength == 0 ) {
+					charsReaden = 0;
+					bytesWritten = 0;
+					return true;
+				}
+
+				var input = source;
+				var output = ( byte* ) destination;
+				var inputEnd = source + sourceLength;
+
+				byte low = 0;
+				byte high = 0;
+
+				if( HasBufferedNibble ) {
+					while( input < inputEnd ) {
+						switch( *input++ ) {
+							case '0': low = 0; break;
+							case '1': low = 1; break;
+							case '2': low = 2; break;
+							case '3': low = 3; break;
+							case '4': low = 4; break;
+							case '5': low = 5; break;
+							case '6': low = 6; break;
+							case '7': low = 7; break;
+							case '8': low = 8; break;
+							case '9': low = 9; break;
+							case 'a': case 'A': low = 10; break;
+							case 'b': case 'B': low = 11; break;
+							case 'c': case 'C': low = 12; break;
+							case 'd': case 'D': low = 13; break;
+							case 'e': case 'E': low = 14; break;
+							case 'f': case 'F': low = 15; break;
+
+							case '{':
+							case '}':
+								if( skipCurlyBraces ) continue;
+								goto default;
+
+							case '(':
+							case ')':
+								if( skipParenthesis ) continue;
+								goto default;
+
+							case ' ':
+							case '\t':
+							case '\n':
+							case '\v':
+							case '\f':
+							case '\r':
+							case '\x0085':
+							case '\x00A0':
+							case '\x1680':
+							case '\x180E':
+							case '\x2000':
+							case '\x2001':
+							case '\x2002':
+							case '\x2003':
+							case '\x2004':
+							case '\x2005':
+							case '\x2006':
+							case '\x2007':
+							case '\x2008':
+							case '\x2009':
+							case '\x200A':
+							case '\x2028':
+							case '\x2029':
+							case '\x202F':
+							case '\x205F':
+							case '\x3000':
+								if( skipWhitespace ) goto refetch_low;
+								goto default;
+
+							default:
+								charsReaden = ( uint )( input - source - 1 );
+								bytesWritten = ( uint )( output - ( byte* ) destination );
+								return false;
+						}
+
+						*output++ = ( HighNibble << 4 ) | low;
+						--destinationLength;
+						HighNibble = 0x80;
+						break;
+					}
+				}
+
+				while( destinationLength != 0 ) {
+				refetch_high:
+					if( input >= inputEnd ) break;
+
+					switch( *input++ ) {
+						case '0': high = 0; break;
+						case '1': high = 1; break;
+						case '2': high = 2; break;
+						case '3': high = 3; break;
+						case '4': high = 4; break;
+						case '5': high = 5; break;
+						case '6': high = 6; break;
+						case '7': high = 7; break;
+						case '8': high = 8; break;
+						case '9': high = 9; break;
+						case 'a': case 'A': high = 10; break;
+						case 'b': case 'B': high = 11; break;
+						case 'c': case 'C': high = 12; break;
+						case 'd': case 'D': high = 13; break;
+						case 'e': case 'E': high = 14; break;
+						case 'f': case 'F': high = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_high;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_high;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_high;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+				refetch_low:
+					if( input >= inputEnd ) {
+						HighNibble = high;
+						break;
+					}
+
+					switch( *input++ ) {
+						case '0': low = 0; break;
+						case '1': low = 1; break;
+						case '2': low = 2; break;
+						case '3': low = 3; break;
+						case '4': low = 4; break;
+						case '5': low = 5; break;
+						case '6': low = 6; break;
+						case '7': low = 7; break;
+						case '8': low = 8; break;
+						case '9': low = 9; break;
+						case 'a': case 'A': low = 10; break;
+						case 'b': case 'B': low = 11; break;
+						case 'c': case 'C': low = 12; break;
+						case 'd': case 'D': low = 13; break;
+						case 'e': case 'E': low = 14; break;
+						case 'f': case 'F': low = 15; break;
+
+						case '{':
+						case '}':
+							if( skipCurlyBraces ) goto refetch_low;
+							goto default;
+
+						case '(':
+						case ')':
+							if( skipParenthesis ) goto refetch_low;
+							goto default;
+
+						case ' ':
+						case '\t':
+						case '\n':
+						case '\v':
+						case '\f':
+						case '\r':
+						case '\x0085':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000':
+						case '\x2001':
+						case '\x2002':
+						case '\x2003':
+						case '\x2004':
+						case '\x2005':
+						case '\x2006':
+						case '\x2007':
+						case '\x2008':
+						case '\x2009':
+						case '\x200A':
+						case '\x2028':
+						case '\x2029':
+						case '\x202F':
+						case '\x205F':
+						case '\x3000':
+							if( skipWhitespace ) goto refetch_low;
+							goto default;
+
+						default:
+							charsReaden = ( uint )( input - source - 1 );
+							bytesWritten = ( uint )( output - ( byte* ) destination );
+							return false;
+					}
+
+					*output++ = ( high << 4 ) | low;
+					--destinationLength;
+				}
+
+				charsReaden = ( uint )( input - source );
+				bytesWritten = ( uint )( output - ( byte* ) destination );
+
+				return true;
+			}
+		}
+	}
+}

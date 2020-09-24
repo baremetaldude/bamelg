@@ -3,15 +3,8 @@
 //
 
 using System;
-using System.Collections;
 using System.IO;
-using System.Net;
-using System.Net.Mail;
-using System.Text;
-using System.Threading;
-using System.Web;
 
-using Platform.IO;
 using Platform.Kernel;
 using Platform.Libc;
 
@@ -38,7 +31,7 @@ namespace Example {
 				return;
 			}
 
-			for( var i = 1; i < parameters.Length; ++i ) {
+			for( var i = 1U; i < parameters.Length; ++i ) {
 				switch( parameters[i] ) {
 					case "--help":
 						PrintHelp();
@@ -135,16 +128,16 @@ namespace Example {
 					return;
 				}
 
-				var totalLength = reader.Seek( 0, SeekOrigin.End );
+				var totalLength = ( uint ) reader.Seek( 0, SeekOrigin.End );
 				if( Trace ) Console.WriteLine( "InputSize: {0}", totalLength );
 				if( totalLength > 0 ) reader.Seek( 0, SeekOrigin.Begin );
 
-				if( totalLength <= 0 || ( sizeof( void* ) == 4 && totalLength >= 128 * 1024 * 1024 ) ) {
+				if( totalLength <= 0 || ( sizeof( void* ) == 4 && totalLength >= 128U * 1024 * 1024 ) ) {
 					Base64Convert( writer, reader );
 					return;
 				}
 
-				var readerMapping = reader.CreateReadView( 0, ( int ) totalLength );
+				var readerMapping = reader.CreateReadView( 0, totalLength );
 				if( readerMapping == null ) {
 					Base64Convert( writer, reader );
 					return;
@@ -152,26 +145,26 @@ namespace Example {
 
 				if( DisableWriterMapping ) {
 					if( Trace ) System.Console.WriteLine( "Processing: mmap -> convert -> write" );
-					System.Text.Base64.Encode( writer, readerMapping.Start, ( int ) readerMapping.DataLength );
+					System.Text.Base64.Encode( writer, readerMapping.Start, ( uint ) readerMapping.DataLength );
 					return;
 				}
 
-				var outputLength = System.Text.Base64.GetEncodedLength( ( int ) readerMapping.DataLength );
+				var outputLength = System.Text.Base64.GetEncodedLength( ( uint ) readerMapping.DataLength );
 				var writerMapping = writer.CreateWriteView( 0, outputLength );
 				if( writerMapping == null ) {
 					if( Trace ) System.Console.WriteLine( "Processing: mmap -> convert -> write" );
-					System.Text.Base64.Encode( writer, readerMapping.Start, ( int ) readerMapping.DataLength );
+					System.Text.Base64.Encode( writer, readerMapping.Start, ( uint ) readerMapping.DataLength );
 					return;
 				}
 
 				if( Trace ) System.Console.WriteLine( "Processing: mmap -> convert -> mmap" );
-				System.Text.Base64.Encode( ( byte* ) writerMapping.Start, ( int ) writerMapping.DataLength, readerMapping.Start, ( int ) readerMapping.DataLength );
+				System.Text.Base64.Encode( ( byte* ) writerMapping.Start, ( uint ) writerMapping.DataLength, readerMapping.Start, ( uint ) readerMapping.DataLength );
 			}
 		}
 
 		public static void Base64Convert( IStream writer, IStream reader ) {
 			if( Trace ) System.Console.WriteLine( "Processing: read -> convert -> write" );
-			System.Text.Base64.Encode( writer, reader, 65536 );
+			System.Text.Base64.Encode( writer, reader );
 		}
 	}
 }

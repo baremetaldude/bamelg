@@ -82,7 +82,7 @@ namespace System.Net {
 
 		public bool IsMulticast { get { return ( Data[0] & 0b11100000 ) == 0b11100000; } }
 
-		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			byte[4] values;
 
 			var parsePosition = text;
@@ -90,50 +90,50 @@ namespace System.Net {
 
 			if( trimLeadingWhitespace ) PrimitiveTypesParser.TryFetchWhitespace( parsePosition, remaining );
 
-			for( var i = 0; i < values.Length - 1; ++i ) {
-				if( !byte.TryFetch( parsePosition, remaining, values[i], false, false ) ) return TextParsingStatus.Format;
-				if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '.' ) ) return TextParsingStatus.Format;
+			for( var i = 0U; i < values.Length - 1; ++i ) {
+				if( !byte.TryFetch( parsePosition, remaining, values[i], false, false ) ) return Convert.ConversionResult.IncompatibleValue;
+				if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '.' ) ) return Convert.ConversionResult.IncompatibleValue;
 			}
 
-			if( !byte.TryFetch( parsePosition, remaining, values[3], false, trimTrailingWhitespace ) ) return TextParsingStatus.Format;
+			if( !byte.TryFetch( parsePosition, remaining, values[3], false, trimTrailingWhitespace ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			result = new IPv4Address( values[0], values[1], values[2], values[3] );
 
 			if( readen != nullref ) readen = length - remaining;
-			else if( remaining != 0 ) return TextParsingStatus.Format;
+			else if( remaining != 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-			return TextParsingStatus.OK;
+			return Convert.ConversionResult.OK;
 		}
 
-		public static TextParsingStatus TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
 		public static bool TryFetch( byte*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 		public static bool TryFetch( char*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
@@ -148,8 +148,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.WriteValues( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.ReadValues( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }
@@ -175,53 +175,53 @@ namespace System.Net {
 			builder.Append( Port );
 		}
 
-		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			IPv4Address address;
 			ushort port;
 
 			var parsePosition = text;
 			var remaining = length;
 
-			if( !IPv4Address.TryFetch( parsePosition, remaining, address, trimLeadingWhitespace, false ) ) return TextParsingStatus.Format;
-			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return TextParsingStatus.Format;
-			if( !ushort.TryFetch( parsePosition, remaining, port, false, trimTrailingWhitespace ) ) return TextParsingStatus.Format;
+			if( !IPv4Address.TryFetch( parsePosition, remaining, address, trimLeadingWhitespace, false ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !ushort.TryFetch( parsePosition, remaining, port, false, trimTrailingWhitespace ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			if( readen != nullref ) readen = length - remaining;
-			else if( remaining != 0 ) return TextParsingStatus.Format;
+			else if( remaining != 0 ) return Convert.ConversionResult.IncompatibleValue;
 
 			result = new IPv4Endpoint( address, port );
-			return TextParsingStatus.OK;
+			return Convert.ConversionResult.OK;
 		}
 
-		public static TextParsingStatus TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
 		public static bool TryFetch( byte*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 		public static bool TryFetch( char*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
@@ -250,13 +250,52 @@ namespace System.Net {
 				data[i] = address[i];
 		}
 
+		/// EUI-64
+		public IPv6Address( [In] MACAddress& address ) {
+			Data[0] = 0xFE;
+			Data[1] = 0x80;
+			Data[2] = 0;
+			Data[3] = 0;
+			Data[4] = 0;
+			Data[5] = 0;
+			Data[6] = 0;
+			Data[7] = 0;
+
+			Data[8] = address.Data[0] ^ 2;
+			Data[9] = address.Data[1];
+			Data[10] = address.Data[2];
+
+			Data[11] = 0xFF;
+			Data[12] = 0xFE;
+
+			Data[13] = address.Data[3];
+			Data[14] = address.Data[4];
+			Data[15] = address.Data[5];
+		}
+
+		public bool GetMAC( MACAddress& result ) {
+			if( Data[0] != 0xFE || Data[1] == 0x80 ) return false;
+			if( Data[11] != 0xFF || Data[12] == 0xFE ) return false;
+			if( Data[2] != 0 || Data[3] != 0 || Data[4] != 0 || Data[5] != 0 || Data[6] != 0 || Data[7] != 0 ) return false;
+
+			result.Data[0] = Data[8] ^ 2;
+			result.Data[1] = Data[9];
+			result.Data[2] = Data[10];
+
+			result.Data[3] = Data[13];
+			result.Data[4] = Data[14];
+			result.Data[5] = Data[15];
+
+			return true;
+		}
+
 		public bool IsLinkLocal { get { return Data[0] == 0xFE && ( Data[1] & 0xC0 ) == 0x80; } }
 		public bool IsSiteLocal { get { return Data[0] == 0xFE && ( Data[1] & 0xC0 ) == 0xC0; } }
 		public bool IsGlobal { get { return ( Data[0] & 0xF0 ) != 0 && ( Data[0] & 0xF0 ) != 0xF0; } }
 		public bool IsMappedIpv4 { get { return Data[0] == 0 && Data[1] == 0 && Data[2] == 0 && Data[3] == 0 && Data[4] == 0 && Data[5] == 0 && Data[6] == 0 && Data[7] == 0 && Data[8] == 0 && Data[9] == 0 && Data[10] == 0xFF && Data[11] == 0xFF; } }
 		public bool IsTranslatedIpv4 { get { return Data[0] == 0 && Data[1] == 0 && Data[2] == 0 && Data[3] == 0 && Data[4] == 0 && Data[5] == 0 && Data[6] == 0 && Data[7] == 0xFF && Data[8] == 0xFF && Data[9] == 0xFF && Data[10] == 0 && Data[11] == 0; } }
 
-		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			ushort[8] values;
 
 			var parsePosition = text;
@@ -264,36 +303,36 @@ namespace System.Net {
 
 			if( trimLeadingWhitespace ) PrimitiveTypesParser.TryFetchWhitespace( parsePosition, remaining );
 
-			for( var i = 0; i < values.Length; ++i ) {
+			for( var i = 0U; i < values.Length; ++i ) {
 				var groupParsed = PrimitiveTypesParser.TryFetchHexUInt16( parsePosition, remaining, values[i], false, false );
-				if( i > 0 && !groupParsed ) return TextParsingStatus.Format;
+				if( i != 0 && !groupParsed ) return Convert.ConversionResult.IncompatibleValue;
 
 				if( i < values.Length - 1 ) {
 					if( i == 0 && !groupParsed ) --i;
 
-					if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return TextParsingStatus.Format;
+					if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return Convert.ConversionResult.IncompatibleValue;
 					if( PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) {
 						var trailingCount = 0;
 
 						for( var j = i + 1; j < values.Length; ++j ) {
 							if( j > i + 1 && !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) {
-								if( j == i + 1 ) return TextParsingStatus.Format;
+								if( j == i + 1 ) return Convert.ConversionResult.IncompatibleValue;
 								break;
 							}
 
-							if( !PrimitiveTypesParser.TryFetchHexUInt16( parsePosition, remaining, values[j], false, false ) ) return TextParsingStatus.Format;
+							if( !PrimitiveTypesParser.TryFetchHexUInt16( parsePosition, remaining, values[j], false, false ) ) return Convert.ConversionResult.IncompatibleValue;
 
 							++trailingCount;
 						}
 
-						System.Runtime.Memory.Move( &values[values.Length - trailingCount], &values[i + 1], ( uint )( trailingCount * sizeof( values[0] ) ) );
+						System.Runtime.Memory.CopyOverlapped( &values[values.Length - trailingCount], &values[i + 1], ( uint )( trailingCount * sizeof( values[0] ) ) );
 						for( var j = i + 1; j < values.Length - trailingCount; ++j )
 							values[j] = 0;
 
 						break;
 					}
 
-					if( !groupParsed ) return TextParsingStatus.Format;
+					if( !groupParsed ) return Convert.ConversionResult.IncompatibleValue;
 				}
 			}
 
@@ -302,40 +341,40 @@ namespace System.Net {
 			result = new thistype( values );
 
 			if( readen != nullref ) readen = length - remaining;
-			else if( remaining != 0 ) return TextParsingStatus.Format;
+			else if( remaining != 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-			return TextParsingStatus.OK;
+			return Convert.ConversionResult.OK;
 		}
 
-		public static TextParsingStatus TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
 		public static bool TryFetch( byte*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 		public static bool TryFetch( char*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
@@ -377,8 +416,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.WriteValues( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.ReadValues( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }
@@ -388,26 +427,26 @@ namespace System.Net {
 		public IPv6Endpoint( IPv6Address address, ushort port ) {
 			Address = address;
 			Port = port;
-			ScopeId = 0;
+			ZoneId = 0;
 		}
 
 		public IPv6Address Address;
-		public uint ScopeId;
+		public uint ZoneId;
 		public ushort Port;
 
 		public void ToString( StringBuilder builder, string format ) {
 			builder.Append( '[' );
 			Address.ToString( builder, format );
-			if( ScopeId != 0 ) {
+			if( ZoneId != 0 ) {
 				builder.Append( '%' );
-				builder.Append( ScopeId );
+				builder.Append( ZoneId );
 			}
 			builder.Append( ']' );
 			builder.Append( ':' );
 			builder.Append( Port );
 		}
 
-		private static TextParsingStatus TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetch<TElement>( TElement* text, uint length, thistype& result, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			IPv6Address address;
 			ushort port;
 			uint scope = 0;
@@ -417,53 +456,53 @@ namespace System.Net {
 
 			if( trimLeadingWhitespace ) PrimitiveTypesParser.TryFetchWhitespace( parsePosition, remaining );
 
-			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '[' ) ) return TextParsingStatus.Format;
-			if( !IPv6Address.TryFetch( parsePosition, remaining, address, false, false ) ) return TextParsingStatus.Format;
+			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '[' ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !IPv6Address.TryFetch( parsePosition, remaining, address, false, false ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			if( PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, '%' ) ) {
-				if( !uint.TryFetch( parsePosition, remaining, scope, false, trimTrailingWhitespace ) ) return TextParsingStatus.Format;
+				if( !uint.TryFetch( parsePosition, remaining, scope, false, trimTrailingWhitespace ) ) return Convert.ConversionResult.IncompatibleValue;
 			}
 
-			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ']' ) ) return TextParsingStatus.Format;
-			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return TextParsingStatus.Format;
-			if( !ushort.TryFetch( parsePosition, remaining, port, false, trimTrailingWhitespace ) ) return TextParsingStatus.Format;
+			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ']' ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !PrimitiveTypesParser.TryFetchSpecificChar( parsePosition, remaining, ':' ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !ushort.TryFetch( parsePosition, remaining, port, false, trimTrailingWhitespace ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			if( readen != nullref ) readen = length - remaining;
-			else if( remaining != 0 ) return TextParsingStatus.Format;
+			else if( remaining != 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-			result = new IPv6Endpoint( address, port ) { ScopeId = scope };
-			return TextParsingStatus.OK;
+			result = new IPv6Endpoint( address, port ) { ZoneId = scope };
+			return Convert.ConversionResult.OK;
 		}
 
-		public static TextParsingStatus TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( SbcsString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( Utf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( Utf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CString text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8String text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16String text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32String text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static TextParsingStatus TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CStringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan text, thistype& result ) { return TryFetch<byte>( text.GetChars(), text.ByteLength, result ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan text, thistype& result ) { return TryFetch<char>( text.GetChars(), text.Length, result ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan text, thistype& result ) { return TryFetch<uint>( text.GetChars(), text.Length, result ); }
 
-		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( SbcsString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( Utf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CString text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32String text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
-		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static thistype Parse( CStringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf8StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf16StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
+		public static thistype Parse( CUtf32StringSpan text ) { thistype parsedResult; var status = TryParse( text, parsedResult ); BclErrorHandler.ConvertException( status ); return parsedResult; }
 
 		public static bool TryFetch( byte*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 		public static bool TryFetch( char*& buffer, uint& remaining, thistype& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetch<char>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }

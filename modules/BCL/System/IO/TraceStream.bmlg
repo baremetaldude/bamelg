@@ -8,70 +8,81 @@ using System.Diagnostics;
 using System.Runtime;
 
 namespace System.IO {
-	public abstract class TraceStream : IStream {
+	public class TraceStream : IStream {
 		protected IStream _stream;
 		private string _name;
 
 		public StreamCapabilities Capabilities { get { return _stream.Capabilities; } }
 		public StreamingBufferInfo* BufferInfo { get { return _stream.BufferInfo; } }
 
-		private TraceStream( IStream stream, string name = "" ) {
+		public uint TotalReaden = 0;
+		public uint TotalWritten = 0;
+
+		public TraceStream( IStream stream, string name = "" ) {
 			_stream = stream;
 
 			_name = name.IsNullOrEmpty ? bitcast<InterfaceInstance>( stream ).Type->ToString() : name;
+			Trace.Write( "TraceStream: {0} Created", _name );
 		}
 
-		int IStream.Read( void* buffer, int length ) {
-			Trace.Write( "Stream: {0} read length={1}", _name, length );
+		uint IStream.Read( void* buffer, uint length ) {
+			Trace.Write( "TraceStream: {0} BeginRead length={1} Total={2}", _name, length, TotalReaden );
 			var result = _stream.Read( buffer, length );
-			Trace.Write( "Stream: {0} read completed readen={1}", _name, result );
+			TotalReaden += result;
+			Trace.Write( "TraceStream: {0} EndRead Readen={1} Total={2}", _name, result, TotalReaden );
 			return result;
 		}
 
-		void IStream.Write( void* buffer, int length ) {
-			Trace.Write( "Stream: {0} write length={1}", _name, length );
-			var result = _stream.Read( buffer, length );
-			Trace.Write( "Stream: {0} write completed", _name );
+		uint IStream.Write( void* buffer, uint length ) {
+			Trace.Write( "TraceStream: {0} BeginWrite length={1}", _name, length );
+			var result = _stream.Write( buffer, length );
+			TotalWritten += result;
+			Trace.Write( "TraceStream: {0} EndWrite Written={1} Total={2}", _name, result, TotalWritten );
+			return result;
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) {
-			var totalSize = 0;
+		uint IStream.Read( vararg MemorySegment segments ) {
+			var totalSize = 0U;
 			foreach( var segment in segments )
-				totalSize += ( int ) segment.Count;
+				totalSize += ( uint ) segment.Count;
 
-			Trace.Write( "Stream: {0} read scatter segments={1} totalSize={2}", _name, segments.Length, totalSize );
+			Trace.Write( "TraceStream: {0} BeginRead scatter segments={1} totalSize={2}", _name, segments.Length, totalSize );
 			var result = _stream.Read( vararg( segments, segments.Length ) );
-			Trace.Write( "Stream: {0} read scatter completed readen={1}", _name, result );
+			Trace.Write( "TraceStream: {0} BeginRead scatter completed Readen={1}", _name, result );
 
 			return result;
 		}
 
-		void IStream.Write( vararg MemorySegment segments ) {
-			var totalSize = 0;
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var totalSize = 0U;
 			foreach( var segment in segments )
-				totalSize += ( int ) segment.Count;
+				totalSize += ( uint ) segment.Count;
 
-			Trace.Write( "Stream: {0} write gather segments={1} totalSize={2}", _name, segments.Length, totalSize );
-			_stream.Write( vararg( segments, segments.Length ) );
-			Trace.Write( "Stream: {0} write gather completed", _name );
+			Trace.Write( "TraceStream: {0} BeginWrite gather segments={1} totalSize={2}", _name, segments.Length, totalSize );
+			var result = _stream.Write( vararg( segments, segments.Length ) );
+			Trace.Write( "TraceStream: {0} EndWrite gather Written={1}", _name, result );
+
+			return result;
 		}
 
 		void IStream.Flush( FlushKind flushKind ) {
+			Trace.Write( "TraceStream: {0} BeginFlush( {1} )", _name, flushKind );
 			_stream.Flush( flushKind );
+			Trace.Write( "TraceStream: {0} EndFlush( {1} )", _name, flushKind );
 		}
 
-		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 
 		long IStream.Position { get { return _stream.Position; } }
 
 		long IStream.Seek( long offset, SeekOrigin origin ) {
-			Trace.Write( "Stream: {0} seek offset={1} orign={2}", _name, offset, origin );
+			Trace.Write( "TraceStream: {0} seek offset={1} orign={2}", _name, offset, origin );
 			var result = _stream.Seek( offset, origin );
-			Trace.Write( "Stream: {0} seek completed", _name );
+			Trace.Write( "TraceStream: {0} seek completed", _name );
 			return result;
 		}
 	}

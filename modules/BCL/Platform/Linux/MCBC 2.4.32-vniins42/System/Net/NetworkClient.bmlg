@@ -18,14 +18,14 @@ namespace System.Net {
 		private NetworkStream _platformStream;
 
 		private void _implInitialize() {
-			_platformStream = new NetworkStream() { 
+			_platformStream = new NetworkStream() {
 				ErrorHandler = ErrorHandler
 			};
 		}
 
-		private TimeSpan _implConnectTimeout { get { return _platformStream.ConnectTimeout; } set { _platformStream.ConnectTimeout = value; } }
-		private TimeSpan _implReadTimeout { get { return _platformStream.ReadTimeout; } set { _platformStream.ReadTimeout = value; } }
-		private TimeSpan _implWriteTimeout { get { return _platformStream.WriteTimeout; } set { _platformStream.WriteTimeout = value; } }
+		private TimeDuration _implConnectTimeout { get { return _platformStream.ConnectTimeout; } set { _platformStream.ConnectTimeout = value; } }
+		private TimeDuration _implReadTimeout { get { return _platformStream.ReadTimeout; } set { _platformStream.ReadTimeout = value; } }
+		private TimeDuration _implWriteTimeout { get { return _platformStream.WriteTimeout; } set { _platformStream.WriteTimeout = value; } }
 		private bool _implImmediateDelivery { get { return _platformStream.ImmediateDeliveryTCP; } set { _platformStream.ImmediateDeliveryTCP = value; } }
 
 		private bool _implConnect( IPv4Endpoint endpoint, IPv4Address @interface ) {
@@ -74,5 +74,10 @@ namespace System.Net {
 		private bool _implAcceptLocal( Utf8String endpoint ) { return false; }
 
 		protected virtual IPlatformErrorHandler ErrorHandler { get { return PlatformErrorHandlerNull.Instance; } }
+
+		public bool _implIsClosed() { return _platformStream.IsClosed(); }
+
+		private void _implEnableKeepAlive( TimeDuration timeout, TimeDuration interval, uint count ) { _platformStream.EnableKeepAlive( timeout, interval, count ); }
+		private void _implDisableKeepAlive() { _platformStream.DisableKeepAlive(); }
 	}
 }

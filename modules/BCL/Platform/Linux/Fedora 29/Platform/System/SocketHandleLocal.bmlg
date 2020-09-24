@@ -30,15 +30,15 @@ namespace Platform.Kernel {
 		}
 
 		public SystemError Connect( sockaddr_un& endpoint ) {
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, Utf8String path ) {
+		public SystemError Connect( TimeDuration& timeout, Utf8String path ) {
 			var endpoint = new sockaddr_un( path );
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, sockaddr_un& endpoint ) {
+		public SystemError Connect( TimeDuration& timeout, sockaddr_un& endpoint ) {
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 

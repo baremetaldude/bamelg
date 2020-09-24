@@ -36,20 +36,20 @@ namespace Platform.Kernel {
 
 		public SystemError Connect( IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
 		public SystemError Connect( IPv6Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, IPv4Endpoint& endpoint ) {
+		public SystemError Connect( TimeDuration& timeout, IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, IPv6Endpoint& endpoint ) {
+		public SystemError Connect( TimeDuration& timeout, IPv6Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
@@ -139,6 +139,79 @@ namespace Platform.Kernel {
 			}
 		}
 
+		public IPv4Endpoint LocalEndpointV4 {
+			get {
+				var result = default( sockaddr_in );
+				int length = sizeof( result );
+
+				if( LibcApi.getsockname( this, &result, length ) < 0 )
+					return default( IPv4Endpoint );
+
+				return ( IPv4Endpoint ) result;
+			}
+		}
+
+		public IPv4Endpoint RemoteEndpointV4 {
+			get {
+				var result = default( sockaddr_in );
+				int length = sizeof( result );
+
+				if( !LibcApi.AssertErrno( LibcApi.getpeername( this, &result, length ) ) )
+					return default( IPv4Endpoint );
+
+				return ( IPv4Endpoint ) result;
+			}
+		}
+
+		public IPv6Endpoint LocalEndpointV6 {
+			get {
+				var result = default( sockaddr_in6 );
+				int length = sizeof( result );
+
+				if( LibcApi.getsockname( this, &result, length ) < 0 )
+					return default( IPv6Endpoint );
+
+				return ( IPv6Endpoint ) result;
+			}
+		}
+
+		public IPv6Endpoint RemoteEndpointV6 {
+			get {
+				var result = default( sockaddr_in6 );
+				int length = sizeof( result );
+
+				if( !LibcApi.AssertErrno( LibcApi.getpeername( this, &result, length ) ) )
+					return default( IPv6Endpoint );
+
+				return ( IPv6Endpoint ) result;
+			}
+		}
+
+		public uint ReceiveLowWatermark {
+			get {
+				int result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &result, sizeof( result ) ) );
+				return ( uint ) result;
+			}
+			set {
+				uint result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &result, sizeof( result ) ) );
+			}
+		}
+
+		public uint SendLowWatermark {
+			get {
+				int result = 0;
+				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDLOWAT, &result, sizeof( result ) ) );
+				return ( uint ) result;
+			}
+			set {
+				uint result = value;
+				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDLOWAT, &result, sizeof( result ) ) );
+			}
+		}
+
+
 		public bool QuickAcknowledgement {
 			get {
 				Boolean32 result;
@@ -151,9 +224,9 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public int KeepAliveProbesMax {
+		public uint KeepAliveProbesMax {
 			get {
-				int result;
+				uint result;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_KEEPCNT, &result, sizeof( result ) ) );
 				return result;
 			}
@@ -162,9 +235,9 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public int KeepAliveIdleSeconds {
+		public uint KeepAliveIdleSeconds {
 			get {
-				int result;
+				uint result;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_KEEPIDLE, &result, sizeof( result ) ) );
 				return result;
 			}
@@ -173,9 +246,9 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public int KeepAliveProbingIntervalSeconds {
+		public uint KeepAliveProbingIntervalSeconds {
 			get {
-				int result;
+				uint result;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_KEEPINTVL, &result, sizeof( result ) ) );
 				return result;
 			}
@@ -185,11 +258,11 @@ namespace Platform.Kernel {
 		}
 
 		// http://en.wikipedia.org/wiki/Maximum_segment_size
-		public int MaximumSegmentSize {
+		public uint MaximumSegmentSize {
 			get {
 				int result = 0;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_MAXSEG, &result, sizeof( result ) ) );
-				return result;
+				return ( uint ) result;
 			}
 			set {
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_TCP, SocketPropertyTcp.TCP_MAXSEG, &value, sizeof( value ) ) );
@@ -201,15 +274,53 @@ namespace Platform.Kernel {
 
 			base.DumpRelevantData( builder );
 
-			builder.AppendFormat( " Cork={0} NoDelay={1} DefferedAccept={2} MSS={3} QuickAck={4} KeepAlive={5}", Cork, ImmediateDelivery, DefferedAccept, MaximumSegmentSize, QuickAcknowledgement, keepAlive );
-			if( keepAlive )
-				builder.AppendFormat( " KeepAliveProbesMax={0} KeepAliveProbingIntervalSeconds={1} KeepAliveIdleSeconds={2}", KeepAliveProbesMax, KeepAliveProbingIntervalSeconds, KeepAliveIdleSeconds );
+			builder.Append( " Cork=" ); builder.Append( Cork );
+			builder.Append( " NoDelay=" ); builder.Append( ImmediateDelivery );
+			builder.Append( " DefferedAccept=" ); builder.Append( DefferedAccept );
+			builder.Append( " MSS=" ); builder.Append( MaximumSegmentSize );
+			builder.Append( " QuickAck=" ); builder.Append( QuickAcknowledgement );
+
+			var result = default( sockaddr_storage );
+			int length = sizeof( result );
+
+			if( LibcApi.getsockname( this, &result, length ) >= 0 ) {
+				builder.Append( " LocalEndpoint=" ); builder.Append( result );
+			}
+
+			length = sizeof( result );
+			if( LibcApi.getpeername( this, &result, length ) >= 0 ) {
+				builder.Append( " RemoteEndpoint=" ); builder.Append( result );
+			}
+
+			builder.Append( " KeepAlive=" ); builder.Append( keepAlive );
+
+			if( keepAlive ) {
+				builder.Append( " KeepAliveProbesMax=" ); builder.Append( KeepAliveProbesMax );
+				builder.Append( " KeepAliveProbingIntervalSeconds=" ); builder.Append( KeepAliveProbingIntervalSeconds );
+				builder.Append( " KeepAliveIdleSeconds=" ); builder.Append( KeepAliveIdleSeconds );
+			}
 		}
 
 		public new void ToString( StringBuilder builder, string format ) {
 			builder.Append( "{" );
 			DumpRelevantData( builder );
 			builder.Append( " }" );
+		}
+
+		public bool IsClosed() {
+			int temp;
+
+			if( Fiber.IsFiberExecuting ) {
+				var readen = LibcApi.read( this, &temp, sizeof( temp ) );
+				return readen == 0;
+			}
+			else {
+				var isNonBlocking = IsNonBlocking;
+				if( !isNonBlocking ) IsNonBlocking = true;
+				var readen = LibcApi.read( this, &temp, sizeof( temp ) );
+				if( !isNonBlocking ) IsNonBlocking = false;
+				return readen == 0;
+			}
 		}
 	}
 }

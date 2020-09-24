@@ -18,16 +18,16 @@ namespace Platform.Libc {
 			this = LibcApi.kqueue();
 		}
 
-		/// @{ For debugging purposes only. You must aggreagte changes before wait in 'kevent()'
-		public void Modify( kevent* newEvents, int length ) {
+		#region For debugging purposes only. You must aggreagte changes before wait in 'kevent()'
+		public void Modify( kevent* newEvents, uint length ) {
 			LibcApi.AssertErrno( LibcApi.kevent( this, newEvents, length, null, 0, nullref ) );
 		}
 
 		public void Modify( vararg kevent newEvents ) {
-			Modify( newEvents, ( int ) newEvents.Length );
+			Modify( newEvents, newEvents.Length );
 		}
 
-		/// @}
+		#endregion
 	}
 
 	public partial struct kevent : IFormattable {

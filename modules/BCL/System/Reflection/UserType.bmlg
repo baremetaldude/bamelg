@@ -40,19 +40,19 @@ namespace System.Reflection {
 
 		/// virtual function table pointer unique for each class.
 		/// each element is pointer to method start but first element is typeof(this)
-		public int VirtualMethodCount;
-		public int BaseCount;
+		public uint VirtualMethodCount;
+		public uint BaseCount;
 
-		public int ContentSize;
+		public uint ContentSize;
 		public uint ContentAlignment;
 		// pointer stride, may be greater than 'sizeof(T)' when alignment involved
 		public uint ContentStride {
-			get { return Memory.GetStride( ( uint ) ContentSize, ContentAlignment ); }
+			get { return Memory.GetStride( ContentSize, ContentAlignment ); }
 		}
 
 		public uint InterfaceMappingCapacity;
-		public int FieldCount, PropertyCount, IndexedPropertyCount, EventCount, MethodCount, TemplateMethodCount, ConstantCount;
-		public int AttributeCount;
+		public uint FieldCount, PropertyCount, IndexedPropertyCount, EventCount, MethodCount, TemplateMethodCount, ConstantCount;
+		public uint AttributeCount;
 
 		public bool IsSealed { get { return ( Flags & TypeFlags.Sealed ) != 0; } }
 		public bool IsAbstract { get { return ( Flags & TypeFlags.Abstract ) != 0; } }
@@ -73,7 +73,7 @@ namespace System.Reflection {
 			return VirtualMethods[method.VirtualSlot] != method.Address;
 		}
 
-		private const int InterfaceHashCapacityThreshold = 32; /// Do not create hashtables with capacity smaller than 'InterfaceHashCapacityThreshold'
+		private const uint InterfaceHashCapacityThreshold = 32; /// Do not create hashtables with capacity smaller than 'InterfaceHashCapacityThreshold'
 
 		public void** QueryInterface( [In] InterfaceType& interfaceType ) {
 			if( interfaceType == nullref || interfaceType.FullQualifiedName == null || InterfaceMappingCapacity == 0 ) return null;
@@ -181,9 +181,9 @@ namespace System.Reflection {
 			public AccessKind AccessKind { get { return cast<AccessKind>( Flags & LocalFlags.AccessKindMask ); } }
 
 			/// for instance fields it contains offset of field
-			public int ByteOffset { get { return ( int ) Address; } }
+			public uint ByteOffset { get { return ( uint ) Address; } }
 			public void* Address;
-			public int AttributeCount;
+			public uint AttributeCount;
 			public LocalFlags Flags;
 
 			public T GetValue<T>( void* target ) {
@@ -266,7 +266,7 @@ namespace System.Reflection {
 
 			public int VirtualSlot;
 			public int ParameterCount;
-			public int AttributeCount;
+			public uint AttributeCount;
 			public LocalFlags Flags;
 		}
 
@@ -509,7 +509,7 @@ namespace System.Reflection {
 				}
 			}
 
-			public int AttributeCount;
+			public uint AttributeCount;
 		}
 
 		[Alignment( Boundary = sizeof( intptr ) )]
@@ -537,7 +537,7 @@ namespace System.Reflection {
 			public Attribute* GetAttribute( [In] UserType& type ) { return GetAttribute( Attributes, AttributeCount, type ); }
 			public T* GetAttribute<T>() { return ( T* ) GetAttribute( typeof( T ) ); }
 
-			public int AttributeCount;
+			public uint AttributeCount;
 		}
 
 		[Alignment( Boundary = sizeof( intptr ) )]
@@ -561,7 +561,7 @@ namespace System.Reflection {
 			public Attribute* GetAttribute( [In] UserType& type ) { return GetAttribute( Attributes, AttributeCount, type ); }
 			public T* GetAttribute<T>() { return ( T* ) GetAttribute( typeof( T ) ); }
 
-			public int AttributeCount;
+			public uint AttributeCount;
 		}
 
 		[Alignment( Boundary = sizeof( intptr ) )]
@@ -584,7 +584,7 @@ namespace System.Reflection {
 				Predefined,
 			}
 
-			public int AttributeCount;
+			public uint AttributeCount;
 			public void* Value;
 
 			public LocalFlags Flags;

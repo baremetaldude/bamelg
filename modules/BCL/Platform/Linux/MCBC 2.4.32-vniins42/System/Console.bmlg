@@ -17,9 +17,6 @@ namespace System {
 		private static IOHandle _handle = LibcApi.StdOut;
 
 		static Console() {
-			// TestEncodings();
-			// PrintDefaultColorsLab( DefaultColors256, DefaultColors256.Length );
-
 			UpdateTerminalCapabilities();
 		}
 
@@ -32,8 +29,8 @@ namespace System {
 				case "xterm-16color":
 					IsTerminalSupports16Color = true;
 					break;
-					
-				case "xterm-256color": 
+
+				case "xterm-256color":
 					IsTerminalSupports16Color = IsTerminalSupports256Color = true;
 					break;
 			}
@@ -46,11 +43,11 @@ namespace System {
 		}
 
 		private static void WriteVector( vararg iovec vectors ) {
-			LibcApi.AssertErrno( LibcApi.writev( _handle, &vectors[0], vectors.Length.ToSigned() ) );
+			LibcApi.AssertErrno( LibcApi.writev( _handle, &vectors[0], vectors.Length ) );
 		}
 
 		public static void WriteLine() {
-			LibcApi.AssertErrno( LibcApi.write( _handle, _newlineUtf8.Start, ( int ) _newlineUtf8.Count ) );
+			LibcApi.AssertErrno( LibcApi.write( _handle, _newlineUtf8.Start, ( uint ) _newlineUtf8.Count ) );
 		}
 
 		public static void Clear() {
@@ -67,17 +64,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertSbcsCharactersToUtf8( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertSbcsCharactersToUtf8( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					}
 				}
 			}
 		}
@@ -89,7 +83,7 @@ namespace System {
 			}
 
 			if( appendNewLine ) WriteVector( new iovec( data.GetChars(), data.ByteLength ), _newlineUtf8 );
-			else LibcApi.AssertErrno( LibcApi.write( _handle, data.GetChars(), ( int ) data.ByteLength ) );
+			else LibcApi.AssertErrno( LibcApi.write( _handle, data.GetChars(), data.ByteLength ) );
 		}
 
 		private static void PlatformWrite( CUtf16StringSpan data, bool appendNewLine ) {
@@ -102,17 +96,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertUtf16CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertUtf16CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					}
 				}
 			}
 		}
@@ -127,17 +118,14 @@ namespace System {
 				var buffer = ( byte* ) page.Value;
 				var bufferLength = ( uint ) Memory.DefaultPageSize;
 
-				var lastSegment = new MemorySegment<byte>( null, 0 );
-				foreach( var segment in Unicode.StreamConvertUtf32CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length ) ) {
-					if( lastSegment.Count != 0 )
-						LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
-
-					lastSegment = segment;
-				}
-
-				if( lastSegment.Count != 0 ) {
-					if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) lastSegment, _newlineUtf8 );
-					else LibcApi.AssertErrno( LibcApi.write( _handle, lastSegment.Start, ( int ) lastSegment.Count ) );
+				uint encoded;
+				foreach( var segment in Unicode.StreamConvertUtf32CharactersToUtf8( buffer, bufferLength, data.GetChars(), data.Length, encoded ) ) {
+					if( encoded != data.Length )
+						LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					else {
+						if( appendNewLine ) WriteVector( ( iovec ) ( MemorySegment ) segment, _newlineUtf8 );
+						else LibcApi.AssertErrno( LibcApi.write( _handle, segment.Start, ( uint ) segment.Count ) );
+					}
 				}
 			}
 		}
@@ -662,7 +650,7 @@ namespace System {
 
 		private static void SeparateTerminalCommand( StringBuilder builder ) { if( builder.Length > 2 && !builder.EndsWith( ';' ) ) builder.Append( ';' ); }
 
-		private static void WriteColor( StringBuilder builder, bool foreground, RgbColor color, int colorIndex ) {
+		private static void WriteColor( StringBuilder builder, bool foreground, RgbColor color, uint colorIndex ) {
 			if( IsTerminalSupportsRGB ) {
 				SeparateTerminalCommand( builder ); builder.Append( foreground ? 38 : 48 );
 				SeparateTerminalCommand( builder ); builder.Append( 2 );
@@ -703,8 +691,19 @@ namespace System {
 				if( attributes.Underline ) { SeparateTerminalCommand( builder ); builder.Append( '4' ); }
 				if( attributes.Strikeout ) { SeparateTerminalCommand( builder ); builder.Append( '9' ); }
 
-				if( !attributes.DefaultForegroundColor ) WriteColor( builder, true, attributes.ForegroundColor, attributes.ForegroundColorIndex );
-				if( !attributes.DefaultBackgroundColor ) WriteColor( builder, false, attributes.BackgroundColor, attributes.BackgroundColorIndex );
+				if( !attributes.DefaultForegroundColor ) {
+					if( attributes.ForegroundColorIndex == uint.MaxValue )
+						attributes.ForegroundColorIndex = GetIndexedColor( attributes.ForegroundColor );
+
+					WriteColor( builder, true, attributes.ForegroundColor, attributes.ForegroundColorIndex );
+				}
+
+				if( !attributes.DefaultBackgroundColor ) {
+					if( attributes.BackgroundColorIndex == uint.MaxValue )
+						attributes.BackgroundColorIndex = GetIndexedColor( attributes.BackgroundColor );
+
+					WriteColor( builder, false, attributes.BackgroundColor, attributes.BackgroundColorIndex );
+				}
 
 				builder.Append( 'm' ); // ECMA-48 Set Graphics Rendition
 
@@ -717,8 +716,8 @@ namespace System {
 			if( Console.IsTerminalSupportsRGB | Console.IsTerminalSupports256Color | Console.IsTerminalSupports16Color ) Console.Write( ( Utf8String ) "\x001B[0m" );
 		}
 
-		private static int GetIndexedColor( RgbColor& color ) {
-			if( Console.IsTerminalSupportsRGB ) return -1;
+		private static uint GetIndexedColor( RgbColor& color ) {
+			if( Console.IsTerminalSupportsRGB ) return uint.MaxValue;
 
 			if( Console.IsTerminalSupports256Color )
 				return Console.CreateIndexedColor( Console.DefaultLabColors256, DefaultLabColors256.Length, color );
@@ -726,12 +725,7 @@ namespace System {
 			if( Console.IsTerminalSupports16Color )
 				return Console.CreateIndexedColor( Console.DefaultLabColors256, 16, color );
 
-			return -1;
-		}
-
-		public partial struct OutputAttributes {
-			private void OnForegroundColorChanged() { ForegroundColorIndex = Console.GetIndexedColor( ForegroundColor ); }
-			private void OnBackgroundColorChanged() { BackgroundColorIndex = Console.GetIndexedColor( BackgroundColor ); }
+			return uint.MaxValue;
 		}
 	}
 }

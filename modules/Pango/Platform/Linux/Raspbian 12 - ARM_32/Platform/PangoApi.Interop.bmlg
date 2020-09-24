@@ -1,0 +1,2444 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Cairo;
+using Platform.Glib;
+using Platform.Libc;
+
+namespace Platform.Pango {
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libpango-1.0.so.0" )]
+	public static partial struct PangoApi {
+		public extern static PangoCoverage* pango_coverage_copy( PangoCoverage* coverage );
+		public extern static PangoCoverage* pango_coverage_from_bytes( byte* bytes, int nBytes );
+		public extern static PangoCoverageLevel pango_coverage_get( PangoCoverage* coverage, int index_ );
+		[BackendHintReadNone]
+		public extern static uintptr pango_coverage_get_type();
+		public extern static void pango_coverage_max( PangoCoverage* coverage, PangoCoverage* other );
+		public extern static PangoCoverage* pango_coverage_new();
+		public extern static PangoCoverage* pango_coverage_ref( PangoCoverage* coverage );
+		public extern static void pango_coverage_set( PangoCoverage* coverage, int index_, PangoCoverageLevel level );
+		public extern static void pango_coverage_to_bytes( PangoCoverage* coverage, byte** bytes, int* nBytes );
+		public extern static void pango_coverage_unref( PangoCoverage* coverage );
+
+		public extern static void pango_extents_to_pixels( PangoRectangle* inclusive, PangoRectangle* nearest );
+		[BackendHintReadNone]
+		public extern static int pango_units_from_double( double d );
+		[BackendHintReadNone]
+		public extern static double pango_units_to_double( int i );
+
+		public extern static void pango_matrix_concat( PangoMatrix* matrix, PangoMatrix* newMatrix );
+		public extern static PangoMatrix* pango_matrix_copy( PangoMatrix* matrix );
+		public extern static void pango_matrix_free( PangoMatrix* matrix );
+		[BackendHintReadOnly]
+		public extern static double pango_matrix_get_font_scale_factor( PangoMatrix* matrix );
+		public extern static void pango_matrix_get_font_scale_factors( PangoMatrix* matrix, double* xscale, double* yscale );
+		[BackendHintReadOnly]
+		public extern static double pango_matrix_get_slant_ratio( PangoMatrix* matrix );
+		[BackendHintReadNone]
+		public extern static uintptr pango_matrix_get_type();
+		public extern static void pango_matrix_rotate( PangoMatrix* matrix, double degrees );
+		public extern static void pango_matrix_scale( PangoMatrix* matrix, double scaleX, double scaleY );
+		public extern static void pango_matrix_transform_distance( PangoMatrix* matrix, double* dx, double* dy );
+		public extern static void pango_matrix_transform_pixel_rectangle( PangoMatrix* matrix, PangoRectangle* rect );
+		public extern static void pango_matrix_transform_point( PangoMatrix* matrix, double* x, double* y );
+		public extern static void pango_matrix_transform_rectangle( PangoMatrix* matrix, PangoRectangle* rect );
+		public extern static void pango_matrix_translate( PangoMatrix* matrix, double tx, double ty );
+
+		[BackendHintReadNone]
+		public extern static PangoScript pango_script_for_unichar( uint ch );
+		[BackendHintReadOnly]
+		public extern static PangoLanguage* pango_script_get_sample_language( PangoScript script );
+		public extern static void pango_script_iter_free( PangoScriptIter* iter );
+		public extern static void pango_script_iter_get_range( PangoScriptIter* iter, sbyte** start, sbyte** end, PangoScript* script );
+		[BackendHintReadNone]
+		public extern static uintptr pango_script_iter_get_type();
+		public extern static PangoScriptIter* pango_script_iter_new( CUtf8String text, int length );
+		public extern static Boolean32 pango_script_iter_next( PangoScriptIter* iter );
+
+		public extern static PangoLanguage* pango_language_from_string( sbyte* language );
+		[BackendHintReadNone]
+		public extern static PangoLanguage* pango_language_get_default();
+		[BackendHintReadNone]
+		public extern static PangoLanguage** pango_language_get_preferred();
+		[BackendHintReadNone]
+		public extern static sbyte* pango_language_get_sample_string( PangoLanguage* language );
+		public extern static PangoScript* pango_language_get_scripts( PangoLanguage* language, int* numScripts );
+		[BackendHintReadNone]
+		public extern static uintptr pango_language_get_type();
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_language_includes_script( PangoLanguage* language, PangoScript script );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_language_matches( PangoLanguage* language, sbyte* rangeList );
+		[BackendHintReadNone]
+		public extern static sbyte* pango_language_to_string( PangoLanguage* language );
+
+		[BackendHintReadOnly]
+		public extern static PangoGravity pango_gravity_get_for_matrix( PangoMatrix* matrix );
+		[BackendHintReadNone]
+		public extern static PangoGravity pango_gravity_get_for_script( PangoScript script, PangoGravity baseGravity, PangoGravityHint hint );
+		[BackendHintReadNone]
+		public extern static PangoGravity pango_gravity_get_for_script_and_width( PangoScript script, Boolean32 wide, PangoGravity baseGravity, PangoGravityHint hint );
+		[BackendHintReadNone]
+		public extern static double pango_gravity_to_rotation( PangoGravity gravity );
+
+		[BackendHintReadNone]
+		public extern static PangoBidiType pango_bidi_type_for_unichar( uint ch );
+		public extern static PangoDirection pango_find_base_dir( CUtf8String text, int length );
+		public extern static Boolean32 pango_get_mirror_char( uint ch, uint* mirroredCh );
+		[BackendHintReadNone]
+		public extern static PangoDirection pango_unichar_direction( uint ch );
+
+		public extern static PangoFontDescription* pango_font_describe( PangoFont* font );
+		public extern static PangoFontDescription* pango_font_describe_with_absolute_size( PangoFont* font );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_description_better_match( PangoFontDescription* desc, PangoFontDescription* oldMatch, PangoFontDescription* newMatch );
+		public extern static PangoFontDescription* pango_font_description_copy( PangoFontDescription* desc );
+		public extern static PangoFontDescription* pango_font_description_copy_static( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_description_equal( PangoFontDescription* desc1, PangoFontDescription* desc2 );
+		public extern static void pango_font_description_free( PangoFontDescription* desc );
+		public extern static PangoFontDescription* pango_font_description_from_string( CUtf8String str );
+		[BackendHintReadOnly]
+		public extern static sbyte* pango_font_description_get_family( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static PangoGravity pango_font_description_get_gravity( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static PangoFontMask pango_font_description_get_set_fields( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static int pango_font_description_get_size( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_description_get_size_is_absolute( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static PangoStretch pango_font_description_get_stretch( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static PangoStyle pango_font_description_get_style( PangoFontDescription* desc );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_description_get_type();
+		[BackendHintReadOnly]
+		public extern static PangoVariant pango_font_description_get_variant( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static sbyte* pango_font_description_get_variations( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static PangoWeight pango_font_description_get_weight( PangoFontDescription* desc );
+		[BackendHintReadOnly]
+		public extern static uint pango_font_description_hash( PangoFontDescription* desc );
+		public extern static void pango_font_description_merge( PangoFontDescription* desc, PangoFontDescription* descToMerge, Boolean32 replaceExisting );
+		public extern static void pango_font_description_merge_static( PangoFontDescription* desc, PangoFontDescription* descToMerge, Boolean32 replaceExisting );
+		public extern static PangoFontDescription* pango_font_description_new();
+		public extern static void pango_font_description_set_absolute_size( PangoFontDescription* desc, double size );
+		public extern static void pango_font_description_set_family( PangoFontDescription* desc, sbyte* family );
+		public extern static void pango_font_description_set_family_static( PangoFontDescription* desc, sbyte* family );
+		public extern static void pango_font_description_set_gravity( PangoFontDescription* desc, PangoGravity gravity );
+		public extern static void pango_font_description_set_size( PangoFontDescription* desc, int size );
+		public extern static void pango_font_description_set_stretch( PangoFontDescription* desc, PangoStretch stretch );
+		public extern static void pango_font_description_set_style( PangoFontDescription* desc, PangoStyle style );
+		public extern static void pango_font_description_set_variant( PangoFontDescription* desc, PangoVariant variant );
+		public extern static void pango_font_description_set_variations( PangoFontDescription* desc, sbyte* settings );
+		public extern static void pango_font_description_set_variations_static( PangoFontDescription* desc, sbyte* settings );
+		public extern static void pango_font_description_set_weight( PangoFontDescription* desc, PangoWeight weight );
+		public extern static sbyte* pango_font_description_to_filename( PangoFontDescription* desc );
+		public extern static sbyte* pango_font_description_to_string( PangoFontDescription* desc );
+		public extern static void pango_font_description_unset_fields( PangoFontDescription* desc, PangoFontMask toUnset );
+		public extern static void pango_font_descriptions_free( PangoFontDescription** descs, int nDescs );
+		public extern static PangoFont* pango_font_deserialize( PangoContext* context, GBytes* bytes, GError** error );
+		public extern static PangoFontDescription* pango_font_face_describe( PangoFontFace* face );
+		[BackendHintReadOnly]
+		public extern static sbyte* pango_font_face_get_face_name( PangoFontFace* face );
+		public extern static PangoFontFamily* pango_font_face_get_family( PangoFontFace* face );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_face_get_type();
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_face_is_synthesized( PangoFontFace* face );
+		public extern static void pango_font_face_list_sizes( PangoFontFace* face, int** sizes, int* nSizes );
+		public extern static PangoFontFace* pango_font_family_get_face( PangoFontFamily* family, CUtf8String name );
+		[BackendHintReadOnly]
+		public extern static sbyte* pango_font_family_get_name( PangoFontFamily* family );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_family_get_type();
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_family_is_monospace( PangoFontFamily* family );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_font_family_is_variable( PangoFontFamily* family );
+		public extern static void pango_font_family_list_faces( PangoFontFamily* family, PangoFontFace*** faces, int* nFaces );
+		public extern static PangoEngineShape* pango_font_find_shaper( PangoFont* font, PangoLanguage* language, uint ch );
+		public extern static PangoCoverage* pango_font_get_coverage( PangoFont* font, PangoLanguage* language );
+		public extern static PangoFontFace* pango_font_get_face( PangoFont* font );
+		public extern static void pango_font_get_features( PangoFont* font, hb_feature_t* features, uint len, uint* numFeatures );
+		public extern static PangoFontMap* pango_font_get_font_map( PangoFont* font );
+		public extern static void pango_font_get_glyph_extents( PangoFont* font, uint glyph, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static hb_font_t* pango_font_get_hb_font( PangoFont* font );
+		public extern static PangoLanguage** pango_font_get_languages( PangoFont* font );
+		public extern static PangoFontMetrics* pango_font_get_metrics( PangoFont* font, PangoLanguage* language );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_get_type();
+		public extern static Boolean32 pango_font_has_char( PangoFont* font, uint wc );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_approximate_char_width( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_approximate_digit_width( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_ascent( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_descent( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_height( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_strikethrough_position( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_strikethrough_thickness( PangoFontMetrics* metrics );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_metrics_get_type();
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_underline_position( PangoFontMetrics* metrics );
+		[BackendHintReadOnly]
+		public extern static int pango_font_metrics_get_underline_thickness( PangoFontMetrics* metrics );
+		public extern static PangoFontMetrics* pango_font_metrics_ref( PangoFontMetrics* metrics );
+		public extern static void pango_font_metrics_unref( PangoFontMetrics* metrics );
+		public extern static GBytes* pango_font_serialize( PangoFont* font );
+
+		public extern static PangoColor* pango_color_copy( PangoColor* src );
+		public extern static void pango_color_free( PangoColor* color );
+		[BackendHintReadNone]
+		public extern static uintptr pango_color_get_type();
+		public extern static Boolean32 pango_color_parse( PangoColor* color, sbyte* spec );
+		public extern static Boolean32 pango_color_parse_with_alpha( PangoColor* color, ushort* alpha, sbyte* spec );
+		public extern static sbyte* pango_color_to_string( PangoColor* color );
+
+		public extern static PangoAttribute* pango_attr_allow_breaks_new( Boolean32 allowBreaks );
+		public extern static PangoAttribute* pango_attr_background_alpha_new( ushort alpha );
+		public extern static PangoAttribute* pango_attr_background_new( ushort red, ushort green, ushort blue );
+		public extern static PangoAttribute* pango_attr_baseline_shift_new( int shift );
+		public extern static PangoAttribute* pango_attr_fallback_new( Boolean32 enableFallback );
+		public extern static PangoAttribute* pango_attr_family_new( sbyte* family );
+		public extern static PangoAttribute* pango_attr_font_desc_new( PangoFontDescription* desc );
+		public extern static PangoAttribute* pango_attr_font_features_new( sbyte* features );
+		public extern static PangoAttribute* pango_attr_font_scale_new( PangoFontScale scale );
+		public extern static PangoAttribute* pango_attr_foreground_alpha_new( ushort alpha );
+		public extern static PangoAttribute* pango_attr_foreground_new( ushort red, ushort green, ushort blue );
+		public extern static PangoAttribute* pango_attr_gravity_hint_new( PangoGravityHint hint );
+		public extern static PangoAttribute* pango_attr_gravity_new( PangoGravity gravity );
+		public extern static PangoAttribute* pango_attr_insert_hyphens_new( Boolean32 insertHyphens );
+		public extern static PangoAttrIterator* pango_attr_iterator_copy( PangoAttrIterator* iterator );
+		public extern static void pango_attr_iterator_destroy( PangoAttrIterator* iterator );
+		public extern static PangoAttribute* pango_attr_iterator_get( PangoAttrIterator* iterator, PangoAttrType type );
+		public extern static GSList* pango_attr_iterator_get_attrs( PangoAttrIterator* iterator );
+		public extern static void pango_attr_iterator_get_font( PangoAttrIterator* iterator, PangoFontDescription* desc, PangoLanguage** language, GSList** extraAttrs );
+		[BackendHintReadNone]
+		public extern static uintptr pango_attr_iterator_get_type();
+		public extern static Boolean32 pango_attr_iterator_next( PangoAttrIterator* iterator );
+		public extern static void pango_attr_iterator_range( PangoAttrIterator* iterator, int* start, int* end );
+		public extern static PangoAttribute* pango_attr_language_new( PangoLanguage* language );
+		public extern static PangoAttribute* pango_attr_letter_spacing_new( int letterSpacing );
+		public extern static PangoAttribute* pango_attr_line_height_new( double factor );
+		public extern static PangoAttribute* pango_attr_line_height_new_absolute( int height );
+		public extern static void pango_attr_list_change( PangoAttrList* list, PangoAttribute* attr );
+		public extern static PangoAttrList* pango_attr_list_copy( PangoAttrList* list );
+		public extern static Boolean32 pango_attr_list_equal( PangoAttrList* list, PangoAttrList* otherList );
+		public extern static PangoAttrList* pango_attr_list_filter( PangoAttrList* list, Functors.Func<PangoAttribute*, void*, Boolean32> func, void* data );
+		public extern static PangoAttrList* pango_attr_list_from_string( CUtf8String text );
+		public extern static GSList* pango_attr_list_get_attributes( PangoAttrList* list );
+		public extern static PangoAttrIterator* pango_attr_list_get_iterator( PangoAttrList* list );
+		[BackendHintReadNone]
+		public extern static uintptr pango_attr_list_get_type();
+		public extern static void pango_attr_list_insert( PangoAttrList* list, PangoAttribute* attr );
+		public extern static void pango_attr_list_insert_before( PangoAttrList* list, PangoAttribute* attr );
+		public extern static PangoAttrList* pango_attr_list_new();
+		public extern static PangoAttrList* pango_attr_list_ref( PangoAttrList* list );
+		public extern static void pango_attr_list_splice( PangoAttrList* list, PangoAttrList* other, int pos, int len );
+		public extern static sbyte* pango_attr_list_to_string( PangoAttrList* list );
+		public extern static void pango_attr_list_unref( PangoAttrList* list );
+		public extern static void pango_attr_list_update( PangoAttrList* list, int pos, int remove, int add );
+		public extern static PangoAttribute* pango_attr_overline_color_new( ushort red, ushort green, ushort blue );
+		public extern static PangoAttribute* pango_attr_overline_new( PangoOverline overline );
+		public extern static PangoAttribute* pango_attr_rise_new( int rise );
+		public extern static PangoAttribute* pango_attr_scale_new( double scaleFactor );
+		public extern static PangoAttribute* pango_attr_sentence_new();
+		public extern static PangoAttribute* pango_attr_shape_new( PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoAttribute* pango_attr_shape_new_with_data( PangoRectangle* inkRect, PangoRectangle* logicalRect, void* data, Functors.Func<void*, void*> copyFunc, Functors.Action<void*> destroyFunc );
+		public extern static PangoAttribute* pango_attr_show_new( PangoShowFlags flags );
+		public extern static PangoAttribute* pango_attr_size_new( int size );
+		public extern static PangoAttribute* pango_attr_size_new_absolute( int size );
+		public extern static PangoAttribute* pango_attr_stretch_new( PangoStretch stretch );
+		public extern static PangoAttribute* pango_attr_strikethrough_color_new( ushort red, ushort green, ushort blue );
+		public extern static PangoAttribute* pango_attr_strikethrough_new( Boolean32 strikethrough );
+		public extern static PangoAttribute* pango_attr_style_new( PangoStyle style );
+		public extern static PangoAttribute* pango_attr_text_transform_new( PangoTextTransform transform );
+		[BackendHintReadNone]
+		public extern static sbyte* pango_attr_type_get_name( PangoAttrType type );
+		public extern static PangoAttrType pango_attr_type_register( CUtf8String name );
+		public extern static PangoAttribute* pango_attr_underline_color_new( ushort red, ushort green, ushort blue );
+		public extern static PangoAttribute* pango_attr_underline_new( PangoUnderline underline );
+		public extern static PangoAttribute* pango_attr_variant_new( PangoVariant variant );
+		public extern static PangoAttribute* pango_attr_weight_new( PangoWeight weight );
+		public extern static PangoAttribute* pango_attr_word_new();
+		public extern static PangoAttrColor* pango_attribute_as_color( PangoAttribute* attr );
+		public extern static PangoAttrFloat* pango_attribute_as_float( PangoAttribute* attr );
+		public extern static PangoAttrFontDesc* pango_attribute_as_font_desc( PangoAttribute* attr );
+		public extern static PangoAttrFontFeatures* pango_attribute_as_font_features( PangoAttribute* attr );
+		public extern static PangoAttrInt* pango_attribute_as_int( PangoAttribute* attr );
+		public extern static PangoAttrLanguage* pango_attribute_as_language( PangoAttribute* attr );
+		public extern static PangoAttrShape* pango_attribute_as_shape( PangoAttribute* attr );
+		public extern static PangoAttrSize* pango_attribute_as_size( PangoAttribute* attr );
+		public extern static PangoAttrString* pango_attribute_as_string( PangoAttribute* attr );
+		public extern static PangoAttribute* pango_attribute_copy( PangoAttribute* attr );
+		public extern static void pango_attribute_destroy( PangoAttribute* attr );
+		[BackendHintReadOnly]
+		public extern static Boolean32 pango_attribute_equal( PangoAttribute* attr1, PangoAttribute* attr2 );
+		[BackendHintReadNone]
+		public extern static uintptr pango_attribute_get_type();
+		public extern static void pango_attribute_init( PangoAttribute* attr, PangoAttrClass* klass );
+
+		public extern static void pango_item_apply_attrs( PangoItem* item, PangoAttrIterator* iter );
+		public extern static PangoItem* pango_item_copy( PangoItem* item );
+		public extern static void pango_item_free( PangoItem* item );
+		[BackendHintReadNone]
+		public extern static uintptr pango_item_get_type();
+		public extern static PangoItem* pango_item_new();
+		public extern static PangoItem* pango_item_split( PangoItem* orig, int splitIndex, int splitOffset );
+		public extern static GList* pango_itemize( PangoContext* context, CUtf8String text, int startIndex, int length, PangoAttrList* attrs, PangoAttrIterator* cachedIter );
+		public extern static GList* pango_itemize_with_base_dir( PangoContext* context, PangoDirection baseDir, CUtf8String text, int startIndex, int length, PangoAttrList* attrs, PangoAttrIterator* cachedIter );
+		public extern static GList* pango_reorder_items( GList* logicalItems );
+
+		public extern static void pango_attr_break( CUtf8String text, int length, PangoAttrList* attrList, int offset, PangoLogAttr* attrs, int attrsLen );
+		public extern static void pango_break( CUtf8String text, int length, PangoAnalysis* analysis, PangoLogAttr* attrs, int attrsLen );
+		public extern static void pango_default_break( CUtf8String text, int length, PangoAnalysis* analysis, PangoLogAttr* attrs, int attrsLen );
+		public extern static void pango_get_log_attrs( CUtf8String text, int length, int level, PangoLanguage* language, PangoLogAttr* logAttrs, int attrsLen );
+		public extern static void pango_tailor_break( CUtf8String text, int length, PangoAnalysis* analysis, int offset, PangoLogAttr* attrs, int attrsLen );
+
+		public extern static void pango_fontset_foreach( PangoFontset* fontset, Functors.Func<PangoFontset*, PangoFont*, void*, Boolean32> func, void* data );
+		public extern static PangoFont* pango_fontset_get_font( PangoFontset* fontset, uint wc );
+		public extern static PangoFontMetrics* pango_fontset_get_metrics( PangoFontset* fontset );
+		[BackendHintReadNone]
+		public extern static uintptr pango_fontset_get_type();
+
+		public extern static void pango_font_map_changed( PangoFontMap* fontmap );
+		public extern static PangoContext* pango_font_map_create_context( PangoFontMap* fontmap );
+		public extern static PangoFontFamily* pango_font_map_get_family( PangoFontMap* fontmap, CUtf8String name );
+		public extern static uint pango_font_map_get_serial( PangoFontMap* fontmap );
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_map_get_type();
+		public extern static void pango_font_map_list_families( PangoFontMap* fontmap, PangoFontFamily*** families, int* nFamilies );
+		public extern static PangoFont* pango_font_map_load_font( PangoFontMap* fontmap, PangoContext* context, PangoFontDescription* desc );
+		public extern static PangoFontset* pango_font_map_load_fontset( PangoFontMap* fontmap, PangoContext* context, PangoFontDescription* desc, PangoLanguage* language );
+
+		public extern static void pango_context_changed( PangoContext* context );
+		public extern static PangoDirection pango_context_get_base_dir( PangoContext* context );
+		public extern static PangoGravity pango_context_get_base_gravity( PangoContext* context );
+		public extern static PangoFontDescription* pango_context_get_font_description( PangoContext* context );
+		public extern static PangoFontMap* pango_context_get_font_map( PangoContext* context );
+		public extern static PangoGravity pango_context_get_gravity( PangoContext* context );
+		public extern static PangoGravityHint pango_context_get_gravity_hint( PangoContext* context );
+		public extern static PangoLanguage* pango_context_get_language( PangoContext* context );
+		public extern static PangoMatrix* pango_context_get_matrix( PangoContext* context );
+		public extern static PangoFontMetrics* pango_context_get_metrics( PangoContext* context, PangoFontDescription* desc, PangoLanguage* language );
+		public extern static Boolean32 pango_context_get_round_glyph_positions( PangoContext* context );
+		public extern static uint pango_context_get_serial( PangoContext* context );
+		[BackendHintReadNone]
+		public extern static uintptr pango_context_get_type();
+		public extern static void pango_context_list_families( PangoContext* context, PangoFontFamily*** families, int* nFamilies );
+		public extern static PangoFont* pango_context_load_font( PangoContext* context, PangoFontDescription* desc );
+		public extern static PangoFontset* pango_context_load_fontset( PangoContext* context, PangoFontDescription* desc, PangoLanguage* language );
+		public extern static PangoContext* pango_context_new();
+		public extern static void pango_context_set_base_dir( PangoContext* context, PangoDirection direction );
+		public extern static void pango_context_set_base_gravity( PangoContext* context, PangoGravity gravity );
+		public extern static void pango_context_set_font_description( PangoContext* context, PangoFontDescription* desc );
+		public extern static void pango_context_set_font_map( PangoContext* context, PangoFontMap* fontMap );
+		public extern static void pango_context_set_gravity_hint( PangoContext* context, PangoGravityHint hint );
+		public extern static void pango_context_set_language( PangoContext* context, PangoLanguage* language );
+		public extern static void pango_context_set_matrix( PangoContext* context, PangoMatrix* matrix );
+		public extern static void pango_context_set_round_glyph_positions( PangoContext* context, Boolean32 roundPositions );
+
+		public extern static PangoGlyphString* pango_glyph_string_copy( PangoGlyphString* @string );
+		public extern static void pango_glyph_string_extents( PangoGlyphString* glyphs, PangoFont* font, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static void pango_glyph_string_extents_range( PangoGlyphString* glyphs, int start, int end, PangoFont* font, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static void pango_glyph_string_free( PangoGlyphString* @string );
+		public extern static void pango_glyph_string_get_logical_widths( PangoGlyphString* glyphs, CUtf8String text, int length, int embeddingLevel, int* logicalWidths );
+		[BackendHintReadNone]
+		public extern static uintptr pango_glyph_string_get_type();
+		public extern static int pango_glyph_string_get_width( PangoGlyphString* glyphs );
+		public extern static void pango_glyph_string_index_to_x( PangoGlyphString* glyphs, CUtf8String text, int length, PangoAnalysis* analysis, int index_, Boolean32 trailing, int* xPos );
+		public extern static void pango_glyph_string_index_to_x_full( PangoGlyphString* glyphs, CUtf8String text, int length, PangoAnalysis* analysis, PangoLogAttr* attrs, int index_, Boolean32 trailing, int* xPos );
+		public extern static PangoGlyphString* pango_glyph_string_new();
+		public extern static void pango_glyph_string_set_size( PangoGlyphString* @string, int newLen );
+		public extern static void pango_glyph_string_x_to_index( PangoGlyphString* glyphs, CUtf8String text, int length, PangoAnalysis* analysis, int xPos, int* index_, int* trailing );
+		public extern static void pango_shape( CUtf8String text, int length, PangoAnalysis* analysis, PangoGlyphString* glyphs );
+		public extern static void pango_shape_full( CUtf8String itemText, int itemLength, CUtf8String paragraphText, int paragraphLength, PangoAnalysis* analysis, PangoGlyphString* glyphs );
+		public extern static void pango_shape_item( PangoItem* item, CUtf8String paragraphText, int paragraphLength, PangoLogAttr* logAttrs, PangoGlyphString* glyphs, PangoShapeFlags flags );
+		public extern static void pango_shape_with_flags( CUtf8String itemText, int itemLength, CUtf8String paragraphText, int paragraphLength, PangoAnalysis* analysis, PangoGlyphString* glyphs, PangoShapeFlags flags );
+
+		[BackendHintReadNone]
+		public extern static uintptr pango_engine_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_engine_lang_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_engine_shape_get_type();
+
+		[BackendHintReadNone]
+		public extern static uintptr pango_alignment_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_attr_type_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_baseline_shift_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_bidi_type_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_coverage_level_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_direction_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_ellipsize_mode_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_mask_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_font_scale_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_gravity_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_gravity_hint_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_deserialize_error_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_deserialize_flags_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_serialize_flags_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_overline_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_render_part_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_script_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_shape_flags_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_show_flags_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_stretch_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_style_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_tab_align_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_text_transform_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_underline_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_variant_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_weight_get_type();
+		[BackendHintReadNone]
+		public extern static uintptr pango_wrap_mode_get_type();
+
+		public extern static void pango_fontset_simple_append( PangoFontsetSimple* fontset, PangoFont* font );
+		[BackendHintReadNone]
+		public extern static uintptr pango_fontset_simple_get_type();
+		public extern static PangoFontsetSimple* pango_fontset_simple_new( PangoLanguage* language );
+		public extern static int pango_fontset_simple_size( PangoFontsetSimple* fontset );
+
+		public extern static GSList* pango_glyph_item_apply_attrs( PangoGlyphItem* glyphItem, CUtf8String text, PangoAttrList* list );
+		public extern static PangoGlyphItem* pango_glyph_item_copy( PangoGlyphItem* orig );
+		public extern static void pango_glyph_item_free( PangoGlyphItem* glyphItem );
+		public extern static void pango_glyph_item_get_logical_widths( PangoGlyphItem* glyphItem, CUtf8String text, int* logicalWidths );
+		[BackendHintReadNone]
+		public extern static uintptr pango_glyph_item_get_type();
+		public extern static PangoGlyphItemIter* pango_glyph_item_iter_copy( PangoGlyphItemIter* orig );
+		public extern static void pango_glyph_item_iter_free( PangoGlyphItemIter* iter );
+		[BackendHintReadNone]
+		public extern static uintptr pango_glyph_item_iter_get_type();
+		public extern static Boolean32 pango_glyph_item_iter_init_end( PangoGlyphItemIter* iter, PangoGlyphItem* glyphItem, CUtf8String text );
+		public extern static Boolean32 pango_glyph_item_iter_init_start( PangoGlyphItemIter* iter, PangoGlyphItem* glyphItem, CUtf8String text );
+		public extern static Boolean32 pango_glyph_item_iter_next_cluster( PangoGlyphItemIter* iter );
+		public extern static Boolean32 pango_glyph_item_iter_prev_cluster( PangoGlyphItemIter* iter );
+		public extern static void pango_glyph_item_letter_space( PangoGlyphItem* glyphItem, CUtf8String text, PangoLogAttr* logAttrs, int letterSpacing );
+		public extern static PangoGlyphItem* pango_glyph_item_split( PangoGlyphItem* orig, CUtf8String text, int splitIndex );
+
+		public extern static PangoTabArray* pango_tab_array_copy( PangoTabArray* src );
+		public extern static void pango_tab_array_free( PangoTabArray* tabArray );
+		public extern static PangoTabArray* pango_tab_array_from_string( CUtf8String text );
+		public extern static uint pango_tab_array_get_decimal_point( PangoTabArray* tabArray, int tabIndex );
+		public extern static Boolean32 pango_tab_array_get_positions_in_pixels( PangoTabArray* tabArray );
+		public extern static int pango_tab_array_get_size( PangoTabArray* tabArray );
+		public extern static void pango_tab_array_get_tab( PangoTabArray* tabArray, int tabIndex, PangoTabAlign* alignment, int* location );
+		public extern static void pango_tab_array_get_tabs( PangoTabArray* tabArray, PangoTabAlign** alignments, int** locations );
+		[BackendHintReadNone]
+		public extern static uintptr pango_tab_array_get_type();
+		public extern static PangoTabArray* pango_tab_array_new( int initialSize, Boolean32 positionsInPixels );
+		public extern static void pango_tab_array_resize( PangoTabArray* tabArray, int newSize );
+		public extern static void pango_tab_array_set_decimal_point( PangoTabArray* tabArray, int tabIndex, uint decimalPoint );
+		public extern static void pango_tab_array_set_positions_in_pixels( PangoTabArray* tabArray, Boolean32 positionsInPixels );
+		public extern static void pango_tab_array_set_tab( PangoTabArray* tabArray, int tabIndex, PangoTabAlign alignment, int location );
+		public extern static void pango_tab_array_sort( PangoTabArray* tabArray );
+		public extern static sbyte* pango_tab_array_to_string( PangoTabArray* tabArray );
+
+		public extern static void pango_layout_context_changed( PangoLayout* layout );
+		public extern static PangoLayout* pango_layout_copy( PangoLayout* src );
+		public extern static PangoLayout* pango_layout_deserialize( PangoContext* context, GBytes* bytes, PangoLayoutDeserializeFlags flags, GError** error );
+		public extern static uint pango_layout_deserialize_error_quark();
+		public extern static PangoAlignment pango_layout_get_alignment( PangoLayout* layout );
+		public extern static PangoAttrList* pango_layout_get_attributes( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_get_auto_dir( PangoLayout* layout );
+		public extern static int pango_layout_get_baseline( PangoLayout* layout );
+		public extern static void pango_layout_get_caret_pos( PangoLayout* layout, int index_, PangoRectangle* strongPos, PangoRectangle* weakPos );
+		public extern static int pango_layout_get_character_count( PangoLayout* layout );
+		public extern static PangoContext* pango_layout_get_context( PangoLayout* layout );
+		public extern static void pango_layout_get_cursor_pos( PangoLayout* layout, int index_, PangoRectangle* strongPos, PangoRectangle* weakPos );
+		public extern static PangoDirection pango_layout_get_direction( PangoLayout* layout, int index );
+		public extern static PangoEllipsizeMode pango_layout_get_ellipsize( PangoLayout* layout );
+		public extern static void pango_layout_get_extents( PangoLayout* layout, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoFontDescription* pango_layout_get_font_description( PangoLayout* layout );
+		public extern static int pango_layout_get_height( PangoLayout* layout );
+		public extern static int pango_layout_get_indent( PangoLayout* layout );
+		public extern static PangoLayoutIter* pango_layout_get_iter( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_get_justify( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_get_justify_last_line( PangoLayout* layout );
+		public extern static PangoLayoutLine* pango_layout_get_line( PangoLayout* layout, int line );
+		public extern static int pango_layout_get_line_count( PangoLayout* layout );
+		public extern static PangoLayoutLine* pango_layout_get_line_readonly( PangoLayout* layout, int line );
+		public extern static float pango_layout_get_line_spacing( PangoLayout* layout );
+		public extern static GSList* pango_layout_get_lines( PangoLayout* layout );
+		public extern static GSList* pango_layout_get_lines_readonly( PangoLayout* layout );
+		public extern static void pango_layout_get_log_attrs( PangoLayout* layout, PangoLogAttr** attrs, int* nAttrs );
+		public extern static PangoLogAttr* pango_layout_get_log_attrs_readonly( PangoLayout* layout, int* nAttrs );
+		public extern static void pango_layout_get_pixel_extents( PangoLayout* layout, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static void pango_layout_get_pixel_size( PangoLayout* layout, int* width, int* height );
+		public extern static uint pango_layout_get_serial( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_get_single_paragraph_mode( PangoLayout* layout );
+		public extern static void pango_layout_get_size( PangoLayout* layout, int* width, int* height );
+		public extern static int pango_layout_get_spacing( PangoLayout* layout );
+		public extern static PangoTabArray* pango_layout_get_tabs( PangoLayout* layout );
+		public extern static sbyte* pango_layout_get_text( PangoLayout* layout );
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_get_type();
+		public extern static int pango_layout_get_unknown_glyphs_count( PangoLayout* layout );
+		public extern static int pango_layout_get_width( PangoLayout* layout );
+		public extern static PangoWrapMode pango_layout_get_wrap( PangoLayout* layout );
+		public extern static void pango_layout_index_to_line_x( PangoLayout* layout, int index_, Boolean32 trailing, int* line, int* xPos );
+		public extern static void pango_layout_index_to_pos( PangoLayout* layout, int index_, PangoRectangle* pos );
+		public extern static Boolean32 pango_layout_is_ellipsized( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_is_wrapped( PangoLayout* layout );
+		public extern static Boolean32 pango_layout_iter_at_last_line( PangoLayoutIter* iter );
+		public extern static PangoLayoutIter* pango_layout_iter_copy( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_free( PangoLayoutIter* iter );
+		public extern static int pango_layout_iter_get_baseline( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_get_char_extents( PangoLayoutIter* iter, PangoRectangle* logicalRect );
+		public extern static void pango_layout_iter_get_cluster_extents( PangoLayoutIter* iter, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static int pango_layout_iter_get_index( PangoLayoutIter* iter );
+		public extern static PangoLayout* pango_layout_iter_get_layout( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_get_layout_extents( PangoLayoutIter* iter, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoLayoutLine* pango_layout_iter_get_line( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_get_line_extents( PangoLayoutIter* iter, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoLayoutLine* pango_layout_iter_get_line_readonly( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_get_line_yrange( PangoLayoutIter* iter, int* y0_, int* y1_ );
+		public extern static PangoGlyphItem* pango_layout_iter_get_run( PangoLayoutIter* iter );
+		public extern static int pango_layout_iter_get_run_baseline( PangoLayoutIter* iter );
+		public extern static void pango_layout_iter_get_run_extents( PangoLayoutIter* iter, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoGlyphItem* pango_layout_iter_get_run_readonly( PangoLayoutIter* iter );
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_iter_get_type();
+		public extern static Boolean32 pango_layout_iter_next_char( PangoLayoutIter* iter );
+		public extern static Boolean32 pango_layout_iter_next_cluster( PangoLayoutIter* iter );
+		public extern static Boolean32 pango_layout_iter_next_line( PangoLayoutIter* iter );
+		public extern static Boolean32 pango_layout_iter_next_run( PangoLayoutIter* iter );
+		public extern static void pango_layout_line_get_extents( PangoLayoutLine* line, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static void pango_layout_line_get_height( PangoLayoutLine* line, int* height );
+		public extern static int pango_layout_line_get_length( PangoLayoutLine* line );
+		public extern static void pango_layout_line_get_pixel_extents( PangoLayoutLine* layoutLine, PangoRectangle* inkRect, PangoRectangle* logicalRect );
+		public extern static PangoDirection pango_layout_line_get_resolved_direction( PangoLayoutLine* line );
+		public extern static int pango_layout_line_get_start_index( PangoLayoutLine* line );
+		[BackendHintReadNone]
+		public extern static uintptr pango_layout_line_get_type();
+		public extern static void pango_layout_line_get_x_ranges( PangoLayoutLine* line, int startIndex, int endIndex, int** ranges, int* nRanges );
+		public extern static void pango_layout_line_index_to_x( PangoLayoutLine* line, int index_, Boolean32 trailing, int* xPos );
+		public extern static Boolean32 pango_layout_line_is_paragraph_start( PangoLayoutLine* line );
+		public extern static PangoLayoutLine* pango_layout_line_ref( PangoLayoutLine* line );
+		public extern static void pango_layout_line_unref( PangoLayoutLine* line );
+		public extern static Boolean32 pango_layout_line_x_to_index( PangoLayoutLine* line, int xPos, int* index_, int* trailing );
+		public extern static void pango_layout_move_cursor_visually( PangoLayout* layout, Boolean32 strong, int oldIndex, int oldTrailing, int direction, int* newIndex, int* newTrailing );
+		public extern static PangoLayout* pango_layout_new( PangoContext* context );
+		public extern static GBytes* pango_layout_serialize( PangoLayout* layout, PangoLayoutSerializeFlags flags );
+		public extern static void pango_layout_set_alignment( PangoLayout* layout, PangoAlignment alignment );
+		public extern static void pango_layout_set_attributes( PangoLayout* layout, PangoAttrList* attrs );
+		public extern static void pango_layout_set_auto_dir( PangoLayout* layout, Boolean32 autoDir );
+		public extern static void pango_layout_set_ellipsize( PangoLayout* layout, PangoEllipsizeMode ellipsize );
+		public extern static void pango_layout_set_font_description( PangoLayout* layout, PangoFontDescription* desc );
+		public extern static void pango_layout_set_height( PangoLayout* layout, int height );
+		public extern static void pango_layout_set_indent( PangoLayout* layout, int indent );
+		public extern static void pango_layout_set_justify( PangoLayout* layout, Boolean32 justify );
+		public extern static void pango_layout_set_justify_last_line( PangoLayout* layout, Boolean32 justify );
+		public extern static void pango_layout_set_line_spacing( PangoLayout* layout, float factor );
+		public extern static void pango_layout_set_markup( PangoLayout* layout, sbyte* markup, int length );
+		public extern static void pango_layout_set_markup_with_accel( PangoLayout* layout, sbyte* markup, int length, uint accelMarker, uint* accelChar );
+		public extern static void pango_layout_set_single_paragraph_mode( PangoLayout* layout, Boolean32 setting );
+		public extern static void pango_layout_set_spacing( PangoLayout* layout, int spacing );
+		public extern static void pango_layout_set_tabs( PangoLayout* layout, PangoTabArray* tabs );
+		public extern static void pango_layout_set_text( PangoLayout* layout, CUtf8String text, int length );
+		public extern static void pango_layout_set_width( PangoLayout* layout, int width );
+		public extern static void pango_layout_set_wrap( PangoLayout* layout, PangoWrapMode wrap );
+		public extern static Boolean32 pango_layout_write_to_file( PangoLayout* layout, PangoLayoutSerializeFlags flags, CUtf8String filename, GError** error );
+		public extern static Boolean32 pango_layout_xy_to_index( PangoLayout* layout, int x, int y, int* index_, int* trailing );
+
+		public extern static Boolean32 pango_markup_parser_finish( GMarkupParseContext* context, PangoAttrList** attrList, sbyte** text, uint* accelChar, GError** error );
+		public extern static GMarkupParseContext* pango_markup_parser_new( uint accelMarker );
+		public extern static Boolean32 pango_parse_markup( CUtf8String markupText, int length, uint accelMarker, PangoAttrList** attrList, sbyte** text, uint* accelChar, GError** error );
+
+		public extern static void pango_renderer_activate( PangoRenderer* renderer );
+		public extern static void pango_renderer_deactivate( PangoRenderer* renderer );
+		public extern static void pango_renderer_draw_error_underline( PangoRenderer* renderer, int x, int y, int width, int height );
+		public extern static void pango_renderer_draw_glyph( PangoRenderer* renderer, PangoFont* font, uint glyph, double x, double y );
+		public extern static void pango_renderer_draw_glyph_item( PangoRenderer* renderer, CUtf8String text, PangoGlyphItem* glyphItem, int x, int y );
+		public extern static void pango_renderer_draw_glyphs( PangoRenderer* renderer, PangoFont* font, PangoGlyphString* glyphs, int x, int y );
+		public extern static void pango_renderer_draw_layout( PangoRenderer* renderer, PangoLayout* layout, int x, int y );
+		public extern static void pango_renderer_draw_layout_line( PangoRenderer* renderer, PangoLayoutLine* line, int x, int y );
+		public extern static void pango_renderer_draw_rectangle( PangoRenderer* renderer, PangoRenderPart part, int x, int y, int width, int height );
+		public extern static void pango_renderer_draw_trapezoid( PangoRenderer* renderer, PangoRenderPart part, double y1_, double x11, double x21, double y2, double x12, double x22 );
+		public extern static ushort pango_renderer_get_alpha( PangoRenderer* renderer, PangoRenderPart part );
+		public extern static PangoColor* pango_renderer_get_color( PangoRenderer* renderer, PangoRenderPart part );
+		public extern static PangoLayout* pango_renderer_get_layout( PangoRenderer* renderer );
+		public extern static PangoLayoutLine* pango_renderer_get_layout_line( PangoRenderer* renderer );
+		public extern static PangoMatrix* pango_renderer_get_matrix( PangoRenderer* renderer );
+		[BackendHintReadNone]
+		public extern static uintptr pango_renderer_get_type();
+		public extern static void pango_renderer_part_changed( PangoRenderer* renderer, PangoRenderPart part );
+		public extern static void pango_renderer_set_alpha( PangoRenderer* renderer, PangoRenderPart part, ushort alpha );
+		public extern static void pango_renderer_set_color( PangoRenderer* renderer, PangoRenderPart part, PangoColor* color );
+		public extern static void pango_renderer_set_matrix( PangoRenderer* renderer, PangoMatrix* matrix );
+
+		public extern static void pango_find_paragraph_boundary( CUtf8String text, int length, int* paragraphDelimiterIndex, int* nextParagraphStart );
+		[BackendHintReadNone]
+		public extern static Boolean32 pango_is_zero_width( uint ch );
+		public extern static byte* pango_log2vis_get_embedding_levels( CUtf8String text, int length, PangoDirection* pbaseDir );
+		public extern static Boolean32 pango_parse_enum( uintptr type, sbyte* str, int* value, Boolean32 warn, sbyte** possibleValues );
+		public extern static Boolean32 pango_parse_stretch( sbyte* str, PangoStretch* stretch, Boolean32 warn );
+		public extern static Boolean32 pango_parse_style( sbyte* str, PangoStyle* style, Boolean32 warn );
+		public extern static Boolean32 pango_parse_variant( sbyte* str, PangoVariant* variant, Boolean32 warn );
+		public extern static Boolean32 pango_parse_weight( sbyte* str, PangoWeight* weight, Boolean32 warn );
+		public extern static void pango_quantize_line_geometry( int* thickness, int* position );
+		public extern static int pango_read_line( FILE* stream, GString* str );
+		public extern static Boolean32 pango_scan_int( sbyte** pos, int* out );
+		public extern static Boolean32 pango_scan_string( sbyte** pos, GString* out );
+		public extern static Boolean32 pango_scan_word( sbyte** pos, GString* out );
+		public extern static Boolean32 pango_skip_space( sbyte** pos );
+		public extern static sbyte** pango_split_file_list( sbyte* str );
+		public extern static sbyte* pango_trim_string( sbyte* str );
+		[BackendHintReadNone]
+		public extern static int pango_version();
+		[BackendHintReadNone]
+		public extern static sbyte* pango_version_check( int requiredMajor, int requiredMinor, int requiredMicro );
+		[BackendHintReadNone]
+		public extern static sbyte* pango_version_string();
+	}
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libpangocairo-1.0.so.0" )]
+	public static partial struct PangoCairoApi {
+		public extern static cairo_font_options_t* pango_cairo_context_get_font_options( PangoContext* context );
+		public extern static double pango_cairo_context_get_resolution( PangoContext* context );
+		public extern static Functors.Action<cairo_t*, PangoAttrShape*, Boolean32, void*> pango_cairo_context_get_shape_renderer( PangoContext* context, void** data );
+		public extern static void pango_cairo_context_set_font_options( PangoContext* context, cairo_font_options_t* options );
+		public extern static void pango_cairo_context_set_resolution( PangoContext* context, double dpi );
+		public extern static void pango_cairo_context_set_shape_renderer( PangoContext* context, Functors.Action<cairo_t*, PangoAttrShape*, Boolean32, void*> func, void* data, Functors.Action<void*> dnotify );
+		public extern static PangoContext* pango_cairo_create_context( cairo_t* cr );
+		public extern static PangoLayout* pango_cairo_create_layout( cairo_t* cr );
+		public extern static void pango_cairo_error_underline_path( cairo_t* cr, double x, double y, double width, double height );
+		public extern static cairo_scaled_font_t* pango_cairo_font_get_scaled_font( PangoCairoFont* font );
+		[BackendHintReadNone]
+		public extern static uintptr pango_cairo_font_get_type();
+		public extern static PangoContext* pango_cairo_font_map_create_context( PangoCairoFontMap* fontmap );
+		public extern static PangoFontMap* pango_cairo_font_map_get_default();
+		public extern static cairo_font_type_t pango_cairo_font_map_get_font_type( PangoCairoFontMap* fontmap );
+		public extern static double pango_cairo_font_map_get_resolution( PangoCairoFontMap* fontmap );
+		[BackendHintReadNone]
+		public extern static uintptr pango_cairo_font_map_get_type();
+		public extern static PangoFontMap* pango_cairo_font_map_new();
+		public extern static PangoFontMap* pango_cairo_font_map_new_for_font_type( cairo_font_type_t fonttype );
+		public extern static void pango_cairo_font_map_set_default( PangoCairoFontMap* fontmap );
+		public extern static void pango_cairo_font_map_set_resolution( PangoCairoFontMap* fontmap, double dpi );
+		public extern static void pango_cairo_glyph_string_path( cairo_t* cr, PangoFont* font, PangoGlyphString* glyphs );
+		public extern static void pango_cairo_layout_line_path( cairo_t* cr, PangoLayoutLine* line );
+		public extern static void pango_cairo_layout_path( cairo_t* cr, PangoLayout* layout );
+		public extern static void pango_cairo_show_error_underline( cairo_t* cr, double x, double y, double width, double height );
+		public extern static void pango_cairo_show_glyph_item( cairo_t* cr, CUtf8String text, PangoGlyphItem* glyphItem );
+		public extern static void pango_cairo_show_glyph_string( cairo_t* cr, PangoFont* font, PangoGlyphString* glyphs );
+		public extern static void pango_cairo_show_layout( cairo_t* cr, PangoLayout* layout );
+		public extern static void pango_cairo_show_layout_line( cairo_t* cr, PangoLayoutLine* line );
+		public extern static void pango_cairo_update_context( cairo_t* cr, PangoContext* context );
+		public extern static void pango_cairo_update_layout( cairo_t* cr, PangoLayout* layout );
+	}
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libharfbuzz.so.0" )]
+	public static partial struct HarfBuzzApi {
+		public extern static byte hb_color_get_alpha( uint color );
+		public extern static byte hb_color_get_blue( uint color );
+		public extern static byte hb_color_get_green( uint color );
+		public extern static byte hb_color_get_red( uint color );
+		public extern static hb_direction_t hb_direction_from_string( sbyte* str, int len );
+		public extern static sbyte* hb_direction_to_string( hb_direction_t direction );
+		public extern static int hb_feature_from_string( sbyte* str, int len, hb_feature_t* feature );
+		public extern static void hb_feature_to_string( hb_feature_t* feature, sbyte* buf, uint size );
+		public extern static hb_language_t* hb_language_from_string( sbyte* str, int len );
+		public extern static hb_language_t* hb_language_get_default();
+		public extern static int hb_language_matches( hb_language_t* language, hb_language_t* specific );
+		public extern static sbyte* hb_language_to_string( hb_language_t* language );
+		public extern static hb_script_t hb_script_from_iso15924_tag( uint tag );
+		public extern static hb_script_t hb_script_from_string( sbyte* str, int len );
+		public extern static hb_direction_t hb_script_get_horizontal_direction( hb_script_t script );
+		public extern static uint hb_script_to_iso15924_tag( hb_script_t script );
+		public extern static uint hb_tag_from_string( sbyte* str, int len );
+		public extern static void hb_tag_to_string( uint tag, sbyte* buf );
+		public extern static int hb_variation_from_string( sbyte* str, int len, hb_variation_t* variation );
+		public extern static void hb_variation_to_string( hb_variation_t* variation, sbyte* buf, uint size );
+
+		public extern static hb_blob_t* hb_blob_copy_writable_or_fail( hb_blob_t* blob );
+		public extern static hb_blob_t* hb_blob_create( sbyte* data, uint length, hb_memory_mode_t mode, void* userData, Functors.Action<void*> destroy );
+		public extern static hb_blob_t* hb_blob_create_from_file( CUtf8String fileName );
+		public extern static hb_blob_t* hb_blob_create_from_file_or_fail( CUtf8String fileName );
+		public extern static hb_blob_t* hb_blob_create_or_fail( sbyte* data, uint length, hb_memory_mode_t mode, void* userData, Functors.Action<void*> destroy );
+		public extern static hb_blob_t* hb_blob_create_sub_blob( hb_blob_t* parent, uint offset, uint length );
+		public extern static void hb_blob_destroy( hb_blob_t* blob );
+		public extern static sbyte* hb_blob_get_data( hb_blob_t* blob, uint* length );
+		public extern static sbyte* hb_blob_get_data_writable( hb_blob_t* blob, uint* length );
+		public extern static hb_blob_t* hb_blob_get_empty();
+		public extern static uint hb_blob_get_length( hb_blob_t* blob );
+		public extern static void* hb_blob_get_user_data( hb_blob_t* blob, hb_user_data_key_t* key );
+		public extern static int hb_blob_is_immutable( hb_blob_t* blob );
+		public extern static void hb_blob_make_immutable( hb_blob_t* blob );
+		public extern static hb_blob_t* hb_blob_reference( hb_blob_t* blob );
+		public extern static int hb_blob_set_user_data( hb_blob_t* blob, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+
+		public extern static hb_unicode_combining_class_t hb_unicode_combining_class( hb_unicode_funcs_t* ufuncs, uint unicode );
+		public extern static int hb_unicode_compose( hb_unicode_funcs_t* ufuncs, uint a, uint b, uint* ab );
+		public extern static int hb_unicode_decompose( hb_unicode_funcs_t* ufuncs, uint ab, uint* a, uint* b );
+		public extern static hb_unicode_funcs_t* hb_unicode_funcs_create( hb_unicode_funcs_t* parent );
+		public extern static void hb_unicode_funcs_destroy( hb_unicode_funcs_t* ufuncs );
+		public extern static hb_unicode_funcs_t* hb_unicode_funcs_get_default();
+		public extern static hb_unicode_funcs_t* hb_unicode_funcs_get_empty();
+		public extern static hb_unicode_funcs_t* hb_unicode_funcs_get_parent( hb_unicode_funcs_t* ufuncs );
+		public extern static void* hb_unicode_funcs_get_user_data( hb_unicode_funcs_t* ufuncs, hb_user_data_key_t* key );
+		public extern static int hb_unicode_funcs_is_immutable( hb_unicode_funcs_t* ufuncs );
+		public extern static void hb_unicode_funcs_make_immutable( hb_unicode_funcs_t* ufuncs );
+		public extern static hb_unicode_funcs_t* hb_unicode_funcs_reference( hb_unicode_funcs_t* ufuncs );
+		public extern static void hb_unicode_funcs_set_combining_class_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, void*, hb_unicode_combining_class_t> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_compose_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, uint, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_decompose_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, uint*, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_general_category_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, void*, hb_unicode_general_category_t> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_mirroring_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, void*, uint> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_script_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, void*, hb_script_t> func, void* userData, Functors.Action<void*> destroy );
+		public extern static int hb_unicode_funcs_set_user_data( hb_unicode_funcs_t* ufuncs, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+		public extern static hb_unicode_general_category_t hb_unicode_general_category( hb_unicode_funcs_t* ufuncs, uint unicode );
+		public extern static uint hb_unicode_mirroring( hb_unicode_funcs_t* ufuncs, uint unicode );
+		public extern static hb_script_t hb_unicode_script( hb_unicode_funcs_t* ufuncs, uint unicode );
+
+		public extern static void hb_set_add( hb_set_t* set, uint codepoint );
+		public extern static void hb_set_add_range( hb_set_t* set, uint first, uint last );
+		public extern static void hb_set_add_sorted_array( hb_set_t* set, uint* sortedCodepoints, uint numCodepoints );
+		public extern static int hb_set_allocation_successful( hb_set_t* set );
+		public extern static void hb_set_clear( hb_set_t* set );
+		public extern static hb_set_t* hb_set_copy( hb_set_t* set );
+		public extern static hb_set_t* hb_set_create();
+		public extern static void hb_set_del( hb_set_t* set, uint codepoint );
+		public extern static void hb_set_del_range( hb_set_t* set, uint first, uint last );
+		public extern static void hb_set_destroy( hb_set_t* set );
+		public extern static hb_set_t* hb_set_get_empty();
+		public extern static uint hb_set_get_max( hb_set_t* set );
+		public extern static uint hb_set_get_min( hb_set_t* set );
+		public extern static uint hb_set_get_population( hb_set_t* set );
+		public extern static void* hb_set_get_user_data( hb_set_t* set, hb_user_data_key_t* key );
+		public extern static int hb_set_has( hb_set_t* set, uint codepoint );
+		public extern static uint hb_set_hash( hb_set_t* set );
+		public extern static void hb_set_intersect( hb_set_t* set, hb_set_t* other );
+		public extern static void hb_set_invert( hb_set_t* set );
+		public extern static int hb_set_is_empty( hb_set_t* set );
+		public extern static int hb_set_is_equal( hb_set_t* set, hb_set_t* other );
+		public extern static int hb_set_is_subset( hb_set_t* set, hb_set_t* largerSet );
+		public extern static int hb_set_next( hb_set_t* set, uint* codepoint );
+		public extern static uint hb_set_next_many( hb_set_t* set, uint codepoint, uint* out, uint size );
+		public extern static int hb_set_next_range( hb_set_t* set, uint* first, uint* last );
+		public extern static int hb_set_previous( hb_set_t* set, uint* codepoint );
+		public extern static int hb_set_previous_range( hb_set_t* set, uint* first, uint* last );
+		public extern static hb_set_t* hb_set_reference( hb_set_t* set );
+		public extern static void hb_set_set( hb_set_t* set, hb_set_t* other );
+		public extern static int hb_set_set_user_data( hb_set_t* set, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+		public extern static void hb_set_subtract( hb_set_t* set, hb_set_t* other );
+		public extern static void hb_set_symmetric_difference( hb_set_t* set, hb_set_t* other );
+		public extern static void hb_set_union( hb_set_t* set, hb_set_t* other );
+
+		public extern static int hb_face_builder_add_table( hb_face_t* face, uint tag, hb_blob_t* blob );
+		public extern static hb_face_t* hb_face_builder_create();
+		public extern static void hb_face_builder_sort_tables( hb_face_t* face, uint* tags );
+		public extern static void hb_face_collect_unicodes( hb_face_t* face, hb_set_t* out );
+		public extern static void hb_face_collect_variation_selectors( hb_face_t* face, hb_set_t* out );
+		public extern static void hb_face_collect_variation_unicodes( hb_face_t* face, uint variationSelector, hb_set_t* out );
+		public extern static uint hb_face_count( hb_blob_t* blob );
+		public extern static hb_face_t* hb_face_create( hb_blob_t* blob, uint index );
+		public extern static hb_face_t* hb_face_create_for_tables( Functors.Func<hb_face_t*, uint, void*, hb_blob_t*> referenceTableFunc, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_face_destroy( hb_face_t* face );
+		public extern static hb_face_t* hb_face_get_empty();
+		public extern static uint hb_face_get_glyph_count( hb_face_t* face );
+		public extern static uint hb_face_get_index( hb_face_t* face );
+		public extern static uint hb_face_get_table_tags( hb_face_t* face, uint startOffset, uint* tableCount, uint* tableTags );
+		public extern static uint hb_face_get_upem( hb_face_t* face );
+		public extern static void* hb_face_get_user_data( hb_face_t* face, hb_user_data_key_t* key );
+		public extern static int hb_face_is_immutable( hb_face_t* face );
+		public extern static void hb_face_make_immutable( hb_face_t* face );
+		public extern static hb_face_t* hb_face_reference( hb_face_t* face );
+		public extern static hb_blob_t* hb_face_reference_blob( hb_face_t* face );
+		public extern static hb_blob_t* hb_face_reference_table( hb_face_t* face, uint tag );
+		public extern static void hb_face_set_glyph_count( hb_face_t* face, uint glyphCount );
+		public extern static void hb_face_set_index( hb_face_t* face, uint index );
+		public extern static void hb_face_set_upem( hb_face_t* face, uint upem );
+		public extern static int hb_face_set_user_data( hb_face_t* face, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+
+		public extern static void hb_draw_close_path( hb_draw_funcs_t* dfuncs, void* drawData, hb_draw_state_t* st );
+		public extern static void hb_draw_cubic_to( hb_draw_funcs_t* dfuncs, void* drawData, hb_draw_state_t* st, float control1X, float control1Y, float control2X, float control2Y, float toX, float toY );
+		public extern static hb_draw_funcs_t* hb_draw_funcs_create();
+		public extern static void hb_draw_funcs_destroy( hb_draw_funcs_t* dfuncs );
+		public extern static int hb_draw_funcs_is_immutable( hb_draw_funcs_t* dfuncs );
+		public extern static void hb_draw_funcs_make_immutable( hb_draw_funcs_t* dfuncs );
+		public extern static hb_draw_funcs_t* hb_draw_funcs_reference( hb_draw_funcs_t* dfuncs );
+		public extern static void hb_draw_funcs_set_close_path_func( hb_draw_funcs_t* dfuncs, Functors.Action<hb_draw_funcs_t*, void*, hb_draw_state_t*, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_draw_funcs_set_cubic_to_func( hb_draw_funcs_t* dfuncs, Functors.Action<hb_draw_funcs_t*, void*, hb_draw_state_t*, float, float, float, float, float, float, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_draw_funcs_set_line_to_func( hb_draw_funcs_t* dfuncs, Functors.Action<hb_draw_funcs_t*, void*, hb_draw_state_t*, float, float, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_draw_funcs_set_move_to_func( hb_draw_funcs_t* dfuncs, Functors.Action<hb_draw_funcs_t*, void*, hb_draw_state_t*, float, float, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_draw_funcs_set_quadratic_to_func( hb_draw_funcs_t* dfuncs, Functors.Action<hb_draw_funcs_t*, void*, hb_draw_state_t*, float, float, float, float, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_draw_line_to( hb_draw_funcs_t* dfuncs, void* drawData, hb_draw_state_t* st, float toX, float toY );
+		public extern static void hb_draw_move_to( hb_draw_funcs_t* dfuncs, void* drawData, hb_draw_state_t* st, float toX, float toY );
+		public extern static void hb_draw_quadratic_to( hb_draw_funcs_t* dfuncs, void* drawData, hb_draw_state_t* st, float controlX, float controlY, float toX, float toY );
+
+		public extern static void hb_font_add_glyph_origin_for_direction( hb_font_t* font, uint glyph, hb_direction_t direction, int* x, int* y );
+		public extern static void hb_font_changed( hb_font_t* font );
+		public extern static hb_font_t* hb_font_create( hb_face_t* face );
+		public extern static hb_font_t* hb_font_create_sub_font( hb_font_t* parent );
+		public extern static void hb_font_destroy( hb_font_t* font );
+		public extern static hb_font_funcs_t* hb_font_funcs_create();
+		public extern static void hb_font_funcs_destroy( hb_font_funcs_t* ffuncs );
+		public extern static hb_font_funcs_t* hb_font_funcs_get_empty();
+		public extern static void* hb_font_funcs_get_user_data( hb_font_funcs_t* ffuncs, hb_user_data_key_t* key );
+		public extern static int hb_font_funcs_is_immutable( hb_font_funcs_t* ffuncs );
+		public extern static void hb_font_funcs_make_immutable( hb_font_funcs_t* ffuncs );
+		public extern static hb_font_funcs_t* hb_font_funcs_reference( hb_font_funcs_t* ffuncs );
+		public extern static void hb_font_funcs_set_font_h_extents_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, hb_font_extents_t*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_font_v_extents_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, hb_font_extents_t*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_contour_point_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint, int*, int*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_extents_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, hb_glyph_extents_t*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_from_name_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, sbyte*, int, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_h_advance_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_h_advances_func( hb_font_funcs_t* ffuncs, Functors.Action<hb_font_t*, void*, uint, uint*, uint, int*, uint, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_h_kerning_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_h_origin_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, int*, int*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_name_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, sbyte*, uint, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_shape_func( hb_font_funcs_t* ffuncs, Functors.Action<hb_font_t*, void*, uint, hb_draw_funcs_t*, void*, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_v_advance_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_v_advances_func( hb_font_funcs_t* ffuncs, Functors.Action<hb_font_t*, void*, uint, uint*, uint, int*, uint, void*> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_v_origin_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, int*, int*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_nominal_glyph_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_nominal_glyphs_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint*, uint, uint*, uint, void*, uint> func, void* userData, Functors.Action<void*> destroy );
+		public extern static int hb_font_funcs_set_user_data( hb_font_funcs_t* ffuncs, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+		public extern static void hb_font_funcs_set_variation_glyph_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static hb_font_t* hb_font_get_empty();
+		public extern static void hb_font_get_extents_for_direction( hb_font_t* font, hb_direction_t direction, hb_font_extents_t* extents );
+		public extern static hb_face_t* hb_font_get_face( hb_font_t* font );
+		public extern static int hb_font_get_glyph( hb_font_t* font, uint unicode, uint variationSelector, uint* glyph );
+		public extern static void hb_font_get_glyph_advance_for_direction( hb_font_t* font, uint glyph, hb_direction_t direction, int* x, int* y );
+		public extern static void hb_font_get_glyph_advances_for_direction( hb_font_t* font, hb_direction_t direction, uint count, uint* firstGlyph, uint glyphStride, int* firstAdvance, uint advanceStride );
+		public extern static int hb_font_get_glyph_contour_point( hb_font_t* font, uint glyph, uint pointIndex, int* x, int* y );
+		public extern static int hb_font_get_glyph_contour_point_for_origin( hb_font_t* font, uint glyph, uint pointIndex, hb_direction_t direction, int* x, int* y );
+		public extern static int hb_font_get_glyph_extents( hb_font_t* font, uint glyph, hb_glyph_extents_t* extents );
+		public extern static int hb_font_get_glyph_extents_for_origin( hb_font_t* font, uint glyph, hb_direction_t direction, hb_glyph_extents_t* extents );
+		public extern static int hb_font_get_glyph_from_name( hb_font_t* font, CUtf8String name, int len, uint* glyph );
+		public extern static int hb_font_get_glyph_h_advance( hb_font_t* font, uint glyph );
+		public extern static void hb_font_get_glyph_h_advances( hb_font_t* font, uint count, uint* firstGlyph, uint glyphStride, int* firstAdvance, uint advanceStride );
+		public extern static int hb_font_get_glyph_h_kerning( hb_font_t* font, uint leftGlyph, uint rightGlyph );
+		public extern static int hb_font_get_glyph_h_origin( hb_font_t* font, uint glyph, int* x, int* y );
+		public extern static void hb_font_get_glyph_kerning_for_direction( hb_font_t* font, uint firstGlyph, uint secondGlyph, hb_direction_t direction, int* x, int* y );
+		public extern static int hb_font_get_glyph_name( hb_font_t* font, uint glyph, CUtf8String name, uint size );
+		public extern static void hb_font_get_glyph_origin_for_direction( hb_font_t* font, uint glyph, hb_direction_t direction, int* x, int* y );
+		public extern static void hb_font_get_glyph_shape( hb_font_t* font, uint glyph, hb_draw_funcs_t* dfuncs, void* drawData );
+		public extern static int hb_font_get_glyph_v_advance( hb_font_t* font, uint glyph );
+		public extern static void hb_font_get_glyph_v_advances( hb_font_t* font, uint count, uint* firstGlyph, uint glyphStride, int* firstAdvance, uint advanceStride );
+		public extern static int hb_font_get_glyph_v_origin( hb_font_t* font, uint glyph, int* x, int* y );
+		public extern static int hb_font_get_h_extents( hb_font_t* font, hb_font_extents_t* extents );
+		public extern static int hb_font_get_nominal_glyph( hb_font_t* font, uint unicode, uint* glyph );
+		public extern static uint hb_font_get_nominal_glyphs( hb_font_t* font, uint count, uint* firstUnicode, uint unicodeStride, uint* firstGlyph, uint glyphStride );
+		public extern static hb_font_t* hb_font_get_parent( hb_font_t* font );
+		public extern static void hb_font_get_ppem( hb_font_t* font, uint* xPpem, uint* yPpem );
+		public extern static float hb_font_get_ptem( hb_font_t* font );
+		public extern static void hb_font_get_scale( hb_font_t* font, int* xScale, int* yScale );
+		public extern static uint hb_font_get_serial( hb_font_t* font );
+		public extern static float hb_font_get_synthetic_slant( hb_font_t* font );
+		public extern static void* hb_font_get_user_data( hb_font_t* font, hb_user_data_key_t* key );
+		public extern static int hb_font_get_v_extents( hb_font_t* font, hb_font_extents_t* extents );
+		public extern static float* hb_font_get_var_coords_design( hb_font_t* font, uint* length );
+		public extern static int* hb_font_get_var_coords_normalized( hb_font_t* font, uint* length );
+		public extern static int hb_font_get_variation_glyph( hb_font_t* font, uint unicode, uint variationSelector, uint* glyph );
+		public extern static int hb_font_glyph_from_string( hb_font_t* font, sbyte* s, int len, uint* glyph );
+		public extern static void hb_font_glyph_to_string( hb_font_t* font, uint glyph, sbyte* s, uint size );
+		public extern static int hb_font_is_immutable( hb_font_t* font );
+		public extern static void hb_font_make_immutable( hb_font_t* font );
+		public extern static hb_font_t* hb_font_reference( hb_font_t* font );
+		public extern static void hb_font_set_face( hb_font_t* font, hb_face_t* face );
+		public extern static void hb_font_set_funcs( hb_font_t* font, hb_font_funcs_t* klass, void* fontData, Functors.Action<void*> destroy );
+		public extern static void hb_font_set_funcs_data( hb_font_t* font, void* fontData, Functors.Action<void*> destroy );
+		public extern static void hb_font_set_parent( hb_font_t* font, hb_font_t* parent );
+		public extern static void hb_font_set_ppem( hb_font_t* font, uint xPpem, uint yPpem );
+		public extern static void hb_font_set_ptem( hb_font_t* font, float ptem );
+		public extern static void hb_font_set_scale( hb_font_t* font, int xScale, int yScale );
+		public extern static void hb_font_set_synthetic_slant( hb_font_t* font, float slant );
+		public extern static int hb_font_set_user_data( hb_font_t* font, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+		public extern static void hb_font_set_var_coords_design( hb_font_t* font, float* coords, uint coordsLength );
+		public extern static void hb_font_set_var_coords_normalized( hb_font_t* font, int* coords, uint coordsLength );
+		public extern static void hb_font_set_var_named_instance( hb_font_t* font, uint instanceIndex );
+		public extern static void hb_font_set_variations( hb_font_t* font, hb_variation_t* variations, uint variationsLength );
+		public extern static void hb_font_subtract_glyph_origin_for_direction( hb_font_t* font, uint glyph, hb_direction_t direction, int* x, int* y );
+
+		public extern static void hb_buffer_add( hb_buffer_t* buffer, uint codepoint, uint cluster );
+		public extern static void hb_buffer_add_codepoints( hb_buffer_t* buffer, uint* text, int textLength, uint itemOffset, int itemLength );
+		public extern static void hb_buffer_add_latin1( hb_buffer_t* buffer, CUtf8String text, int textLength, uint itemOffset, int itemLength );
+		public extern static void hb_buffer_add_utf16( hb_buffer_t* buffer, ushort* text, int textLength, uint itemOffset, int itemLength );
+		public extern static void hb_buffer_add_utf32( hb_buffer_t* buffer, uint* text, int textLength, uint itemOffset, int itemLength );
+		public extern static void hb_buffer_add_utf8( hb_buffer_t* buffer, CUtf8String text, int textLength, uint itemOffset, int itemLength );
+		public extern static int hb_buffer_allocation_successful( hb_buffer_t* buffer );
+		public extern static void hb_buffer_append( hb_buffer_t* buffer, hb_buffer_t* source, uint start, uint end );
+		public extern static void hb_buffer_clear_contents( hb_buffer_t* buffer );
+		public extern static hb_buffer_t* hb_buffer_create();
+		public extern static hb_buffer_t* hb_buffer_create_similar( hb_buffer_t* src );
+		public extern static int hb_buffer_deserialize_glyphs( hb_buffer_t* buffer, sbyte* buf, int bufLen, sbyte** endPtr, hb_font_t* font, hb_buffer_serialize_format_t format );
+		public extern static int hb_buffer_deserialize_unicode( hb_buffer_t* buffer, sbyte* buf, int bufLen, sbyte** endPtr, hb_buffer_serialize_format_t format );
+		public extern static void hb_buffer_destroy( hb_buffer_t* buffer );
+		public extern static hb_buffer_diff_flags_t hb_buffer_diff( hb_buffer_t* buffer, hb_buffer_t* reference, uint dottedcircleGlyph, uint positionFuzz );
+		public extern static hb_buffer_cluster_level_t hb_buffer_get_cluster_level( hb_buffer_t* buffer );
+		public extern static hb_buffer_content_type_t hb_buffer_get_content_type( hb_buffer_t* buffer );
+		public extern static hb_direction_t hb_buffer_get_direction( hb_buffer_t* buffer );
+		public extern static hb_buffer_t* hb_buffer_get_empty();
+		public extern static hb_buffer_flags_t hb_buffer_get_flags( hb_buffer_t* buffer );
+		public extern static hb_glyph_info_t* hb_buffer_get_glyph_infos( hb_buffer_t* buffer, uint* length );
+		public extern static hb_glyph_position_t* hb_buffer_get_glyph_positions( hb_buffer_t* buffer, uint* length );
+		public extern static uint hb_buffer_get_invisible_glyph( hb_buffer_t* buffer );
+		public extern static hb_language_t* hb_buffer_get_language( hb_buffer_t* buffer );
+		public extern static uint hb_buffer_get_length( hb_buffer_t* buffer );
+		public extern static uint hb_buffer_get_not_found_glyph( hb_buffer_t* buffer );
+		public extern static uint hb_buffer_get_replacement_codepoint( hb_buffer_t* buffer );
+		public extern static hb_script_t hb_buffer_get_script( hb_buffer_t* buffer );
+		public extern static void hb_buffer_get_segment_properties( hb_buffer_t* buffer, hb_segment_properties_t* props );
+		public extern static hb_unicode_funcs_t* hb_buffer_get_unicode_funcs( hb_buffer_t* buffer );
+		public extern static void* hb_buffer_get_user_data( hb_buffer_t* buffer, hb_user_data_key_t* key );
+		public extern static void hb_buffer_guess_segment_properties( hb_buffer_t* buffer );
+		public extern static int hb_buffer_has_positions( hb_buffer_t* buffer );
+		public extern static void hb_buffer_normalize_glyphs( hb_buffer_t* buffer );
+		public extern static int hb_buffer_pre_allocate( hb_buffer_t* buffer, uint size );
+		public extern static hb_buffer_t* hb_buffer_reference( hb_buffer_t* buffer );
+		public extern static void hb_buffer_reset( hb_buffer_t* buffer );
+		public extern static void hb_buffer_reverse( hb_buffer_t* buffer );
+		public extern static void hb_buffer_reverse_clusters( hb_buffer_t* buffer );
+		public extern static void hb_buffer_reverse_range( hb_buffer_t* buffer, uint start, uint end );
+		public extern static uint hb_buffer_serialize( hb_buffer_t* buffer, uint start, uint end, sbyte* buf, uint bufSize, uint* bufConsumed, hb_font_t* font, hb_buffer_serialize_format_t format, hb_buffer_serialize_flags_t flags );
+		public extern static hb_buffer_serialize_format_t hb_buffer_serialize_format_from_string( sbyte* str, int len );
+		public extern static sbyte* hb_buffer_serialize_format_to_string( hb_buffer_serialize_format_t format );
+		public extern static uint hb_buffer_serialize_glyphs( hb_buffer_t* buffer, uint start, uint end, sbyte* buf, uint bufSize, uint* bufConsumed, hb_font_t* font, hb_buffer_serialize_format_t format, hb_buffer_serialize_flags_t flags );
+		public extern static sbyte** hb_buffer_serialize_list_formats();
+		public extern static uint hb_buffer_serialize_unicode( hb_buffer_t* buffer, uint start, uint end, sbyte* buf, uint bufSize, uint* bufConsumed, hb_buffer_serialize_format_t format, hb_buffer_serialize_flags_t flags );
+		public extern static void hb_buffer_set_cluster_level( hb_buffer_t* buffer, hb_buffer_cluster_level_t clusterLevel );
+		public extern static void hb_buffer_set_content_type( hb_buffer_t* buffer, hb_buffer_content_type_t contentType );
+		public extern static void hb_buffer_set_direction( hb_buffer_t* buffer, hb_direction_t direction );
+		public extern static void hb_buffer_set_flags( hb_buffer_t* buffer, hb_buffer_flags_t flags );
+		public extern static void hb_buffer_set_invisible_glyph( hb_buffer_t* buffer, uint invisible );
+		public extern static void hb_buffer_set_language( hb_buffer_t* buffer, hb_language_t* language );
+		public extern static int hb_buffer_set_length( hb_buffer_t* buffer, uint length );
+		public extern static void hb_buffer_set_message_func( hb_buffer_t* buffer, Functors.Func<hb_buffer_t*, hb_font_t*, sbyte*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_buffer_set_not_found_glyph( hb_buffer_t* buffer, uint notFound );
+		public extern static void hb_buffer_set_replacement_codepoint( hb_buffer_t* buffer, uint replacement );
+		public extern static void hb_buffer_set_script( hb_buffer_t* buffer, hb_script_t script );
+		public extern static void hb_buffer_set_segment_properties( hb_buffer_t* buffer, hb_segment_properties_t* props );
+		public extern static void hb_buffer_set_unicode_funcs( hb_buffer_t* buffer, hb_unicode_funcs_t* unicodeFuncs );
+		public extern static int hb_buffer_set_user_data( hb_buffer_t* buffer, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+		public extern static hb_glyph_flags_t hb_glyph_info_get_glyph_flags( hb_glyph_info_t* info );
+		public extern static int hb_segment_properties_equal( hb_segment_properties_t* a, hb_segment_properties_t* b );
+		public extern static uint hb_segment_properties_hash( hb_segment_properties_t* p );
+		public extern static void hb_segment_properties_overlay( hb_segment_properties_t* p, hb_segment_properties_t* src );
+
+		public extern static void hb_font_funcs_set_glyph_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint, uint*, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_font_funcs_set_glyph_v_kerning_func( hb_font_funcs_t* ffuncs, Functors.Func<hb_font_t*, void*, uint, uint, void*, int> func, void* userData, Functors.Action<void*> destroy );
+		public extern static int hb_font_get_glyph_v_kerning( hb_font_t* font, uint topGlyph, uint bottomGlyph );
+		public extern static uint hb_unicode_decompose_compatibility( hb_unicode_funcs_t* ufuncs, uint u, uint* decomposed );
+		public extern static uint hb_unicode_eastasian_width( hb_unicode_funcs_t* ufuncs, uint unicode );
+		public extern static void hb_unicode_funcs_set_decompose_compatibility_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, uint*, void*, uint> func, void* userData, Functors.Action<void*> destroy );
+		public extern static void hb_unicode_funcs_set_eastasian_width_func( hb_unicode_funcs_t* ufuncs, Functors.Func<hb_unicode_funcs_t*, uint, void*, uint> func, void* userData, Functors.Action<void*> destroy );
+
+		public extern static int hb_map_allocation_successful( hb_map_t* map );
+		public extern static void hb_map_clear( hb_map_t* map );
+		public extern static hb_map_t* hb_map_copy( hb_map_t* map );
+		public extern static hb_map_t* hb_map_create();
+		public extern static void hb_map_del( hb_map_t* map, uint key );
+		public extern static void hb_map_destroy( hb_map_t* map );
+		public extern static uint hb_map_get( hb_map_t* map, uint key );
+		public extern static hb_map_t* hb_map_get_empty();
+		public extern static uint hb_map_get_population( hb_map_t* map );
+		public extern static void* hb_map_get_user_data( hb_map_t* map, hb_user_data_key_t* key );
+		public extern static int hb_map_has( hb_map_t* map, uint key );
+		public extern static uint hb_map_hash( hb_map_t* map );
+		public extern static int hb_map_is_empty( hb_map_t* map );
+		public extern static int hb_map_is_equal( hb_map_t* map, hb_map_t* other );
+		public extern static hb_map_t* hb_map_reference( hb_map_t* map );
+		public extern static void hb_map_set( hb_map_t* map, uint key, uint value );
+		public extern static int hb_map_set_user_data( hb_map_t* map, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+
+		public extern static void hb_shape( hb_font_t* font, hb_buffer_t* buffer, hb_feature_t* features, uint numFeatures );
+		public extern static int hb_shape_full( hb_font_t* font, hb_buffer_t* buffer, hb_feature_t* features, uint numFeatures, sbyte** shaperList );
+		public extern static sbyte** hb_shape_list_shapers();
+
+		public extern static hb_shape_plan_t* hb_shape_plan_create( hb_face_t* face, hb_segment_properties_t* props, hb_feature_t* userFeatures, uint numUserFeatures, sbyte** shaperList );
+		public extern static hb_shape_plan_t* hb_shape_plan_create_cached( hb_face_t* face, hb_segment_properties_t* props, hb_feature_t* userFeatures, uint numUserFeatures, sbyte** shaperList );
+		public extern static hb_shape_plan_t* hb_shape_plan_create_cached2( hb_face_t* face, hb_segment_properties_t* props, hb_feature_t* userFeatures, uint numUserFeatures, int* coords, uint numCoords, sbyte** shaperList );
+		public extern static hb_shape_plan_t* hb_shape_plan_create2( hb_face_t* face, hb_segment_properties_t* props, hb_feature_t* userFeatures, uint numUserFeatures, int* coords, uint numCoords, sbyte** shaperList );
+		public extern static void hb_shape_plan_destroy( hb_shape_plan_t* shapePlan );
+		public extern static int hb_shape_plan_execute( hb_shape_plan_t* shapePlan, hb_font_t* font, hb_buffer_t* buffer, hb_feature_t* features, uint numFeatures );
+		public extern static hb_shape_plan_t* hb_shape_plan_get_empty();
+		public extern static sbyte* hb_shape_plan_get_shaper( hb_shape_plan_t* shapePlan );
+		public extern static void* hb_shape_plan_get_user_data( hb_shape_plan_t* shapePlan, hb_user_data_key_t* key );
+		public extern static hb_shape_plan_t* hb_shape_plan_reference( hb_shape_plan_t* shapePlan );
+		public extern static int hb_shape_plan_set_user_data( hb_shape_plan_t* shapePlan, hb_user_data_key_t* key, void* data, Functors.Action<void*> destroy, int replace );
+
+		public extern static float hb_style_get_value( hb_font_t* font, hb_style_tag_t styleTag );
+
+		public extern static void hb_version( uint* major, uint* minor, uint* micro );
+		public extern static int hb_version_atleast( uint major, uint minor, uint micro );
+		public extern static sbyte* hb_version_string();
+	}
+	public enum hb_buffer_cluster_level_t : uint {
+		HB_BUFFER_CLUSTER_LEVEL_MONOTONE_GRAPHEMES =  0,
+		HB_BUFFER_CLUSTER_LEVEL_MONOTONE_CHARACTERS = 1,
+		HB_BUFFER_CLUSTER_LEVEL_CHARACTERS =          2,
+		HB_BUFFER_CLUSTER_LEVEL_DEFAULT =             0,
+	}
+	public enum hb_buffer_content_type_t : uint {
+		HB_BUFFER_CONTENT_TYPE_INVALID = 0,
+		HB_BUFFER_CONTENT_TYPE_UNICODE = 1,
+		HB_BUFFER_CONTENT_TYPE_GLYPHS =  2,
+	}
+	[Flags]
+	public enum hb_buffer_diff_flags_t : uint {
+		HB_BUFFER_DIFF_FLAG_EQUAL =                 0,
+		HB_BUFFER_DIFF_FLAG_CONTENT_TYPE_MISMATCH = 1,
+		HB_BUFFER_DIFF_FLAG_LENGTH_MISMATCH =       2,
+		HB_BUFFER_DIFF_FLAG_NOTDEF_PRESENT =        4,
+		HB_BUFFER_DIFF_FLAG_DOTTED_CIRCLE_PRESENT = 8,
+		HB_BUFFER_DIFF_FLAG_CODEPOINT_MISMATCH =   16,
+		HB_BUFFER_DIFF_FLAG_CLUSTER_MISMATCH =     32,
+		HB_BUFFER_DIFF_FLAG_GLYPH_FLAGS_MISMATCH = 64,
+		HB_BUFFER_DIFF_FLAG_POSITION_MISMATCH =   128,
+	}
+	[Flags]
+	public enum hb_buffer_flags_t : uint {
+		HB_BUFFER_FLAG_DEFAULT =                          0,
+		HB_BUFFER_FLAG_BOT =                              1,
+		HB_BUFFER_FLAG_EOT =                              2,
+		HB_BUFFER_FLAG_PRESERVE_DEFAULT_IGNORABLES =      4,
+		HB_BUFFER_FLAG_REMOVE_DEFAULT_IGNORABLES =        8,
+		HB_BUFFER_FLAG_DO_NOT_INSERT_DOTTED_CIRCLE =     16,
+		HB_BUFFER_FLAG_VERIFY =                          32,
+		HB_BUFFER_FLAG_PRODUCE_UNSAFE_TO_CONCAT =        64,
+		HB_BUFFER_FLAG_PRODUCE_SAFE_TO_INSERT_TATWEEL = 128,
+		HB_BUFFER_FLAG_DEFINED =                        255,
+	}
+	[Flags]
+	public enum hb_buffer_serialize_flags_t : uint {
+		HB_BUFFER_SERIALIZE_FLAG_DEFAULT =        0,
+		HB_BUFFER_SERIALIZE_FLAG_NO_CLUSTERS =    1,
+		HB_BUFFER_SERIALIZE_FLAG_NO_POSITIONS =   2,
+		HB_BUFFER_SERIALIZE_FLAG_NO_GLYPH_NAMES = 4,
+		HB_BUFFER_SERIALIZE_FLAG_GLYPH_EXTENTS =  8,
+		HB_BUFFER_SERIALIZE_FLAG_GLYPH_FLAGS =   16,
+		HB_BUFFER_SERIALIZE_FLAG_NO_ADVANCES =   32,
+		HB_BUFFER_SERIALIZE_FLAG_DEFINED =       63,
+	}
+	public enum hb_buffer_serialize_format_t : uint {
+		HB_BUFFER_SERIALIZE_FORMAT_TEXT = 1413830740,
+		HB_BUFFER_SERIALIZE_FORMAT_JSON = 1246973774,
+		HB_BUFFER_SERIALIZE_FORMAT_INVALID =       0,
+	}
+	public enum hb_direction_t : uint {
+		HB_DIRECTION_INVALID = 0,
+		HB_DIRECTION_LTR =     4,
+		HB_DIRECTION_RTL =     5,
+		HB_DIRECTION_TTB =     6,
+		HB_DIRECTION_BTT =     7,
+	}
+	[Flags]
+	public enum hb_glyph_flags_t : uint {
+		None =                                 0,
+		HB_GLYPH_FLAG_UNSAFE_TO_BREAK =        1,
+		HB_GLYPH_FLAG_UNSAFE_TO_CONCAT =       2,
+		HB_GLYPH_FLAG_SAFE_TO_INSERT_TATWEEL = 4,
+		HB_GLYPH_FLAG_DEFINED =                7,
+	}
+	public enum hb_memory_mode_t : uint {
+		HB_MEMORY_MODE_DUPLICATE =                  0,
+		HB_MEMORY_MODE_READONLY =                   1,
+		HB_MEMORY_MODE_WRITABLE =                   2,
+		HB_MEMORY_MODE_READONLY_MAY_MAKE_WRITABLE = 3,
+	}
+	public enum hb_script_t : uint {
+		HB_SCRIPT_COMMON =                 1517910393,
+		HB_SCRIPT_INHERITED =              1516858984,
+		HB_SCRIPT_UNKNOWN =                1517976186,
+		HB_SCRIPT_ARABIC =                 1098015074,
+		HB_SCRIPT_ARMENIAN =               1098018158,
+		HB_SCRIPT_BENGALI =                1113943655,
+		HB_SCRIPT_CYRILLIC =               1132032620,
+		HB_SCRIPT_DEVANAGARI =             1147500129,
+		HB_SCRIPT_GEORGIAN =               1197830002,
+		HB_SCRIPT_GREEK =                  1198679403,
+		HB_SCRIPT_GUJARATI =               1198877298,
+		HB_SCRIPT_GURMUKHI =               1198879349,
+		HB_SCRIPT_HANGUL =                 1214344807,
+		HB_SCRIPT_HAN =                    1214344809,
+		HB_SCRIPT_HEBREW =                 1214603890,
+		HB_SCRIPT_HIRAGANA =               1214870113,
+		HB_SCRIPT_KANNADA =                1265525857,
+		HB_SCRIPT_KATAKANA =               1264676449,
+		HB_SCRIPT_LAO =                    1281453935,
+		HB_SCRIPT_LATIN =                  1281455214,
+		HB_SCRIPT_MALAYALAM =              1298954605,
+		HB_SCRIPT_ORIYA =                  1332902241,
+		HB_SCRIPT_TAMIL =                  1415671148,
+		HB_SCRIPT_TELUGU =                 1415933045,
+		HB_SCRIPT_THAI =                   1416126825,
+		HB_SCRIPT_TIBETAN =                1416192628,
+		HB_SCRIPT_BOPOMOFO =               1114599535,
+		HB_SCRIPT_BRAILLE =                1114792297,
+		HB_SCRIPT_CANADIAN_SYLLABICS =     1130458739,
+		HB_SCRIPT_CHEROKEE =               1130915186,
+		HB_SCRIPT_ETHIOPIC =               1165256809,
+		HB_SCRIPT_KHMER =                  1265134962,
+		HB_SCRIPT_MONGOLIAN =              1299148391,
+		HB_SCRIPT_MYANMAR =                1299803506,
+		HB_SCRIPT_OGHAM =                  1332175213,
+		HB_SCRIPT_RUNIC =                  1383427698,
+		HB_SCRIPT_SINHALA =                1399418472,
+		HB_SCRIPT_SYRIAC =                 1400468067,
+		HB_SCRIPT_THAANA =                 1416126817,
+		HB_SCRIPT_YI =                     1500080489,
+		HB_SCRIPT_DESERET =                1148416628,
+		HB_SCRIPT_GOTHIC =                 1198486632,
+		HB_SCRIPT_OLD_ITALIC =             1232363884,
+		HB_SCRIPT_BUHID =                  1114990692,
+		HB_SCRIPT_HANUNOO =                1214344815,
+		HB_SCRIPT_TAGALOG =                1416064103,
+		HB_SCRIPT_TAGBANWA =               1415669602,
+		HB_SCRIPT_CYPRIOT =                1131442804,
+		HB_SCRIPT_LIMBU =                  1281977698,
+		HB_SCRIPT_LINEAR_B =               1281977954,
+		HB_SCRIPT_OSMANYA =                1332964705,
+		HB_SCRIPT_SHAVIAN =                1399349623,
+		HB_SCRIPT_TAI_LE =                 1415670885,
+		HB_SCRIPT_UGARITIC =               1432838514,
+		HB_SCRIPT_BUGINESE =               1114990441,
+		HB_SCRIPT_COPTIC =                 1131376756,
+		HB_SCRIPT_GLAGOLITIC =             1198285159,
+		HB_SCRIPT_KHAROSHTHI =             1265131890,
+		HB_SCRIPT_NEW_TAI_LUE =            1415670901,
+		HB_SCRIPT_OLD_PERSIAN =            1483761007,
+		HB_SCRIPT_SYLOTI_NAGRI =           1400466543,
+		HB_SCRIPT_TIFINAGH =               1415999079,
+		HB_SCRIPT_BALINESE =               1113681001,
+		HB_SCRIPT_CUNEIFORM =              1483961720,
+		HB_SCRIPT_NKO =                    1315663727,
+		HB_SCRIPT_PHAGS_PA =               1349017959,
+		HB_SCRIPT_PHOENICIAN =             1349021304,
+		HB_SCRIPT_CARIAN =                 1130459753,
+		HB_SCRIPT_CHAM =                   1130914157,
+		HB_SCRIPT_KAYAH_LI =               1264675945,
+		HB_SCRIPT_LEPCHA =                 1281716323,
+		HB_SCRIPT_LYCIAN =                 1283023721,
+		HB_SCRIPT_LYDIAN =                 1283023977,
+		HB_SCRIPT_OL_CHIKI =               1332503403,
+		HB_SCRIPT_REJANG =                 1382706791,
+		HB_SCRIPT_SAURASHTRA =             1398895986,
+		HB_SCRIPT_SUNDANESE =              1400204900,
+		HB_SCRIPT_VAI =                    1449224553,
+		HB_SCRIPT_AVESTAN =                1098281844,
+		HB_SCRIPT_BAMUM =                  1113681269,
+		HB_SCRIPT_EGYPTIAN_HIEROGLYPHS =   1164409200,
+		HB_SCRIPT_IMPERIAL_ARAMAIC =       1098018153,
+		HB_SCRIPT_INSCRIPTIONAL_PAHLAVI =  1349020777,
+		HB_SCRIPT_INSCRIPTIONAL_PARTHIAN = 1349678185,
+		HB_SCRIPT_JAVANESE =               1247901281,
+		HB_SCRIPT_KAITHI =                 1265920105,
+		HB_SCRIPT_LISU =                   1281979253,
+		HB_SCRIPT_MEETEI_MAYEK =           1299473769,
+		HB_SCRIPT_OLD_SOUTH_ARABIAN =      1398895202,
+		HB_SCRIPT_OLD_TURKIC =             1332898664,
+		HB_SCRIPT_SAMARITAN =              1398893938,
+		HB_SCRIPT_TAI_THAM =               1281453665,
+		HB_SCRIPT_TAI_VIET =               1415673460,
+		HB_SCRIPT_BATAK =                  1113683051,
+		HB_SCRIPT_BRAHMI =                 1114792296,
+		HB_SCRIPT_MANDAIC =                1298230884,
+		HB_SCRIPT_CHAKMA =                 1130457965,
+		HB_SCRIPT_MEROITIC_CURSIVE =       1298494051,
+		HB_SCRIPT_MEROITIC_HIEROGLYPHS =   1298494063,
+		HB_SCRIPT_MIAO =                   1349284452,
+		HB_SCRIPT_SHARADA =                1399353956,
+		HB_SCRIPT_SORA_SOMPENG =           1399812705,
+		HB_SCRIPT_TAKRI =                  1415670642,
+		HB_SCRIPT_BASSA_VAH =              1113682803,
+		HB_SCRIPT_CAUCASIAN_ALBANIAN =     1097295970,
+		HB_SCRIPT_DUPLOYAN =               1148547180,
+		HB_SCRIPT_ELBASAN =                1164730977,
+		HB_SCRIPT_GRANTHA =                1198678382,
+		HB_SCRIPT_KHOJKI =                 1265135466,
+		HB_SCRIPT_KHUDAWADI =              1399418468,
+		HB_SCRIPT_LINEAR_A =               1281977953,
+		HB_SCRIPT_MAHAJANI =               1298229354,
+		HB_SCRIPT_MANICHAEAN =             1298230889,
+		HB_SCRIPT_MENDE_KIKAKUI =          1298493028,
+		HB_SCRIPT_MODI =                   1299145833,
+		HB_SCRIPT_MRO =                    1299345263,
+		HB_SCRIPT_NABATAEAN =              1315070324,
+		HB_SCRIPT_OLD_NORTH_ARABIAN =      1315009122,
+		HB_SCRIPT_OLD_PERMIC =             1348825709,
+		HB_SCRIPT_PAHAWH_HMONG =           1215131239,
+		HB_SCRIPT_PALMYRENE =              1348562029,
+		HB_SCRIPT_PAU_CIN_HAU =            1348564323,
+		HB_SCRIPT_PSALTER_PAHLAVI =        1349020784,
+		HB_SCRIPT_SIDDHAM =                1399415908,
+		HB_SCRIPT_TIRHUTA =                1416196712,
+		HB_SCRIPT_WARANG_CITI =            1466004065,
+		HB_SCRIPT_AHOM =                   1097363309,
+		HB_SCRIPT_ANATOLIAN_HIEROGLYPHS =  1215067511,
+		HB_SCRIPT_HATRAN =                 1214346354,
+		HB_SCRIPT_MULTANI =                1299541108,
+		HB_SCRIPT_OLD_HUNGARIAN =          1215655527,
+		HB_SCRIPT_SIGNWRITING =            1399287415,
+		HB_SCRIPT_ADLAM =                  1097100397,
+		HB_SCRIPT_BHAIKSUKI =              1114139507,
+		HB_SCRIPT_MARCHEN =                1298231907,
+		HB_SCRIPT_OSAGE =                  1332963173,
+		HB_SCRIPT_TANGUT =                 1415671399,
+		HB_SCRIPT_NEWA =                   1315272545,
+		HB_SCRIPT_MASARAM_GONDI =          1198485101,
+		HB_SCRIPT_NUSHU =                  1316186229,
+		HB_SCRIPT_SOYOMBO =                1399814511,
+		HB_SCRIPT_ZANABAZAR_SQUARE =       1516334690,
+		HB_SCRIPT_DOGRA =                  1148151666,
+		HB_SCRIPT_GUNJALA_GONDI =          1198485095,
+		HB_SCRIPT_HANIFI_ROHINGYA =        1383032935,
+		HB_SCRIPT_MAKASAR =                1298230113,
+		HB_SCRIPT_MEDEFAIDRIN =            1298490470,
+		HB_SCRIPT_OLD_SOGDIAN =            1399809903,
+		HB_SCRIPT_SOGDIAN =                1399809892,
+		HB_SCRIPT_ELYMAIC =                1164736877,
+		HB_SCRIPT_NANDINAGARI =            1315008100,
+		HB_SCRIPT_NYIAKENG_PUACHUE_HMONG = 1215131248,
+		HB_SCRIPT_WANCHO =                 1466132591,
+		HB_SCRIPT_CHORASMIAN =             1130918515,
+		HB_SCRIPT_DIVES_AKURU =            1147756907,
+		HB_SCRIPT_KHITAN_SMALL_SCRIPT =    1265202291,
+		HB_SCRIPT_YEZIDI =                 1499822697,
+		HB_SCRIPT_CYPRO_MINOAN =           1131441518,
+		HB_SCRIPT_OLD_UYGHUR =             1333094258,
+		HB_SCRIPT_TANGSA =                 1416524641,
+		HB_SCRIPT_TOTO =                   1416590447,
+		HB_SCRIPT_VITHKUQI =               1449751656,
+		HB_SCRIPT_MATH =                   1517122664,
+		HB_SCRIPT_KAWI =                   1264678761,
+		HB_SCRIPT_NAG_MUNDARI =            1315006317,
+		HB_SCRIPT_INVALID =                         0,
+		_HB_SCRIPT_MAX_VALUE =             2147483647,
+		_HB_SCRIPT_MAX_VALUE_SIGNED =      2147483647,
+	}
+	public enum hb_style_tag_t : uint {
+		HB_STYLE_TAG_ITALIC =       1769234796,
+		HB_STYLE_TAG_OPTICAL_SIZE = 1869640570,
+		HB_STYLE_TAG_SLANT_ANGLE =  1936486004,
+		HB_STYLE_TAG_SLANT_RATIO =  1399615092,
+		HB_STYLE_TAG_WIDTH =        2003072104,
+		HB_STYLE_TAG_WEIGHT =       2003265652,
+		_HB_STYLE_TAG_MAX_VALUE =   2147483647,
+	}
+	public enum hb_unicode_combining_class_t : uint {
+		HB_UNICODE_COMBINING_CLASS_NOT_REORDERED =          0,
+		HB_UNICODE_COMBINING_CLASS_OVERLAY =                1,
+		HB_UNICODE_COMBINING_CLASS_NUKTA =                  7,
+		HB_UNICODE_COMBINING_CLASS_KANA_VOICING =           8,
+		HB_UNICODE_COMBINING_CLASS_VIRAMA =                 9,
+		HB_UNICODE_COMBINING_CLASS_CCC10 =                 10,
+		HB_UNICODE_COMBINING_CLASS_CCC11 =                 11,
+		HB_UNICODE_COMBINING_CLASS_CCC12 =                 12,
+		HB_UNICODE_COMBINING_CLASS_CCC13 =                 13,
+		HB_UNICODE_COMBINING_CLASS_CCC14 =                 14,
+		HB_UNICODE_COMBINING_CLASS_CCC15 =                 15,
+		HB_UNICODE_COMBINING_CLASS_CCC16 =                 16,
+		HB_UNICODE_COMBINING_CLASS_CCC17 =                 17,
+		HB_UNICODE_COMBINING_CLASS_CCC18 =                 18,
+		HB_UNICODE_COMBINING_CLASS_CCC19 =                 19,
+		HB_UNICODE_COMBINING_CLASS_CCC20 =                 20,
+		HB_UNICODE_COMBINING_CLASS_CCC21 =                 21,
+		HB_UNICODE_COMBINING_CLASS_CCC22 =                 22,
+		HB_UNICODE_COMBINING_CLASS_CCC23 =                 23,
+		HB_UNICODE_COMBINING_CLASS_CCC24 =                 24,
+		HB_UNICODE_COMBINING_CLASS_CCC25 =                 25,
+		HB_UNICODE_COMBINING_CLASS_CCC26 =                 26,
+		HB_UNICODE_COMBINING_CLASS_CCC27 =                 27,
+		HB_UNICODE_COMBINING_CLASS_CCC28 =                 28,
+		HB_UNICODE_COMBINING_CLASS_CCC29 =                 29,
+		HB_UNICODE_COMBINING_CLASS_CCC30 =                 30,
+		HB_UNICODE_COMBINING_CLASS_CCC31 =                 31,
+		HB_UNICODE_COMBINING_CLASS_CCC32 =                 32,
+		HB_UNICODE_COMBINING_CLASS_CCC33 =                 33,
+		HB_UNICODE_COMBINING_CLASS_CCC34 =                 34,
+		HB_UNICODE_COMBINING_CLASS_CCC35 =                 35,
+		HB_UNICODE_COMBINING_CLASS_CCC36 =                 36,
+		HB_UNICODE_COMBINING_CLASS_CCC84 =                 84,
+		HB_UNICODE_COMBINING_CLASS_CCC91 =                 91,
+		HB_UNICODE_COMBINING_CLASS_CCC103 =               103,
+		HB_UNICODE_COMBINING_CLASS_CCC107 =               107,
+		HB_UNICODE_COMBINING_CLASS_CCC118 =               118,
+		HB_UNICODE_COMBINING_CLASS_CCC122 =               122,
+		HB_UNICODE_COMBINING_CLASS_CCC129 =               129,
+		HB_UNICODE_COMBINING_CLASS_CCC130 =               130,
+		HB_UNICODE_COMBINING_CLASS_CCC133 =               132,
+		HB_UNICODE_COMBINING_CLASS_ATTACHED_BELOW_LEFT =  200,
+		HB_UNICODE_COMBINING_CLASS_ATTACHED_BELOW =       202,
+		HB_UNICODE_COMBINING_CLASS_ATTACHED_ABOVE =       214,
+		HB_UNICODE_COMBINING_CLASS_ATTACHED_ABOVE_RIGHT = 216,
+		HB_UNICODE_COMBINING_CLASS_BELOW_LEFT =           218,
+		HB_UNICODE_COMBINING_CLASS_BELOW =                220,
+		HB_UNICODE_COMBINING_CLASS_BELOW_RIGHT =          222,
+		HB_UNICODE_COMBINING_CLASS_LEFT =                 224,
+		HB_UNICODE_COMBINING_CLASS_RIGHT =                226,
+		HB_UNICODE_COMBINING_CLASS_ABOVE_LEFT =           228,
+		HB_UNICODE_COMBINING_CLASS_ABOVE =                230,
+		HB_UNICODE_COMBINING_CLASS_ABOVE_RIGHT =          232,
+		HB_UNICODE_COMBINING_CLASS_DOUBLE_BELOW =         233,
+		HB_UNICODE_COMBINING_CLASS_DOUBLE_ABOVE =         234,
+		HB_UNICODE_COMBINING_CLASS_IOTA_SUBSCRIPT =       240,
+		HB_UNICODE_COMBINING_CLASS_INVALID =              255,
+	}
+	public enum hb_unicode_general_category_t : uint {
+		HB_UNICODE_GENERAL_CATEGORY_CONTROL =              0,
+		HB_UNICODE_GENERAL_CATEGORY_FORMAT =               1,
+		HB_UNICODE_GENERAL_CATEGORY_UNASSIGNED =           2,
+		HB_UNICODE_GENERAL_CATEGORY_PRIVATE_USE =          3,
+		HB_UNICODE_GENERAL_CATEGORY_SURROGATE =            4,
+		HB_UNICODE_GENERAL_CATEGORY_LOWERCASE_LETTER =     5,
+		HB_UNICODE_GENERAL_CATEGORY_MODIFIER_LETTER =      6,
+		HB_UNICODE_GENERAL_CATEGORY_OTHER_LETTER =         7,
+		HB_UNICODE_GENERAL_CATEGORY_TITLECASE_LETTER =     8,
+		HB_UNICODE_GENERAL_CATEGORY_UPPERCASE_LETTER =     9,
+		HB_UNICODE_GENERAL_CATEGORY_SPACING_MARK =        10,
+		HB_UNICODE_GENERAL_CATEGORY_ENCLOSING_MARK =      11,
+		HB_UNICODE_GENERAL_CATEGORY_NON_SPACING_MARK =    12,
+		HB_UNICODE_GENERAL_CATEGORY_DECIMAL_NUMBER =      13,
+		HB_UNICODE_GENERAL_CATEGORY_LETTER_NUMBER =       14,
+		HB_UNICODE_GENERAL_CATEGORY_OTHER_NUMBER =        15,
+		HB_UNICODE_GENERAL_CATEGORY_CONNECT_PUNCTUATION = 16,
+		HB_UNICODE_GENERAL_CATEGORY_DASH_PUNCTUATION =    17,
+		HB_UNICODE_GENERAL_CATEGORY_CLOSE_PUNCTUATION =   18,
+		HB_UNICODE_GENERAL_CATEGORY_FINAL_PUNCTUATION =   19,
+		HB_UNICODE_GENERAL_CATEGORY_INITIAL_PUNCTUATION = 20,
+		HB_UNICODE_GENERAL_CATEGORY_OTHER_PUNCTUATION =   21,
+		HB_UNICODE_GENERAL_CATEGORY_OPEN_PUNCTUATION =    22,
+		HB_UNICODE_GENERAL_CATEGORY_CURRENCY_SYMBOL =     23,
+		HB_UNICODE_GENERAL_CATEGORY_MODIFIER_SYMBOL =     24,
+		HB_UNICODE_GENERAL_CATEGORY_MATH_SYMBOL =         25,
+		HB_UNICODE_GENERAL_CATEGORY_OTHER_SYMBOL =        26,
+		HB_UNICODE_GENERAL_CATEGORY_LINE_SEPARATOR =      27,
+		HB_UNICODE_GENERAL_CATEGORY_PARAGRAPH_SEPARATOR = 28,
+		HB_UNICODE_GENERAL_CATEGORY_SPACE_SEPARATOR =     29,
+	}
+	public enum PangoAlignment : uint {
+		PANGO_ALIGN_LEFT =   0,
+		PANGO_ALIGN_CENTER = 1,
+		PANGO_ALIGN_RIGHT =  2,
+	}
+	public enum PangoAttrType : uint {
+		PANGO_ATTR_INVALID =               0,
+		PANGO_ATTR_LANGUAGE =              1,
+		PANGO_ATTR_FAMILY =                2,
+		PANGO_ATTR_STYLE =                 3,
+		PANGO_ATTR_WEIGHT =                4,
+		PANGO_ATTR_VARIANT =               5,
+		PANGO_ATTR_STRETCH =               6,
+		PANGO_ATTR_SIZE =                  7,
+		PANGO_ATTR_FONT_DESC =             8,
+		PANGO_ATTR_FOREGROUND =            9,
+		PANGO_ATTR_BACKGROUND =           10,
+		PANGO_ATTR_UNDERLINE =            11,
+		PANGO_ATTR_STRIKETHROUGH =        12,
+		PANGO_ATTR_RISE =                 13,
+		PANGO_ATTR_SHAPE =                14,
+		PANGO_ATTR_SCALE =                15,
+		PANGO_ATTR_FALLBACK =             16,
+		PANGO_ATTR_LETTER_SPACING =       17,
+		PANGO_ATTR_UNDERLINE_COLOR =      18,
+		PANGO_ATTR_STRIKETHROUGH_COLOR =  19,
+		PANGO_ATTR_ABSOLUTE_SIZE =        20,
+		PANGO_ATTR_GRAVITY =              21,
+		PANGO_ATTR_GRAVITY_HINT =         22,
+		PANGO_ATTR_FONT_FEATURES =        23,
+		PANGO_ATTR_FOREGROUND_ALPHA =     24,
+		PANGO_ATTR_BACKGROUND_ALPHA =     25,
+		PANGO_ATTR_ALLOW_BREAKS =         26,
+		PANGO_ATTR_SHOW =                 27,
+		PANGO_ATTR_INSERT_HYPHENS =       28,
+		PANGO_ATTR_OVERLINE =             29,
+		PANGO_ATTR_OVERLINE_COLOR =       30,
+		PANGO_ATTR_LINE_HEIGHT =          31,
+		PANGO_ATTR_ABSOLUTE_LINE_HEIGHT = 32,
+		PANGO_ATTR_TEXT_TRANSFORM =       33,
+		PANGO_ATTR_WORD =                 34,
+		PANGO_ATTR_SENTENCE =             35,
+		PANGO_ATTR_BASELINE_SHIFT =       36,
+		PANGO_ATTR_FONT_SCALE =           37,
+	}
+	public enum PangoBaselineShift : uint {
+		PANGO_BASELINE_SHIFT_NONE =        0,
+		PANGO_BASELINE_SHIFT_SUPERSCRIPT = 1,
+		PANGO_BASELINE_SHIFT_SUBSCRIPT =   2,
+	}
+	public enum PangoBidiType : uint {
+		PANGO_BIDI_TYPE_L =    0,
+		PANGO_BIDI_TYPE_LRE =  1,
+		PANGO_BIDI_TYPE_LRO =  2,
+		PANGO_BIDI_TYPE_R =    3,
+		PANGO_BIDI_TYPE_AL =   4,
+		PANGO_BIDI_TYPE_RLE =  5,
+		PANGO_BIDI_TYPE_RLO =  6,
+		PANGO_BIDI_TYPE_PDF =  7,
+		PANGO_BIDI_TYPE_EN =   8,
+		PANGO_BIDI_TYPE_ES =   9,
+		PANGO_BIDI_TYPE_ET =  10,
+		PANGO_BIDI_TYPE_AN =  11,
+		PANGO_BIDI_TYPE_CS =  12,
+		PANGO_BIDI_TYPE_NSM = 13,
+		PANGO_BIDI_TYPE_BN =  14,
+		PANGO_BIDI_TYPE_B =   15,
+		PANGO_BIDI_TYPE_S =   16,
+		PANGO_BIDI_TYPE_WS =  17,
+		PANGO_BIDI_TYPE_ON =  18,
+		PANGO_BIDI_TYPE_LRI = 19,
+		PANGO_BIDI_TYPE_RLI = 20,
+		PANGO_BIDI_TYPE_FSI = 21,
+		PANGO_BIDI_TYPE_PDI = 22,
+	}
+	public enum PangoCoverageLevel : uint {
+		PANGO_COVERAGE_NONE =        0,
+		PANGO_COVERAGE_FALLBACK =    1,
+		PANGO_COVERAGE_APPROXIMATE = 2,
+		PANGO_COVERAGE_EXACT =       3,
+	}
+	public enum PangoDirection : uint {
+		PANGO_DIRECTION_LTR =      0,
+		PANGO_DIRECTION_RTL =      1,
+		PANGO_DIRECTION_TTB_LTR =  2,
+		PANGO_DIRECTION_TTB_RTL =  3,
+		PANGO_DIRECTION_WEAK_LTR = 4,
+		PANGO_DIRECTION_WEAK_RTL = 5,
+		PANGO_DIRECTION_NEUTRAL =  6,
+	}
+	public enum PangoEllipsizeMode : uint {
+		PANGO_ELLIPSIZE_NONE =   0,
+		PANGO_ELLIPSIZE_START =  1,
+		PANGO_ELLIPSIZE_MIDDLE = 2,
+		PANGO_ELLIPSIZE_END =    3,
+	}
+	[Flags]
+	public enum PangoFontMask : uint {
+		None =                         0,
+		PANGO_FONT_MASK_FAMILY =       1,
+		PANGO_FONT_MASK_STYLE =        2,
+		PANGO_FONT_MASK_VARIANT =      4,
+		PANGO_FONT_MASK_WEIGHT =       8,
+		PANGO_FONT_MASK_STRETCH =     16,
+		PANGO_FONT_MASK_SIZE =        32,
+		PANGO_FONT_MASK_GRAVITY =     64,
+		PANGO_FONT_MASK_VARIATIONS = 128,
+	}
+	public enum PangoFontScale : uint {
+		PANGO_FONT_SCALE_NONE =        0,
+		PANGO_FONT_SCALE_SUPERSCRIPT = 1,
+		PANGO_FONT_SCALE_SUBSCRIPT =   2,
+		PANGO_FONT_SCALE_SMALL_CAPS =  3,
+	}
+	public enum PangoGravity : uint {
+		PANGO_GRAVITY_SOUTH = 0,
+		PANGO_GRAVITY_EAST =  1,
+		PANGO_GRAVITY_NORTH = 2,
+		PANGO_GRAVITY_WEST =  3,
+		PANGO_GRAVITY_AUTO =  4,
+	}
+	public enum PangoGravityHint : uint {
+		PANGO_GRAVITY_HINT_NATURAL = 0,
+		PANGO_GRAVITY_HINT_STRONG =  1,
+		PANGO_GRAVITY_HINT_LINE =    2,
+	}
+	public enum PangoLayoutDeserializeError : uint {
+		PANGO_LAYOUT_DESERIALIZE_INVALID =       0,
+		PANGO_LAYOUT_DESERIALIZE_INVALID_VALUE = 1,
+		PANGO_LAYOUT_DESERIALIZE_MISSING_VALUE = 2,
+	}
+	[Flags]
+	public enum PangoLayoutDeserializeFlags : uint {
+		PANGO_LAYOUT_DESERIALIZE_DEFAULT = 0,
+		PANGO_LAYOUT_DESERIALIZE_CONTEXT = 1,
+	}
+	[Flags]
+	public enum PangoLayoutSerializeFlags : uint {
+		PANGO_LAYOUT_SERIALIZE_DEFAULT = 0,
+		PANGO_LAYOUT_SERIALIZE_CONTEXT = 1,
+		PANGO_LAYOUT_SERIALIZE_OUTPUT =  2,
+	}
+	public enum PangoOverline : uint {
+		PANGO_OVERLINE_NONE =   0,
+		PANGO_OVERLINE_SINGLE = 1,
+	}
+	public enum PangoRenderPart : uint {
+		PANGO_RENDER_PART_FOREGROUND =    0,
+		PANGO_RENDER_PART_BACKGROUND =    1,
+		PANGO_RENDER_PART_UNDERLINE =     2,
+		PANGO_RENDER_PART_STRIKETHROUGH = 3,
+		PANGO_RENDER_PART_OVERLINE =      4,
+	}
+	public enum PangoScript : int {
+		PANGO_SCRIPT_INVALID_CODE =           -1,
+		PANGO_SCRIPT_COMMON =                  0,
+		PANGO_SCRIPT_INHERITED =               1,
+		PANGO_SCRIPT_ARABIC =                  2,
+		PANGO_SCRIPT_ARMENIAN =                3,
+		PANGO_SCRIPT_BENGALI =                 4,
+		PANGO_SCRIPT_BOPOMOFO =                5,
+		PANGO_SCRIPT_CHEROKEE =                6,
+		PANGO_SCRIPT_COPTIC =                  7,
+		PANGO_SCRIPT_CYRILLIC =                8,
+		PANGO_SCRIPT_DESERET =                 9,
+		PANGO_SCRIPT_DEVANAGARI =             10,
+		PANGO_SCRIPT_ETHIOPIC =               11,
+		PANGO_SCRIPT_GEORGIAN =               12,
+		PANGO_SCRIPT_GOTHIC =                 13,
+		PANGO_SCRIPT_GREEK =                  14,
+		PANGO_SCRIPT_GUJARATI =               15,
+		PANGO_SCRIPT_GURMUKHI =               16,
+		PANGO_SCRIPT_HAN =                    17,
+		PANGO_SCRIPT_HANGUL =                 18,
+		PANGO_SCRIPT_HEBREW =                 19,
+		PANGO_SCRIPT_HIRAGANA =               20,
+		PANGO_SCRIPT_KANNADA =                21,
+		PANGO_SCRIPT_KATAKANA =               22,
+		PANGO_SCRIPT_KHMER =                  23,
+		PANGO_SCRIPT_LAO =                    24,
+		PANGO_SCRIPT_LATIN =                  25,
+		PANGO_SCRIPT_MALAYALAM =              26,
+		PANGO_SCRIPT_MONGOLIAN =              27,
+		PANGO_SCRIPT_MYANMAR =                28,
+		PANGO_SCRIPT_OGHAM =                  29,
+		PANGO_SCRIPT_OLD_ITALIC =             30,
+		PANGO_SCRIPT_ORIYA =                  31,
+		PANGO_SCRIPT_RUNIC =                  32,
+		PANGO_SCRIPT_SINHALA =                33,
+		PANGO_SCRIPT_SYRIAC =                 34,
+		PANGO_SCRIPT_TAMIL =                  35,
+		PANGO_SCRIPT_TELUGU =                 36,
+		PANGO_SCRIPT_THAANA =                 37,
+		PANGO_SCRIPT_THAI =                   38,
+		PANGO_SCRIPT_TIBETAN =                39,
+		PANGO_SCRIPT_CANADIAN_ABORIGINAL =    40,
+		PANGO_SCRIPT_YI =                     41,
+		PANGO_SCRIPT_TAGALOG =                42,
+		PANGO_SCRIPT_HANUNOO =                43,
+		PANGO_SCRIPT_BUHID =                  44,
+		PANGO_SCRIPT_TAGBANWA =               45,
+		PANGO_SCRIPT_BRAILLE =                46,
+		PANGO_SCRIPT_CYPRIOT =                47,
+		PANGO_SCRIPT_LIMBU =                  48,
+		PANGO_SCRIPT_OSMANYA =                49,
+		PANGO_SCRIPT_SHAVIAN =                50,
+		PANGO_SCRIPT_LINEAR_B =               51,
+		PANGO_SCRIPT_TAI_LE =                 52,
+		PANGO_SCRIPT_UGARITIC =               53,
+		PANGO_SCRIPT_NEW_TAI_LUE =            54,
+		PANGO_SCRIPT_BUGINESE =               55,
+		PANGO_SCRIPT_GLAGOLITIC =             56,
+		PANGO_SCRIPT_TIFINAGH =               57,
+		PANGO_SCRIPT_SYLOTI_NAGRI =           58,
+		PANGO_SCRIPT_OLD_PERSIAN =            59,
+		PANGO_SCRIPT_KHAROSHTHI =             60,
+		PANGO_SCRIPT_UNKNOWN =                61,
+		PANGO_SCRIPT_BALINESE =               62,
+		PANGO_SCRIPT_CUNEIFORM =              63,
+		PANGO_SCRIPT_PHOENICIAN =             64,
+		PANGO_SCRIPT_PHAGS_PA =               65,
+		PANGO_SCRIPT_NKO =                    66,
+		PANGO_SCRIPT_KAYAH_LI =               67,
+		PANGO_SCRIPT_LEPCHA =                 68,
+		PANGO_SCRIPT_REJANG =                 69,
+		PANGO_SCRIPT_SUNDANESE =              70,
+		PANGO_SCRIPT_SAURASHTRA =             71,
+		PANGO_SCRIPT_CHAM =                   72,
+		PANGO_SCRIPT_OL_CHIKI =               73,
+		PANGO_SCRIPT_VAI =                    74,
+		PANGO_SCRIPT_CARIAN =                 75,
+		PANGO_SCRIPT_LYCIAN =                 76,
+		PANGO_SCRIPT_LYDIAN =                 77,
+		PANGO_SCRIPT_BATAK =                  78,
+		PANGO_SCRIPT_BRAHMI =                 79,
+		PANGO_SCRIPT_MANDAIC =                80,
+		PANGO_SCRIPT_CHAKMA =                 81,
+		PANGO_SCRIPT_MEROITIC_CURSIVE =       82,
+		PANGO_SCRIPT_MEROITIC_HIEROGLYPHS =   83,
+		PANGO_SCRIPT_MIAO =                   84,
+		PANGO_SCRIPT_SHARADA =                85,
+		PANGO_SCRIPT_SORA_SOMPENG =           86,
+		PANGO_SCRIPT_TAKRI =                  87,
+		PANGO_SCRIPT_BASSA_VAH =              88,
+		PANGO_SCRIPT_CAUCASIAN_ALBANIAN =     89,
+		PANGO_SCRIPT_DUPLOYAN =               90,
+		PANGO_SCRIPT_ELBASAN =                91,
+		PANGO_SCRIPT_GRANTHA =                92,
+		PANGO_SCRIPT_KHOJKI =                 93,
+		PANGO_SCRIPT_KHUDAWADI =              94,
+		PANGO_SCRIPT_LINEAR_A =               95,
+		PANGO_SCRIPT_MAHAJANI =               96,
+		PANGO_SCRIPT_MANICHAEAN =             97,
+		PANGO_SCRIPT_MENDE_KIKAKUI =          98,
+		PANGO_SCRIPT_MODI =                   99,
+		PANGO_SCRIPT_MRO =                   100,
+		PANGO_SCRIPT_NABATAEAN =             101,
+		PANGO_SCRIPT_OLD_NORTH_ARABIAN =     102,
+		PANGO_SCRIPT_OLD_PERMIC =            103,
+		PANGO_SCRIPT_PAHAWH_HMONG =          104,
+		PANGO_SCRIPT_PALMYRENE =             105,
+		PANGO_SCRIPT_PAU_CIN_HAU =           106,
+		PANGO_SCRIPT_PSALTER_PAHLAVI =       107,
+		PANGO_SCRIPT_SIDDHAM =               108,
+		PANGO_SCRIPT_TIRHUTA =               109,
+		PANGO_SCRIPT_WARANG_CITI =           110,
+		PANGO_SCRIPT_AHOM =                  111,
+		PANGO_SCRIPT_ANATOLIAN_HIEROGLYPHS = 112,
+		PANGO_SCRIPT_HATRAN =                113,
+		PANGO_SCRIPT_MULTANI =               114,
+		PANGO_SCRIPT_OLD_HUNGARIAN =         115,
+		PANGO_SCRIPT_SIGNWRITING =           116,
+	}
+	[Flags]
+	public enum PangoShapeFlags : uint {
+		PANGO_SHAPE_NONE =            0,
+		PANGO_SHAPE_ROUND_POSITIONS = 1,
+	}
+	[Flags]
+	public enum PangoShowFlags : uint {
+		PANGO_SHOW_NONE =        0,
+		PANGO_SHOW_SPACES =      1,
+		PANGO_SHOW_LINE_BREAKS = 2,
+		PANGO_SHOW_IGNORABLES =  4,
+	}
+	public enum PangoStretch : uint {
+		PANGO_STRETCH_ULTRA_CONDENSED = 0,
+		PANGO_STRETCH_EXTRA_CONDENSED = 1,
+		PANGO_STRETCH_CONDENSED =       2,
+		PANGO_STRETCH_SEMI_CONDENSED =  3,
+		PANGO_STRETCH_NORMAL =          4,
+		PANGO_STRETCH_SEMI_EXPANDED =   5,
+		PANGO_STRETCH_EXPANDED =        6,
+		PANGO_STRETCH_EXTRA_EXPANDED =  7,
+		PANGO_STRETCH_ULTRA_EXPANDED =  8,
+	}
+	public enum PangoStyle : uint {
+		PANGO_STYLE_NORMAL =  0,
+		PANGO_STYLE_OBLIQUE = 1,
+		PANGO_STYLE_ITALIC =  2,
+	}
+	public enum PangoTabAlign : uint {
+		PANGO_TAB_LEFT =    0,
+		PANGO_TAB_RIGHT =   1,
+		PANGO_TAB_CENTER =  2,
+		PANGO_TAB_DECIMAL = 3,
+	}
+	public enum PangoTextTransform : uint {
+		PANGO_TEXT_TRANSFORM_NONE =       0,
+		PANGO_TEXT_TRANSFORM_LOWERCASE =  1,
+		PANGO_TEXT_TRANSFORM_UPPERCASE =  2,
+		PANGO_TEXT_TRANSFORM_CAPITALIZE = 3,
+	}
+	public enum PangoUnderline : uint {
+		PANGO_UNDERLINE_NONE =        0,
+		PANGO_UNDERLINE_SINGLE =      1,
+		PANGO_UNDERLINE_DOUBLE =      2,
+		PANGO_UNDERLINE_LOW =         3,
+		PANGO_UNDERLINE_ERROR =       4,
+		PANGO_UNDERLINE_SINGLE_LINE = 5,
+		PANGO_UNDERLINE_DOUBLE_LINE = 6,
+		PANGO_UNDERLINE_ERROR_LINE =  7,
+	}
+	public enum PangoVariant : uint {
+		PANGO_VARIANT_NORMAL =          0,
+		PANGO_VARIANT_SMALL_CAPS =      1,
+		PANGO_VARIANT_ALL_SMALL_CAPS =  2,
+		PANGO_VARIANT_PETITE_CAPS =     3,
+		PANGO_VARIANT_ALL_PETITE_CAPS = 4,
+		PANGO_VARIANT_UNICASE =         5,
+		PANGO_VARIANT_TITLE_CAPS =      6,
+	}
+	public enum PangoWeight : uint {
+		PANGO_WEIGHT_THIN =        100,
+		PANGO_WEIGHT_ULTRALIGHT =  200,
+		PANGO_WEIGHT_LIGHT =       300,
+		PANGO_WEIGHT_SEMILIGHT =   350,
+		PANGO_WEIGHT_BOOK =        380,
+		PANGO_WEIGHT_NORMAL =      400,
+		PANGO_WEIGHT_MEDIUM =      500,
+		PANGO_WEIGHT_SEMIBOLD =    600,
+		PANGO_WEIGHT_BOLD =        700,
+		PANGO_WEIGHT_ULTRABOLD =   800,
+		PANGO_WEIGHT_HEAVY =       900,
+		PANGO_WEIGHT_ULTRAHEAVY = 1000,
+	}
+	public enum PangoWrapMode : uint {
+		PANGO_WRAP_WORD =      0,
+		PANGO_WRAP_CHAR =      1,
+		PANGO_WRAP_WORD_CHAR = 2,
+	}
+	public partial struct hb_blob_t {
+	}
+	public partial struct hb_buffer_t {
+	}
+	public partial struct hb_draw_funcs_t {
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_draw_state_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int path_open;
+		[ExplicitOffset( Offset = 4 )]
+		public float path_start_x;
+		[ExplicitOffset( Offset = 8 )]
+		public float path_start_y;
+		[ExplicitOffset( Offset = 12 )]
+		public float current_x;
+		[ExplicitOffset( Offset = 16 )]
+		public float current_y;
+		[ExplicitOffset( Offset = 20 )]
+		public hb_var_num_t reserved1;
+		[ExplicitOffset( Offset = 24 )]
+		public hb_var_num_t reserved2;
+		[ExplicitOffset( Offset = 28 )]
+		public hb_var_num_t reserved3;
+		[ExplicitOffset( Offset = 32 )]
+		public hb_var_num_t reserved4;
+		[ExplicitOffset( Offset = 36 )]
+		public hb_var_num_t reserved5;
+		[ExplicitOffset( Offset = 40 )]
+		public hb_var_num_t reserved6;
+		[ExplicitOffset( Offset = 44 )]
+		public hb_var_num_t reserved7;
+	}
+	public partial struct hb_face_t {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_feature_t {
+		[ExplicitOffset( Offset = 0 )]
+		public uint tag;
+		[ExplicitOffset( Offset = 4 )]
+		public uint value;
+		[ExplicitOffset( Offset = 8 )]
+		public uint start;
+		[ExplicitOffset( Offset = 12 )]
+		public uint end;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_font_extents_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int ascender;
+		[ExplicitOffset( Offset = 4 )]
+		public int descender;
+		[ExplicitOffset( Offset = 8 )]
+		public int line_gap;
+		[ExplicitOffset( Offset = 12 )]
+		public int reserved9;
+		[ExplicitOffset( Offset = 16 )]
+		public int reserved8;
+		[ExplicitOffset( Offset = 20 )]
+		public int reserved7;
+		[ExplicitOffset( Offset = 24 )]
+		public int reserved6;
+		[ExplicitOffset( Offset = 28 )]
+		public int reserved5;
+		[ExplicitOffset( Offset = 32 )]
+		public int reserved4;
+		[ExplicitOffset( Offset = 36 )]
+		public int reserved3;
+		[ExplicitOffset( Offset = 40 )]
+		public int reserved2;
+		[ExplicitOffset( Offset = 44 )]
+		public int reserved1;
+	}
+	public partial struct hb_font_funcs_t {
+	}
+	public partial struct hb_font_t {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_glyph_extents_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int x_bearing;
+		[ExplicitOffset( Offset = 4 )]
+		public int y_bearing;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_glyph_info_t {
+		[ExplicitOffset( Offset = 0 )]
+		public uint codepoint;
+		[ExplicitOffset( Offset = 4 )]
+		public uint mask;
+		[ExplicitOffset( Offset = 8 )]
+		public uint cluster;
+		[ExplicitOffset( Offset = 12 )]
+		public hb_var_int_t var1;
+		[ExplicitOffset( Offset = 16 )]
+		public hb_var_int_t var2;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_glyph_position_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int x_advance;
+		[ExplicitOffset( Offset = 4 )]
+		public int y_advance;
+		[ExplicitOffset( Offset = 8 )]
+		public int x_offset;
+		[ExplicitOffset( Offset = 12 )]
+		public int y_offset;
+		[ExplicitOffset( Offset = 16 )]
+		public hb_var_int_t var;
+	}
+	public partial struct hb_language_t {
+	}
+	public partial struct hb_map_t {
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_segment_properties_t {
+		[ExplicitOffset( Offset = 0 )]
+		public hb_direction_t direction;
+		[ExplicitOffset( Offset = 4 )]
+		public hb_script_t script;
+		[ExplicitOffset( Offset = 8 )]
+		public hb_language_t* language;
+		[ExplicitOffset( Offset = 12 )]
+		public void* reserved1;
+		[ExplicitOffset( Offset = 16 )]
+		public void* reserved2;
+	}
+	public partial struct hb_set_t {
+	}
+	public partial struct hb_shape_plan_t {
+	}
+	public partial struct hb_unicode_funcs_t {
+	}
+	[ExplicitSize( Size = 1 )]
+	public partial struct hb_user_data_key_t {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte unused;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_var_int_t {
+		[Overlapped( Offset = 0 )]
+		public uint u32;
+		[Overlapped( Offset = 0 )]
+		public int i32;
+		[Overlapped( Offset = 0 )]
+		public ushort[2] u16;
+		[Overlapped( Offset = 0 )]
+		public short[2] i16;
+		[Overlapped( Offset = 0 )]
+		public byte[4] u8;
+		[Overlapped( Offset = 0 )]
+		public sbyte[4] i8;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_var_num_t {
+		[Overlapped( Offset = 0 )]
+		public float f;
+		[Overlapped( Offset = 0 )]
+		public uint u32;
+		[Overlapped( Offset = 0 )]
+		public int i32;
+		[Overlapped( Offset = 0 )]
+		public ushort[2] u16;
+		[Overlapped( Offset = 0 )]
+		public short[2] i16;
+		[Overlapped( Offset = 0 )]
+		public byte[4] u8;
+		[Overlapped( Offset = 0 )]
+		public sbyte[4] i8;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct hb_variation_t {
+		[ExplicitOffset( Offset = 0 )]
+		public uint tag;
+		[ExplicitOffset( Offset = 4 )]
+		public float value;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAnalysis {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoEngineShape* shape_engine;
+		[ExplicitOffset( Offset = 4 )]
+		public PangoEngineLang* lang_engine;
+		[ExplicitOffset( Offset = 8 )]
+		public PangoFont* font;
+		[ExplicitOffset( Offset = 12 )]
+		public byte level;
+		[ExplicitOffset( Offset = 13 )]
+		public byte gravity;
+		[ExplicitOffset( Offset = 14 )]
+		public byte flags;
+		[ExplicitOffset( Offset = 15 )]
+		public byte script;
+		[ExplicitOffset( Offset = 16 )]
+		public PangoLanguage* language;
+		[ExplicitOffset( Offset = 20 )]
+		public GSList* extra_attrs;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrClass {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttrType type;
+		[ExplicitOffset( Offset = 4 )]
+		public Functors.Func<PangoAttribute*, PangoAttribute*> copy;
+		[ExplicitOffset( Offset = 8 )]
+		public Functors.Action<PangoAttribute*> destroy;
+		[ExplicitOffset( Offset = 12 )]
+		public Functors.Func<PangoAttribute*, PangoAttribute*, Boolean32> equal;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrColor {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoColor color;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct PangoAttrFloat {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 16 )]
+		public double value;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrFontDesc {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoFontDescription* desc;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrFontFeatures {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte* features;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttribute {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttrClass* klass;
+		[ExplicitOffset( Offset = 4 )]
+		public uint start_index;
+		[ExplicitOffset( Offset = 8 )]
+		public uint end_index;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrInt {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public int value;
+	}
+	public partial struct PangoAttrIterator {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrLanguage {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoLanguage* value;
+	}
+	public partial struct PangoAttrList {
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrShape {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoRectangle ink_rect;
+		[ExplicitOffset( Offset = 28 )]
+		public PangoRectangle logical_rect;
+		[ExplicitOffset( Offset = 44 )]
+		public void* data;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Func<void*, void*> copy_func;
+		[ExplicitOffset( Offset = 52 )]
+		public Functors.Action<void*> destroy_func;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrSize {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public int size;
+		public bool absolute { get { return ( cast<byte*>( &this )[16] & 1 ) != 0; } set { cast<byte*>( &this )[16] &= 254; cast<byte*>( &this )[16] |= cast<byte>( value ) << 0; } }
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoAttrString {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte* value;
+	}
+	public partial struct PangoCairoFont {
+	}
+	public partial struct PangoCairoFontMap {
+	}
+	[ExplicitSize( Size = 6 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct PangoColor {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort red;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort green;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort blue;
+	}
+	public partial struct PangoContext {
+	}
+	public partial struct PangoContextClass {
+	}
+	public partial struct PangoCoverage {
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoEngine : GObject {
+		[ExplicitSize( Size = 68 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoEngineInfo {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte* id;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte* engine_type;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte* render_type;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoEngineScriptInfo* scripts;
+		[ExplicitOffset( Offset = 16 )]
+		public int n_scripts;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoEngineLang : PangoEngine {
+		[ExplicitSize( Size = 72 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<PangoEngineLang*, sbyte*, int, PangoAnalysis*, PangoLogAttr*, int> _script_break;
+		}
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoEngineScriptInfo {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoScript script;
+		[ExplicitOffset( Offset = 4 )]
+		public sbyte* langs;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoEngineShape : PangoEngine {
+		[ExplicitSize( Size = 76 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<PangoEngineShape*, PangoFont*, sbyte*, uint, PangoAnalysis*, PangoGlyphString*, sbyte*, uint> _script_shape;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<PangoEngineShape*, PangoFont*, PangoLanguage*, uint, PangoCoverageLevel> _covers;
+		}
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFont : GObject {
+		[ExplicitSize( Size = 100 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<PangoFont*, PangoFontDescription*> _describe;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<PangoFont*, PangoLanguage*, PangoCoverage*> _get_coverage;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<PangoFont*, uint, PangoRectangle*, PangoRectangle*> _get_glyph_extents;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Func<PangoFont*, PangoLanguage*, PangoFontMetrics*> _get_metrics;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Func<PangoFont*, PangoFontMap*> _get_font_map;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Func<PangoFont*, PangoFontDescription*> _describe_absolute;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action<PangoFont*, hb_feature_t*, uint, uint*> _get_features;
+			[ExplicitOffset( Offset = 96 )]
+			public Functors.Func<PangoFont*, hb_font_t*> _create_hb_font;
+		}
+	}
+	public partial struct PangoFontDescription {
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFontFace : GObject {
+		[ExplicitSize( Size = 96 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<PangoFontFace*, sbyte*> _get_face_name;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<PangoFontFace*, PangoFontDescription*> _describe;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<PangoFontFace*, int**, int*> _list_sizes;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Func<PangoFontFace*, Boolean32> _is_synthesized;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Func<PangoFontFace*, PangoFontFamily*> _get_family;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action _pango_reserved3;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action _pango_reserved4;
+		}
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFontFamily : GObject {
+		[ExplicitSize( Size = 92 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<PangoFontFamily*, PangoFontFace***, int*> _list_faces;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<PangoFontFamily*, sbyte*> _get_name;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Func<PangoFontFamily*, Boolean32> _is_monospace;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Func<PangoFontFamily*, Boolean32> _is_variable;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Func<PangoFontFamily*, sbyte*, PangoFontFace*> _get_face;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action _pango_reserved2;
+		}
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFontMap : GObject {
+		[ExplicitSize( Size = 100 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<PangoFontMap*, PangoContext*, PangoFontDescription*, PangoFont*> _load_font;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<PangoFontMap*, PangoFontFamily***, int*> _list_families;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Func<PangoFontMap*, PangoContext*, PangoFontDescription*, PangoLanguage*, PangoFontset*> _load_fontset;
+			[ExplicitOffset( Offset = 80 )]
+			public sbyte* _shape_engine_type;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Func<PangoFontMap*, uint> _get_serial;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action<PangoFontMap*> _changed;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Func<PangoFontMap*, sbyte*, PangoFontFamily*> _get_family;
+			[ExplicitOffset( Offset = 96 )]
+			public Functors.Func<PangoFontMap*, PangoFont*, PangoFontFace*> _get_face;
+		}
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFontMetrics {
+		[ExplicitOffset( Offset = 0 )]
+		public uint ref_count;
+		[ExplicitOffset( Offset = 4 )]
+		public int ascent;
+		[ExplicitOffset( Offset = 8 )]
+		public int descent;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+		[ExplicitOffset( Offset = 16 )]
+		public int approximate_char_width;
+		[ExplicitOffset( Offset = 20 )]
+		public int approximate_digit_width;
+		[ExplicitOffset( Offset = 24 )]
+		public int underline_position;
+		[ExplicitOffset( Offset = 28 )]
+		public int underline_thickness;
+		[ExplicitOffset( Offset = 32 )]
+		public int strikethrough_position;
+		[ExplicitOffset( Offset = 36 )]
+		public int strikethrough_thickness;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoFontset : GObject {
+		[ExplicitSize( Size = 100 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<PangoFontset*, uint, PangoFont*> _get_font;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<PangoFontset*, PangoFontMetrics*> _get_metrics;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Func<PangoFontset*, PangoLanguage*> _get_language;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action<PangoFontset*, Functors.Func<PangoFontset*, PangoFont*, void*, Boolean32>, void*> _foreach;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action _pango_reserved1;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action _pango_reserved2;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action _pango_reserved3;
+			[ExplicitOffset( Offset = 96 )]
+			public Functors.Action _pango_reserved4;
+		}
+	}
+	public partial struct PangoFontsetSimple {
+	}
+	public partial struct PangoFontsetSimpleClass {
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphGeometry {
+		[ExplicitOffset( Offset = 0 )]
+		public int width;
+		[ExplicitOffset( Offset = 4 )]
+		public int x_offset;
+		[ExplicitOffset( Offset = 8 )]
+		public int y_offset;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphInfo {
+		[ExplicitOffset( Offset = 0 )]
+		public uint glyph;
+		[ExplicitOffset( Offset = 4 )]
+		public PangoGlyphGeometry geometry;
+		[ExplicitOffset( Offset = 16 )]
+		public PangoGlyphVisAttr attr;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphItem {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoItem* item;
+		[ExplicitOffset( Offset = 4 )]
+		public PangoGlyphString* glyphs;
+		[ExplicitOffset( Offset = 8 )]
+		public int y_offset;
+		[ExplicitOffset( Offset = 12 )]
+		public int start_x_offset;
+		[ExplicitOffset( Offset = 16 )]
+		public int end_x_offset;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphItemIter {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoGlyphItem* glyph_item;
+		[ExplicitOffset( Offset = 4 )]
+		public CUtf8String text;
+		[ExplicitOffset( Offset = 8 )]
+		public int start_glyph;
+		[ExplicitOffset( Offset = 12 )]
+		public int start_index;
+		[ExplicitOffset( Offset = 16 )]
+		public int start_char;
+		[ExplicitOffset( Offset = 20 )]
+		public int end_glyph;
+		[ExplicitOffset( Offset = 24 )]
+		public int end_index;
+		[ExplicitOffset( Offset = 28 )]
+		public int end_char;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphString {
+		[ExplicitOffset( Offset = 0 )]
+		public int num_glyphs;
+		[ExplicitOffset( Offset = 4 )]
+		public PangoGlyphInfo* glyphs;
+		[ExplicitOffset( Offset = 8 )]
+		public int* log_clusters;
+		[ExplicitOffset( Offset = 12 )]
+		public int space;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoGlyphVisAttr {
+		public bool is_cluster_start { get { return ( cast<byte*>( &this )[0] & 1 ) != 0; } set { cast<byte*>( &this )[0] &= 254; cast<byte*>( &this )[0] |= cast<byte>( value ) << 0; } }
+		public bool is_color { get { return ( cast<byte*>( &this )[0] & 2 ) != 0; } set { cast<byte*>( &this )[0] &= 253; cast<byte*>( &this )[0] |= cast<byte>( value ) << 1; } }
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoItem {
+		[ExplicitOffset( Offset = 0 )]
+		public int offset;
+		[ExplicitOffset( Offset = 4 )]
+		public int length;
+		[ExplicitOffset( Offset = 8 )]
+		public int num_chars;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoAnalysis analysis;
+	}
+	public partial struct PangoLanguage {
+	}
+	public partial struct PangoLayout {
+	}
+	public partial struct PangoLayoutClass {
+	}
+	public partial struct PangoLayoutIter {
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoLayoutLine {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoLayout* layout;
+		[ExplicitOffset( Offset = 4 )]
+		public int start_index;
+		[ExplicitOffset( Offset = 8 )]
+		public int length;
+		[ExplicitOffset( Offset = 12 )]
+		public GSList* runs;
+		public bool is_paragraph_start { get { return ( cast<byte*>( &this )[16] & 1 ) != 0; } set { cast<byte*>( &this )[16] &= 254; cast<byte*>( &this )[16] |= cast<byte>( value ) << 0; } }
+		public uint resolved_dir { get { return cast<byte*>( &this )[16] >> 1 & 7; } set { cast<byte*>( &this )[16] &= 241; cast<byte*>( &this )[16] |= ( cast<byte>( value ) & 14 ) << 1; } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoLogAttr {
+		public bool is_line_break { get { return ( cast<byte*>( &this )[0] & 1 ) != 0; } set { cast<byte*>( &this )[0] &= 254; cast<byte*>( &this )[0] |= cast<byte>( value ) << 0; } }
+		public bool is_mandatory_break { get { return ( cast<byte*>( &this )[0] & 2 ) != 0; } set { cast<byte*>( &this )[0] &= 253; cast<byte*>( &this )[0] |= cast<byte>( value ) << 1; } }
+		public bool is_char_break { get { return ( cast<byte*>( &this )[0] & 4 ) != 0; } set { cast<byte*>( &this )[0] &= 251; cast<byte*>( &this )[0] |= cast<byte>( value ) << 2; } }
+		public bool is_white { get { return ( cast<byte*>( &this )[0] & 8 ) != 0; } set { cast<byte*>( &this )[0] &= 247; cast<byte*>( &this )[0] |= cast<byte>( value ) << 3; } }
+		public bool is_cursor_position { get { return ( cast<byte*>( &this )[0] & 16 ) != 0; } set { cast<byte*>( &this )[0] &= 239; cast<byte*>( &this )[0] |= cast<byte>( value ) << 4; } }
+		public bool is_word_start { get { return ( cast<byte*>( &this )[0] & 32 ) != 0; } set { cast<byte*>( &this )[0] &= 223; cast<byte*>( &this )[0] |= cast<byte>( value ) << 5; } }
+		public bool is_word_end { get { return ( cast<byte*>( &this )[0] & 64 ) != 0; } set { cast<byte*>( &this )[0] &= 191; cast<byte*>( &this )[0] |= cast<byte>( value ) << 6; } }
+		public bool is_sentence_boundary { get { return ( cast<byte*>( &this )[0] & 128 ) != 0; } set { cast<byte*>( &this )[0] &= 127; cast<byte*>( &this )[0] |= cast<byte>( value ) << 7; } }
+		public bool is_sentence_start { get { return ( cast<byte*>( &this )[1] & 1 ) != 0; } set { cast<byte*>( &this )[1] &= 254; cast<byte*>( &this )[1] |= cast<byte>( value ) << 0; } }
+		public bool is_sentence_end { get { return ( cast<byte*>( &this )[1] & 2 ) != 0; } set { cast<byte*>( &this )[1] &= 253; cast<byte*>( &this )[1] |= cast<byte>( value ) << 1; } }
+		public bool backspace_deletes_character { get { return ( cast<byte*>( &this )[1] & 4 ) != 0; } set { cast<byte*>( &this )[1] &= 251; cast<byte*>( &this )[1] |= cast<byte>( value ) << 2; } }
+		public bool is_expandable_space { get { return ( cast<byte*>( &this )[1] & 8 ) != 0; } set { cast<byte*>( &this )[1] &= 247; cast<byte*>( &this )[1] |= cast<byte>( value ) << 3; } }
+		public bool is_word_boundary { get { return ( cast<byte*>( &this )[1] & 16 ) != 0; } set { cast<byte*>( &this )[1] &= 239; cast<byte*>( &this )[1] |= cast<byte>( value ) << 4; } }
+		public bool break_inserts_hyphen { get { return ( cast<byte*>( &this )[1] & 32 ) != 0; } set { cast<byte*>( &this )[1] &= 223; cast<byte*>( &this )[1] |= cast<byte>( value ) << 5; } }
+		public bool break_removes_preceding { get { return ( cast<byte*>( &this )[1] & 64 ) != 0; } set { cast<byte*>( &this )[1] &= 191; cast<byte*>( &this )[1] |= cast<byte>( value ) << 6; } }
+		public uint reserved { get { return cast<byte*>( &this )[1] >> 7 | cast<ushort>( cast<byte*>( &this )[2] ) << 1 | cast<uint>( cast<byte*>( &this )[3] ) << 9; } set { cast<byte*>( &this )[1] &= 127; cast<byte*>( &this )[1] |= ( cast<byte>( value ) & 128 ) << 7; cast<byte*>( &this )[2] = cast<byte>( value >> 1 ); cast<byte*>( &this )[3] = cast<byte>( value >> 9 ); } }
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct PangoMatrix {
+		[ExplicitOffset( Offset = 0 )]
+		public double xx;
+		[ExplicitOffset( Offset = 8 )]
+		public double xy;
+		[ExplicitOffset( Offset = 16 )]
+		public double yx;
+		[ExplicitOffset( Offset = 24 )]
+		public double yy;
+		[ExplicitOffset( Offset = 32 )]
+		public double x0;
+		[ExplicitOffset( Offset = 40 )]
+		public double y0;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoRectangle {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct PangoRenderer : GObject {
+		[ExplicitSize( Size = 124 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<PangoRenderer*, PangoFont*, PangoGlyphString*, int, int> _draw_glyphs;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<PangoRenderer*, PangoRenderPart, int, int, int, int> _draw_rectangle;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<PangoRenderer*, int, int, int, int> _draw_error_underline;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action<PangoRenderer*, PangoAttrShape*, int, int> _draw_shape;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action<PangoRenderer*, PangoRenderPart, double, double, double, double, double, double> _draw_trapezoid;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action<PangoRenderer*, PangoFont*, uint, double, double> _draw_glyph;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action<PangoRenderer*, PangoRenderPart> _part_changed;
+			[ExplicitOffset( Offset = 96 )]
+			public Functors.Action<PangoRenderer*> _begin;
+			[ExplicitOffset( Offset = 100 )]
+			public Functors.Action<PangoRenderer*> _end;
+			[ExplicitOffset( Offset = 104 )]
+			public Functors.Action<PangoRenderer*, PangoGlyphItem*> _prepare_run;
+			[ExplicitOffset( Offset = 108 )]
+			public Functors.Action<PangoRenderer*, sbyte*, PangoGlyphItem*, int, int> _draw_glyph_item;
+			[ExplicitOffset( Offset = 112 )]
+			public Functors.Action _pango_reserved2;
+			[ExplicitOffset( Offset = 116 )]
+			public Functors.Action _pango_reserved3;
+			[ExplicitOffset( Offset = 120 )]
+			public Functors.Action _pango_reserved4;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public PangoUnderline _underline;
+		[ExplicitOffset( Offset = 16 )]
+		public Boolean32 _strikethrough;
+		[ExplicitOffset( Offset = 20 )]
+		public int _active_count;
+		[ExplicitOffset( Offset = 24 )]
+		public PangoMatrix* _matrix;
+		[ExplicitOffset( Offset = 28 )]
+		public PangoRendererPrivate* _priv;
+	}
+	public partial struct PangoRendererPrivate {
+	}
+	public partial struct PangoScriptIter {
+	}
+	public partial struct PangoTabArray {
+	}
+}

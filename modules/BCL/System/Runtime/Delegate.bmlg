@@ -8,13 +8,14 @@ using System.Collections;
 using System.Reflection;
 
 namespace System.Runtime {
-	// Only weak reference count incremented for objects subscribed to event/delegate. All objects must be unsubscribed from delegate/event before it's destructor being called
+	// Only weak reference count incremented for objects subscribed to event/delegate. All objects must be unsubscribed from delegate/event before it's destructor get called
+	[RelaxedRelease]
 	public sealed partial class Delegate {
-		private int _itemCount;
+		private uint _itemCount;
 
-		private Delegate( DelegateType& type, int count ) {
+		private Delegate( DelegateType& type, uint count ) {
 			extra {
-				return sizeof( InvokationItem ) * ( uint ) count;
+				return sizeof( InvokationItem ) * count;
 			}
 			body {
 				NoVtable = true;
@@ -95,7 +96,7 @@ namespace System.Runtime {
 			var buffer = GetItems();
 			var buffer2 = other.GetItems();
 
-			for( var i = count - count2; i >= 0; --i ) {
+			for( var i = count - count2; i != uint.MaxValue; --i ) {
 				if( CommonCollectionOperations.Compare<InvokationItem>( buffer + i, buffer2, count2 ) ) {
 					if( count == count2 ) return null;
 
@@ -118,15 +119,15 @@ namespace System.Runtime {
 
 			var buffer = GetItems();
 
-			for( var i = _itemCount - 1; i >= 0; --i ) {
+			for( var i = _itemCount - 1; i != uint.MaxValue; --i ) {
 				if( buffer[i].Target == target && buffer[i].MethodAddress == methodAddress ) {
 					if( _itemCount == 1 ) return null;
 
 					var result = new Delegate( _type, _itemCount - 1 );
 					var newBuffer = result.GetItems();
 
-					Memory.Copy( newBuffer, buffer, ( uint ) i * sizeof( *newBuffer ) );
-					Memory.Copy( newBuffer + i, buffer + i + 1, ( uint )( _itemCount - 1 - i ) * sizeof( *newBuffer ) );
+					Memory.Copy( newBuffer, buffer, i * sizeof( *newBuffer ) );
+					Memory.Copy( newBuffer + i, buffer + i + 1, ( _itemCount - 1 - i ) * sizeof( *newBuffer ) );
 
 					result.TargetAddWeakReference();
 					return result;

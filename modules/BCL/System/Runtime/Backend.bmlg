@@ -11,13 +11,14 @@ using System.Runtime.InteropServices;
 namespace System.Runtime {
 	public static partial class Backend {
 		/// \return 'value' in power of 'power'
+		[BackendSymbolAttribute( Name = "__powidf2" )]
 		private static double powidf2( double value, int power ) {
 			var reciprocal = power < 0;
-			var r = 1.0;
+			var result = 1.0;
 
 			while( true ) {
 				if( ( power & 1 ) == 1 )
-					r *= value;
+					result *= value;
 
 				power /= 2;
 
@@ -27,7 +28,7 @@ namespace System.Runtime {
 				value *= value;
 			}
 
-			return reciprocal ? 1 / r : r;
+			return reciprocal ? 1 / result : result;
 		}
 
 		/// \return 'value' in power of 'power'
@@ -56,15 +57,15 @@ namespace System.Runtime {
 			var bits = bitcast<int>( value );
 			if( bits < 0 ) return 0;
 
-			var exponent = cast<int>( bits >> float.MantissaBits ) - float.ExponentBias; // masking of sign is unnecessary
+			var exponent = cast<int>( bits >> float.SignificandBits ) - float.ExponentBias; // masking of sign is unnecessary
 			if( exponent < 0 ) return 0;
 
-			var result = ( ulong )( ( bits & float.MantissaMask ) | ( float.MantissaMask + 1 ) );
+			var result = ( ulong )( ( bits & float.SignificandMask ) | ( float.SignificandMask + 1 ) );
 
-			if( exponent > float.MantissaBits )
-				result <<= exponent - float.MantissaBits;
+			if( exponent > float.SignificandBits )
+				result <<= exponent - float.SignificandBits;
 			else
-				result >>= float.MantissaBits - exponent;
+				result >>= float.SignificandBits - exponent;
 
 			return result;
 		}
@@ -75,17 +76,17 @@ namespace System.Runtime {
 			var bits = bitcast<long>( value );
 			if( bits < 0 ) return 0;
 
-			var exponent = ( int )( bits >> double.MantissaBits ) - double.ExponentBias; // masking of sign is unnecessary
+			var exponent = ( int )( bits >> double.SignificandBits ) - double.ExponentBias; // masking of sign is unnecessary
 			if( exponent < 0 ) return 0;
 
 			var result = ( ulong ) bits;
-			result &= double.MantissaMask;
-			result |= double.MantissaMask + 1;
+			result &= double.SignificandMask;
+			result |= double.SignificandMask + 1;
 
-			if( exponent > double.MantissaBits )
-				result <<= exponent - double.MantissaBits;
+			if( exponent > double.SignificandBits )
+				result <<= exponent - double.SignificandBits;
 			else
-				result >>= double.MantissaBits - exponent;
+				result >>= double.SignificandBits - exponent;
 
 			return result;
 		}
@@ -119,28 +120,6 @@ namespace System.Runtime {
 				overflow = abs_a > long.MinValue / -abs_b;
 
 			return result;
-		}
-
-
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.AreEqual( 64.0, powidf2( 4.0, 3 ) );
-			Assert.AreEqual( 64f, powisf2( 4f, 3 ) );
-
-			Assert.AreEqual( 1UL, fixunssfdi( 1f ) );
-			Assert.AreEqual( 1UL, fixunsdfdi( 1.0 ) );
-
-			Assert.AreEqual( 1UL, fixunssfdi( 1.5f ) );
-			Assert.AreEqual( 1UL, fixunsdfdi( 1.5 ) );
-
-			Assert.AreEqual( 1UL, fixunssfdi( 1.9f ) );
-			Assert.AreEqual( 1UL, fixunsdfdi( 1.9 ) );
-
-			Assert.AreEqual( 64UL, fixunssfdi( 64.999f ) );
-			Assert.AreEqual( 64UL, fixunsdfdi( 64.999 ) );
-
-			Assert.AreEqual( 0UL, fixunssfdi( -64.9999f ) );
-			Assert.AreEqual( 0UL, fixunsdfdi( -64.9999 ) );
 		}
 	}
 }

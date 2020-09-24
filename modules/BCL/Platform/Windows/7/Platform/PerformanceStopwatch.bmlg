@@ -1,0 +1,77 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Diagnostics;
+using System.Net;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+namespace Platform {
+	public partial struct PerformanceStopwatch : IFormattable {
+		private TimeStamp.BootTime_ExcludeSuspend _started;
+		private TimeDuration _accumulated;
+		private ulong Cycles, CyclesStarted;
+
+		public PerformanceStopwatch( bool start ) {
+			Reset();
+
+			if( start ) Start();
+		}
+
+		public PerformanceStopwatch()
+			: this( true ) {
+		}
+
+		public void Reset() {
+			_started = TimeStamp.BootTime_ExcludeSuspend.Now;
+			_accumulated = new TimeDuration( 0 );
+			Cycles = 0;
+		}
+
+		public void Restart() {
+			Reset();
+			Start();
+		}
+
+		public void Start() {
+			_started = TimeStamp.BootTime_ExcludeSuspend.Now;
+			Kernel32Api.QueryThreadCycleTime( ThreadHandle.CurrentThreadPseudoHandle, CyclesStarted );
+		}
+
+		public void Stop() {
+			if( _started.Ticks == 0 ) return;
+
+			_accumulated += ( TimeStamp.BootTime_ExcludeSuspend.Now - _started ).Duration();
+
+			ulong cycles;
+			Kernel32Api.QueryThreadCycleTime( ThreadHandle.CurrentThreadPseudoHandle, cycles );
+			Cycles += cycles - CyclesStarted;
+
+			_started = TimeStamp.BootTime_ExcludeSuspend.Zero;
+		}
+
+		public TimeDuration Elapsed {
+			get {
+				if( _started.Ticks == 0 ) return _accumulated;
+
+				return ( TimeStamp.BootTime_ExcludeSuspend.Now - _started ).Duration() + _accumulated;
+			}
+		}
+
+		public static thistype operator -( thistype left, thistype right ) {
+			return new thistype { Cycles = left.Cycles - right.Cycles, _accumulated = left._accumulated - right._accumulated, CyclesStarted = 0, _started = TimeStamp.BootTime_ExcludeSuspend.Zero };
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( "Elapsed: " );
+			builder.Append( _accumulated );
+			builder.Append( " Cycles: " );
+			builder.Append( Cycles );
+		}
+	}
+}

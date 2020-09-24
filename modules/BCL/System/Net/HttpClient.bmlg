@@ -39,7 +39,7 @@ namespace System.Net {
 		public bool SendHeaderCPU = true;
 		public string HeaderCPU = "AMD64";
 
-		private long _contentLength;
+		private ulong _contentLength;
 
 		private bool _isKeepAliveResponse = false;
 
@@ -69,8 +69,8 @@ namespace System.Net {
 					break;
 
 				case "content-length": {
-						if( !long.TryParse( value, _contentLength ) )
-							_contentLength = -1;
+						if( !ulong.TryParse( value, _contentLength ) )
+							_contentLength = 0;
 					} break;
 			}
 		}
@@ -86,7 +86,7 @@ namespace System.Net {
 
 		public byte[] DownloadData( string host, string path ) {
 			var stream = DownloadStream( host, path );
-			if( stream == null || _contentLength == -1 ) return null;
+			if( stream == null || _contentLength == 0 ) return null;
 
 			var result = new[( int ) _contentLength] byte;
 			stream.Read( result );
@@ -96,7 +96,7 @@ namespace System.Net {
 		public IStream DownloadStream( string host, string path ) {
 			FinalizePendingStreams();
 			RedirectedTo = null;
-			_contentLength = -1;
+			_contentLength = 0;
 
 			var redirectsRemaining = RedirectLimit;
 
@@ -156,13 +156,13 @@ namespace System.Net {
 			builder.AppendLine();
 
 			using( var headersBuffer = Memory.GetTemporary( builder.Length ) ) {
-				var headerSegment = new MemorySegment( headersBuffer.Location, ( uint ) headersBuffer.Length );
-				Encoding.GetBytes( Environment.DefaultCodePage, builder.GetChars(), ( uint ) builder.Length, ( byte* ) headersBuffer.Location, ( uint ) headersBuffer.Length );
+				var headerSegment = new MemorySegment( headersBuffer.Location, headersBuffer.Length );
+				Encoding.GetBytes( Environment.DefaultCodePage, builder.GetChars(), builder.Length, ( byte* ) headersBuffer.Location, headersBuffer.Length );
 				_stream.Write( headerSegment );
 			}
 
 			while( true ) {
-				int readen = _responseStreamBuffer->AvailableToRead;
+				var readen = _responseStreamBuffer->AvailableToRead;
 				_responseStream.Flush( FlushKind.Read );
 				readen = _responseStreamBuffer->AvailableToRead - readen;
 
@@ -193,7 +193,7 @@ namespace System.Net {
 						continue; // wait more data
 
 					case HttpResponseParser.ParsingResult.Finished: {
-							var bytesToTrim = ( int )( _parser._current - _responseStreamBuffer->ReadBufferStart );
+							var bytesToTrim = ( uint )( _parser._current - _responseStreamBuffer->ReadBufferStart );
 							_responseStreamBuffer->OnReadPerformed( bytesToTrim );
 							_parser._current = null;
 
@@ -204,7 +204,7 @@ namespace System.Net {
 								goto restart;
 							}
 
-							if( _contentLength == -1 ) {
+							if( _contentLength == 0 ) {
 								return _responseStream;
 							}
 

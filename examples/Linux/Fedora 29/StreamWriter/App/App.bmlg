@@ -49,13 +49,13 @@ namespace Example {
 			if( File.Exists( basePath + "Append.txt" ) )
 				File.Delete( basePath + "Append.txt" );
 
-			{ // mostly your code must follow 'using pattern' ( always use 'using' when you clearly see object lifetime region )
+			{
 				using( var file = File.OpenAppend( basePath + "Append.txt" ) )
 				using( var writer = new StreamWriter( file, TextEncodingKind.Utf8 ) )
 					writer.WriteLine( "lazy fox" );
 			}
 
-			{ // destructors also work as well (no cyclic references in this case).
+			{
 				var file = File.OpenAppend( basePath + "Append.txt" );
 				var writer = new StreamWriter( file, TextEncodingKind.Utf8 );
 

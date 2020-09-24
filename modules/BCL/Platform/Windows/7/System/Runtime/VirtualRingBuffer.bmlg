@@ -1,0 +1,78 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using Platform;
+
+namespace System.Runtime {
+	public abstract partial class VirtualRingBufferBase {
+		public bool _implCreate( uintptr capacity ) {
+			SYSTEM_INFO info;
+			Kernel32Api.GetSystemInfo( &info );
+
+			if( ( capacity & ( info.dwAllocationGranularity - 1 ) ) != 0 ) {
+				Console.WriteLine( "'capacity' must be multiple of {0}", info.dwAllocationGranularity );
+				return false;
+			}
+
+			Dispose();
+
+			ulong totalCapacity = capacity * 2UL;
+			FileMapping = Kernel32Api.CreateFileMapping( HANDLE.Invalid, nullref, FileMappingCreateFlags.PAGE_READWRITE, ( uint )( totalCapacity >> 32 ), ( uint ) totalCapacity, CString.Null );
+			if( FileMapping == HANDLE.Invalid ) {
+				// Console.WriteLine( "!CreateFileMapping: {0}", Kernel32Api.LastError );
+				return false;
+			}
+
+			for( byte retries = 0; retries < 1; ++retries ) {
+				var freeSpace = Kernel32Api.VirtualAlloc( null, capacity * 2, VirtualAllocFlags.MEM_RESERVE, PageProtectionFlags.PAGE_READWRITE );
+				if( freeSpace == null ) return false;
+				Kernel32Api.VirtualFree( freeSpace, 0, VirtualFreeType.MEM_RELEASE );
+
+				var half0 = Kernel32Api.MapViewOfFileEx( FileMapping, FileMappingAccessRights.FILE_MAP_ALL_ACCESS, 0, 0, capacity, freeSpace );
+				if( half0 != freeSpace ) {
+					if( half0 != null ) Kernel32Api.UnmapViewOfFile( half0 );
+					Console.WriteLine( "MapViewOfFileEx: {0}", Kernel32Api.LastError );
+					continue;
+				}
+
+				var expectedHalf1 = ( byte* ) freeSpace + capacity;
+				var half1 = Kernel32Api.MapViewOfFileEx( FileMapping, FileMappingAccessRights.FILE_MAP_ALL_ACCESS, 0, 0, capacity, expectedHalf1 );
+				if( half1 != ( void* ) expectedHalf1 ) {
+					Kernel32Api.UnmapViewOfFile( half0 );
+					Console.WriteLine( "MapViewOfFileEx: {0}", Kernel32Api.LastError );
+					continue;
+				}
+
+				Half0 = half0;
+				Capacity = capacity;
+				OnMapped();
+				return true;
+			}
+
+			return false;
+		}
+
+		public override void Dispose() {
+			if( Half0 != null ) {
+				Kernel32Api.UnmapViewOfFile( Half0 );
+				Kernel32Api.UnmapViewOfFile( Half1 );
+
+				Half0 = null;
+				Capacity = 0;
+			}
+
+			FileMapping.Close();
+
+			base.Dispose();
+		}
+
+		public FileMappingHandle FileMapping = FileMappingHandle.Invalid;
+	}
+}

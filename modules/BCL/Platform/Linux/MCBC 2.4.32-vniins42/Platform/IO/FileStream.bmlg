@@ -12,8 +12,8 @@ using Platform.Libc;
 
 namespace Platform.IO {
 	public class FileStream : IStream {
-		public TimeSpan WriteTimeout { get; set; }
-		public TimeSpan ReadTimeout { get; set; }
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
 
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
@@ -27,7 +27,7 @@ namespace Platform.IO {
 			set { Close(); _handle = value; }
 		}
 
-		public bool CloseHandle = true;
+		public bool CloseHandle { get; set; } = true;
 		public string Context;
 
 		public FileStream() { }
@@ -44,15 +44,15 @@ namespace Platform.IO {
 		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
 		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
 
-		public int Read( void* buffer, int length ) {
+		public uint Read( void* buffer, uint length ) {
 			if( !_handle.IsValid || length == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0U;
 			for( ; length > 0; ) {
 			restart_Read:
-				var error = _handle.Read( ReadTimeout, data, length, transmitted );
+				var error = _handle.Read( ReadTimeout, transmitted, data, length );
 				if( error != SystemError.None ) {
 					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Read;
 					break;
@@ -64,14 +64,14 @@ namespace Platform.IO {
 				length -= transmitted;
 			}
 
-			return ( int )( data - ( byte* ) buffer );
+			return ( uint )( data - ( byte* ) buffer );
 		}
 
-		public int Read( vararg MemorySegment segments ) {
+		public uint Read( vararg MemorySegment segments ) {
 			if( !_handle.IsValid || segments.Length == 0 ) return 0;
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
 
-			int totalReaden;
+			uint totalReaden;
 		restart_Read:
 			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
@@ -82,27 +82,33 @@ namespace Platform.IO {
 			return totalReaden;
 		}
 
-		public void Write( void* buffer, int length ) {
-			if( !_handle.IsValid || length == 0 || buffer == null ) return;
+		public uint Write( void* buffer, uint length ) {
+			if( !_handle.IsValid || length == 0 || buffer == null ) return 0;
 
+			uint totalWritten;
 		restart_Write:
-			var error = _handle.Write( WriteTimeout, buffer, length );
+			var error = _handle.Write( WriteTimeout, totalWritten, buffer, length );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
-				return;
+				return 0;
 			}
+
+			return totalWritten;
 		}
 
-		public void Write( vararg MemorySegment segments ) {
-			if( !_handle.IsValid || segments.Length == 0 ) return;
+		public uint Write( vararg MemorySegment segments ) {
+			if( !_handle.IsValid || segments.Length == 0 ) return 0;
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
 
+			uint totalWritten = 0;
 		restart_Write:
-			var error = _handle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Write( WriteTimeout, totalWritten, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Write;
-				return;
+				return 0;
 			}
+
+			return totalWritten;
 		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
@@ -116,10 +122,10 @@ namespace Platform.IO {
 			}
 		}
 
-		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); result.OpenRead( name ); return result; }
-		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenWrite( name, permission ); return result; }
-		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenReadWrite( name, permission ); return result; }
-		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) { var result = new FileStream(); result.OpenAppend( name, permission ); return result; }
+		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); if( !result.OpenRead( name ) ) return null; return result; }
+		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) { var result = new FileStream(); if( !result.OpenWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) { var result = new FileStream(); if( !result.OpenReadWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true ) { var result = new FileStream(); if( !result.OpenAppend( name, permission, createNew ) ) return null; return result; }
 
 		public bool OpenRead( CUtf8String name ) {
 			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
@@ -129,7 +135,7 @@ namespace Platform.IO {
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_RDONLY, 0 );
+			var error = IOHandle.Open( handle, name, FileOpenFlags.O_RDONLY, 0 );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -139,33 +145,17 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
 			var exists = FileHandle.Exists( name );
 
 			Context = ( string ) name;
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_TRUNC, permission );
-			if( error != SystemError.None ) {
-				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
-				return false;
-			}
-
-			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
-
-			_handle = bitcast<FileHandle>( handle );
-			return true;
-		}
-
-		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
-			var exists = FileHandle.Exists( name );
-
-			Context = ( string ) name;
-
-			IOHandle handle;
-		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_RDWR | FctlFlags.O_TRUNC, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_WRONLY | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -177,14 +167,39 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public bool OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110 ) {
+		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
 			var exists = FileHandle.Exists( name );
 
 			Context = ( string ) name;
 
 			IOHandle handle;
 		restart_Open:
-			var error = IOHandle.Open( handle, name, FctlFlags.O_CREAT | FctlFlags.O_WRONLY | FctlFlags.O_APPEND, permission );
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_RDWR | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenAppend( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_WRONLY | FileOpenFlags.O_APPEND, permission );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
 				return false;
@@ -248,17 +263,17 @@ namespace Platform.IO {
 			}
 		}
 
-		public MemoryMappedView CreateReadView( intptr offset, intptr length ) {
+		public MemoryMappedView CreateReadView( uintptr offset, uintptr length ) {
 			if( length <= 0 ) return null;
 
 			var pagesize = System.Runtime.Memory.DefaultPageSize;
 
-			var fileLength = ( intptr ) length;
+			var fileLength = length;
 			var mappingLength = ( uint ) fileLength;
 			mappingLength += pagesize - 1; mappingLength &= ~( pagesize - 1 );
 
 			var mapFlags = MemoryMapFlags.MAP_FILE | MemoryMapFlags.MAP_PRIVATE;
-			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ, mapFlags, _handle, offset );
+			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ, mapFlags, _handle, ( intptr ) offset );
 
 			if( ( intptr ) mmapResult < 0 ) {
 				var lastError = LibcApi.LastError;
@@ -272,17 +287,17 @@ namespace Platform.IO {
 			};
 		}
 
-		public MemoryMappedView CreateWriteView( intptr offset, intptr length ) {
+		public MemoryMappedView CreateWriteView( uintptr offset, uintptr length ) {
 			if( length <= 0 ) return null;
 
 			var pagesize = System.Runtime.Memory.DefaultPageSize;
 
-			var fileLength = ( intptr ) length;
+			var fileLength = length;
 			var mappingLength = ( uint ) fileLength;
 			mappingLength += pagesize - 1; mappingLength &= ~( pagesize - 1 );
 
 			var mapFlags = MemoryMapFlags.MAP_FILE | MemoryMapFlags.MAP_SHARED;
-			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ | MemoryMapProtection.PROT_WRITE, mapFlags, _handle, offset );
+			var mmapResult = LibcApi.mmap( null, mappingLength, MemoryMapProtection.PROT_READ | MemoryMapProtection.PROT_WRITE, mapFlags, _handle, ( intptr ) offset );
 
 			if( ( intptr ) mmapResult < 0 ) {
 				var lastError = LibcApi.LastError;
@@ -291,7 +306,7 @@ namespace Platform.IO {
 			}
 
 			var position = Seek( 0, SeekOrigin.Current );
-			Seek( offset + length - 1, SeekOrigin.Begin );
+			Seek( ( long )( offset + length - 1 ), SeekOrigin.Begin );
 			Write( Utf8String.Empty.GetChars(), 1 );
 			Seek( position, SeekOrigin.Begin );
 

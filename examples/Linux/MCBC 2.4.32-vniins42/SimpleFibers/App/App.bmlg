@@ -4,7 +4,6 @@
 
 using System;
 using System.IO;
-using System.Runtime;
 
 using Platform.IO;
 using Platform.Libc;
@@ -26,7 +25,7 @@ namespace Example {
 
 			_eventLoop.CatchExitSignals();
 
-			_eventLoop.BeginInvoke( Worker ); // dont create fibers until event loop started
+			_eventLoop.EnqueueInvoke( Worker ); // dont create fibers until event loop started
 
 			_eventLoop.Dispatch(); // wait until RequestExit
 		}

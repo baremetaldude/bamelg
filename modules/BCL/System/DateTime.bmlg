@@ -9,12 +9,11 @@ using System.Diagnostics;
 namespace System {
 	public enum DateTimeKind {
 		Unspecified,
-		Utc,      // UTC
-		Local,    // UTC+TZ
-		Unbiased, // aka monotonic on Linux/FreeBSD
+		Utc,   // UTC
+		Local, // UTC [+ TimeZone offset [+ DST]]
 	}
 
-	public enum DayOfWeek {
+	public enum DayOfWeek : byte {
 		Monday,
 		Tuesday,
 		Wednesday,
@@ -25,31 +24,27 @@ namespace System {
 	}
 
 	public sealed partial struct DateTime {
-		private const long MaxTicks = 0x2BCA2875F4373FFFL;
+		internal const long MaxTicks = 0x2BCA2875F4373FFFL;
 
-		public static readonly DateTime MinValue = new DateTime( 0, DateTimeKind.Utc );
-		public static readonly DateTime MaxValue = new DateTime( MaxTicks, DateTimeKind.Utc );
+		public static readonly DateTime MinValueUnspecified = new DateTime { _data = ( ulong ) DateTimeKind.Unspecified << 62 };
+		public static readonly DateTime MaxValueUnspecified = new DateTime { _data = MaxTicks | ( ulong ) DateTimeKind.Unspecified << 62 };
 
-		public static readonly DateTime MinValueLocal = new DateTime( 0, DateTimeKind.Local );
-		public static readonly DateTime MaxValueLocal = new DateTime( MaxTicks, DateTimeKind.Local );
+		public static readonly DateTime MinValue = new DateTime { _data = ( ulong ) DateTimeKind.Utc << 62 };
+		public static readonly DateTime MaxValue = new DateTime { _data = MaxTicks | ( ulong ) DateTimeKind.Utc << 62 };
 
-		public static readonly DateTime MinValueUnbiased = new DateTime( 0, DateTimeKind.Unbiased );
-		public static readonly DateTime MaxValueUnbiased = new DateTime( MaxTicks, DateTimeKind.Unbiased );
+		public static readonly DateTime MinValueLocal = new DateTime { _data = ( ulong ) DateTimeKind.Local << 62 };
+		public static readonly DateTime MaxValueLocal = new DateTime { _data = MaxTicks | ( ulong ) DateTimeKind.Local << 62 };
 
 		private ulong _data;
-		private static int[13] DaysInMonth365 = new int[13] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
-		private static int[13] DaysInMonth366 = new int[13] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
 
 		public DateTime( long ticks ) {
-			if( !Assert.IsFalse( ticks < 0L || ticks > MaxTicks ) )
-				ticks = 0;
+			if( !Assert.IsTrue( ( ulong ) ticks <= MaxTicks ) ) ticks = 0;
 
 			_data = ( ulong ) ticks;
 		}
 
 		public DateTime( long ticks, DateTimeKind kind ) {
-			if( !Assert.IsFalse( ticks < 0L ) ) ticks = 0;
-			if( !Assert.IsFalse( ticks > MaxTicks ) ) ticks = 0;
+			if( !Assert.IsTrue( ( ulong ) ticks <= MaxTicks ) ) ticks = 0;
 
 			_data = ( ulong )( ticks | ( ( ( long ) kind ) << 62 ) );
 		}
@@ -117,7 +112,7 @@ namespace System {
 			if( !Assert.IsTrue( year >= 1 && year <= 9999 && month >= 1 && month <= 12 ) )
 				return 0;
 
-			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+			var& daysInMonth = IsLeapYear( year ) ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
 
 			if( !Assert.IsTrue( day >= 1 && day <= daysInMonth[month] - daysInMonth[month - 1], "Bad combination of year/month/day" ) )
 				return 0;
@@ -164,7 +159,7 @@ namespace System {
 			dayOfYear = totalDays + 1;
 
 			var isLeapYear = totalYears == 3 && ( _4years != 24 || _100years == 3 );
-			var& daysInMonth = isLeapYear ? DaysInMonth366 : DaysInMonth365;
+			var& daysInMonth = isLeapYear ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
 
 			var index = totalDays >> 5 + 1;
 			while( totalDays >= daysInMonth[index] )
@@ -232,13 +227,19 @@ namespace System {
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private static void EnsureSameKind( [In] DateTime& left, [In] DateTime& right ) {
-			Debug.Assert( left.Kind == right.Kind, string.Format( "left.Kind={0} right.Kind={1}", left.Kind, right.Kind ) );
+			Debug.Assert( left.Kind == right.Kind );
 		}
+
+		public static TimeSpan operator %( DateTime t1, TimeSpan t2 ) { return new TimeSpan( t1.Ticks % t2.Ticks ); }
+		public static TimeDuration operator %( DateTime t1, TimeDuration t2 ) { return new TimeDuration( ( ulong ) t1.Ticks % t2.Ticks ); }
 
 		public static TimeSpan operator -( [In] DateTime& left, [In] DateTime& right ) { EnsureSameKind( left, right ); return new TimeSpan( left.Ticks - right.Ticks ); }
 
 		public static DateTime operator +( [In] DateTime& left, [In] TimeSpan& right ) { return new DateTime( left.Ticks + right.Ticks, left.Kind ); }
 		public static DateTime operator -( [In] DateTime& left, [In] TimeSpan& right ) { return new DateTime( left.Ticks - right.Ticks, left.Kind ); }
+
+		public static DateTime operator +( [In] DateTime& left, [In] TimeDuration& right ) { return new DateTime( left.Ticks + ( long ) right.Ticks, left.Kind ); }
+		public static DateTime operator -( [In] DateTime& left, [In] TimeDuration& right ) { return new DateTime( left.Ticks - ( long ) right.Ticks, left.Kind ); }
 
 		public static bool operator ==( [In] DateTime& left, [In] DateTime& right ) { EnsureSameKind( left, right ); return left.Ticks == right.Ticks; }
 		public static bool operator !=( [In] DateTime& left, [In] DateTime& right ) { EnsureSameKind( left, right ); return left.Ticks != right.Ticks; }
@@ -252,18 +253,17 @@ namespace System {
 		public static int DaysInMonth( int year, int month ) {
 			if( !Assert.IsTrue( month >= 1 && month <= 12 ) ) return 0;
 
-			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+			var& daysInMonth = IsLeapYear( year ) ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
 			return daysInMonth[month] - daysInMonth[month - 1];
 		}
 
 		public static DateTime GetLastDayOfMonth( int year, int month ) {
 			if( !Assert.IsTrue( year >= 1 && year <= 9999 && month >= 1 && month <= 12 ) ) return DateTime.MinValue;
 
-			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
-			var day = daysInMonth[month] - daysInMonth[month - 1];
+			var dayOfYear = IsLeapYear( year ) ? PrimitiveTypesParser.TotalDaysInMonth366[month] : PrimitiveTypesParser.TotalDaysInMonth365[month];
 
 			--year;
-			int totalDays = year * 365 + year / 4 - year / 100 + year / 400 + daysInMonth[month - 1] + day - 1;
+			int totalDays = year * 365 + year / 4 - year / 100 + year / 400 + dayOfYear - 1;
 			return new DateTime( totalDays * ( 10L * 1000 * 1000 * 60 * 60 * 24 ) );
 		}
 
@@ -334,6 +334,16 @@ namespace System {
 			return result;
 		}
 
+		public DateTime Ceil( TimeDuration interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+			if( remainder.Ticks != 0 ) result += interval;
+
+			return result;
+		}
+
 		// this='12:33:01' interval='00:00:05' ==> '12:33:00'
 		public DateTime Floor( TimeSpan interval ) {
 			var result = this;
@@ -344,20 +354,29 @@ namespace System {
 			return result;
 		}
 
-		private static TextParsingStatus TryParse<TElement>( TElement* parsePosition, uint remaining, thistype& parsedResult ) {
+		public DateTime Floor( TimeDuration interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+
+			return result;
+		}
+
+		private static Convert.ConversionResult TryParse<TElement>( TElement* parsePosition, uint remaining, thistype& parsedResult ) {
 			parsedResult = default( thistype );
 
 			uint[7] values;
 			int year, month, day;
 
-			if( !uint.TryFetch( parsePosition, remaining, values[0] ) || remaining == 0 ) return TextParsingStatus.Format;
-			if( --remaining == 0 ) return TextParsingStatus.Format;
+			if( !uint.TryFetch( parsePosition, remaining, values[0] ) || remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+			if( --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 			switch( *parsePosition++ ) {
 				case '-': // 2012-01-05
-					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( *parsePosition++ != '-' || --remaining == 0 ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+					if( *parsePosition++ != '-' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return Convert.ConversionResult.IncompatibleValue;
 
 					year = ( int ) values[0];
 					month = ( int ) values[1];
@@ -366,10 +385,10 @@ namespace System {
 					break;
 
 				case '.': // 05.01.2012
-					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+					if( *parsePosition++ != '.' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return Convert.ConversionResult.IncompatibleValue;
 
 					year = ( int ) values[2];
 					month = ( int ) values[1];
@@ -378,10 +397,10 @@ namespace System {
 					break;
 
 				case '/': // 01/05/2012
-					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( *parsePosition++ != '/' || --remaining == 0 ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+					if( *parsePosition++ != '/' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return Convert.ConversionResult.IncompatibleValue;
 
 					year = ( int ) values[2];
 					month = ( int ) values[0];
@@ -390,59 +409,67 @@ namespace System {
 					break;
 
 				default:
-					return TextParsingStatus.Format;
+					return Convert.ConversionResult.IncompatibleValue;
 			}
 
 
-			if( !IsDateValid( year, month, day ) ) return TextParsingStatus.Format;
+			if( !IsDateValid( year, month, day ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			if( remaining == 0 ) { // date only '2011-01-02'
 				parsedResult = new DateTime( year, month, day );
-				parsedResult.Kind = DateTimeKind.Utc;
-				return TextParsingStatus.OK;
+				// parsedResult.Kind = DateTimeKind.Unspecified;
+				return Convert.ConversionResult.OK;
 			}
 
-			if( !uint.TryFetch( parsePosition, remaining, values[3] ) || remaining == 0 ) return TextParsingStatus.Format;
-			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
+			if( !uint.TryFetch( parsePosition, remaining, values[3] ) || remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+			if( *parsePosition++ != ':' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 
-			if( !uint.TryFetch( parsePosition, remaining, values[4] ) || remaining == 0 ) return TextParsingStatus.Format;
-			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
+			if( !uint.TryFetch( parsePosition, remaining, values[4] ) ) return Convert.ConversionResult.IncompatibleValue;
 
-			if( !uint.TryFetch( parsePosition, remaining, values[5] ) ) return TextParsingStatus.Format;
-			if( !IsTimeValid( ( int ) values[3], ( int ) values[4], ( int ) values[5] ) ) return TextParsingStatus.Format;
+			if( !IsTimeValid( ( int ) values[3], ( int ) values[4], 0 ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02'
+				parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], 0 );
+				// parsedResult.Kind = DateTimeKind.Unspecified;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( *parsePosition++ != ':' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
+
+			if( !uint.TryFetch( parsePosition, remaining, values[5] ) ) return Convert.ConversionResult.IncompatibleValue;
+			if( !IsTimeValid( ( int ) values[3], ( int ) values[4], ( int ) values[5] ) ) return Convert.ConversionResult.IncompatibleValue;
 
 			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03'
 				parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], ( int ) values[5] );
-				parsedResult.Kind = DateTimeKind.Utc;
-				return TextParsingStatus.OK;
+				// parsedResult.Kind = DateTimeKind.Unspecified;
+				return Convert.ConversionResult.OK;
 			}
 
-			if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
+			if( *parsePosition++ != '.' || --remaining == 0 ) return Convert.ConversionResult.IncompatibleValue;
 			var remainingDigits = remaining;
 			parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], ( int ) values[5] );
-			parsedResult.Kind = DateTimeKind.Utc;
+			// parsedResult.Kind = DateTimeKind.Unspecified;
 
-			if( !uint.TryFetch( parsePosition, remaining, values[6], false, false ) ) return TextParsingStatus.Format;
+			if( !uint.TryFetch( parsePosition, remaining, values[6], false, false ) ) return Convert.ConversionResult.IncompatibleValue;
 			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03.1234'
 				switch( remainingDigits ) {
-					case 1: parsedResult = new DateTime( parsedResult.Ticks + 1000000 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 2: parsedResult = new DateTime( parsedResult.Ticks + 100000 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 3: parsedResult = new DateTime( parsedResult.Ticks + 10000 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 4: parsedResult = new DateTime( parsedResult.Ticks + 1000 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 5: parsedResult = new DateTime( parsedResult.Ticks + 100 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 6: parsedResult = new DateTime( parsedResult.Ticks + 10 * values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
-					case 7: parsedResult = new DateTime( parsedResult.Ticks + values[6] ); parsedResult.Kind = DateTimeKind.Utc; return TextParsingStatus.OK;
+					case 1: parsedResult = new DateTime( parsedResult.Ticks + 1000000 * values[6] ); return Convert.ConversionResult.OK;
+					case 2: parsedResult = new DateTime( parsedResult.Ticks + 100000 * values[6] ); return Convert.ConversionResult.OK;
+					case 3: parsedResult = new DateTime( parsedResult.Ticks + 10000 * values[6] ); return Convert.ConversionResult.OK;
+					case 4: parsedResult = new DateTime( parsedResult.Ticks + 1000 * values[6] ); return Convert.ConversionResult.OK;
+					case 5: parsedResult = new DateTime( parsedResult.Ticks + 100 * values[6] ); return Convert.ConversionResult.OK;
+					case 6: parsedResult = new DateTime( parsedResult.Ticks + 10 * values[6] ); return Convert.ConversionResult.OK;
+					case 7: parsedResult = new DateTime( parsedResult.Ticks + values[6] ); return Convert.ConversionResult.OK;
 				}
 			}
 
-			return TextParsingStatus.Format;
+			return Convert.ConversionResult.IncompatibleValue;
 		}
 
 		public static bool IsDateValid( int year, int month, int day ) {
 			if( ( uint ) year > 9999U ) return false;
 			if( ( uint ) month - 1 > 11U ) return false;
 
-			var& daysInMonth = IsLeapYear( ( int ) year ) ? DaysInMonth366 : DaysInMonth365;
+			var& daysInMonth = IsLeapYear( ( int ) year ) ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
 			return day >= 1 && day <= daysInMonth[month] - daysInMonth[month - 1];
 		}
 
@@ -450,40 +477,40 @@ namespace System {
 			return ( uint ) hours < 24U && ( uint ) minutes < 60U && ( uint ) seconds < 60U;
 		}
 
-		public long ToUnixSeconds() { return ( Ticks - 621355968000000000 ) / 10000000; }
-		public long ToUnixMilliseconds() { return ( Ticks - 621355968000000000 ) / 10000; }
+		public long ToUnixTimeSeconds() { return ( long )( Ticks / TimeSpan.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeSpan.TicksPerSecond ); }
+		public long ToUnixTimeMilliseconds() { return ( long )( Ticks / TimeSpan.TicksPerMillisecond - TimeSpan.Ticks_1970_1_1 / TimeSpan.TicksPerMillisecond ); }
 
 		public double ToUnixSecondsFractional() { return ( Ticks - 621355968000000000 ) / 10000000.0; }
 		public double ToUnixMillisecondsFractional() { return ( Ticks - 621355968000000000 ) / 10000.0; }
 
-		public static thistype Parse( CString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
 
-		public static thistype Parse( CStringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf8StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf16StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf32StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CStringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf8StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf16StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( CUtf32StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
 
-		public static thistype Parse( SbcsString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( SbcsString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( Utf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( Utf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
+		public static thistype Parse( Utf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status ); return result; }
 
-		public static TextParsingStatus TryParse( CString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( CUtf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
 
-		public static TextParsingStatus TryParse( CStringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CStringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
 
-		public static TextParsingStatus TryParse( SbcsString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( Utf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( Utf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( Utf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( SbcsString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( Utf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
 	}
 }

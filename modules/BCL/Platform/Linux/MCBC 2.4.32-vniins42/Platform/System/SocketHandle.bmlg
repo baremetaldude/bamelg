@@ -14,7 +14,7 @@ namespace Platform.Kernel {
 	public struct SocketHandle : IOHandleNonBlocking, IFormattable {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public SystemError Listen( int backlog ) {
+		public SystemError Listen( uint backlog ) {
 			if( LibcApi.listen( this, backlog ) != 0 ) return LibcApi.LastError;
 			return SystemError.None;
 		}
@@ -24,47 +24,51 @@ namespace Platform.Kernel {
 			return SystemError.None;
 		}
 
-		public SystemError RawPeek( void* buffer, int bufferLength, int& transmitted ) {
+		public SystemError RawPeek( void* buffer, uint bufferLength, uint& transmitted ) {
 			transmitted = 0;
-			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
+			if( !Assert.IsTrue( buffer != null && bufferLength != 0 ) ) return SystemError.None;
 
 			var readen = LibcApi.recv( this, ( byte* ) buffer + transmitted, bufferLength, MessageFlags.MSG_PEEK );
 			if( readen < 0 ) return LibcApi.LastError;
 
-			transmitted += readen;
+			transmitted += ( uint ) readen;
 			return SystemError.None;
 		}
 
-		public SystemError Send( vararg iovec data ) { return WriteNonBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
+		public SystemError Send( uint& totalTransmitted, vararg iovec data ) {
+			return WriteNonBlocking( TimeDuration.Zero, totalTransmitted, vararg( data, data.Length ) );
+		}
 
 		// All bytes will be sent or error returned
-		public SystemError Send( void* buffer, int count ) { return WriteNonBlocking( TimeSpan.Zero, buffer, count ); }
+		public SystemError Send( uint& totalTransmitted, void* buffer, uint count ) {
+			return WriteNonBlocking( TimeDuration.Zero, totalTransmitted, buffer, count );
+		}
 
-		public SystemError Receive( int& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeSpan.Zero, totalReceived, vararg( data, data.Length ) ); }
+		public SystemError Receive( uint& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeDuration.Zero, totalReceived, vararg( data, data.Length ) ); }
 
 		// Less than 'count' bytes can be received
-		public SystemError Receive( void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+		public SystemError Receive( uint& totalReceived, void* buffer, uint count ) { return ReadNonBlocking( TimeDuration.Zero, totalReceived, buffer, count ); }
 
-		public TimeSpan ReadTimeout {
+		public TimeDuration ReadTimeout {
 			get {
 				var result = default( timeval );
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVTIMEO, &result, sizeof( result ) ) );
-				return ( TimeSpan ) result;
+				return ( TimeDuration ) result;
 			}
 			set {
-				var timeout = new timeval( value );
+				var timeout = ( timeval ) value;
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVTIMEO, &timeout, sizeof( timeout ) ) );
 			}
 		}
 
-		public TimeSpan WriteTimeout {
+		public TimeDuration WriteTimeout {
 			get {
 				var result = default( timeval );
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDTIMEO, &result, sizeof( result ) ) );
-				return ( TimeSpan ) result;
+				return ( TimeDuration ) result;
 			}
 			set {
-				var timeout = new timeval( value );
+				var timeout = ( timeval ) value;
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDTIMEO, &timeout, sizeof( timeout ) ) );
 			}
 		}
@@ -145,20 +149,20 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public int SendBufferSize {
+		public uint SendBufferSize {
 			get {
 				int result = 0;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUF, &result, sizeof( result ) ) );
-				return result;
+				return ( uint ) result;
 			}
 			set {
 				LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_SNDBUF, &value, sizeof( value ) ) );
 			}
 		}
 
-		public int ReceiveBufferSize {
+		public uint ReceiveBufferSize {
 			get {
-				int result = 0;
+				uint result = 0;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVBUF, &result, sizeof( result ) ) );
 				return result;
 			}
@@ -201,10 +205,19 @@ namespace Platform.Kernel {
 		protected new void DumpRelevantData( StringBuilder builder ) {
 			base.DumpRelevantData( builder );
 
-			builder.AppendFormat( " Listen={0} sndbuf={1} rcvbuf={2} timestamp={3} donroute={4} debugged={5} broadcast={6} reuse={7} ReadTimeout={8} WriteTimeout={9}", IsListening, SendBufferSize, ReceiveBufferSize, IsTimpestampEnabled, IsRouteDisabled, IsDebugged, IsBroadcast, ReuseAddress, ReadTimeout, WriteTimeout );
+			builder.Append( " IsListening=" ); builder.Append( IsListening );
+			builder.Append( " SendBufferSize=" ); builder.Append( SendBufferSize );
+			builder.Append( " ReceiveBufferSize=" ); builder.Append( ReceiveBufferSize );
+			builder.Append( " IsTimpestampEnabled=" ); builder.Append( IsTimpestampEnabled );
+			builder.Append( " IsRouteDisabled=" ); builder.Append( IsRouteDisabled );
+			builder.Append( " IsDebugged=" ); builder.Append( IsDebugged );
+			builder.Append( " IsBroadcast=" ); builder.Append( IsBroadcast );
+			builder.Append( " ReuseAddress=" ); builder.Append( ReuseAddress );
+			builder.Append( " ReadTimeout=" ); builder.Append( ReadTimeout );
+			builder.Append( " WriteTimeout=" ); builder.Append( WriteTimeout );
 		}
 
-		protected SystemError ConnectNonBlocking( TimeSpan timeout, sockaddr* address, int addressLength ) {
+		protected SystemError ConnectNonBlocking( TimeDuration timeout, sockaddr* address, int addressLength ) {
 			if( Fiber.IsFiberExecuting )
 				return Fiber.FiberManager.ConnectNonBlocking( timeout, this, address, addressLength );
 			else {

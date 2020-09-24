@@ -14,22 +14,22 @@ namespace System.IO {
 		public StreamingBufferInfo* BufferInfo { get { return null; } }
 		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read; } }
 
-		int IStream.Read( void* buffer, int length ) { return 0; }
-		void IStream.Write( void* buffer, int length ) { }
+		uint IStream.Read( void* buffer, uint length ) { return 0; }
+		uint IStream.Write( void* buffer, uint length ) { return 0; }
 
-		int IStream.Read( vararg MemorySegment segments ) { return 0; }
-		void IStream.Write( vararg MemorySegment segments ) { }
+		uint IStream.Read( vararg MemorySegment segments ) { return 0; }
+		uint IStream.Write( vararg MemorySegment segments ) { return 0; }
 
 		void IStream.Flush( FlushKind flushKind = FlushKind.DeepWrite ) { }
 		void IDisposable.Dispose() { }
 
-		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

@@ -7,14 +7,14 @@
 namespace System.Collections {
 	public class Stack<T> {
 		private T[] _items;
-		private int _count;
+		private uint _count;
 		private uint _version;
 
 		public Stack() {
 			_items = new[16] T;
 		}
 
-		public Stack( int capacity ) {
+		public Stack( uint capacity ) {
 			if( !Assert.IsFalse( capacity < 0 ) )
 				capacity = 3;
 
@@ -28,8 +28,9 @@ namespace System.Collections {
 			CommonCollectionOperations.UpdateVersion( &_version );
 		}
 
+		/// O(N)
 		public bool Contains( T value ) {
-			for( var i = 0; i < _count; ++i )
+			for( var i = 0U; i < _count; ++i )
 				if( _items[i] == value )
 					return true;
 			return false;
@@ -65,7 +66,7 @@ namespace System.Collections {
 
 		public T[] ToArray() {
 			var result = new[_count] T;
-			for( var i = 0; i < _count; ++i )
+			for( var i = 0U; i < _count; ++i )
 				result[i] = _items[_count - i - 1];
 
 			return result;
@@ -78,11 +79,16 @@ namespace System.Collections {
 		}
 
 		public T this[int index] {
-			get { return _items[_count - index - 1]; }
-			set { _items[_count - index - 1] = value; }
+			get { System.Diagnostics.Debug.Assert( ( uint ) index < _count ); return _items[_count - index - 1]; }
+			set { System.Diagnostics.Debug.Assert( ( uint ) index < _count ); _items[_count - index - 1] = value; }
 		}
 
-		public int Count {
+		public T this[uint index] {
+			get { System.Diagnostics.Debug.Assert( index < _count ); return _items[_count - index - 1]; }
+			set { System.Diagnostics.Debug.Assert( index < _count ); _items[_count - index - 1] = value; }
+		}
+
+		public uint Count {
 			get {
 				return _count;
 			}
@@ -95,14 +101,14 @@ namespace System.Collections {
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private declaringtype _parent;
-			private int _index;
+			private uint _index;
 			private uint _version;
 			private T _current;
 
 			internal Enumerator( declaringtype stack ) {
 				_parent = stack;
 				_version = _parent._version;
-				_index = -2;
+				_index = uint.MaxValue - 1;
 				_current = default( T );
 			}
 
@@ -110,9 +116,9 @@ namespace System.Collections {
 				bool result;
 				CommonCollectionOperations.VersionCheck( _parent._version == _version );
 
-				if( _index == -2 ) {
+				if( _index == uint.MaxValue - 1 ) {
 					_index = _parent._count - 1;
-					result = _index >= 0;
+					result = _index != uint.MaxValue;
 
 					if( result )
 						_current = _parent._items[_index];
@@ -120,10 +126,10 @@ namespace System.Collections {
 					return result;
 				}
 
-				if( _index == -1 )
+				if( _index == uint.MaxValue )
 					return false;
 
-				result = --_index >= 0;
+				result = --_index != uint.MaxValue;
 				if( result ) {
 					_current = _parent._items[_index];
 					return result;
@@ -133,22 +139,24 @@ namespace System.Collections {
 				return result;
 			}
 
+			[Conditional( ConditionString = "DEBUG" )]
+			private void EnsureEnumeratorValid() {
+				if( _index == uint.MaxValue - 1 ) {
+					System.Diagnostics.Debug.Fail( "Enumeration not started!" );
+				}
+
+				if( _index == uint.MaxValue ) {
+					System.Diagnostics.Debug.Fail( "Enumeration finished!" );
+				}
+			}
+
 			public T Current {
 				get {
-					if( _index == -2 ) {
-						Assert.Fail( "Enumeration not started!" );
-						return default( T );
-					}
-
-					if( _index == -1 ) {
-						Assert.Fail( "Enumeration finished!" );
-						return default( T );
-					}
+					EnsureEnumeratorValid();
 
 					return _current;
 				}
 			}
 		}
-
 	}
 }

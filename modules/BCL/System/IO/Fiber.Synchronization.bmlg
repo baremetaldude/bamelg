@@ -76,6 +76,35 @@ namespace System.IO {
 					OnCancelled();
 			}
 
+			// \return true if lock acquired
+			// \return false if timed out
+			public bool TryLock( TimeDuration time ) {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				if( ++_lockCount == 1 ) return true;
+
+				currentFiber->WaitNext = null;
+				if( _lastWaiter == null ) {
+					_lastWaiter = _firstWaiter = currentFiber;
+				}
+				else {
+					_lastWaiter->WaitNext = currentFiber;
+					_lastWaiter = currentFiber;
+				}
+
+				TraceBlocked( currentFiber );
+				FiberManager.Suspend();
+				var isTimedOut = FiberManager.EndTimeout( time );
+
+				if( isTimedOut | currentFiber->IsCancelled ) // leave mutex in correct state
+					OnCancelled();
+
+				return !isTimedOut;
+			}
+
 			public void Unlock() {
 				Debug.Assert( Fiber.IsFiberExecuting );
 
@@ -191,6 +220,39 @@ namespace System.IO {
 					OnCancelled();
 			}
 
+			public bool TryDecrement( TimeDuration time ) {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				if( Value > 0 ) {
+					--Value;
+					return true;
+				}
+
+				currentFiber->WaitNext = null;
+				if( _lastWaiter == null ) {
+					_lastWaiter = _firstWaiter = currentFiber;
+				}
+				else {
+					_lastWaiter->WaitNext = currentFiber;
+					_lastWaiter = currentFiber;
+				}
+
+				TraceBlocked( currentFiber );
+
+				currentFiber->IsCancelled = false;
+				FiberManager.BeginTimeout( time );
+				FiberManager.Suspend();
+				var isTimedOut = FiberManager.EndTimeout( time );
+
+				if( isTimedOut | currentFiber->IsCancelled ) // leave semaphore in correct state
+					OnCancelled();
+
+				return !isTimedOut;
+			}
+
 			public void Wait() {
 				Debug.Assert( Fiber.IsFiberExecuting );
 
@@ -218,6 +280,41 @@ namespace System.IO {
 
 				if( currentFiber->IsCancelled ) // leave semaphore in correct state
 					OnCancelled();
+			}
+
+			// \return true if signal occured
+			// \return false if timed out
+			public bool TryWait( TimeDuration time ) {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				if( Value > 0 ) {
+					Value = 0;
+					return true;
+				}
+
+				currentFiber->WaitNext = null;
+				if( _lastWaiter == null ) {
+					_lastWaiter = _firstWaiter = currentFiber;
+				}
+				else {
+					_lastWaiter->WaitNext = currentFiber;
+					_lastWaiter = currentFiber;
+				}
+
+				TraceBlocked( currentFiber );
+
+				currentFiber->IsCancelled = false;
+				FiberManager.BeginTimeout( time );
+				FiberManager.Suspend();
+				var isTimedOut = FiberManager.EndTimeout( time );
+
+				if( isTimedOut | currentFiber->IsCancelled ) // leave semaphore in correct state
+					OnCancelled();
+
+				return !isTimedOut;
 			}
 
 			public void Increment() {
@@ -320,6 +417,29 @@ namespace System.IO {
 					OnCancelled();
 			}
 
+			// \return true if event occured
+			// \return false if timed out
+			public bool TryWait( TimeDuration time ) {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				currentFiber->WaitNext = _firstWaiter;
+				_firstWaiter = currentFiber;
+
+				TraceBlocked( currentFiber );
+
+				FiberManager.BeginTimeout( time );
+				FiberManager.Suspend();
+				var isTimedOut = FiberManager.EndTimeout( time );
+
+				if( isTimedOut | currentFiber->IsCancelled ) // leave event in correct state
+					OnCancelled();
+
+				return !isTimedOut;
+			}
+
 			public void Signal() {
 				// Debug.Assert( Fiber.IsFiberExecuting ); signal can occur in main fiber too
 
@@ -410,6 +530,40 @@ namespace System.IO {
 
 				if( currentFiber->IsCancelled ) // leave barrier in correct state
 					OnCancelled();
+			}
+
+			public bool TryWait( TimeDuration time ) {
+				Debug.Assert( Fiber.IsFiberExecuting );
+
+				var currentFiber = FiberManager.CurrentFiber;
+				Debug.Assert( currentFiber->WaitNext == null );
+
+				if( ++_readyCount == ParticipantsCount ) {
+					for( var ready = _firstWaiter; ready != null; ) {
+						var next = ready->WaitNext; ready->WaitNext = null;
+						TraceResumed( ready );
+						ready->Ready();
+						ready = next;
+					}
+
+					_readyCount = 0;
+					_firstWaiter = null;
+					return true;
+				}
+
+				currentFiber->WaitNext = _firstWaiter;
+				_firstWaiter = currentFiber;
+
+				TraceBlocked( currentFiber );
+
+				FiberManager.BeginTimeout( time );
+				FiberManager.Suspend();
+				var isTimedOut = FiberManager.EndTimeout( time );
+
+				if( isTimedOut | currentFiber->IsCancelled ) // leave barrier in correct state
+					OnCancelled();
+
+				return !isTimedOut;
 			}
 
 			private void OnCancelled() {

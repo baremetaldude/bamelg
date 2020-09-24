@@ -16,16 +16,30 @@ namespace Platform.Kernel {
 			LibcApi.Assert( this = bitcast<SocketHandleRaw>( LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_RAW, IPProtocol.IPPROTO_ICMP ) ) );
 		}
 
-		public int Send( sockaddr_in& address, void* buffer, int count ) {
-			int result = 0;
-			LibcApi.AssertErrno( result = LibcApi.sendto( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
-			return result;
+		public SystemError Send( sockaddr_in& address, void* buffer, uint count, uint& written ) {
+			var writeResult = LibcApi.sendto( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) );
+			if( writeResult < 0 ) {
+				var lastError = LibcApi.LastError;
+				if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+				written = 0;
+				return lastError;
+			}
+
+			written = ( uint ) writeResult;
+			return SystemError.None;
 		}
 
-		public int Receive( sockaddr_in& address, void* buffer, int count ) {
-			int result = 0;
-			LibcApi.AssertErrno( result = LibcApi.recvfrom( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) ) );
-			return result;
+		public SystemError Receive( sockaddr_in& address, void* buffer, uint count, uint& readen ) {
+			var readResult = LibcApi.recvfrom( this, buffer, count, MessageFlags.None, ( sockaddr* ) &address, sizeof( address ) );
+			if( readResult < 0 ) {
+				var lastError = LibcApi.LastError;
+				if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+				readen = 0;
+				return lastError;
+			}
+
+			readen = ( uint ) readResult;
+			return SystemError.None;
 		}
 
 		protected new void DumpRelevantData( StringBuilder builder ) {
