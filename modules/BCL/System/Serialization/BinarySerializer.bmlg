@@ -11,31 +11,31 @@ using System.Reflection;
 using System.Runtime;
 
 namespace System.Serialization {
-	/// Binary serializer for LPC/IPC. No backward compatibility or versioning. For long-term persistance use thrift API.
+	/// Simple binary serializer for LPC/IPC. No backward compatibility or versioning
 	public static class BinarySerializer {
-		public static void Serialize( BinaryWriter writer, Binder.MapperEmpty mapper, Binder.Context& context ) {
-			for( int i = 0, length = mapper.Binder.Mappings.Length; i < length; ++i )
-				context.Binder.GetValue( context, i, writer );
+		public static void Serialize( BinaryWriter writer, Binder.Context& context ) {
+			for( uint i = 0U, length = context.Binder.Mappings.Length; i < length; ++i )
+				context.Binder.GetValue( context.Object, i, writer );
 		}
 
-		public static void Deserialize( BinaryReader reader, Binder.MapperEmpty mapper, Binder.Context& context ) {
-			for( int i = 0, length = mapper.Binder.Mappings.Length; i < length; ++i )
-				context.Binder.SetValue( context, i, reader );
+		public static void Deserialize( BinaryReader reader, Binder.Context& context ) {
+			for( uint i = 0, length = context.Binder.Mappings.Length; i < length; ++i )
+				context.Binder.SetValue( context.Object, i, reader );
 		}
 	}
 
-	/// Simple and facade facade for BinarySerializer
+	/// Facade for BinarySerializer
 	public class BinarySerializer<T> {
-		public static readonly Binder.MapperEmpty Mapper = new Binder.MapperEmpty( typeof( T ) );
+		public static readonly Binder.MapperIndexed Mapper = new Binder.MapperIndexed( typeof( T ) );
 
 		public static void Serialize( T& object, BinaryWriter stream ) {
 			var binderContext = Mapper.Binder.CreateContext( &object );
-			BinarySerializer.Serialize( stream, Mapper, binderContext );
+			BinarySerializer.Serialize( stream, binderContext );
 		}
 
 		public static void Deserialize( T& object, BinaryReader stream ) {
 			var binderContext = Mapper.Binder.CreateContext( &object );
-			BinarySerializer.Deserialize( stream, Mapper, binderContext );
+			BinarySerializer.Deserialize( stream, binderContext );
 		}
 	}
 }

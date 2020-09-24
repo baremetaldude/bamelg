@@ -3,18 +3,14 @@
 //
 
 using System;
-using System.Collections;
 using System.IO;
 using System.Net;
-using System.Reflection;
 using System.Runtime;
-using System.Runtime.InteropServices;
 using System.Serialization;
 using System.Text;
 using System.Web;
 
 using Platform;
-using Platform.IO;
 
 namespace BamelgForwarder {
 	public class HttpApiServer : HttpServer {
@@ -56,6 +52,7 @@ namespace BamelgForwarder {
 					case "/endpoint/1/properties": return new EndpointPropertyHandler( this, 1 );
 				}
 
+				SendStatus( HttpStatusCode.NotFound );
 				return null;
 			}
 		}

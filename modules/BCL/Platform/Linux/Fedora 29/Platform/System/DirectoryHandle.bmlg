@@ -18,8 +18,8 @@ namespace Platform.Kernel {
 		public DirectoryHandle( CUtf8String name ) { LibcApi.Assert( Open( name ) ); }
 		public DirectoryHandle( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { LibcApi.Assert( Open( parent, name, symlinkFollowOption ) ); }
 
-		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, 0 ); }
-		public SystemError Open( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { return OpenAtBlocking( parent, name, FctlFlags.O_RDONLY | FctlFlags.O_DIRECTORY, symlinkFollowOption ); }
+		public SystemError Open( CUtf8String name ) { return OpenBlocking( name, FileOpenFlags.O_RDONLY | FileOpenFlags.O_DIRECTORY, 0U ); }
+		public SystemError Open( IOHandle parent, CUtf8String name, SymlinkFollowOption symlinkFollowOption = SymlinkFollowOption.None ) { return OpenAtBlocking( parent, name, FileOpenFlags.O_RDONLY | FileOpenFlags.O_DIRECTORY, symlinkFollowOption ); }
 
 		public SystemError getdents64( dirent64* buffer, intptr length, int& readen ) {
 			using( Fiber.AsyncCompletionRegion() )

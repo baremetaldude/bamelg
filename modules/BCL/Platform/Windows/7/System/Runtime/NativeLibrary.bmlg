@@ -1,0 +1,14 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Runtime {
+	public partial struct NativeLibrary {
+		private static NativeLibrary* _implLoad( Utf8String name ) { return _implLoad( ( string ) name ); }
+		private static NativeLibrary* _implLoad( string name ) { return bitcast<NativeLibrary*>( Platform.Kernel32Api.LoadLibrary( name ) ); }
+
+		private void _implFree() { Platform.Kernel32Api.FreeLibrary( bitcast<Platform.HMODULE>( &this ) ); }
+	}
+}

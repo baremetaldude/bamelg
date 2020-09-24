@@ -1,0 +1,430 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+
+namespace System {
+	public sealed partial struct DateTimeUTC {
+		private const ulong MaxTicks = 0x2BCA2875F4373FFFUL;
+
+		public static readonly DateTimeUTC MinValue = new DateTimeUTC { Ticks = 0 };
+		public static readonly DateTimeUTC MaxValue = new DateTimeUTC { Ticks = MaxTicks };
+
+		private static uint[13] DaysInMonth365 = new uint[13] { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365 };
+		private static uint[13] DaysInMonth366 = new uint[13] { 0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366 };
+
+		public DateTimeUTC( ulong ticks ) { 
+			if( !Assert.IsTrue( ticks < MaxTicks ) ) return;
+
+			Ticks = ticks;
+		}
+
+		public DateTimeUTC( uint year, uint month, uint day ) {
+			Ticks = DateToTicks( year, month, day );
+		}
+
+		public DateTimeUTC( uint year, uint month, uint day, uint hour, uint minute, uint second ) {
+			Ticks = ( ulong )( DateToTicks( year, month, day ) + TimeToTicks( hour, minute, second ) );
+		}
+
+		public DateTimeUTC( uint year, uint month, uint day, uint hour, uint minute, uint second, uint millisecond ) {
+			if( !Assert.IsFalse( millisecond >= 1000 ) ) millisecond = 0;
+
+			var ticks = DateToTicks( year, month, day ) + TimeToTicks( hour, minute, second );
+			ticks += millisecond * ( 10UL * 1000 );
+
+			if( !Assert.IsFalse( ticks > MaxTicks, "Bad combination of year/month/day/hour/minute/second/millisecond" ) )
+				ticks = 0;
+
+			Ticks = ticks;
+		}
+
+		public static bool IsDateValid( uint year, uint month, uint day ) {
+			if( year > 9999U ) return false;
+			if( month - 1 > 11U ) return false;
+
+			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+			return day >= 1 && day <= daysInMonth[month] - daysInMonth[month - 1];
+		}
+
+		public static bool IsTimeValid( uint hours, uint minutes, uint seconds ) {
+			return hours < 24U && minutes < 60U && seconds < 60U;
+		}
+
+		public static bool IsLeapYear( uint year ) {
+			if( year % 4 != 0 ) return false;
+			if( year % 100 == 0 ) return year % 400 == 0;
+
+			return true;
+		}
+
+		private static ulong DateToTicks( uint year, uint month, uint day ) {
+			if( !Assert.IsTrue( year >= 1 && year <= 9999 && month >= 1 && month <= 12 ) )
+				return 0;
+
+			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+
+			if( !Assert.IsTrue( day >= 1 && day <= daysInMonth[month] - daysInMonth[month - 1], "Bad combination of year/month/day" ) )
+				return 0;
+
+			--year;
+			uint totalDays = year * 365 + year / 4 - year / 100 + year / 400 + daysInMonth[month - 1] + day - 1;
+			return totalDays * ( 10UL * 1000 * 1000 * 60 * 60 * 24 );
+		}
+
+		internal static ulong TimeToTicks( uint hour, uint minute, uint second ) {
+			if( !Assert.IsFalse( hour >= 24 || minute >= 60 || second >= 60, "Bad combination of hour/minute/second" ) ) return 0;
+
+			var totalSeconds = hour * ( 60L * 60 ) + minute * 60L + second;
+			if( !Assert.IsFalse( totalSeconds > 922337203685 || totalSeconds < -922337203685L ) )
+				return 0;
+
+			return totalSeconds * 10000000UL;
+		}
+
+		private const uint _daysPer400Years = 146097;
+		private const uint _daysPer100Years = 36524;
+		private const uint _daysPer4Years = 1461;
+
+		public void GetDateValues( uint& year, uint& dayOfYear, uint& month, uint& dayOfMonth, DayOfWeek& dayOfWeek = nullref ) {
+			uint totalDays = ( uint )( Ticks / ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) );
+			if( dayOfWeek != nullref ) dayOfWeek = ( DayOfWeek )( totalDays % 7 );
+
+			uint _400years = totalDays / _daysPer400Years;
+			totalDays -= _400years * _daysPer400Years;
+
+			uint _100years = totalDays / _daysPer100Years;
+			if( _100years == 4 ) _100years = 3;
+			totalDays -= _100years * _daysPer100Years;
+
+			var _4years = totalDays / _daysPer4Years;
+			totalDays -= _4years * _daysPer4Years;
+
+			var totalYears = totalDays / 365;
+			if( totalYears == 4 ) totalYears = 3;
+			year = _400years * 400 + _100years * 100 + _4years * 4 + totalYears + 1;
+
+			totalDays -= totalYears * 365;
+			dayOfYear = totalDays + 1;
+
+			var isLeapYear = totalYears == 3 && ( _4years != 24 || _100years == 3 );
+			var& daysInMonth = isLeapYear ? DaysInMonth366 : DaysInMonth365;
+
+			var index = totalDays >> 5 + 1;
+			while( totalDays >= daysInMonth[index] )
+				++index;
+
+			month = index;
+			dayOfMonth = totalDays - daysInMonth[index - 1] + 1;
+		}
+
+		public ulong Ticks;
+
+		public uint DayOfYear {
+			get {
+				uint year, dayOfYear, month, day;
+				GetDateValues( year, dayOfYear, month, day );
+				return dayOfYear;
+			}
+		}
+
+		public DayOfWeek DayOfWeek { get { return ( DayOfWeek )( Ticks / ( 10L * 1000 * 1000 * 60 * 60 * 24 ) % 7L ); } }
+
+		public uint Year {
+			get {
+				uint year, dayOfYear, month, day;
+				GetDateValues( year, dayOfYear, month, day );
+				return year;
+			}
+		}
+
+		public uint Month {
+			get {
+				uint year, dayOfYear, month, day;
+				GetDateValues( year, dayOfYear, month, day );
+				return month;
+			}
+		}
+
+		public uint Day {
+			get {
+				uint year, dayOfYear, month, day;
+				GetDateValues( year, dayOfYear, month, day );
+				return day;
+			}
+		}
+
+		public int Hour { get { return ( int )( ( Ticks / ( 60L * 60 * 1000 * 1000 * 10 ) ) % 24UL ); } }
+		public int Minute { get { return ( int )( ( Ticks / ( 60L * 1000 * 1000 * 10 ) ) % 60L ); } }
+		public int Second { get { return ( int )( ( Ticks / ( 1000L * 1000 * 10 ) ) % 60L ); } }
+		public int Millisecond { get { return ( int )( ( Ticks / ( 1000L * 10 ) ) % 1000UL ); } }
+		public int Microsecond { get { return ( int )( ( Ticks / 10 ) % 1000UL ); } }
+		public int MicrosecondsWithMilliseconds { get { return ( int )( ( Ticks / 10 ) % 1000000UL ); } }
+
+		/// Gets the date component
+		public DateTimeUTC Date {
+			get {
+				ulong ticks = Ticks;
+				return new DateTimeUTC { Ticks = ( ticks - ( ticks % ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ) ) };
+			}
+		}
+
+		/// Gets the time of day
+		public TimeSpan TimeOfDay { get { return new TimeSpan( ( long )( Ticks % ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ) ); } }
+
+		public static TimeSpan operator -( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return new TimeSpan( ( long )( left.Ticks - right.Ticks ) ); }
+
+		public static DateTimeUTC operator +( [In] DateTimeUTC& left, [In] TimeSpan& right ) { return new DateTimeUTC( left.Ticks + right.Ticks ); }
+		public static DateTimeUTC operator -( [In] DateTimeUTC& left, [In] TimeSpan& right ) { return new DateTimeUTC( left.Ticks - right.Ticks ); }
+
+		public static bool operator ==( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks == right.Ticks; }
+		public static bool operator !=( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks != right.Ticks; }
+
+		public static bool operator <( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks < right.Ticks; }
+		public static bool operator >( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks > right.Ticks; }
+
+		public static bool operator <=( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks <= right.Ticks; }
+		public static bool operator >=( [In] DateTimeUTC& left, [In] DateTimeUTC& right ) { return left.Ticks >= right.Ticks; }
+
+		public static uint DaysInMonth( uint year, uint month ) {
+			if( !Assert.IsTrue( month >= 1 && month <= 12 ) ) return 0;
+
+			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+			return daysInMonth[month] - daysInMonth[month - 1];
+		}
+
+		public static DateTimeUTC GetLastDayOfMonth( uint year, uint month ) {
+			if( !Assert.IsTrue( year >= 1 && year <= 9999 && month >= 1 && month <= 12 ) ) return DateTimeUTC.MinValue;
+
+			var& daysInMonth = IsLeapYear( year ) ? DaysInMonth366 : DaysInMonth365;
+			var day = daysInMonth[month] - daysInMonth[month - 1];
+
+			--year;
+			uint totalDays = year * 365 + year / 4 - year / 100 + year / 400 + daysInMonth[month - 1] + day - 1;
+			return new DateTimeUTC( totalDays * ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) );
+		}
+
+		public static DateTimeUTC GetLastDayOfWeek( uint year, uint month, DayOfWeek dayOfWeek ) {
+			var date = GetLastDayOfMonth( year, month );
+			var lastDayOfWeek = date.DayOfWeek;
+
+			if( lastDayOfWeek == dayOfWeek ) return date;
+			return date.AddDays( dayOfWeek - lastDayOfWeek - ( lastDayOfWeek < dayOfWeek ? 7 : 0 ) );
+		}
+
+		public DateTimeUTC AddTicks( long value ) {
+			ulong result;
+
+			if( !Assert.IsFalse( checkwrap( result = (ulong)( ( long ) Ticks + value ) ) ) )
+				return this;
+
+			return new DateTimeUTC { Ticks = result };
+		}
+
+		public DateTimeUTC AddTicks( ulong value ) {
+			ulong result;
+
+			if( !Assert.IsFalse( checkwrap( result = Ticks + value ) ) )
+				return this;
+
+			return new DateTimeUTC { Ticks = result };
+		}
+
+		public DateTimeUTC AddMicroseconds( long value ) { return AddTicks( value * 10UL ); }
+		public DateTimeUTC AddMilliseconds( long value ) { return AddTicks( value * ( 10UL * 1000 ) ); }
+		public DateTimeUTC AddSeconds( long value ) { return AddTicks( value * ( 10UL * 1000 * 1000 ) ); }
+		public DateTimeUTC AddMinutes( long value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 ) ); }
+		public DateTimeUTC AddHours( long value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 * 60 ) ); }
+		public DateTimeUTC AddDays( long value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ); }
+
+		public DateTimeUTC AddMonths( int months ) {
+			if( !Assert.IsTrue( months >= -120000 && months <= 120000 ) ) return this;
+
+			uint year, dayOfYear, month, day;
+			GetDateValues( year, dayOfYear, month, day );
+
+			var newMonth = month + months;
+			if( newMonth >= 1 ) {
+				month = ( newMonth - 1 ) % 12 + 1;
+				year += ( newMonth - 1 ) / 12;
+			}
+			else {
+				month = 12 + newMonth % 12;
+				year += newMonth / 12 - 1;
+			}
+
+			if( !Assert.IsTrue( year >= 1 && year <= 9999 ) ) return this;
+
+			var daysInMonth = DaysInMonth( year, month );
+			if( day > daysInMonth )
+				day = daysInMonth;
+
+			return new DateTimeUTC( DateToTicks( year, month, day ) + Ticks % ( 10L * 1000 * 1000 * 60 * 60 * 24 ) );
+		}
+
+		public DateTimeUTC AddYears( int value ) { return AddMonths( value * 12 ); }
+
+		public static DateTimeUTC Min( DateTimeUTC& left, DateTimeUTC& right ) { return left < right ? left : right; }
+		public static DateTimeUTC Max( DateTimeUTC& left, DateTimeUTC& right ) { return left > right ? left : right; }
+
+		public uint GetHashCode() { return Ticks.GetHashCode(); }
+
+		// this='12:33:01' interval='00:00:05' ==> '12:33:05'
+		public DateTimeUTC Ceil( TimeSpan interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+			if( remainder.Ticks != 0 ) result += interval;
+
+			return result;
+		}
+
+		// this='12:33:01' interval='00:00:05' ==> '12:33:00'
+		public DateTimeUTC Floor( TimeSpan interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+
+			return result;
+		}
+
+		private static TextParsingStatus TryParse<TElement>( TElement* parsePosition, uint remaining, thistype& parsedResult ) {
+			parsedResult = default( thistype );
+
+			uint[7] values;
+			uint year, month, day;
+
+			if( !uint.TryFetch( parsePosition, remaining, values[0] ) || remaining == 0 ) return TextParsingStatus.Format;
+			if( --remaining == 0 ) return TextParsingStatus.Format;
+			switch( *parsePosition++ ) {
+				case '-': // yyyy-MM-dd
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
+					if( *parsePosition++ != '-' || --remaining == 0 ) return TextParsingStatus.Format;
+
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+
+					year = values[0];
+					month = values[1];
+					day = values[2];
+
+					break;
+
+				case '.': // dd.MM.yyyy
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
+					if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
+
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+
+					year = values[2];
+					month = values[1];
+					day = values[0];
+
+					break;
+
+				case '/': // MM/dd/yyyy
+					if( !uint.TryFetch( parsePosition, remaining, values[1] ) || remaining == 0 ) return TextParsingStatus.Format;
+					if( *parsePosition++ != '/' || --remaining == 0 ) return TextParsingStatus.Format;
+
+					if( !uint.TryFetch( parsePosition, remaining, values[2] ) ) return TextParsingStatus.Format;
+
+					year = values[2];
+					month = values[0];
+					day = values[1];
+
+					break;
+
+				default:
+					return TextParsingStatus.Format;
+			}
+
+
+			if( !IsDateValid( year, month, day ) ) return TextParsingStatus.Format;
+
+			if( remaining == 0 ) { // date only '2011-01-02'
+				parsedResult = new DateTimeUTC( year, month, day );
+				return TextParsingStatus.OK;
+			}
+
+			if( !uint.TryFetch( parsePosition, remaining, values[3] ) || remaining == 0 ) return TextParsingStatus.Format;
+			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
+
+			if( !uint.TryFetch( parsePosition, remaining, values[4] ) ) return TextParsingStatus.Format;
+
+			if( !IsTimeValid( values[3], values[4], 0 ) ) return TextParsingStatus.Format;
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02'
+				parsedResult = new DateTimeUTC( year, month, day, values[3], values[4], 0 );
+				return TextParsingStatus.OK;
+			}
+
+			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
+
+			if( !uint.TryFetch( parsePosition, remaining, values[5] ) ) return TextParsingStatus.Format;
+			if( !IsTimeValid( values[3], values[4], values[5] ) ) return TextParsingStatus.Format;
+
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03'
+				parsedResult = new DateTimeUTC( year, month, day, values[3], values[4], values[5] );
+				return TextParsingStatus.OK;
+			}
+
+			if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
+			var remainingDigits = remaining;
+			parsedResult = new DateTimeUTC( year, month, day, values[3], values[4], values[5] );
+
+			if( !uint.TryFetch( parsePosition, remaining, values[6], false, false ) ) return TextParsingStatus.Format;
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02:03.1234'
+				switch( remainingDigits ) {
+					case 1: parsedResult = new DateTimeUTC( parsedResult.Ticks + 1000000 * values[6] ); return TextParsingStatus.OK;
+					case 2: parsedResult = new DateTimeUTC( parsedResult.Ticks + 100000 * values[6] ); return TextParsingStatus.OK;
+					case 3: parsedResult = new DateTimeUTC( parsedResult.Ticks + 10000 * values[6] ); return TextParsingStatus.OK;
+					case 4: parsedResult = new DateTimeUTC( parsedResult.Ticks + 1000 * values[6] ); return TextParsingStatus.OK;
+					case 5: parsedResult = new DateTimeUTC( parsedResult.Ticks + 100 * values[6] ); return TextParsingStatus.OK;
+					case 6: parsedResult = new DateTimeUTC( parsedResult.Ticks + 10 * values[6] ); return TextParsingStatus.OK;
+					case 7: parsedResult = new DateTimeUTC( parsedResult.Ticks + values[6] ); return TextParsingStatus.OK;
+				}
+			}
+
+			return TextParsingStatus.Format;
+		}
+
+		public ulong ToUnixSeconds() { return ( Ticks - 621355968000000000UL ) / 10000000; }
+		public ulong ToUnixMilliseconds() { return ( Ticks - 621355968000000000UL ) / 10000; }
+
+		public double ToUnixSecondsFractional() { return ( Ticks - 621355968000000000 ) / 10000000.0; }
+		public double ToUnixMillisecondsFractional() { return ( Ticks - 621355968000000000 ) / 10000.0; }
+
+		public static thistype Parse( CString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+
+		public static thistype Parse( CStringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf8StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf16StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( CUtf32StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+
+		public static thistype Parse( SbcsString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( Utf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( Utf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+		public static thistype Parse( Utf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
+
+		public static TextParsingStatus TryParse( CString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+
+		public static TextParsingStatus TryParse( CStringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf8StringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( CUtf16StringSpan input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( CUtf32StringSpan input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+
+		public static TextParsingStatus TryParse( SbcsString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static TextParsingStatus TryParse( Utf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
+		public static TextParsingStatus TryParse( Utf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
+	}
+}

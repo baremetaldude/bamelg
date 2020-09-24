@@ -135,7 +135,7 @@ namespace System.Reflection {
 		}
 
 		// How many bytes needed to store that type in variable or field
-		public int InstanceSize {
+		public uint InstanceSize {
 			get {
 				if( ( Flags & ( TypeFlags.Reference | TypeFlags.Pointer | TypeFlags.Functor | TypeFlags.Delegate | TypeFlags.Class | TypeFlags.DynamicArray ) ) != 0 ) return sizeof( void* );
 				if( IsInterface ) return sizeof( InterfaceInstance );
@@ -175,7 +175,7 @@ namespace System.Reflection {
 
 		// pointer stride, may be greater than 'sizeof(T)' when alignment involved
 		public uint InstanceStride {
-			get { return Memory.GetStride( ( uint ) InstanceSize, InstanceAlignment ); }
+			get { return Memory.GetStride( InstanceSize, InstanceAlignment ); }
 		}
 
 		public bool IsPlainDataType {
@@ -186,7 +186,7 @@ namespace System.Reflection {
 			}
 		}
 
-		internal static Attribute* GetAttribute( Attribute** attributes, int attributesCount, [In] UserType& type ) {
+		internal static Attribute* GetAttribute( Attribute** attributes, uint attributesCount, [In] UserType& type ) {
 			return Assembly.AttributeAccessor.GetAttribute( attributes, attributesCount, type );
 		}
 

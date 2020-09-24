@@ -16,7 +16,7 @@ namespace Bamelg.Cryptography {
 
 		public readonly byte[] Key;
 
-		private int _rounds;
+		private uint _rounds;
 		private uint C0, C1, C2, C3;
 
 		private uint[,] _encryptionKey;
@@ -69,12 +69,12 @@ namespace Bamelg.Cryptography {
 			var pw = &w[0, 0];
 			{
 				var wPtr = pw;
-				for( int i = 0; i < Key.Length; i += 4 )
+				for( var i = 0U; i < Key.Length; i += 4 )
 					*wPtr++ = *( uint_littleendian* )( pkey + i );
 			}
 
 			var wl = w.Length;
-			for( int i = kc; i < wl; ++i ) {
+			for( var i = kc; i < wl; ++i ) {
 				var tmp = pw[i - 1];
 
 				if( ( i % kc ) == 0 )
@@ -85,10 +85,10 @@ namespace Bamelg.Cryptography {
 				pw[i] = pw[i - kc] ^ tmp;
 			}
 
-			Memory.Copy( &_encryptionKey[0, 0], pw, ( uint ) w.Length * sizeof( uint ) );
+			Memory.Copy( &_encryptionKey[0, 0], pw, w.Length * sizeof( uint ) );
 
-			for( int j = 1; j < _rounds; ++j )
-				for( int i = 0; i < 4; ++i )
+			for( var j = 1U; j < _rounds; ++j )
+				for( var i = 0U; i < 4; ++i )
 					w[j, i] = InvMcol( w[j, i] );
 
 			_decryptionKey = w;
@@ -130,7 +130,7 @@ namespace Bamelg.Cryptography {
 		}
 
 		private void EncryptBlock( uint[,] key ) {
-			int r;
+			uint r;
 			uint r0, r1, r2, r3;
 
 			C0 ^= key[0, 0];
@@ -161,7 +161,7 @@ namespace Bamelg.Cryptography {
 		}
 
 		private void DecryptBlock( uint[,] key ) {
-			int r;
+			uint r;
 			uint r0, r1, r2, r3;
 
 			C0 ^= key[_rounds, 0];

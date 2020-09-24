@@ -36,18 +36,15 @@ namespace System.Numerics {
 			return left.X != right.X | left.Y != right.Y | left.Z != right.Z | left.W != right.W;
 		}
 
-		private static uint _mnull = 0x80000001;
-		private static int _minus1 = -1;
-
-		public bool Equals( Quaternion& other, int tolerance ) {
+		public bool Equals( Quaternion& other, uint tolerance ) {
 			return ( ( Vector4* ) &this )->Equals( *( Vector4* ) &other, tolerance );
 		}
 
 		[Alignment( Boundary = 16 )]
-		private static uint[4] _changeWSignMask = new uint[4] { 0, 0, 0, 0x80000000 };
+		private static readonly uint[4] _changeWSignMask = new uint[4] { 0, 0, 0, 0x80000000 };
 
 		[Alignment( Boundary = 8 )]
-		private static uint[2] _changeSign = new uint[2] { 0x80000000, 0x00000000 };
+		private static readonly uint[2] _changeSign = new uint[2] { 0x80000000, 0x00000000 };
 
 		public static Quaternion operator *( Quaternion& left, Quaternion& right ) asm {
 			X86_32 {
@@ -807,13 +804,5 @@ namespace System.Numerics {
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) { builder.AppendFormat( "({0};{1};{2};{3})", X, Y, Z, W ); }
-
-		[UnitTest]
-		public static void UnitTest() {
-			var q1 = new Quaternion( 1, 2, 3, 4 );
-			var q2 = new Quaternion( 3, 1, 2, 2 );
-
-			var q3 = q1 * q2;
-		}
 	}
 }

@@ -15,12 +15,12 @@ namespace System.Diagnostics {
 		public static void Print() {
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( void** ) page.Value;
-				var bufferLength = ( int ) Memory.DefaultPageSize / sizeof( void* );
+				var bufferLength = Memory.DefaultPageSize / sizeof( void* );
 
-				var count = LibexecApi.backtrace( &buffer[0], bufferLength );
+				var count = LibexecApi.backtrace( &buffer[0], ( int ) bufferLength );
 				var strings = LibexecApi.backtrace_symbols( &buffer[0], count );
 
-				for( var i = 0; i < count; i++ )
+				for( var i = 1; i < count; i++ )
 					Console.WriteLine( strings[i] );
 
 				LibcApi.free( strings );

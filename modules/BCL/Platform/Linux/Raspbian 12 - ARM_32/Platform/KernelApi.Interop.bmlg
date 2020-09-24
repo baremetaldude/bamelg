@@ -1,0 +1,2947 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public static partial struct KernelApi {
+		public const int _LINUX_CAPABILITY_VERSION = 429392688;
+
+	}
+	public enum FileDriverCommand : uint {
+		TIOCPKT_DATA =                              0,
+		GPIOHANDLE_REQUEST_INPUT =                  1,
+		TIOCPKT_FLUSHREAD =                         1,
+		TIOCPKT_FLUSHWRITE =                        2,
+		TIOCPKT_STOP =                              4,
+		TIOCPKT_START =                             8,
+		TIOCPKT_NOSTOP =                           16,
+		TIOCPKT_DOSTOP =                           32,
+		TCGETS =                                21505,
+		TCSETS =                                21506,
+		TCSETSW =                               21507,
+		TCSETSF =                               21508,
+		TCGETA =                                21509,
+		TCSETA =                                21510,
+		TCSETAW =                               21511,
+		TCSETAF =                               21512,
+		TCSBRK =                                21513,
+		TCXONC =                                21514,
+		TCFLSH =                                21515,
+		TIOCEXCL =                              21516,
+		TIOCNXCL =                              21517,
+		TIOCSCTTY =                             21518,
+		TIOCGPGRP =                             21519,
+		TIOCSPGRP =                             21520,
+		TIOCOUTQ =                              21521,
+		TIOCSTI =                               21522,
+		TIOCGWINSZ =                            21523,
+		TIOCSWINSZ =                            21524,
+		TIOCMGET =                              21525,
+		TIOCMBIS =                              21526,
+		TIOCMBIC =                              21527,
+		TIOCMSET =                              21528,
+		TIOCGSOFTCAR =                          21529,
+		TIOCSSOFTCAR =                          21530,
+		FIONREAD =                              21531,
+		TIOCINQ =                               21531,
+		TIOCLINUX =                             21532,
+		TIOCCONS =                              21533,
+		TIOCGSERIAL =                           21534,
+		TIOCSSERIAL =                           21535,
+		TIOCPKT =                               21536,
+		FIONBIO =                               21537,
+		TIOCNOTTY =                             21538,
+		TIOCSETD =                              21539,
+		TIOCGETD =                              21540,
+		TCSBRKP =                               21541,
+		TIOCSBRK =                              21543,
+		TIOCCBRK =                              21544,
+		TIOCGSID =                              21545,
+		FIONCLEX =                              21584,
+		FIOCLEX =                               21585,
+		FIOASYNC =                              21586,
+		TIOCSERCONFIG =                         21587,
+		TIOCSERGWILD =                          21588,
+		TIOCSERSWILD =                          21589,
+		TIOCGLCKTRMIOS =                        21590,
+		TIOCSLCKTRMIOS =                        21591,
+		TIOCSERGSTRUCT =                        21592,
+		TIOCSERGETLSR =                         21593,
+		TIOCSERGETMULTI =                       21594,
+		TIOCSERSETMULTI =                       21595,
+		TIOCMIWAIT =                            21596,
+		TIOCGICOUNT =                           21597,
+		FIOQSIZE =                              21598,
+		GPIO_GET_CHIPINFO_IOCTL =          2151986177,
+		GPIO_GET_LINEEVENT_IOCTL =         3224417284,
+		GPIOHANDLE_GET_LINE_VALUES_IOCTL = 3225465864,
+		GPIOHANDLE_SET_LINE_VALUES_IOCTL = 3225465865,
+		GPIO_GET_LINEHANDLE_IOCTL =        3245126659,
+	}
+	public enum fsconfig_command : uint {
+		FSCONFIG_SET_FLAG =        0,
+		FSCONFIG_SET_STRING =      1,
+		FSCONFIG_SET_BINARY =      2,
+		FSCONFIG_SET_PATH =        3,
+		FSCONFIG_SET_PATH_EMPTY =  4,
+		FSCONFIG_SET_FD =          5,
+		FSCONFIG_CMD_CREATE =      6,
+		FSCONFIG_CMD_RECONFIGURE = 7,
+		FSCONFIG_CMD_CREATE_EXCL = 8,
+	}
+	public enum gpio_v2_line_attr_id : uint {
+		GPIO_V2_LINE_ATTR_ID_FLAGS =         1,
+		GPIO_V2_LINE_ATTR_ID_OUTPUT_VALUES = 2,
+		GPIO_V2_LINE_ATTR_ID_DEBOUNCE =      3,
+	}
+	public enum gpio_v2_line_changed_type : uint {
+		GPIO_V2_LINE_CHANGED_REQUESTED = 1,
+		GPIO_V2_LINE_CHANGED_RELEASED =  2,
+		GPIO_V2_LINE_CHANGED_CONFIG =    3,
+	}
+	public enum gpio_v2_line_event_id : uint {
+		GPIO_V2_LINE_EVENT_RISING_EDGE =  1,
+		GPIO_V2_LINE_EVENT_FALLING_EDGE = 2,
+	}
+	[Flags]
+	public enum gpio_v2_line_flag : uint {
+		None =                                      0,
+		GPIO_V2_LINE_FLAG_USED =                    1,
+		GPIO_V2_LINE_FLAG_ACTIVE_LOW =              2,
+		GPIO_V2_LINE_FLAG_INPUT =                   4,
+		GPIO_V2_LINE_FLAG_OUTPUT =                  8,
+		GPIO_V2_LINE_FLAG_EDGE_RISING =            16,
+		GPIO_V2_LINE_FLAG_EDGE_FALLING =           32,
+		GPIO_V2_LINE_FLAG_OPEN_DRAIN =             64,
+		GPIO_V2_LINE_FLAG_OPEN_SOURCE =           128,
+		GPIO_V2_LINE_FLAG_BIAS_PULL_UP =          256,
+		GPIO_V2_LINE_FLAG_BIAS_PULL_DOWN =        512,
+		GPIO_V2_LINE_FLAG_BIAS_DISABLED =        1024,
+		GPIO_V2_LINE_FLAG_EVENT_CLOCK_REALTIME = 2048,
+		GPIO_V2_LINE_FLAG_EVENT_CLOCK_HTE =      4096,
+	}
+	public enum GPIOEVENT_EVENT : uint {
+		GPIOEVENT_EVENT_RISING_EDGE =  1,
+		GPIOEVENT_EVENT_FALLING_EDGE = 2,
+	}
+	public enum GPIOEVENT_REQUEST : uint {
+		GPIOEVENT_REQUEST_RISING_EDGE =  1,
+		GPIOEVENT_REQUEST_FALLING_EDGE = 2,
+		GPIOEVENT_REQUEST_BOTH_EDGES =   3,
+	}
+	[Flags]
+	public enum GPIOHANDLE_REQUEST : uint {
+		None =                            0,
+		GPIOHANDLE_REQUEST_INPUT =        1,
+		GPIOHANDLE_REQUEST_OUTPUT =       2,
+		GPIOHANDLE_REQUEST_ACTIVE_LOW =   4,
+		GPIOHANDLE_REQUEST_OPEN_DRAIN =   8,
+		GPIOHANDLE_REQUEST_OPEN_SOURCE = 16,
+	}
+	[Flags]
+	public enum GPIOLINE_FLAG : uint {
+		None =                       0,
+		GPIOLINE_FLAG_KERNEL =       1,
+		GPIOLINE_FLAG_IS_OUT =       2,
+		GPIOLINE_FLAG_ACTIVE_LOW =   4,
+		GPIOLINE_FLAG_OPEN_DRAIN =   8,
+		GPIOLINE_FLAG_OPEN_SOURCE = 16,
+	}
+	public enum ProcessControlActions : int {
+		PR_SET_PTRACER_ANY =               -1,
+		PR_ENDIAN_BIG =                     0,
+		PR_FP_EXC_DISABLED =                0,
+		PR_MCE_KILL_CLEAR =                 0,
+		PR_MCE_KILL_LATE =                  0,
+		PR_MTE_TCF_NONE =                   0,
+		PR_RISCV_V_VSTATE_CTRL_DEFAULT =    0,
+		PR_SCHED_CORE_GET =                 0,
+		PR_SCHED_CORE_SCOPE_THREAD =        0,
+		PR_SET_VMA_ANON_NAME =              0,
+		PR_SPEC_NOT_AFFECTED =              0,
+		PR_SPEC_STORE_BYPASS =              0,
+		PR_SYS_DISPATCH_OFF =               0,
+		PR_TIMING_STATISTICAL =             0,
+		PR_CAP_AMBIENT_IS_SET =             1,
+		PR_ENDIAN_LITTLE =                  1,
+		PR_FP_EXC_NONRECOV =                1,
+		PR_FP_MODE_FR =                     1,
+		PR_FPEMU_NOPRINT =                  1,
+		PR_MCE_KILL_EARLY =                 1,
+		PR_MCE_KILL_SET =                   1,
+		PR_MDWE_REFUSE_EXEC_GAIN =          1,
+		PR_MTE_TCF_SHIFT =                  1,
+		PR_PAC_APIAKEY =                    1,
+		PR_RISCV_V_VSTATE_CTRL_OFF =        1,
+		PR_SCHED_CORE_CREATE =              1,
+		PR_SCHED_CORE_SCOPE_THREAD_GROUP =  1,
+		PR_SET_MM_START_CODE =              1,
+		PR_SET_PDEATHSIG =                  1,
+		PR_SPEC_INDIRECT_BRANCH =           1,
+		PR_SPEC_PRCTL =                     1,
+		PR_SYS_DISPATCH_ON =                1,
+		PR_TAGGED_ADDR_ENABLE =             1,
+		PR_TIMING_TIMESTAMP =               1,
+		PR_TSC_ENABLE =                     1,
+		PR_UNALIGN_NOPRINT =                1,
+		PR_CAP_AMBIENT_RAISE =              2,
+		PR_ENDIAN_PPC_LITTLE =              2,
+		PR_FP_EXC_ASYNC =                   2,
+		PR_FP_MODE_FRE =                    2,
+		PR_FPEMU_SIGFPE =                   2,
+		PR_GET_PDEATHSIG =                  2,
+		PR_MCE_KILL_DEFAULT =               2,
+		PR_MDWE_NO_INHERIT =                2,
+		PR_MTE_TCF_SYNC =                   2,
+		PR_PAC_APIBKEY =                    2,
+		PR_RISCV_V_VSTATE_CTRL_ON =         2,
+		PR_SCHED_CORE_SCOPE_PROCESS_GROUP = 2,
+		PR_SCHED_CORE_SHARE_TO =            2,
+		PR_SET_MM_END_CODE =                2,
+		PR_SPEC_ENABLE =                    2,
+		PR_SPEC_L1D_FLUSH =                 2,
+		PR_TSC_SIGSEGV =                    2,
+		PR_UNALIGN_SIGBUS =                 2,
+		PR_CAP_AMBIENT_LOWER =              3,
+		PR_FP_EXC_PRECISE =                 3,
+		PR_GET_DUMPABLE =                   3,
+		PR_MTE_TAG_SHIFT =                  3,
+		PR_RISCV_V_VSTATE_CTRL_CUR_MASK =   3,
+		PR_SCHED_CORE_SHARE_FROM =          3,
+		PR_SET_MM_START_DATA =              3,
+		PR_CAP_AMBIENT_CLEAR_ALL =          4,
+		PR_MTE_TCF_ASYNC =                  4,
+		PR_PAC_APDAKEY =                    4,
+		PR_SCHED_CORE_MAX =                 4,
+		PR_SET_DUMPABLE =                   4,
+		PR_SET_MM_END_DATA =                4,
+		PR_SPEC_DISABLE =                   4,
+		PR_GET_UNALIGN =                    5,
+		PR_SET_MM_START_STACK =             5,
+		PR_MTE_TCF_MASK =                   6,
+		PR_SET_MM_START_BRK =               6,
+		PR_SET_UNALIGN =                    6,
+		PR_GET_KEEPCAPS =                   7,
+		PR_SET_MM_BRK =                     7,
+		PR_PAC_APDBKEY =                    8,
+		PR_SET_KEEPCAPS =                   8,
+		PR_SET_MM_ARG_START =               8,
+		PR_SPEC_FORCE_DISABLE =             8,
+		PR_GET_FPEMU =                      9,
+		PR_SET_MM_ARG_END =                 9,
+		PR_SET_FPEMU =                     10,
+		PR_SET_MM_ENV_START =              10,
+		PR_GET_FPEXC =                     11,
+		PR_SET_MM_ENV_END =                11,
+		PR_RISCV_V_VSTATE_CTRL_NEXT_MASK = 12,
+		PR_SET_FPEXC =                     12,
+		PR_SET_MM_AUXV =                   12,
+		PR_GET_TIMING =                    13,
+		PR_SET_MM_EXE_FILE =               13,
+		PR_SET_MM_MAP =                    14,
+		PR_SET_TIMING =                    14,
+		PR_SET_MM_MAP_SIZE =               15,
+		PR_SET_NAME =                      15,
+		PR_GET_NAME =                      16,
+		PR_PAC_APGAKEY =                   16,
+		PR_RISCV_V_VSTATE_CTRL_INHERIT =   16,
+		PR_SPEC_DISABLE_NOEXEC =           16,
+		PR_GET_ENDIAN =                    19,
+		PR_SET_ENDIAN =                    20,
+		PR_GET_SECCOMP =                   21,
+		PR_SET_SECCOMP =                   22,
+		PR_CAPBSET_READ =                  23,
+		PR_CAPBSET_DROP =                  24,
+		PR_GET_TSC =                       25,
+		PR_SET_TSC =                       26,
+		PR_GET_SECUREBITS =                27,
+		PR_SET_SECUREBITS =                28,
+		PR_SET_TIMERSLACK =                29,
+		PR_GET_TIMERSLACK =                30,
+		PR_RISCV_V_VSTATE_CTRL_MASK =      31,
+		PR_TASK_PERF_EVENTS_DISABLE =      31,
+		PR_TASK_PERF_EVENTS_ENABLE =       32,
+		PR_MCE_KILL =                      33,
+		PR_MCE_KILL_GET =                  34,
+		PR_SET_MM =                        35,
+		PR_SET_CHILD_SUBREAPER =           36,
+		PR_GET_CHILD_SUBREAPER =           37,
+		PR_SET_NO_NEW_PRIVS =              38,
+		PR_GET_NO_NEW_PRIVS =              39,
+		PR_GET_TID_ADDRESS =               40,
+		PR_SET_THP_DISABLE =               41,
+		PR_GET_THP_DISABLE =               42,
+		PR_MPX_ENABLE_MANAGEMENT =         43,
+		PR_MPX_DISABLE_MANAGEMENT =        44,
+		PR_SET_FP_MODE =                   45,
+		PR_GET_FP_MODE =                   46,
+		PR_CAP_AMBIENT =                   47,
+		PR_SVE_SET_VL =                    50,
+		PR_SVE_GET_VL =                    51,
+		PR_GET_SPECULATION_CTRL =          52,
+		PR_SET_SPECULATION_CTRL =          53,
+		PR_PAC_RESET_KEYS =                54,
+		PR_SET_TAGGED_ADDR_CTRL =          55,
+		PR_GET_TAGGED_ADDR_CTRL =          56,
+		PR_SET_IO_FLUSHER =                57,
+		PR_GET_IO_FLUSHER =                58,
+		PR_SET_SYSCALL_USER_DISPATCH =     59,
+		PR_PAC_SET_ENABLED_KEYS =          60,
+		PR_PAC_GET_ENABLED_KEYS =          61,
+		PR_SCHED_CORE =                    62,
+		PR_SME_SET_VL =                    63,
+		PR_SME_GET_VL =                    64,
+		PR_SET_MDWE =                      65,
+		PR_GET_MDWE =                      66,
+		PR_SET_MEMORY_MERGE =              67,
+		PR_GET_MEMORY_MERGE =              68,
+		PR_RISCV_V_SET_CONTROL =           69,
+		PR_RISCV_V_GET_CONTROL =           70,
+		PR_FP_EXC_SW_ENABLE =             128,
+		PR_SME_VL_LEN_MASK =            65535,
+		PR_SVE_VL_LEN_MASK =            65535,
+		PR_FP_EXC_DIV =                 65536,
+		PR_FP_EXC_OVF =                131072,
+		PR_SME_VL_INHERIT =            131072,
+		PR_SVE_VL_INHERIT =            131072,
+		PR_FP_EXC_UND =                262144,
+		PR_SME_SET_VL_ONEXEC =         262144,
+		PR_SVE_SET_VL_ONEXEC =         262144,
+		PR_MTE_TAG_MASK =              524280,
+		PR_FP_EXC_RES =                524288,
+		PR_FP_EXC_INV =               1048576,
+		PR_GET_AUXV =              1096112214,
+		PR_SET_VMA =               1398164801,
+		PR_SET_PTRACER =           1499557217,
+	}
+	public enum sctp_cmsg_type : uint {
+		SCTP_INIT =      0,
+		SCTP_SNDRCV =    1,
+		SCTP_SNDINFO =   2,
+		SCTP_RCVINFO =   3,
+		SCTP_NXTINFO =   4,
+		SCTP_PRINFO =    5,
+		SCTP_AUTHINFO =  6,
+		SCTP_DSTADDRV4 = 7,
+		SCTP_DSTADDRV6 = 8,
+	}
+	[Flags]
+	public enum sctp_msg_flags : uint {
+		None =                 0,
+		MSG_NOTIFICATION = 32768,
+	}
+	public enum sctp_optname : uint {
+		SCTP_RTOINFO =                 0,
+		SCTP_ASSOCINFO =               1,
+		SCTP_INITMSG =                 2,
+		SCTP_NODELAY =                 3,
+		SCTP_AUTOCLOSE =               4,
+		SCTP_SET_PEER_PRIMARY_ADDR =   5,
+		SCTP_PRIMARY_ADDR =            6,
+		SCTP_ADAPTATION_LAYER =        7,
+		SCTP_DISABLE_FRAGMENTS =       8,
+		SCTP_PEER_ADDR_PARAMS =        9,
+		SCTP_DEFAULT_SEND_PARAM =     10,
+		SCTP_EVENTS =                 11,
+		SCTP_I_WANT_MAPPED_V4_ADDR =  12,
+		SCTP_MAXSEG =                 13,
+		SCTP_STATUS =                 14,
+		SCTP_GET_PEER_ADDR_INFO =     15,
+		SCTP_DELAYED_ACK =            16,
+		SCTP_DELAYED_ACK_TIME =       16,
+		SCTP_DELAYED_SACK =           16,
+		SCTP_CONTEXT =                17,
+		SCTP_FRAGMENT_INTERLEAVE =    18,
+		SCTP_PARTIAL_DELIVERY_POINT = 19,
+		SCTP_MAX_BURST =              20,
+		SCTP_AUTH_CHUNK =             21,
+		SCTP_HMAC_IDENT =             22,
+		SCTP_AUTH_KEY =               23,
+		SCTP_AUTH_ACTIVE_KEY =        24,
+		SCTP_AUTH_DELETE_KEY =        25,
+		SCTP_PEER_AUTH_CHUNKS =       26,
+		SCTP_LOCAL_AUTH_CHUNKS =      27,
+		SCTP_GET_ASSOC_NUMBER =       28,
+		SCTP_GET_ASSOC_ID_LIST =      29,
+		SCTP_AUTO_ASCONF =            30,
+		SCTP_PEER_ADDR_THLDS =        31,
+		SCTP_RECVRCVINFO =            32,
+		SCTP_RECVNXTINFO =            33,
+		SCTP_DEFAULT_SNDINFO =        34,
+		SCTP_AUTH_DEACTIVATE_KEY =    35,
+		SCTP_REUSE_PORT =             36,
+		SCTP_PEER_ADDR_THLDS_V2 =     37,
+		SCTP_SOCKOPT_BINDX_ADD =     100,
+		SCTP_SOCKOPT_BINDX_REM =     101,
+		SCTP_SOCKOPT_PEELOFF =       102,
+		SCTP_SOCKOPT_CONNECTX_OLD =  107,
+		SCTP_GET_PEER_ADDRS =        108,
+		SCTP_GET_LOCAL_ADDRS =       109,
+		SCTP_SOCKOPT_CONNECTX =      110,
+		SCTP_SOCKOPT_CONNECTX3 =     111,
+		SCTP_GET_ASSOC_STATS =       112,
+	}
+	public enum sctp_sac_state : uint {
+		SCTP_COMM_UP =        0,
+		SCTP_COMM_LOST =      1,
+		SCTP_RESTART =        2,
+		SCTP_SHUTDOWN_COMP =  3,
+		SCTP_CANT_STR_ASSOC = 4,
+	}
+	public enum sctp_sched_type : uint {
+		SCTP_SS_FCFS =    0,
+		SCTP_SS_DEFAULT = 0,
+		SCTP_SS_PRIO =    1,
+		SCTP_SS_RR =      2,
+		SCTP_SS_FC =      3,
+		SCTP_SS_WFQ =     4,
+		SCTP_SS_MAX =     4,
+	}
+	[Flags]
+	public enum sctp_sinfo_flags : uint {
+		None =                  0,
+		SCTP_UNORDERED =        1,
+		SCTP_ADDR_OVER =        2,
+		SCTP_ABORT =            4,
+		SCTP_SACK_IMMEDIATELY = 8,
+		SCTP_SENDALL =         64,
+		SCTP_PR_SCTP_ALL =    128,
+		SCTP_NOTIFICATION = 32768,
+		SCTP_EOF =            512,
+	}
+	public enum sctp_sn_error : uint {
+		SCTP_FAILED_THRESHOLD =       0,
+		SCTP_RECEIVED_SACK =          1,
+		SCTP_HEARTBEAT_SUCCESS =      2,
+		SCTP_RESPONSE_TO_USER_REQ =   3,
+		SCTP_INTERNAL_ERROR =         4,
+		SCTP_SHUTDOWN_GUARD_EXPIRES = 5,
+		SCTP_PEER_FAULTY =            6,
+	}
+	public enum sctp_sn_type : uint {
+		SCTP_SN_TYPE_BASE =           32768,
+		SCTP_DATA_IO_EVENT =          32768,
+		SCTP_ASSOC_CHANGE =           32769,
+		SCTP_PEER_ADDR_CHANGE =       32770,
+		SCTP_SEND_FAILED =            32771,
+		SCTP_REMOTE_ERROR =           32772,
+		SCTP_SHUTDOWN_EVENT =         32773,
+		SCTP_PARTIAL_DELIVERY_EVENT = 32774,
+		SCTP_ADAPTATION_INDICATION =  32775,
+		SCTP_AUTHENTICATION_EVENT =   32776,
+		SCTP_SENDER_DRY_EVENT =       32777,
+		SCTP_STREAM_RESET_EVENT =     32778,
+		SCTP_ASSOC_RESET_EVENT =      32779,
+		SCTP_STREAM_CHANGE_EVENT =    32780,
+		SCTP_SEND_FAILED_EVENT =      32781,
+		SCTP_SN_TYPE_MAX =            32781,
+	}
+	public enum sctp_spc_state : uint {
+		SCTP_ADDR_AVAILABLE =          0,
+		SCTP_ADDR_UNREACHABLE =        1,
+		SCTP_ADDR_REMOVED =            2,
+		SCTP_ADDR_ADDED =              3,
+		SCTP_ADDR_MADE_PRIM =          4,
+		SCTP_ADDR_CONFIRMED =          5,
+		SCTP_ADDR_POTENTIALLY_FAILED = 6,
+	}
+	public enum sctp_spinfo_state : uint {
+		SCTP_INACTIVE =    0,
+		SCTP_PF =          1,
+		SCTP_ACTIVE =      2,
+		SCTP_UNCONFIRMED = 3,
+		SCTP_UNKNOWN = 65535,
+	}
+	[Flags]
+	public enum sctp_spp_flags : uint {
+		None =                   0,
+		SPP_HB_ENABLE =          1,
+		SPP_HB_DISABLE =         2,
+		SPP_HB =                 3,
+		SPP_HB_DEMAND =          4,
+		SPP_PMTUD_ENABLE =       8,
+		SPP_PMTUD_DISABLE =     16,
+		SPP_PMTUD =             24,
+		SPP_SACKDELAY_ENABLE =  32,
+		SPP_SACKDELAY_DISABLE = 64,
+		SPP_SACKDELAY =         96,
+		SPP_HB_TIME_IS_ZERO =  128,
+		SPP_IPV6_FLOWLABEL =   256,
+		SPP_DSCP =             512,
+	}
+	[Flags]
+	public enum sctp_ssf_flags : uint {
+		SCTP_DATA_UNSENT = 0,
+		SCTP_DATA_SENT =   1,
+	}
+	public enum sctp_sstat_state : uint {
+		SCTP_EMPTY =             0,
+		SCTP_CLOSED =            1,
+		SCTP_COOKIE_WAIT =       2,
+		SCTP_COOKIE_ECHOED =     3,
+		SCTP_ESTABLISHED =       4,
+		SCTP_SHUTDOWN_PENDING =  5,
+		SCTP_SHUTDOWN_SENT =     6,
+		SCTP_SHUTDOWN_RECEIVED = 7,
+		SCTP_SHUTDOWN_ACK_SENT = 8,
+	}
+	public enum SocketIOControl : uint {
+		SIOCOUTQ =               21521,
+		SIOCINQ =                21531,
+		SIOCSPGRP =              35074,
+		SIOCGPGRP =              35076,
+		SIOCATMARK =             35077,
+		SIOCGSTAMP =             35078,
+		SIOCGSTAMP_OLD =         35078,
+		SIOCGSTAMPNS =           35079,
+		SIOCGSTAMPNS_OLD =       35079,
+		SIOCADDRT =              35083,
+		SIOCDELRT =              35084,
+		SIOCRTMSG =              35085,
+		SIOCGIFNAME =            35088,
+		SIOCSIFLINK =            35089,
+		SIOCGIFCONF =            35090,
+		SIOCGIFFLAGS =           35091,
+		SIOCSIFFLAGS =           35092,
+		SIOCGIFADDR =            35093,
+		SIOCSIFADDR =            35094,
+		SIOCGIFDSTADDR =         35095,
+		SIOCSIFDSTADDR =         35096,
+		SIOCGIFBRDADDR =         35097,
+		SIOCSIFBRDADDR =         35098,
+		SIOCGIFNETMASK =         35099,
+		SIOCSIFNETMASK =         35100,
+		SIOCGIFMETRIC =          35101,
+		SIOCSIFMETRIC =          35102,
+		SIOCGIFMEM =             35103,
+		SIOCSIFMEM =             35104,
+		SIOCGIFMTU =             35105,
+		SIOCSIFMTU =             35106,
+		SIOCSIFNAME =            35107,
+		SIOCSIFHWADDR =          35108,
+		SIOCGIFENCAP =           35109,
+		SIOCSIFENCAP =           35110,
+		SIOCGIFHWADDR =          35111,
+		SIOCGIFSLAVE =           35113,
+		SIOCSIFSLAVE =           35120,
+		SIOCADDMULTI =           35121,
+		SIOCDELMULTI =           35122,
+		SIOCGIFINDEX =           35123,
+		SIOCSIFPFLAGS =          35124,
+		SIOCGIFPFLAGS =          35125,
+		SIOCDIFADDR =            35126,
+		SIOCSIFHWBROADCAST =     35127,
+		SIOCGIFCOUNT =           35128,
+		SIOCGIFBR =              35136,
+		SIOCSIFBR =              35137,
+		SIOCGIFTXQLEN =          35138,
+		SIOCSIFTXQLEN =          35139,
+		SIOCETHTOOL =            35142,
+		SIOCGMIIPHY =            35143,
+		SIOCGMIIREG =            35144,
+		SIOCSMIIREG =            35145,
+		SIOCWANDEV =             35146,
+		SIOCOUTQNSD =            35147,
+		SIOCGSKNS =              35148,
+		SIOCDARP =               35155,
+		SIOCGARP =               35156,
+		SIOCSARP =               35157,
+		SIOCDRARP =              35168,
+		SIOCGRARP =              35169,
+		SIOCSRARP =              35170,
+		SIOCGIFMAP =             35184,
+		SIOCSIFMAP =             35185,
+		SIOCADDDLCI =            35200,
+		SIOCDELDLCI =            35201,
+		SIOCGIFVLAN =            35202,
+		SIOCSIFVLAN =            35203,
+		SIOCBONDENSLAVE =        35216,
+		SIOCBONDRELEASE =        35217,
+		SIOCBONDSETHWADDR =      35218,
+		SIOCBONDSLAVEINFOQUERY = 35219,
+		SIOCBONDINFOQUERY =      35220,
+		SIOCBONDCHANGEACTIVE =   35221,
+		SIOCBRADDBR =            35232,
+		SIOCBRDELBR =            35233,
+		SIOCBRADDIF =            35234,
+		SIOCBRDELIF =            35235,
+		SIOCSHWTSTAMP =          35248,
+		SIOCGHWTSTAMP =          35249,
+		SIOCAIPXITFCRT =         35296,
+		SIOCATALKDIFADDR =       35296,
+		SIOCAX25GETUID =         35296,
+		SIOCNRGETPARMS =         35296,
+		SIOCPROTOPRIVATE =       35296,
+		SIOCRSGCAUSE =           35296,
+		SIOCAIPXPRISLT =         35297,
+		SIOCAX25ADDUID =         35297,
+		SIOCNRSETPARMS =         35297,
+		SIOCRSSCAUSE =           35297,
+		SIOCAX25DELUID =         35298,
+		SIOCIPXCFGDATA =         35298,
+		SIOCNRDECOBS =           35298,
+		SIOCRSL2CALL =           35298,
+		SIOCRSSL2CALL =          35298,
+		SIOCAX25NOUID =          35299,
+		SIOCIPXNCPCONN =         35299,
+		SIOCNRRTCTL =            35299,
+		SIOCRSACCEPT =           35299,
+		SIOCAX25BPQADDR =        35300,
+		SIOCNRCTLCON =           35300,
+		SIOCRSCLRRT =            35300,
+		SIOCAX25GETPARMS =       35301,
+		SIOCRSGL2CALL =          35301,
+		SIOCAX25SETPARMS =       35302,
+		SIOCRSGFACILITIES =      35302,
+		SIOCAX25OPTRT =          35303,
+		SIOCAX25CTLCON =         35304,
+		SIOCAX25GETINFO =        35305,
+		SIOCAX25ADDFWD =         35306,
+		SIOCAX25DELFWD =         35307,
+		SIOCDEVPRIVATE =         35312,
+		SIOCGSTAMP_NEW =    2148567302,
+		SIOCGSTAMPNS_NEW =  2148567303,
+	}
+	public enum SocketProperty : int {
+		SO_DEBUG =                          1,
+		SO_REUSEADDR =                      2,
+		SO_TYPE =                           3,
+		SO_ERROR =                          4,
+		SO_DONTROUTE =                      5,
+		SO_BROADCAST =                      6,
+		SO_SNDBUF =                         7,
+		SO_RCVBUF =                         8,
+		SO_KEEPALIVE =                      9,
+		SO_OOBINLINE =                     10,
+		SO_NO_CHECK =                      11,
+		SO_PRIORITY =                      12,
+		SO_LINGER =                        13,
+		SO_BSDCOMPAT =                     14,
+		SO_REUSEPORT =                     15,
+		SO_PASSCRED =                      16,
+		SO_PEERCRED =                      17,
+		SO_RCVLOWAT =                      18,
+		SO_SNDLOWAT =                      19,
+		SO_RCVTIMEO =                      20,
+		SO_RCVTIMEO_OLD =                  20,
+		SO_SNDTIMEO =                      21,
+		SO_SNDTIMEO_OLD =                  21,
+		SO_SECURITY_AUTHENTICATION =       22,
+		SO_SECURITY_ENCRYPTION_TRANSPORT = 23,
+		SO_SECURITY_ENCRYPTION_NETWORK =   24,
+		SO_BINDTODEVICE =                  25,
+		SO_ATTACH_FILTER =                 26,
+		SO_GET_FILTER =                    26,
+		SO_DETACH_BPF =                    27,
+		SO_DETACH_FILTER =                 27,
+		SO_PEERNAME =                      28,
+		SO_TIMESTAMP =                     29,
+		SO_TIMESTAMP_OLD =                 29,
+		SO_ACCEPTCONN =                    30,
+		SO_PEERSEC =                       31,
+		SO_SNDBUFFORCE =                   32,
+		SO_RCVBUFFORCE =                   33,
+		SO_PASSSEC =                       34,
+		SO_TIMESTAMPNS =                   35,
+		SO_TIMESTAMPNS_OLD =               35,
+		SO_MARK =                          36,
+		SO_TIMESTAMPING =                  37,
+		SO_TIMESTAMPING_OLD =              37,
+		SO_PROTOCOL =                      38,
+		SO_DOMAIN =                        39,
+		SO_RXQ_OVFL =                      40,
+		SO_WIFI_STATUS =                   41,
+		SO_PEEK_OFF =                      42,
+		SO_NOFCS =                         43,
+		SO_LOCK_FILTER =                   44,
+		SO_SELECT_ERR_QUEUE =              45,
+		SO_BUSY_POLL =                     46,
+		SO_MAX_PACING_RATE =               47,
+		SO_BPF_EXTENSIONS =                48,
+		SO_INCOMING_CPU =                  49,
+		SO_ATTACH_BPF =                    50,
+		SO_ATTACH_REUSEPORT_CBPF =         51,
+		SO_ATTACH_REUSEPORT_EBPF =         52,
+		SO_CNX_ADVICE =                    53,
+		SO_MEMINFO =                       55,
+		SO_INCOMING_NAPI_ID =              56,
+		SO_COOKIE =                        57,
+		SO_PEERGROUPS =                    59,
+		SO_ZEROCOPY =                      60,
+		SO_TXTIME =                        61,
+		SO_BINDTOIFINDEX =                 62,
+		SO_TIMESTAMP_NEW =                 63,
+		SO_TIMESTAMPNS_NEW =               64,
+		SO_TIMESTAMPING_NEW =              65,
+		SO_RCVTIMEO_NEW =                  66,
+		SO_SNDTIMEO_NEW =                  67,
+		SO_DETACH_REUSEPORT_BPF =          68,
+		SO_PREFER_BUSY_POLL =              69,
+		SO_BUSY_POLL_BUDGET =              70,
+		SO_NETNS_COOKIE =                  71,
+		SO_BUF_LOCK =                      72,
+		SO_RESERVE_MEM =                   73,
+		SO_TXREHASH =                      74,
+		SO_RCVMARK =                       75,
+		SO_PASSPIDFD =                     76,
+		SO_PEERPIDFD =                     77,
+	}
+	public enum SocketPropertyGroup : uint {
+		SOL_IP =          0,
+		SOL_SOCKET =      1,
+		SOL_TCP =         6,
+		SOL_UDP =        17,
+		SOL_IPV6 =       41,
+		SOL_ICMPV6 =     58,
+		SOL_SCTP =      132,
+		SOL_RAW =       255,
+		SOL_IPX =       256,
+		SOL_AX25 =      257,
+		SOL_ATALK =     258,
+		SOL_NETROM =    259,
+		SOL_ROSE =      260,
+		SOL_DECNET =    261,
+		SOL_X25 =       262,
+		SOL_PACKET =    263,
+		SOL_ATM =       264,
+		SOL_AAL =       265,
+		SOL_IRDA =      266,
+		SOL_NETBEUI =   267,
+		SOL_LLC =       268,
+		SOL_DCCP =      269,
+		SOL_NETLINK =   270,
+		SOL_TIPC =      271,
+		SOL_RXRPC =     272,
+		SOL_PPPOL2TP =  273,
+		SOL_BLUETOOTH = 274,
+		SOL_PNPIPE =    275,
+		SOL_RDS =       276,
+		SOL_IUCV =      277,
+		SOL_CAIF =      278,
+		SOL_ALG =       279,
+		SOL_NFC =       280,
+		SOL_KCM =       281,
+		SOL_TLS =       282,
+		SOL_XDP =       283,
+		SOL_MPTCP =     284,
+		SOL_MCTP =      285,
+		SOL_SMC =       286,
+	}
+	public enum SocketPropertyTcp : int {
+		TCP_REPAIR_OFF_NO_WP =     -1,
+		TCP_REPAIR_OFF =            0,
+		TCP_COOKIE_IN_ALWAYS =      1,
+		TCP_MD5SIG_FLAG_PREFIX =    1,
+		TCP_NODELAY =               1,
+		TCP_REPAIR_ON =             1,
+		TCP_COOKIE_OUT_NEVER =      2,
+		TCP_MAXSEG =                2,
+		TCP_CORK =                  3,
+		TCP_KEEPIDLE =              4,
+		TCP_S_DATA_IN =             4,
+		TCP_KEEPINTVL =             5,
+		TCP_KEEPCNT =               6,
+		TCP_SYNCNT =                7,
+		TCP_COOKIE_MIN =            8,
+		TCP_LINGER2 =               8,
+		TCP_S_DATA_OUT =            8,
+		TCP_DEFER_ACCEPT =          9,
+		TCP_WINDOW_CLAMP =         10,
+		TCP_INFO =                 11,
+		TCP_QUICKACK =             12,
+		TCP_CONGESTION =           13,
+		TCP_MAX_WINSHIFT =         14,
+		TCP_MD5SIG =               14,
+		TCP_COOKIE_TRANSACTIONS =  15,
+		TCP_COOKIE_MAX =           16,
+		TCP_THIN_LINEAR_TIMEOUTS = 16,
+		TCP_THIN_DUPACK =          17,
+		TCP_USER_TIMEOUT =         18,
+		TCP_REPAIR =               19,
+		TCP_REPAIR_QUEUE =         20,
+		TCP_QUEUE_SEQ =            21,
+		TCP_REPAIR_OPTIONS =       22,
+		TCP_FASTOPEN =             23,
+		TCP_TIMESTAMP =            24,
+		TCP_NOTSENT_LOWAT =        25,
+		TCP_CC_INFO =              26,
+		TCP_SAVE_SYN =             27,
+		TCP_SAVED_SYN =            28,
+		TCP_REPAIR_WINDOW =        29,
+		TCP_FASTOPEN_CONNECT =     30,
+		TCP_ULP =                  31,
+		TCP_COOKIE_PAIR_SIZE =     32,
+		TCP_MD5SIG_EXT =           32,
+		TCP_FASTOPEN_KEY =         33,
+		TCP_FASTOPEN_NO_COOKIE =   34,
+		TCP_ZEROCOPY_RECEIVE =     35,
+		TCP_CM_INQ =               36,
+		TCP_INQ =                  36,
+		TCP_TX_DELAY =             37,
+		TCP_MD5SIG_MAXKEYLEN =     80,
+		TCP_MSS =                 512,
+		TCP_MSS_DEFAULT =         536,
+		TCP_MSS_DESIRED =        1220,
+		TCP_MAXWIN =            65535,
+	}
+	public enum SystemCall : uint {
+		restart_syscall =                0,
+		SYSCALL_BASE =                   0,
+		exit =                           1,
+		fork =                           2,
+		read =                           3,
+		write =                          4,
+		open =                           5,
+		close =                          6,
+		creat =                          8,
+		link =                           9,
+		unlink =                        10,
+		execve =                        11,
+		chdir =                         12,
+		mknod =                         14,
+		chmod =                         15,
+		lchown =                        16,
+		lseek =                         19,
+		getpid =                        20,
+		mount =                         21,
+		setuid =                        23,
+		getuid =                        24,
+		ptrace =                        26,
+		pause =                         29,
+		access =                        33,
+		nice =                          34,
+		sync =                          36,
+		kill =                          37,
+		rename =                        38,
+		mkdir =                         39,
+		rmdir =                         40,
+		dup =                           41,
+		pipe =                          42,
+		times =                         43,
+		brk =                           45,
+		setgid =                        46,
+		getgid =                        47,
+		geteuid =                       49,
+		getegid =                       50,
+		acct =                          51,
+		umount2 =                       52,
+		ioctl =                         54,
+		fcntl =                         55,
+		setpgid =                       57,
+		umask =                         60,
+		chroot =                        61,
+		ustat =                         62,
+		dup2 =                          63,
+		getppid =                       64,
+		getpgrp =                       65,
+		setsid =                        66,
+		sigaction =                     67,
+		setreuid =                      70,
+		setregid =                      71,
+		sigsuspend =                    72,
+		sigpending =                    73,
+		sethostname =                   74,
+		setrlimit =                     75,
+		getrusage =                     77,
+		gettimeofday =                  78,
+		settimeofday =                  79,
+		getgroups =                     80,
+		setgroups =                     81,
+		symlink =                       83,
+		readlink =                      85,
+		uselib =                        86,
+		swapon =                        87,
+		reboot =                        88,
+		munmap =                        91,
+		truncate =                      92,
+		ftruncate =                     93,
+		fchmod =                        94,
+		fchown =                        95,
+		getpriority =                   96,
+		setpriority =                   97,
+		statfs =                        99,
+		fstatfs =                      100,
+		syslog =                       103,
+		setitimer =                    104,
+		getitimer =                    105,
+		stat =                         106,
+		lstat =                        107,
+		fstat =                        108,
+		vhangup =                      111,
+		wait4 =                        114,
+		swapoff =                      115,
+		sysinfo =                      116,
+		fsync =                        118,
+		sigreturn =                    119,
+		clone =                        120,
+		setdomainname =                121,
+		uname =                        122,
+		adjtimex =                     124,
+		mprotect =                     125,
+		sigprocmask =                  126,
+		init_module =                  128,
+		delete_module =                129,
+		quotactl =                     131,
+		getpgid =                      132,
+		fchdir =                       133,
+		bdflush =                      134,
+		sysfs =                        135,
+		personality =                  136,
+		setfsuid =                     138,
+		setfsgid =                     139,
+		_llseek =                      140,
+		getdents =                     141,
+		_newselect =                   142,
+		flock =                        143,
+		msync =                        144,
+		readv =                        145,
+		writev =                       146,
+		getsid =                       147,
+		fdatasync =                    148,
+		_sysctl =                      149,
+		mlock =                        150,
+		munlock =                      151,
+		mlockall =                     152,
+		munlockall =                   153,
+		sched_setparam =               154,
+		sched_getparam =               155,
+		sched_setscheduler =           156,
+		sched_getscheduler =           157,
+		sched_yield =                  158,
+		sched_get_priority_max =       159,
+		sched_get_priority_min =       160,
+		sched_rr_get_interval =        161,
+		nanosleep =                    162,
+		mremap =                       163,
+		setresuid =                    164,
+		getresuid =                    165,
+		poll =                         168,
+		nfsservctl =                   169,
+		setresgid =                    170,
+		getresgid =                    171,
+		prctl =                        172,
+		rt_sigreturn =                 173,
+		rt_sigaction =                 174,
+		rt_sigprocmask =               175,
+		rt_sigpending =                176,
+		rt_sigtimedwait =              177,
+		rt_sigqueueinfo =              178,
+		rt_sigsuspend =                179,
+		pread64 =                      180,
+		pwrite64 =                     181,
+		chown =                        182,
+		getcwd =                       183,
+		capget =                       184,
+		capset =                       185,
+		sigaltstack =                  186,
+		sendfile =                     187,
+		vfork =                        190,
+		ugetrlimit =                   191,
+		mmap2 =                        192,
+		truncate64 =                   193,
+		ftruncate64 =                  194,
+		stat64 =                       195,
+		lstat64 =                      196,
+		fstat64 =                      197,
+		lchown32 =                     198,
+		getuid32 =                     199,
+		getgid32 =                     200,
+		geteuid32 =                    201,
+		getegid32 =                    202,
+		setreuid32 =                   203,
+		setregid32 =                   204,
+		getgroups32 =                  205,
+		setgroups32 =                  206,
+		fchown32 =                     207,
+		setresuid32 =                  208,
+		getresuid32 =                  209,
+		setresgid32 =                  210,
+		getresgid32 =                  211,
+		chown32 =                      212,
+		setuid32 =                     213,
+		setgid32 =                     214,
+		setfsuid32 =                   215,
+		setfsgid32 =                   216,
+		getdents64 =                   217,
+		pivot_root =                   218,
+		mincore =                      219,
+		madvise =                      220,
+		fcntl64 =                      221,
+		gettid =                       224,
+		readahead =                    225,
+		setxattr =                     226,
+		lsetxattr =                    227,
+		fsetxattr =                    228,
+		getxattr =                     229,
+		lgetxattr =                    230,
+		fgetxattr =                    231,
+		listxattr =                    232,
+		llistxattr =                   233,
+		flistxattr =                   234,
+		removexattr =                  235,
+		lremovexattr =                 236,
+		fremovexattr =                 237,
+		tkill =                        238,
+		sendfile64 =                   239,
+		futex =                        240,
+		sched_setaffinity =            241,
+		sched_getaffinity =            242,
+		io_setup =                     243,
+		io_destroy =                   244,
+		io_getevents =                 245,
+		io_submit =                    246,
+		io_cancel =                    247,
+		exit_group =                   248,
+		lookup_dcookie =               249,
+		epoll_create =                 250,
+		epoll_ctl =                    251,
+		epoll_wait =                   252,
+		remap_file_pages =             253,
+		set_tid_address =              256,
+		timer_create =                 257,
+		timer_settime =                258,
+		timer_gettime =                259,
+		timer_getoverrun =             260,
+		timer_delete =                 261,
+		clock_settime =                262,
+		clock_gettime =                263,
+		clock_getres =                 264,
+		clock_nanosleep =              265,
+		statfs64 =                     266,
+		fstatfs64 =                    267,
+		tgkill =                       268,
+		utimes =                       269,
+		arm_fadvise64_64 =             270,
+		pciconfig_iobase =             271,
+		pciconfig_read =               272,
+		pciconfig_write =              273,
+		mq_open =                      274,
+		mq_unlink =                    275,
+		mq_timedsend =                 276,
+		mq_timedreceive =              277,
+		mq_notify =                    278,
+		mq_getsetattr =                279,
+		waitid =                       280,
+		socket =                       281,
+		bind =                         282,
+		connect =                      283,
+		listen =                       284,
+		accept =                       285,
+		getsockname =                  286,
+		getpeername =                  287,
+		socketpair =                   288,
+		send =                         289,
+		sendto =                       290,
+		recv =                         291,
+		recvfrom =                     292,
+		shutdown =                     293,
+		setsockopt =                   294,
+		getsockopt =                   295,
+		sendmsg =                      296,
+		recvmsg =                      297,
+		semop =                        298,
+		semget =                       299,
+		semctl =                       300,
+		msgsnd =                       301,
+		msgrcv =                       302,
+		msgget =                       303,
+		msgctl =                       304,
+		shmat =                        305,
+		shmdt =                        306,
+		shmget =                       307,
+		shmctl =                       308,
+		add_key =                      309,
+		request_key =                  310,
+		keyctl =                       311,
+		semtimedop =                   312,
+		vserver =                      313,
+		ioprio_set =                   314,
+		ioprio_get =                   315,
+		inotify_init =                 316,
+		inotify_add_watch =            317,
+		inotify_rm_watch =             318,
+		mbind =                        319,
+		get_mempolicy =                320,
+		set_mempolicy =                321,
+		openat =                       322,
+		mkdirat =                      323,
+		mknodat =                      324,
+		fchownat =                     325,
+		futimesat =                    326,
+		fstatat64 =                    327,
+		unlinkat =                     328,
+		renameat =                     329,
+		linkat =                       330,
+		symlinkat =                    331,
+		readlinkat =                   332,
+		fchmodat =                     333,
+		faccessat =                    334,
+		pselect6 =                     335,
+		ppoll =                        336,
+		unshare =                      337,
+		set_robust_list =              338,
+		get_robust_list =              339,
+		splice =                       340,
+		arm_sync_file_range =          341,
+		sync_file_range2 =             341,
+		tee =                          342,
+		vmsplice =                     343,
+		move_pages =                   344,
+		getcpu =                       345,
+		epoll_pwait =                  346,
+		kexec_load =                   347,
+		utimensat =                    348,
+		signalfd =                     349,
+		timerfd_create =               350,
+		eventfd =                      351,
+		fallocate =                    352,
+		timerfd_settime =              353,
+		timerfd_gettime =              354,
+		signalfd4 =                    355,
+		eventfd2 =                     356,
+		epoll_create1 =                357,
+		dup3 =                         358,
+		pipe2 =                        359,
+		inotify_init1 =                360,
+		preadv =                       361,
+		pwritev =                      362,
+		rt_tgsigqueueinfo =            363,
+		perf_event_open =              364,
+		recvmmsg =                     365,
+		accept4 =                      366,
+		fanotify_init =                367,
+		fanotify_mark =                368,
+		prlimit64 =                    369,
+		name_to_handle_at =            370,
+		open_by_handle_at =            371,
+		clock_adjtime =                372,
+		syncfs =                       373,
+		sendmmsg =                     374,
+		setns =                        375,
+		process_vm_readv =             376,
+		process_vm_writev =            377,
+		kcmp =                         378,
+		finit_module =                 379,
+		sched_setattr =                380,
+		sched_getattr =                381,
+		renameat2 =                    382,
+		seccomp =                      383,
+		getrandom =                    384,
+		memfd_create =                 385,
+		bpf =                          386,
+		execveat =                     387,
+		userfaultfd =                  388,
+		membarrier =                   389,
+		mlock2 =                       390,
+		copy_file_range =              391,
+		preadv2 =                      392,
+		pwritev2 =                     393,
+		pkey_mprotect =                394,
+		pkey_alloc =                   395,
+		pkey_free =                    396,
+		statx =                        397,
+		rseq =                         398,
+		io_pgetevents =                399,
+		migrate_pages =                400,
+		kexec_file_load =              401,
+		clock_gettime64 =              403,
+		clock_settime64 =              404,
+		clock_adjtime64 =              405,
+		clock_getres_time64 =          406,
+		clock_nanosleep_time64 =       407,
+		timer_gettime64 =              408,
+		timer_settime64 =              409,
+		timerfd_gettime64 =            410,
+		timerfd_settime64 =            411,
+		utimensat_time64 =             412,
+		pselect6_time64 =              413,
+		ppoll_time64 =                 414,
+		io_pgetevents_time64 =         416,
+		recvmmsg_time64 =              417,
+		mq_timedsend_time64 =          418,
+		mq_timedreceive_time64 =       419,
+		semtimedop_time64 =            420,
+		rt_sigtimedwait_time64 =       421,
+		futex_time64 =                 422,
+		sched_rr_get_interval_time64 = 423,
+		pidfd_send_signal =            424,
+		io_uring_setup =               425,
+		io_uring_enter =               426,
+		io_uring_register =            427,
+		open_tree =                    428,
+		move_mount =                   429,
+		fsopen =                       430,
+		fsconfig =                     431,
+		fsmount =                      432,
+		fspick =                       433,
+		pidfd_open =                   434,
+		clone3 =                       435,
+		close_range =                  436,
+		openat2 =                      437,
+		pidfd_getfd =                  438,
+		faccessat2 =                   439,
+		process_madvise =              440,
+		epoll_pwait2 =                 441,
+		mount_setattr =                442,
+		quotactl_fd =                  443,
+		landlock_create_ruleset =      444,
+		landlock_add_rule =            445,
+		landlock_restrict_self =       446,
+		process_mrelease =             448,
+		futex_waitv =                  449,
+		set_mempolicy_home_node =      450,
+		cachestat =                    451,
+		fchmodat2 =                    452,
+		SYSCALL_MASK =             1048575,
+		OABI_SYSCALL_BASE =        9437184,
+	}
+	public enum SystemError : int {
+		[ErrorCodeSuccess]
+		None =              0,
+		EPERM =             1,
+		ENOENT =            2,
+		ESRCH =             3,
+		EINTR =             4,
+		EIO =               5,
+		ENXIO =             6,
+		E2BIG =             7,
+		ENOEXEC =           8,
+		EBADF =             9,
+		ECHILD =           10,
+		EAGAIN =           11,
+		EWOULDBLOCK =      11,
+		ENOMEM =           12,
+		EACCES =           13,
+		EFAULT =           14,
+		ENOTBLK =          15,
+		EBUSY =            16,
+		EEXIST =           17,
+		EXDEV =            18,
+		ENODEV =           19,
+		ENOTDIR =          20,
+		EISDIR =           21,
+		EINVAL =           22,
+		ENFILE =           23,
+		EMFILE =           24,
+		ENOTTY =           25,
+		ETXTBSY =          26,
+		EFBIG =            27,
+		ENOSPC =           28,
+		ESPIPE =           29,
+		EROFS =            30,
+		EMLINK =           31,
+		EPIPE =            32,
+		EDOM =             33,
+		ERANGE =           34,
+		EDEADLK =          35,
+		EDEADLOCK =        35,
+		ENAMETOOLONG =     36,
+		ENOLCK =           37,
+		ENOSYS =           38,
+		ENOTEMPTY =        39,
+		ELOOP =            40,
+		ENOMSG =           42,
+		EIDRM =            43,
+		ECHRNG =           44,
+		EL2NSYNC =         45,
+		EL3HLT =           46,
+		EL3RST =           47,
+		ELNRNG =           48,
+		EUNATCH =          49,
+		ENOCSI =           50,
+		EL2HLT =           51,
+		EBADE =            52,
+		EBADR =            53,
+		EXFULL =           54,
+		ENOANO =           55,
+		EBADRQC =          56,
+		EBADSLT =          57,
+		EBFONT =           59,
+		ENOSTR =           60,
+		ENODATA =          61,
+		ETIME =            62,
+		ENOSR =            63,
+		ENONET =           64,
+		ENOPKG =           65,
+		EREMOTE =          66,
+		ENOLINK =          67,
+		EADV =             68,
+		ESRMNT =           69,
+		ECOMM =            70,
+		EPROTO =           71,
+		EMULTIHOP =        72,
+		EDOTDOT =          73,
+		EBADMSG =          74,
+		EOVERFLOW =        75,
+		ENOTUNIQ =         76,
+		EBADFD =           77,
+		EREMCHG =          78,
+		ELIBACC =          79,
+		ELIBBAD =          80,
+		ELIBSCN =          81,
+		ELIBMAX =          82,
+		ELIBEXEC =         83,
+		EILSEQ =           84,
+		ERESTART =         85,
+		ESTRPIPE =         86,
+		EUSERS =           87,
+		ENOTSOCK =         88,
+		EDESTADDRREQ =     89,
+		EMSGSIZE =         90,
+		EPROTOTYPE =       91,
+		ENOPROTOOPT =      92,
+		EPROTONOSUPPORT =  93,
+		ESOCKTNOSUPPORT =  94,
+		EOPNOTSUPP =       95,
+		EPFNOSUPPORT =     96,
+		EAFNOSUPPORT =     97,
+		EADDRINUSE =       98,
+		EADDRNOTAVAIL =    99,
+		ENETDOWN =        100,
+		ENETUNREACH =     101,
+		ENETRESET =       102,
+		ECONNABORTED =    103,
+		ECONNRESET =      104,
+		ENOBUFS =         105,
+		EISCONN =         106,
+		ENOTCONN =        107,
+		ESHUTDOWN =       108,
+		ETOOMANYREFS =    109,
+		ETIMEDOUT =       110,
+		ECONNREFUSED =    111,
+		EHOSTDOWN =       112,
+		EHOSTUNREACH =    113,
+		EALREADY =        114,
+		EINPROGRESS =     115,
+		ESTALE =          116,
+		EUCLEAN =         117,
+		ENOTNAM =         118,
+		ENAVAIL =         119,
+		EISNAM =          120,
+		EREMOTEIO =       121,
+		EDQUOT =          122,
+		ENOMEDIUM =       123,
+		EMEDIUMTYPE =     124,
+		ECANCELED =       125,
+		ENOKEY =          126,
+		EKEYEXPIRED =     127,
+		EKEYREVOKED =     128,
+		EKEYREJECTED =    129,
+		EOWNERDEAD =      130,
+		ENOTRECOVERABLE = 131,
+		ERFKILL =         132,
+		EHWPOISON =       133,
+	}
+	public enum ThreadCapabilities : uint {
+		CAP_CHOWN =               0,
+		CAP_DAC_OVERRIDE =        1,
+		CAP_DAC_READ_SEARCH =     2,
+		CAP_FOWNER =              3,
+		CAP_FSETID =              4,
+		CAP_KILL =                5,
+		CAP_SETGID =              6,
+		CAP_SETUID =              7,
+		CAP_SETPCAP =             8,
+		CAP_LINUX_IMMUTABLE =     9,
+		CAP_NET_BIND_SERVICE =   10,
+		CAP_NET_BROADCAST =      11,
+		CAP_NET_ADMIN =          12,
+		CAP_NET_RAW =            13,
+		CAP_IPC_LOCK =           14,
+		CAP_IPC_OWNER =          15,
+		CAP_SYS_MODULE =         16,
+		CAP_SYS_RAWIO =          17,
+		CAP_SYS_CHROOT =         18,
+		CAP_SYS_PTRACE =         19,
+		CAP_SYS_PACCT =          20,
+		CAP_SYS_ADMIN =          21,
+		CAP_SYS_BOOT =           22,
+		CAP_SYS_NICE =           23,
+		CAP_SYS_RESOURCE =       24,
+		CAP_SYS_TIME =           25,
+		CAP_SYS_TTY_CONFIG =     26,
+		CAP_MKNOD =              27,
+		CAP_LEASE =              28,
+		CAP_AUDIT_WRITE =        29,
+		CAP_AUDIT_CONTROL =      30,
+		CAP_SETFCAP =            31,
+		CAP_MAC_OVERRIDE =       32,
+		CAP_MAC_ADMIN =          33,
+		CAP_SYSLOG =             34,
+		CAP_WAKE_ALARM =         35,
+		CAP_BLOCK_SUSPEND =      36,
+		CAP_AUDIT_READ =         37,
+		CAP_PERFMON =            38,
+		CAP_BPF =                39,
+		CAP_CHECKPOINT_RESTORE = 40,
+		CAP_LAST_CAP =           40,
+	}
+	public enum UnnamedEnum_5A368494 : uint {
+		GPIOLINE_CHANGED_REQUESTED = 1,
+		GPIOLINE_CHANGED_RELEASED =  2,
+		GPIOLINE_CHANGED_CONFIG =    3,
+	}
+	public enum UnnamedEnum_BD0C0B31 : uint {
+		SCTP_AUTH_NEW_KEY =  0,
+		SCTP_AUTH_FREE_KEY = 1,
+		SCTP_AUTH_NO_AUTH =  2,
+	}
+	public enum UnnamedEnum_BD0C0E07 : uint {
+		SCTP_PARTIAL_DELIVERY_ABORTED = 0,
+	}
+	public enum UnnamedEnum_BD0C38F2 : uint {
+		SCTP_AUTH_HMAC_ID_SHA1 =   1,
+		SCTP_AUTH_HMAC_ID_SHA256 = 3,
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __kernel_fd_set {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr[32] fds_bits;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __kernel_fsid_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int[2] val;
+	}
+	[ExplicitSize( Size = 128 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct __kernel_sockaddr_storage {
+		[Overlapped( Offset = 0 )]
+		public ushort ss_family;
+		[Overlapped( Offset = 2 )]
+		public sbyte[126] __data;
+		[Overlapped( Offset = 0 )]
+		public void* __align;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct atalk_addr {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort s_net;
+		[ExplicitOffset( Offset = 2 )]
+		public byte s_node;
+	}
+	[ExplicitSize( Size = 6 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct atalk_netrange {
+		[ExplicitOffset( Offset = 0 )]
+		public byte nr_phase;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort nr_firstnet;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort nr_lastnet;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct cap_user_data_t {
+		[ExplicitOffset( Offset = 0 )]
+		public uint effective;
+		[ExplicitOffset( Offset = 4 )]
+		public uint permitted;
+		[ExplicitOffset( Offset = 8 )]
+		public uint inheritable;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct cap_user_header_t {
+		[ExplicitOffset( Offset = 0 )]
+		public uint version;
+		[ExplicitOffset( Offset = 4 )]
+		public int pid;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_attribute {
+		[ExplicitOffset( Offset = 0 )]
+		public uint id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint padding;
+		[Overlapped( Offset = 8 )]
+		public ulong flags;
+		[Overlapped( Offset = 8 )]
+		public ulong values;
+		[Overlapped( Offset = 8 )]
+		public uint debounce_period_us;
+	}
+	[ExplicitSize( Size = 272 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_config {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong flags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint num_attrs;
+		[ExplicitOffset( Offset = 12 )]
+		public uint[5] padding;
+		[ExplicitOffset( Offset = 32 )]
+		public gpio_v2_line_config_attribute[10] attrs;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_config_attribute {
+		[ExplicitOffset( Offset = 0 )]
+		public gpio_v2_line_attribute attr;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong mask;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong timestamp_ns;
+		[ExplicitOffset( Offset = 8 )]
+		public uint id;
+		[ExplicitOffset( Offset = 12 )]
+		public uint offset;
+		[ExplicitOffset( Offset = 16 )]
+		public uint seqno;
+		[ExplicitOffset( Offset = 20 )]
+		public uint line_seqno;
+		[ExplicitOffset( Offset = 24 )]
+		public uint[6] padding;
+	}
+	[ExplicitSize( Size = 256 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_info {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte[32] consumer;
+		[ExplicitOffset( Offset = 64 )]
+		public uint offset;
+		[ExplicitOffset( Offset = 68 )]
+		public uint num_attrs;
+		[ExplicitOffset( Offset = 72 )]
+		public ulong flags;
+		[ExplicitOffset( Offset = 80 )]
+		public gpio_v2_line_attribute[10] attrs;
+		[ExplicitOffset( Offset = 240 )]
+		public uint[4] padding;
+	}
+	[ExplicitSize( Size = 288 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_info_changed {
+		[ExplicitOffset( Offset = 0 )]
+		public gpio_v2_line_info info;
+		[ExplicitOffset( Offset = 256 )]
+		public ulong timestamp_ns;
+		[ExplicitOffset( Offset = 264 )]
+		public uint event_type;
+		[ExplicitOffset( Offset = 268 )]
+		public uint[5] padding;
+	}
+	[ExplicitSize( Size = 592 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[64] offsets;
+		[ExplicitOffset( Offset = 256 )]
+		public sbyte[32] consumer;
+		[ExplicitOffset( Offset = 288 )]
+		public gpio_v2_line_config config;
+		[ExplicitOffset( Offset = 560 )]
+		public uint num_lines;
+		[ExplicitOffset( Offset = 564 )]
+		public uint event_buffer_size;
+		[ExplicitOffset( Offset = 568 )]
+		public uint[5] padding;
+		[ExplicitOffset( Offset = 588 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpio_v2_line_values {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong bits;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong mask;
+	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiochip_info {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 32 )]
+		public sbyte[32] label;
+		[ExplicitOffset( Offset = 64 )]
+		public uint lines;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpioevent_data {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong timestamp;
+		[ExplicitOffset( Offset = 8 )]
+		public uint id;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioevent_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint lineoffset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint handleflags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint eventflags;
+		[ExplicitOffset( Offset = 12 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 44 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 84 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiohandle_config {
+		[ExplicitOffset( Offset = 0 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 4 )]
+		public byte[64] default_values;
+		[ExplicitOffset( Offset = 68 )]
+		public uint[4] padding;
+	}
+	[ExplicitSize( Size = 64 )]
+	public partial struct gpiohandle_data {
+		[ExplicitOffset( Offset = 0 )]
+		public byte[64] values;
+	}
+	[ExplicitSize( Size = 364 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpiohandle_request {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[64] lineoffsets;
+		[ExplicitOffset( Offset = 256 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 260 )]
+		public byte[64] default_values;
+		[ExplicitOffset( Offset = 324 )]
+		public sbyte[32] consumer_label;
+		[ExplicitOffset( Offset = 356 )]
+		public uint lines;
+		[ExplicitOffset( Offset = 360 )]
+		public int fd;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct gpioline_info {
+		[ExplicitOffset( Offset = 0 )]
+		public uint line_offset;
+		[ExplicitOffset( Offset = 4 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[32] name;
+		[ExplicitOffset( Offset = 40 )]
+		public sbyte[32] consumer;
+	}
+	[ExplicitSize( Size = 104 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct gpioline_info_changed {
+		[ExplicitOffset( Offset = 0 )]
+		public gpioline_info info;
+		[ExplicitOffset( Offset = 72 )]
+		public ulong timestamp;
+		[ExplicitOffset( Offset = 80 )]
+		public uint event_type;
+		[ExplicitOffset( Offset = 84 )]
+		public uint[5] padding;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct mount_attr {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong attr_set;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong attr_clr;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong propagation;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong userns_fd;
+	}
+	[ExplicitSize( Size = 104 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct prctl_mm_map {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong start_code;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong end_code;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong start_data;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong end_data;
+		[ExplicitOffset( Offset = 32 )]
+		public ulong start_brk;
+		[ExplicitOffset( Offset = 40 )]
+		public ulong brk;
+		[ExplicitOffset( Offset = 48 )]
+		public ulong start_stack;
+		[ExplicitOffset( Offset = 56 )]
+		public ulong arg_start;
+		[ExplicitOffset( Offset = 64 )]
+		public ulong arg_end;
+		[ExplicitOffset( Offset = 72 )]
+		public ulong env_start;
+		[ExplicitOffset( Offset = 80 )]
+		public ulong env_end;
+		[ExplicitOffset( Offset = 88 )]
+		public ulong* auxv;
+		[ExplicitOffset( Offset = 92 )]
+		public uint auxv_size;
+		[ExplicitOffset( Offset = 96 )]
+		public uint exe_fd;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct pt_regs {
+		[ExplicitOffset( Offset = 0 )]
+		public intptr[18] uregs;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ptrace_peeksiginfo_args {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong off;
+		[ExplicitOffset( Offset = 8 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 12 )]
+		public int nr;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ptrace_rseq_configuration {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong rseq_abi_pointer;
+		[ExplicitOffset( Offset = 8 )]
+		public uint rseq_abi_size;
+		[ExplicitOffset( Offset = 12 )]
+		public uint signature;
+		[ExplicitOffset( Offset = 16 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 20 )]
+		public uint pad;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ptrace_sud_config {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong mode;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong selector;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong offset;
+		[ExplicitOffset( Offset = 24 )]
+		public ulong len;
+	}
+	[ExplicitSize( Size = 88 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct ptrace_syscall_info {
+		[ExplicitOffset( Offset = 0 )]
+		public byte op;
+		[ExplicitOffset( Offset = 1 )]
+		public byte[3] pad;
+		[ExplicitOffset( Offset = 4 )]
+		public uint arch;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong instruction_pointer;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong stack_pointer;
+		[Overlapped( Offset = 24 )]
+		public UnnamedStruct_7491856E entry;
+		[Overlapped( Offset = 24 )]
+		public UnnamedStruct_749185F2 exit;
+		[Overlapped( Offset = 24 )]
+		public UnnamedStruct_74918046 seccomp;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_adaptation_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sai_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sai_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sai_length;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sai_adaptation_ind;
+		[ExplicitOffset( Offset = 12 )]
+		public int sai_assoc_id;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_add_streams {
+		[ExplicitOffset( Offset = 0 )]
+		public int sas_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sas_instrms;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort sas_outstrms;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assoc_change {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sac_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sac_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sac_length;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort sac_state;
+		[ExplicitOffset( Offset = 10 )]
+		public ushort sac_error;
+		[ExplicitOffset( Offset = 12 )]
+		public ushort sac_outbound_streams;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort sac_inbound_streams;
+		[ExplicitOffset( Offset = 16 )]
+		public int sac_assoc_id;
+		public byte* sac_info { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assoc_ids {
+		[ExplicitOffset( Offset = 0 )]
+		public uint gaids_number_of_ids;
+		public int* gaids_assoc_id { get { return cast<int*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assoc_reset_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort assocreset_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort assocreset_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint assocreset_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int assocreset_assoc_id;
+		[ExplicitOffset( Offset = 12 )]
+		public uint assocreset_local_tsn;
+		[ExplicitOffset( Offset = 16 )]
+		public uint assocreset_remote_tsn;
+	}
+	[ExplicitSize( Size = 256 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct sctp_assoc_stats {
+		[ExplicitOffset( Offset = 0 )]
+		public int sas_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage sas_obs_rto_ipaddr;
+		[ExplicitOffset( Offset = 136 )]
+		public ulong sas_maxrto;
+		[ExplicitOffset( Offset = 144 )]
+		public ulong sas_isacks;
+		[ExplicitOffset( Offset = 152 )]
+		public ulong sas_osacks;
+		[ExplicitOffset( Offset = 160 )]
+		public ulong sas_opackets;
+		[ExplicitOffset( Offset = 168 )]
+		public ulong sas_ipackets;
+		[ExplicitOffset( Offset = 176 )]
+		public ulong sas_rtxchunks;
+		[ExplicitOffset( Offset = 184 )]
+		public ulong sas_outofseqtsns;
+		[ExplicitOffset( Offset = 192 )]
+		public ulong sas_idupchunks;
+		[ExplicitOffset( Offset = 200 )]
+		public ulong sas_gapcnt;
+		[ExplicitOffset( Offset = 208 )]
+		public ulong sas_ouodchunks;
+		[ExplicitOffset( Offset = 216 )]
+		public ulong sas_iuodchunks;
+		[ExplicitOffset( Offset = 224 )]
+		public ulong sas_oodchunks;
+		[ExplicitOffset( Offset = 232 )]
+		public ulong sas_iodchunks;
+		[ExplicitOffset( Offset = 240 )]
+		public ulong sas_octrlchunks;
+		[ExplicitOffset( Offset = 248 )]
+		public ulong sas_ictrlchunks;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assoc_value {
+		[ExplicitOffset( Offset = 0 )]
+		public int assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint assoc_value;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_assocparams {
+		[ExplicitOffset( Offset = 0 )]
+		public int sasoc_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sasoc_asocmaxrxt;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort sasoc_number_peer_destinations;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sasoc_peer_rwnd;
+		[ExplicitOffset( Offset = 12 )]
+		public uint sasoc_local_rwnd;
+		[ExplicitOffset( Offset = 16 )]
+		public uint sasoc_cookie_life;
+	}
+	[ExplicitSize( Size = 1 )]
+	public partial struct sctp_authchunk {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sauth_chunk;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_authchunks {
+		[ExplicitOffset( Offset = 0 )]
+		public int gauth_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint gauth_number_of_chunks;
+		public byte* gauth_chunks { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 2 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct sctp_authinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort auth_keynumber;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_authkey {
+		[ExplicitOffset( Offset = 0 )]
+		public int sca_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sca_keynumber;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort sca_keylength;
+		public byte* sca_key { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_authkey_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort auth_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort auth_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint auth_length;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort auth_keynumber;
+		[ExplicitOffset( Offset = 10 )]
+		public ushort auth_altkeynumber;
+		[ExplicitOffset( Offset = 12 )]
+		public uint auth_indication;
+		[ExplicitOffset( Offset = 16 )]
+		public int auth_assoc_id;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_authkeyid {
+		[ExplicitOffset( Offset = 0 )]
+		public int scact_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort scact_keynumber;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_cmsg_data_t {
+		[Overlapped( Offset = 0 )]
+		public byte raw;
+		[Overlapped( Offset = 0 )]
+		public sctp_initmsg init;
+		[Overlapped( Offset = 0 )]
+		public sctp_sndrcvinfo sndrcv;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_default_prinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int pr_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint pr_value;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort pr_policy;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_event {
+		[ExplicitOffset( Offset = 0 )]
+		public int se_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort se_type;
+		[ExplicitOffset( Offset = 6 )]
+		public byte se_on;
+	}
+	[ExplicitSize( Size = 14 )]
+	public partial struct sctp_event_subscribe {
+		[ExplicitOffset( Offset = 0 )]
+		public byte sctp_data_io_event;
+		[ExplicitOffset( Offset = 1 )]
+		public byte sctp_association_event;
+		[ExplicitOffset( Offset = 2 )]
+		public byte sctp_address_event;
+		[ExplicitOffset( Offset = 3 )]
+		public byte sctp_send_failure_event;
+		[ExplicitOffset( Offset = 4 )]
+		public byte sctp_peer_error_event;
+		[ExplicitOffset( Offset = 5 )]
+		public byte sctp_shutdown_event;
+		[ExplicitOffset( Offset = 6 )]
+		public byte sctp_partial_delivery_event;
+		[ExplicitOffset( Offset = 7 )]
+		public byte sctp_adaptation_layer_event;
+		[ExplicitOffset( Offset = 8 )]
+		public byte sctp_authentication_event;
+		[ExplicitOffset( Offset = 9 )]
+		public byte sctp_sender_dry_event;
+		[ExplicitOffset( Offset = 10 )]
+		public byte sctp_stream_reset_event;
+		[ExplicitOffset( Offset = 11 )]
+		public byte sctp_assoc_reset_event;
+		[ExplicitOffset( Offset = 12 )]
+		public byte sctp_stream_change_event;
+		[ExplicitOffset( Offset = 13 )]
+		public byte sctp_send_failure_event_event;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_getaddrs {
+		[ExplicitOffset( Offset = 0 )]
+		public int assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint addr_num;
+		public byte* addrs { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_getaddrs_old {
+		[ExplicitOffset( Offset = 0 )]
+		public int assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public int addr_num;
+		[ExplicitOffset( Offset = 8 )]
+		public sockaddr* addrs;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_hmacalgo {
+		[ExplicitOffset( Offset = 0 )]
+		public uint shmac_num_idents;
+		public ushort* shmac_idents { get { return cast<ushort*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 368 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct sctp_info {
+		[ExplicitOffset( Offset = 0 )]
+		public uint sctpi_tag;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sctpi_state;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sctpi_rwnd;
+		[ExplicitOffset( Offset = 12 )]
+		public ushort sctpi_unackdata;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort sctpi_penddata;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort sctpi_instrms;
+		[ExplicitOffset( Offset = 18 )]
+		public ushort sctpi_outstrms;
+		[ExplicitOffset( Offset = 20 )]
+		public uint sctpi_fragmentation_point;
+		[ExplicitOffset( Offset = 24 )]
+		public uint sctpi_inqueue;
+		[ExplicitOffset( Offset = 28 )]
+		public uint sctpi_outqueue;
+		[ExplicitOffset( Offset = 32 )]
+		public uint sctpi_overall_error;
+		[ExplicitOffset( Offset = 36 )]
+		public uint sctpi_max_burst;
+		[ExplicitOffset( Offset = 40 )]
+		public uint sctpi_maxseg;
+		[ExplicitOffset( Offset = 44 )]
+		public uint sctpi_peer_rwnd;
+		[ExplicitOffset( Offset = 48 )]
+		public uint sctpi_peer_tag;
+		[ExplicitOffset( Offset = 52 )]
+		public byte sctpi_peer_capable;
+		[ExplicitOffset( Offset = 53 )]
+		public byte sctpi_peer_sack;
+		[ExplicitOffset( Offset = 54 )]
+		public ushort __reserved1;
+		[ExplicitOffset( Offset = 56 )]
+		public ulong sctpi_isacks;
+		[ExplicitOffset( Offset = 64 )]
+		public ulong sctpi_osacks;
+		[ExplicitOffset( Offset = 72 )]
+		public ulong sctpi_opackets;
+		[ExplicitOffset( Offset = 80 )]
+		public ulong sctpi_ipackets;
+		[ExplicitOffset( Offset = 88 )]
+		public ulong sctpi_rtxchunks;
+		[ExplicitOffset( Offset = 96 )]
+		public ulong sctpi_outofseqtsns;
+		[ExplicitOffset( Offset = 104 )]
+		public ulong sctpi_idupchunks;
+		[ExplicitOffset( Offset = 112 )]
+		public ulong sctpi_gapcnt;
+		[ExplicitOffset( Offset = 120 )]
+		public ulong sctpi_ouodchunks;
+		[ExplicitOffset( Offset = 128 )]
+		public ulong sctpi_iuodchunks;
+		[ExplicitOffset( Offset = 136 )]
+		public ulong sctpi_oodchunks;
+		[ExplicitOffset( Offset = 144 )]
+		public ulong sctpi_iodchunks;
+		[ExplicitOffset( Offset = 152 )]
+		public ulong sctpi_octrlchunks;
+		[ExplicitOffset( Offset = 160 )]
+		public ulong sctpi_ictrlchunks;
+		[ExplicitOffset( Offset = 168 )]
+		public sockaddr_storage sctpi_p_address;
+		[ExplicitOffset( Offset = 296 )]
+		public int sctpi_p_state;
+		[ExplicitOffset( Offset = 300 )]
+		public uint sctpi_p_cwnd;
+		[ExplicitOffset( Offset = 304 )]
+		public uint sctpi_p_srtt;
+		[ExplicitOffset( Offset = 308 )]
+		public uint sctpi_p_rto;
+		[ExplicitOffset( Offset = 312 )]
+		public uint sctpi_p_hbinterval;
+		[ExplicitOffset( Offset = 316 )]
+		public uint sctpi_p_pathmaxrxt;
+		[ExplicitOffset( Offset = 320 )]
+		public uint sctpi_p_sackdelay;
+		[ExplicitOffset( Offset = 324 )]
+		public uint sctpi_p_sackfreq;
+		[ExplicitOffset( Offset = 328 )]
+		public uint sctpi_p_ssthresh;
+		[ExplicitOffset( Offset = 332 )]
+		public uint sctpi_p_partial_bytes_acked;
+		[ExplicitOffset( Offset = 336 )]
+		public uint sctpi_p_flight_size;
+		[ExplicitOffset( Offset = 340 )]
+		public ushort sctpi_p_error;
+		[ExplicitOffset( Offset = 342 )]
+		public ushort __reserved2;
+		[ExplicitOffset( Offset = 344 )]
+		public uint sctpi_s_autoclose;
+		[ExplicitOffset( Offset = 348 )]
+		public uint sctpi_s_adaptation_ind;
+		[ExplicitOffset( Offset = 352 )]
+		public uint sctpi_s_pd_point;
+		[ExplicitOffset( Offset = 356 )]
+		public byte sctpi_s_nodelay;
+		[ExplicitOffset( Offset = 357 )]
+		public byte sctpi_s_disable_fragments;
+		[ExplicitOffset( Offset = 358 )]
+		public byte sctpi_s_v4mapped;
+		[ExplicitOffset( Offset = 359 )]
+		public byte sctpi_s_frag_interleave;
+		[ExplicitOffset( Offset = 360 )]
+		public uint sctpi_s_type;
+		[ExplicitOffset( Offset = 364 )]
+		public uint __reserved3;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct sctp_initmsg {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sinit_num_ostreams;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sinit_max_instreams;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sinit_max_attempts;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort sinit_max_init_timeo;
+	}
+	[ExplicitSize( Size = 148 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_notification {
+		[Overlapped( Offset = 0 )]
+		public UnnamedStruct_F913CB04 sn_header;
+		[Overlapped( Offset = 0 )]
+		public sctp_assoc_change sn_assoc_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_paddr_change sn_paddr_change;
+		[Overlapped( Offset = 0 )]
+		public sctp_remote_error sn_remote_error;
+		[Overlapped( Offset = 0 )]
+		public sctp_send_failed sn_send_failed;
+		[Overlapped( Offset = 0 )]
+		public sctp_shutdown_event sn_shutdown_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_adaptation_event sn_adaptation_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_pdapi_event sn_pdapi_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_authkey_event sn_authkey_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_sender_dry_event sn_sender_dry_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_stream_reset_event sn_strreset_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_assoc_reset_event sn_assocreset_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_stream_change_event sn_strchange_event;
+		[Overlapped( Offset = 0 )]
+		public sctp_send_failed_event sn_send_failed_event;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_nxtinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort nxt_sid;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort nxt_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint nxt_ppid;
+		[ExplicitOffset( Offset = 8 )]
+		public uint nxt_length;
+		[ExplicitOffset( Offset = 12 )]
+		public int nxt_assoc_id;
+	}
+	[ExplicitSize( Size = 148 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_paddr_change {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort spc_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort spc_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint spc_length;
+		[ExplicitOffset( Offset = 8 )]
+		public sockaddr_storage spc_aaddr;
+		[ExplicitOffset( Offset = 136 )]
+		public int spc_state;
+		[ExplicitOffset( Offset = 140 )]
+		public int spc_error;
+		[ExplicitOffset( Offset = 144 )]
+		public int spc_assoc_id;
+	}
+	[ExplicitSize( Size = 152 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_paddrinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int spinfo_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage spinfo_address;
+		[ExplicitOffset( Offset = 132 )]
+		public int spinfo_state;
+		[ExplicitOffset( Offset = 136 )]
+		public uint spinfo_cwnd;
+		[ExplicitOffset( Offset = 140 )]
+		public uint spinfo_srtt;
+		[ExplicitOffset( Offset = 144 )]
+		public uint spinfo_rto;
+		[ExplicitOffset( Offset = 148 )]
+		public uint spinfo_mtu;
+	}
+	[ExplicitSize( Size = 156 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_paddrparams {
+		[ExplicitOffset( Offset = 0 )]
+		public int spp_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage spp_address;
+		[ExplicitOffset( Offset = 132 )]
+		public uint spp_hbinterval;
+		[ExplicitOffset( Offset = 136 )]
+		public ushort spp_pathmaxrxt;
+		[ExplicitOffset( Offset = 138 )]
+		public uint spp_pathmtu;
+		[ExplicitOffset( Offset = 142 )]
+		public uint spp_sackdelay;
+		[ExplicitOffset( Offset = 146 )]
+		public uint spp_flags;
+		[ExplicitOffset( Offset = 150 )]
+		public uint spp_ipv6_flowlabel;
+		[ExplicitOffset( Offset = 154 )]
+		public byte spp_dscp;
+	}
+	[ExplicitSize( Size = 136 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_paddrthlds {
+		[ExplicitOffset( Offset = 0 )]
+		public int spt_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage spt_address;
+		[ExplicitOffset( Offset = 132 )]
+		public ushort spt_pathmaxrxt;
+		[ExplicitOffset( Offset = 134 )]
+		public ushort spt_pathpfthld;
+	}
+	[ExplicitSize( Size = 140 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_paddrthlds_v2 {
+		[ExplicitOffset( Offset = 0 )]
+		public int spt_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage spt_address;
+		[ExplicitOffset( Offset = 132 )]
+		public ushort spt_pathmaxrxt;
+		[ExplicitOffset( Offset = 134 )]
+		public ushort spt_pathpfthld;
+		[ExplicitOffset( Offset = 136 )]
+		public ushort spt_pathcpthld;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_pdapi_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort pdapi_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort pdapi_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint pdapi_length;
+		[ExplicitOffset( Offset = 8 )]
+		public uint pdapi_indication;
+		[ExplicitOffset( Offset = 12 )]
+		public int pdapi_assoc_id;
+		[ExplicitOffset( Offset = 16 )]
+		public uint pdapi_stream;
+		[ExplicitOffset( Offset = 20 )]
+		public uint pdapi_seq;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_peeloff_arg_t {
+		[ExplicitOffset( Offset = 0 )]
+		public int associd;
+		[ExplicitOffset( Offset = 4 )]
+		public int sd;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_peeloff_flags_arg_t {
+		[ExplicitOffset( Offset = 0 )]
+		public sctp_peeloff_arg_t p_arg;
+		[ExplicitOffset( Offset = 8 )]
+		public uint flags;
+	}
+	[ExplicitSize( Size = 132 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_prim {
+		[ExplicitOffset( Offset = 0 )]
+		public int ssp_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage ssp_addr;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_prinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort pr_policy;
+		[ExplicitOffset( Offset = 4 )]
+		public uint pr_value;
+	}
+	[ExplicitSize( Size = 136 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_probeinterval {
+		[ExplicitOffset( Offset = 0 )]
+		public int spi_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage spi_address;
+		[ExplicitOffset( Offset = 132 )]
+		public uint spi_interval;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct sctp_prstatus {
+		[ExplicitOffset( Offset = 0 )]
+		public int sprstat_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sprstat_sid;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort sprstat_policy;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong sprstat_abandoned_unsent;
+		[ExplicitOffset( Offset = 16 )]
+		public ulong sprstat_abandoned_sent;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_rcvinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort rcv_sid;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort rcv_ssn;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort rcv_flags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint rcv_ppid;
+		[ExplicitOffset( Offset = 12 )]
+		public uint rcv_tsn;
+		[ExplicitOffset( Offset = 16 )]
+		public uint rcv_cumtsn;
+		[ExplicitOffset( Offset = 20 )]
+		public uint rcv_context;
+		[ExplicitOffset( Offset = 24 )]
+		public int rcv_assoc_id;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_remote_error {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sre_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sre_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sre_length;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort sre_error;
+		[ExplicitOffset( Offset = 12 )]
+		public int sre_assoc_id;
+		public byte* sre_data { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_reset_streams {
+		[ExplicitOffset( Offset = 0 )]
+		public int srs_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort srs_flags;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort srs_number_streams;
+		public ushort* srs_stream_list { get { return cast<ushort*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_rtoinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public int srto_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint srto_initial;
+		[ExplicitOffset( Offset = 8 )]
+		public uint srto_max;
+		[ExplicitOffset( Offset = 12 )]
+		public uint srto_min;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sack_info {
+		[ExplicitOffset( Offset = 0 )]
+		public int sack_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sack_delay;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sack_freq;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_send_failed {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ssf_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort ssf_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ssf_length;
+		[ExplicitOffset( Offset = 8 )]
+		public uint ssf_error;
+		[ExplicitOffset( Offset = 12 )]
+		public sctp_sndrcvinfo ssf_info;
+		[ExplicitOffset( Offset = 44 )]
+		public int ssf_assoc_id;
+		public byte* ssf_data { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_send_failed_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ssf_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort ssf_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ssf_length;
+		[ExplicitOffset( Offset = 8 )]
+		public uint ssf_error;
+		[ExplicitOffset( Offset = 12 )]
+		public sctp_sndinfo ssfe_info;
+		[ExplicitOffset( Offset = 28 )]
+		public int ssf_assoc_id;
+		public byte* ssf_data { get { return cast<byte*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sender_dry_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sender_dry_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sender_dry_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sender_dry_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int sender_dry_assoc_id;
+	}
+	[ExplicitSize( Size = 4 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_setadaptation {
+		[ExplicitOffset( Offset = 0 )]
+		public uint ssb_adaptation_ind;
+	}
+	[ExplicitSize( Size = 132 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_setpeerprim {
+		[ExplicitOffset( Offset = 0 )]
+		public int sspp_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage sspp_addr;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_shutdown_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sse_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sse_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sse_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int sse_assoc_id;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sndinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort snd_sid;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort snd_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint snd_ppid;
+		[ExplicitOffset( Offset = 8 )]
+		public uint snd_context;
+		[ExplicitOffset( Offset = 12 )]
+		public int snd_assoc_id;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sndrcvinfo {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sinfo_stream;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sinfo_ssn;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort sinfo_flags;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sinfo_ppid;
+		[ExplicitOffset( Offset = 12 )]
+		public uint sinfo_context;
+		[ExplicitOffset( Offset = 16 )]
+		public uint sinfo_timetolive;
+		[ExplicitOffset( Offset = 20 )]
+		public uint sinfo_tsn;
+		[ExplicitOffset( Offset = 24 )]
+		public uint sinfo_cumtsn;
+		[ExplicitOffset( Offset = 28 )]
+		public int sinfo_assoc_id;
+	}
+	[ExplicitSize( Size = 176 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_status {
+		[ExplicitOffset( Offset = 0 )]
+		public int sstat_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public int sstat_state;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sstat_rwnd;
+		[ExplicitOffset( Offset = 12 )]
+		public ushort sstat_unackdata;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort sstat_penddata;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort sstat_instrms;
+		[ExplicitOffset( Offset = 18 )]
+		public ushort sstat_outstrms;
+		[ExplicitOffset( Offset = 20 )]
+		public uint sstat_fragmentation_point;
+		[ExplicitOffset( Offset = 24 )]
+		public sctp_paddrinfo sstat_primary;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_stream_change_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort strchange_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort strchange_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint strchange_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int strchange_assoc_id;
+		[ExplicitOffset( Offset = 12 )]
+		public ushort strchange_instrms;
+		[ExplicitOffset( Offset = 14 )]
+		public ushort strchange_outstrms;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_stream_reset_event {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort strreset_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort strreset_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint strreset_length;
+		[ExplicitOffset( Offset = 8 )]
+		public int strreset_assoc_id;
+		public ushort* strreset_stream_list { get { return cast<ushort*>( &this + 1 ); } }
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_stream_value {
+		[ExplicitOffset( Offset = 0 )]
+		public int assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort stream_id;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort stream_value;
+	}
+	[ExplicitSize( Size = 136 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_udpencaps {
+		[ExplicitOffset( Offset = 0 )]
+		public int sue_assoc_id;
+		[ExplicitOffset( Offset = 4 )]
+		public sockaddr_storage sue_address;
+		[ExplicitOffset( Offset = 132 )]
+		public ushort sue_port;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct seccomp_metadata {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong filter_off;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong flags;
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_icounter_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int cts;
+		[ExplicitOffset( Offset = 4 )]
+		public int dsr;
+		[ExplicitOffset( Offset = 8 )]
+		public int rng;
+		[ExplicitOffset( Offset = 12 )]
+		public int dcd;
+		[ExplicitOffset( Offset = 16 )]
+		public int rx;
+		[ExplicitOffset( Offset = 20 )]
+		public int tx;
+		[ExplicitOffset( Offset = 24 )]
+		public int frame;
+		[ExplicitOffset( Offset = 28 )]
+		public int overrun;
+		[ExplicitOffset( Offset = 32 )]
+		public int parity;
+		[ExplicitOffset( Offset = 36 )]
+		public int brk;
+		[ExplicitOffset( Offset = 40 )]
+		public int buf_overrun;
+		[ExplicitOffset( Offset = 44 )]
+		public int[9] reserved;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_iso7816 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint tg;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sc_fi;
+		[ExplicitOffset( Offset = 12 )]
+		public uint sc_di;
+		[ExplicitOffset( Offset = 16 )]
+		public uint clk;
+		[ExplicitOffset( Offset = 20 )]
+		public uint[5] reserved;
+	}
+	[ExplicitSize( Size = 168 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_multiport_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int irq;
+		[ExplicitOffset( Offset = 4 )]
+		public int port1;
+		[ExplicitOffset( Offset = 8 )]
+		public byte mask1;
+		[ExplicitOffset( Offset = 9 )]
+		public byte match1;
+		[ExplicitOffset( Offset = 12 )]
+		public int port2;
+		[ExplicitOffset( Offset = 16 )]
+		public byte mask2;
+		[ExplicitOffset( Offset = 17 )]
+		public byte match2;
+		[ExplicitOffset( Offset = 20 )]
+		public int port3;
+		[ExplicitOffset( Offset = 24 )]
+		public byte mask3;
+		[ExplicitOffset( Offset = 25 )]
+		public byte match3;
+		[ExplicitOffset( Offset = 28 )]
+		public int port4;
+		[ExplicitOffset( Offset = 32 )]
+		public byte mask4;
+		[ExplicitOffset( Offset = 33 )]
+		public byte match4;
+		[ExplicitOffset( Offset = 36 )]
+		public int port_monitor;
+		[ExplicitOffset( Offset = 40 )]
+		public int[32] reserved;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_rs485 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint delay_rts_before_send;
+		[ExplicitOffset( Offset = 8 )]
+		public uint delay_rts_after_send;
+		[Overlapped( Offset = 12 )]
+		public uint[5] padding;
+		[Overlapped( Offset = 12 )]
+		public byte addr_recv;
+		[Overlapped( Offset = 13 )]
+		public byte addr_dest;
+		[Overlapped( Offset = 14 )]
+		public byte[2] padding0;
+		[Overlapped( Offset = 16 )]
+		public uint[4] padding1;
+	}
+	[ExplicitSize( Size = 60 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int type;
+		[ExplicitOffset( Offset = 4 )]
+		public int line;
+		[ExplicitOffset( Offset = 8 )]
+		public uint port;
+		[ExplicitOffset( Offset = 12 )]
+		public int irq;
+		[ExplicitOffset( Offset = 16 )]
+		public int flags;
+		[ExplicitOffset( Offset = 20 )]
+		public int xmit_fifo_size;
+		[ExplicitOffset( Offset = 24 )]
+		public int custom_divisor;
+		[ExplicitOffset( Offset = 28 )]
+		public int baud_base;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort close_delay;
+		[ExplicitOffset( Offset = 34 )]
+		public sbyte io_type;
+		[ExplicitOffset( Offset = 35 )]
+		public sbyte[1] reserved_char;
+		[ExplicitOffset( Offset = 36 )]
+		public int hub6;
+		[ExplicitOffset( Offset = 40 )]
+		public ushort closing_wait;
+		[ExplicitOffset( Offset = 42 )]
+		public ushort closing_wait2;
+		[ExplicitOffset( Offset = 44 )]
+		public byte* iomem_base;
+		[ExplicitOffset( Offset = 48 )]
+		public ushort iomem_reg_shift;
+		[ExplicitOffset( Offset = 52 )]
+		public uint port_high;
+		[ExplicitOffset( Offset = 56 )]
+		public uintptr iomap_base;
+	}
+	[ExplicitSize( Size = 84 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sigcontext {
+		[ExplicitOffset( Offset = 0 )]
+		public uintptr trap_no;
+		[ExplicitOffset( Offset = 4 )]
+		public uintptr error_code;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr oldmask;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr arm_r0;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr arm_r1;
+		[ExplicitOffset( Offset = 20 )]
+		public uintptr arm_r2;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr arm_r3;
+		[ExplicitOffset( Offset = 28 )]
+		public uintptr arm_r4;
+		[ExplicitOffset( Offset = 32 )]
+		public uintptr arm_r5;
+		[ExplicitOffset( Offset = 36 )]
+		public uintptr arm_r6;
+		[ExplicitOffset( Offset = 40 )]
+		public uintptr arm_r7;
+		[ExplicitOffset( Offset = 44 )]
+		public uintptr arm_r8;
+		[ExplicitOffset( Offset = 48 )]
+		public uintptr arm_r9;
+		[ExplicitOffset( Offset = 52 )]
+		public uintptr arm_r10;
+		[ExplicitOffset( Offset = 56 )]
+		public uintptr arm_fp;
+		[ExplicitOffset( Offset = 60 )]
+		public uintptr arm_ip;
+		[ExplicitOffset( Offset = 64 )]
+		public uintptr arm_sp;
+		[ExplicitOffset( Offset = 68 )]
+		public uintptr arm_lr;
+		[ExplicitOffset( Offset = 72 )]
+		public uintptr arm_pc;
+		[ExplicitOffset( Offset = 76 )]
+		public uintptr arm_cpsr;
+		[ExplicitOffset( Offset = 80 )]
+		public uintptr fault_address;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct sockaddr_at {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sat_family;
+		[ExplicitOffset( Offset = 2 )]
+		public byte sat_port;
+		[ExplicitOffset( Offset = 4 )]
+		public atalk_addr sat_addr;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte[8] sat_zero;
+	}
+	[ExplicitSize( Size = 256 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct statx {
+		[ExplicitOffset( Offset = 0 )]
+		public uint stx_mask;
+		[ExplicitOffset( Offset = 4 )]
+		public uint stx_blksize;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong stx_attributes;
+		[ExplicitOffset( Offset = 16 )]
+		public uint stx_nlink;
+		[ExplicitOffset( Offset = 20 )]
+		public uint stx_uid;
+		[ExplicitOffset( Offset = 24 )]
+		public uint stx_gid;
+		[ExplicitOffset( Offset = 28 )]
+		public ushort stx_mode;
+		[ExplicitOffset( Offset = 30 )]
+		public ushort[1] __spare0;
+		[ExplicitOffset( Offset = 32 )]
+		public ulong stx_ino;
+		[ExplicitOffset( Offset = 40 )]
+		public ulong stx_size;
+		[ExplicitOffset( Offset = 48 )]
+		public ulong stx_blocks;
+		[ExplicitOffset( Offset = 56 )]
+		public ulong stx_attributes_mask;
+		[ExplicitOffset( Offset = 64 )]
+		public statx_timestamp stx_atime;
+		[ExplicitOffset( Offset = 80 )]
+		public statx_timestamp stx_btime;
+		[ExplicitOffset( Offset = 96 )]
+		public statx_timestamp stx_ctime;
+		[ExplicitOffset( Offset = 112 )]
+		public statx_timestamp stx_mtime;
+		[ExplicitOffset( Offset = 128 )]
+		public uint stx_rdev_major;
+		[ExplicitOffset( Offset = 132 )]
+		public uint stx_rdev_minor;
+		[ExplicitOffset( Offset = 136 )]
+		public uint stx_dev_major;
+		[ExplicitOffset( Offset = 140 )]
+		public uint stx_dev_minor;
+		[ExplicitOffset( Offset = 144 )]
+		public ulong stx_mnt_id;
+		[ExplicitOffset( Offset = 152 )]
+		public uint stx_dio_mem_align;
+		[ExplicitOffset( Offset = 156 )]
+		public uint stx_dio_offset_align;
+		[ExplicitOffset( Offset = 160 )]
+		public ulong[12] __spare3;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct statx_timestamp {
+		[ExplicitOffset( Offset = 0 )]
+		public long tv_sec;
+		[ExplicitOffset( Offset = 8 )]
+		public uint tv_nsec;
+		[ExplicitOffset( Offset = 12 )]
+		public int __reserved;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct vfs_cap_data {
+		[ExplicitOffset( Offset = 0 )]
+		public uint magic_etc;
+		[ExplicitOffset( Offset = 4 )]
+		public UnnamedStruct_D50D502E[2] data;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct vfs_ns_cap_data {
+		[ExplicitOffset( Offset = 0 )]
+		public uint magic_etc;
+		[ExplicitOffset( Offset = 4 )]
+		public UnnamedStruct_D50D4F85[2] data;
+		[ExplicitOffset( Offset = 20 )]
+		public uint rootid;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_74918046 {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong nr;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong[6] args;
+		[ExplicitOffset( Offset = 56 )]
+		public uint ret_data;
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_7491856E {
+		[ExplicitOffset( Offset = 0 )]
+		public ulong nr;
+		[ExplicitOffset( Offset = 8 )]
+		public ulong[6] args;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct UnnamedStruct_749185F2 {
+		[ExplicitOffset( Offset = 0 )]
+		public long rval;
+		[ExplicitOffset( Offset = 8 )]
+		public byte is_error;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_D50D4F85 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint permitted;
+		[ExplicitOffset( Offset = 4 )]
+		public uint inheritable;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_D50D502E {
+		[ExplicitOffset( Offset = 0 )]
+		public uint permitted;
+		[ExplicitOffset( Offset = 4 )]
+		public uint inheritable;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedStruct_F913CB04 {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort sn_type;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort sn_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint sn_length;
+	}
+}

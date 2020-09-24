@@ -48,5 +48,10 @@ namespace System.Net {
 		/// @}
 
 		protected virtual bool OnConnected() { return true; }
+
+		public bool IsClosed() { return _implIsClosed(); }
+
+		public void EnableKeepAlive( TimeSpan timeout, TimeSpan interval, uint count ) { _implEnableKeepAlive( timeout, interval, count ); }
+		public void DisableKeepAlive() { _implDisableKeepAlive(); }
 	}
 }

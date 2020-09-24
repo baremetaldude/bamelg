@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -41,7 +41,86 @@ namespace System.Reflection {
 			}
 
 			switch( format ) {
+				case "l":
 				case "L": {
+						if( System.Runtime.CompilerServices.CompilerInfo.BigEndian ) {
+							switch( this ) {
+								case typeof( void ): builder.Append( "void" ); return;
+								case typeof( bool ): builder.Append( "bool" ); return;
+
+								case typeof( byte ): builder.Append( "byte" ); return;
+								case typeof( sbyte ): builder.Append( "sbyte" ); return;
+
+								case typeof( short_littleendian ): builder.Append( "short_littleendian" ); return;
+								case typeof( ushort_littleendian ): builder.Append( "ushort_littleendian" ); return;
+
+								case typeof( int_littleendian ): builder.Append( "int_littleendian" ); return;
+								case typeof( uint_littleendian ): builder.Append( "uint_littleendian" ); return;
+
+								case typeof( long_littleendian ): builder.Append( "long_littleendian" ); return;
+								case typeof( ulong_littleendian ): builder.Append( "ulong_littleendian" ); return;
+
+								case typeof( float_littleendian ): builder.Append( "float_littleendian" ); return;
+								case typeof( double_littleendian ): builder.Append( "double_littleendian" ); return;
+
+								case typeof( short_bigendian ): builder.Append( "short" ); return;
+								case typeof( ushort_bigendian ): builder.Append( "ushort" ); return;
+
+								case typeof( int_bigendian ): builder.Append( "int" ); return;
+								case typeof( uint_bigendian ): builder.Append( "uint" ); return;
+
+								case typeof( long_bigendian ): builder.Append( "long" ); return;
+								case typeof( ulong_bigendian ): builder.Append( "ulong" ); return;
+
+								case typeof( float_bigendian ): builder.Append( "float" ); return;
+								case typeof( double_bigendian ): builder.Append( "double" ); return;
+
+								case typeof( char ): builder.Append( "char" ); return;
+								case typeof( string ): builder.Append( "string" ); return;
+								default: goto fallback_format;
+							}
+						}
+						else {
+							switch( this ) {
+								case typeof( void ): builder.Append( "void" ); return;
+								case typeof( bool ): builder.Append( "bool" ); return;
+
+								case typeof( byte ): builder.Append( "byte" ); return;
+								case typeof( sbyte ): builder.Append( "sbyte" ); return;
+
+								case typeof( short_littleendian ): builder.Append( "short" ); return;
+								case typeof( ushort_littleendian ): builder.Append( "ushort" ); return;
+
+								case typeof( int_littleendian ): builder.Append( "int" ); return;
+								case typeof( uint_littleendian ): builder.Append( "uint" ); return;
+
+								case typeof( long_littleendian ): builder.Append( "long" ); return;
+								case typeof( ulong_littleendian ): builder.Append( "ulong" ); return;
+
+								case typeof( float_littleendian ): builder.Append( "float" ); return;
+								case typeof( double_littleendian ): builder.Append( "double" ); return;
+
+								case typeof( short_bigendian ): builder.Append( "short_bigendian" ); return;
+								case typeof( ushort_bigendian ): builder.Append( "ushort_bigendian" ); return;
+
+								case typeof( int_bigendian ): builder.Append( "int_bigendian" ); return;
+								case typeof( uint_bigendian ): builder.Append( "uint_bigendian" ); return;
+
+								case typeof( long_bigendian ): builder.Append( "long_bigendian" ); return;
+								case typeof( ulong_bigendian ): builder.Append( "ulong_bigendian" ); return;
+
+								case typeof( float_bigendian ): builder.Append( "float_bigendian" ); return;
+								case typeof( double_bigendian ): builder.Append( "double_bigendian" ); return;
+
+								case typeof( char ): builder.Append( "char" ); return;
+								case typeof( string ): builder.Append( "string" ); return;
+								default: goto fallback_format;
+							}
+						}
+					} break;
+
+				case "e":
+				case "E": {
 						switch( this ) {
 							case typeof( void ): builder.Append( "void" ); return;
 							case typeof( bool ): builder.Append( "bool" ); return;
@@ -49,17 +128,29 @@ namespace System.Reflection {
 							case typeof( byte ): builder.Append( "byte" ); return;
 							case typeof( sbyte ): builder.Append( "sbyte" ); return;
 
-							case typeof( short ): builder.Append( "short" ); return;
-							case typeof( ushort ): builder.Append( "ushort" ); return;
+							case typeof( short_littleendian ): builder.Append( "short_littleendian" ); return;
+							case typeof( ushort_littleendian ): builder.Append( "ushort_littleendian" ); return;
 
-							case typeof( int ): builder.Append( "int" ); return;
-							case typeof( uint ): builder.Append( "uint" ); return;
+							case typeof( int_littleendian ): builder.Append( "int_littleendian" ); return;
+							case typeof( uint_littleendian ): builder.Append( "uint_littleendian" ); return;
 
-							case typeof( long ): builder.Append( "long" ); return;
-							case typeof( ulong ): builder.Append( "ulong" ); return;
+							case typeof( long_littleendian ): builder.Append( "long_littleendian" ); return;
+							case typeof( ulong_littleendian ): builder.Append( "ulong_littleendian" ); return;
 
-							case typeof( float ): builder.Append( "float" ); return;
-							case typeof( double ): builder.Append( "double" ); return;
+							case typeof( float_littleendian ): builder.Append( "float_littleendian" ); return;
+							case typeof( double_littleendian ): builder.Append( "double_littleendian" ); return;
+
+							case typeof( short_bigendian ): builder.Append( "short_bigendian" ); return;
+							case typeof( ushort_bigendian ): builder.Append( "ushort_bigendian" ); return;
+
+							case typeof( int_bigendian ): builder.Append( "int_bigendian" ); return;
+							case typeof( uint_bigendian ): builder.Append( "uint_bigendian" ); return;
+
+							case typeof( long_bigendian ): builder.Append( "long_bigendian" ); return;
+							case typeof( ulong_bigendian ): builder.Append( "ulong_bigendian" ); return;
+
+							case typeof( float_bigendian ): builder.Append( "float_bigendian" ); return;
+							case typeof( double_bigendian ): builder.Append( "double_bigendian" ); return;
 
 							case typeof( char ): builder.Append( "char" ); return;
 							case typeof( string ): builder.Append( "string" ); return;

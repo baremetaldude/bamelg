@@ -5,7 +5,7 @@
 //
 
 namespace System.Diagnostics {
-	public partial struct Stopwatch {
+	public partial struct Stopwatch : IFormattable {
 		private DateTime _started;
 		private TimeSpan _accumulated;
 
@@ -24,11 +24,16 @@ namespace System.Diagnostics {
 			_accumulated = new TimeSpan( 0 );
 		}
 
+		public void Restart() {
+			Reset();
+			Start();
+		}
+
 		public void Start() {
 			_started = _implNow();
 		}
 
-		public void End() {
+		public void Stop() {
 			if( _started.Ticks == 0 ) return;
 
 			_accumulated += _implNow() - _started;
@@ -42,6 +47,11 @@ namespace System.Diagnostics {
 
 				return _implNow() - _started + _accumulated;
 			}
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( "Elapsed: " );
+			builder.Append( Elapsed );
 		}
 	}
 }

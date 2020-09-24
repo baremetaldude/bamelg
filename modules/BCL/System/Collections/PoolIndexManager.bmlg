@@ -8,17 +8,17 @@ using System.Diagnostics;
 
 namespace System.Collections {
 	public class PoolIndexManager {
-		public int Count { get { return _count; } }
-		public int Capacity { get { return _indices.Capacity; } }
+		public uint Count { get { return _count; } }
+		public uint Capacity { get { return _indices.Capacity; } }
 		public bool Expandable { get; set; } = true;
 
-		private List<int> _indices;
-		private int _count;
+		private List<uint> _indices;
+		private uint _count;
 
-		public int Allocate() {
+		public uint Allocate() {
 			var count = _indices.Count;
 			if( _count >= count ) {
-				if( !Expandable && count == _indices.Capacity ) return -1;
+				if( !Expandable && count == _indices.Capacity ) return uint.MaxValue;
 
 				_indices.Add( count );
 				++_count;
@@ -30,26 +30,25 @@ namespace System.Collections {
 			return result;
 		}
 
-		public void Deallocate( int index ) {
+		public void Deallocate( uint index ) {
 			VerifyIsValid( index );
 
 			--_count;
 			_indices[_count] = index;
 		}
 
-		public PoolIndexManager( int maxElements = 7 ) {
+		public PoolIndexManager( uint maxElements = 7 ) {
 			Debug.Assert( maxElements > 0 );
 
-			_indices = new List<int>( maxElements );
+			_indices = new List<uint>( maxElements );
 			_count = 0;
 
-			for( var i = 0; i < maxElements; ++i )
+			for( var i = 0U; i < maxElements; ++i )
 				_indices.Add( i );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
-		public void VerifyIsValid( int value ) {
-			Debug.Assert( value >= 0 );
+		public void VerifyIsValid( uint value ) {
 			Debug.Assert( value < _indices.Count );
 
 			for( var i = _count; i < _indices.Count; ++i ) {

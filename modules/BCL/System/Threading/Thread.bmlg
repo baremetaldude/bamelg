@@ -15,7 +15,12 @@ namespace System.Threading {
 
 		public void Join() { _implJoin(); }
 
-		public static void Sleep( int milliseconds ) { _implSleep( milliseconds ); }
+		public static void Sleep( uint milliseconds ) { _implSleep( milliseconds ); }
+
+		public static void Sleep( TimeSpan timeout ) {
+			System.Diagnostics.Debug.Assert( timeout.Ticks >= 0 );
+			_implSleep( ( uint ) timeout.TotalMilliseconds );
+		}
 
 		public static void Yield() { _implYield(); }
 

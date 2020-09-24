@@ -1,0 +1,14 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Runtime {
+	public partial struct NativeLibrary {
+		private static NativeLibrary* _implLoad( Utf8String name ) { return bitcast<NativeLibrary*>( Platform.Libc.LibcApi.dlopen( name, Platform.Libc.DynamicLibraryLoadFlag.RTLD_NOW ) ); }
+		private static NativeLibrary* _implLoad( string name ) { return _implLoad( ( Utf8String ) name ); }
+
+		private void _implFree() { Platform.Libc.LibcApi.dlclose( &this ); }
+	}
+}

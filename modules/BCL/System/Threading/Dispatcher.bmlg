@@ -22,6 +22,10 @@ namespace System.Threading {
 		#region unbiased alarms, unaffected by system clock changes
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + interval, interval, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiasedAligned( TimeSpan interval, Functors.Action action ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
 		}
 
@@ -46,6 +50,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + interval, interval, action, data );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiasedAligned( TimeSpan interval, Functors.Action<void*> action, void* data ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action, data );
 		}
 
@@ -66,6 +74,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + interval, interval, action );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiasedAligned( TimeSpan interval, Delegates.Action action ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, action );
 		}
 
@@ -90,6 +102,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUnbiased* BeginAlarmUnbiased( TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUnbiased( DateTime.UnbiasedNow + interval, interval, dpc );
+		}
+
+		public AlarmUnbiased* BeginAlarmUnbiasedAligned( TimeSpan interval, DPC* dpc ) {
 			return BeginAlarmUnbiased( DateTime.UnbiasedNow.Ceil( interval ), interval, dpc );
 		}
 
@@ -119,6 +135,10 @@ namespace System.Threading {
 		#region UTC alarms
 
 		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Functors.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow + interval, interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtcAligned( TimeSpan interval, Functors.Action action ) {
 			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action );
 		}
 
@@ -139,6 +159,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+			return BeginAlarmUtc( DateTime.UtcNow + interval, interval, action, data );
+		}
+
+		public AlarmUtc* BeginAlarmUtcAligned( TimeSpan interval, Functors.Action<void*> action, void* data ) {
 			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action, data );
 		}
 
@@ -159,6 +183,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, Delegates.Action action ) {
+			return BeginAlarmUtc( DateTime.UtcNow + interval, interval, action );
+		}
+
+		public AlarmUtc* BeginAlarmUtcAligned( TimeSpan interval, Delegates.Action action ) {
 			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, action );
 		}
 
@@ -179,6 +207,10 @@ namespace System.Threading {
 		}
 
 		public AlarmUtc* BeginAlarmUtc( TimeSpan interval, DPC* dpc ) {
+			return BeginAlarmUtc( DateTime.UtcNow + interval, interval, dpc );
+		}
+
+		public AlarmUtc* BeginAlarmUtcAligned( TimeSpan interval, DPC* dpc ) {
 			return BeginAlarmUtc( DateTime.UtcNow.Ceil( interval ), interval, dpc );
 		}
 
@@ -208,22 +240,52 @@ namespace System.Threading {
 		#region tasks
 
 		public void BeginInvoke( Functors.Action action ) {
-			BeginInvoke( DPC.Create( action ) );
+			if( action == null ) return;
+			if( IsDispatchingThread ) { action(); return; }
+
+			EnqueueInvoke( DPC.Create( action ) );
 		}
 
 		public void BeginInvoke<T0>( Functors.Action<T0> action, T0 p0 ) {
-			BeginInvoke( DPC.Create<T0>( action, p0 ) );
+			if( action == null ) return;
+			if( IsDispatchingThread ) { action( p0 ); return; }
+
+			EnqueueInvoke( DPC.Create<T0>( action, p0 ) );
 		}
 
 		public void BeginInvoke( Delegates.Action action ) {
-			BeginInvoke( DPC.Create( action ) );
+			if( action == null ) return;
+			if( IsDispatchingThread ) { action(); return; }
+
+			EnqueueInvoke( DPC.Create( action ) );
 		}
 
 		public void BeginInvoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
-			BeginInvoke( DPC.Create<T0>( action, p0 ) );
+			if( action == null ) return;
+			if( IsDispatchingThread ) { action( p0 ); return; }
+
+			EnqueueInvoke( DPC.Create<T0>( action, p0 ) );
+		}
+
+		public void EnqueueInvoke( Functors.Action action ) {
+			EnqueueInvoke( DPC.Create( action ) );
+		}
+
+		public void EnqueueInvoke<T0>( Functors.Action<T0> action, T0 p0 ) {
+			EnqueueInvoke( DPC.Create<T0>( action, p0 ) );
+		}
+
+		public void EnqueueInvoke( Delegates.Action action ) {
+			EnqueueInvoke( DPC.Create( action ) );
+		}
+
+		public void EnqueueInvoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			EnqueueInvoke( DPC.Create<T0>( action, p0 ) );
 		}
 
 		public void Invoke( Functors.Action action ) {
+			Debug.Assert( IsDispatchingStarted );
+
 			if( IsDispatchingThread ) {
 				action();
 				return;
@@ -242,11 +304,13 @@ namespace System.Threading {
 			};
 			task.OnActionDispose = task.OnAction;
 
-			BeginInvoke( &task );
+			EnqueueInvoke( &task );
 			wait.Wait(); // wait for task completion
 		}
 
 		public void Invoke<T0>( Functors.Action<T0> action, T0 p0 ) {
+			Debug.Assert( IsDispatchingStarted );
+
 			if( IsDispatchingThread ) {
 				action( p0 );
 				return;
@@ -266,11 +330,13 @@ namespace System.Threading {
 			};
 			task.OnActionDispose = task.OnAction;
 
-			BeginInvoke( &task );
+			EnqueueInvoke( &task );
 			wait.Wait(); // wait for task completion
 		}
 
 		public void Invoke( Delegates.Action action ) {
+			Debug.Assert( IsDispatchingStarted );
+
 			if( IsDispatchingThread ) {
 				action();
 				return;
@@ -289,11 +355,13 @@ namespace System.Threading {
 			};
 			task.OnActionDispose = task.OnAction;
 
-			BeginInvoke( &task );
+			EnqueueInvoke( &task );
 			wait.Wait(); // wait for task completion
 		}
 
 		public void Invoke<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			Debug.Assert( IsDispatchingStarted );
+
 			if( IsDispatchingThread ) {
 				action( p0 );
 				return;
@@ -313,7 +381,7 @@ namespace System.Threading {
 			};
 			task.OnActionDispose = task.OnAction;
 
-			BeginInvoke( &task );
+			EnqueueInvoke( &task );
 			wait.Wait(); // wait for task completion
 		}
 
@@ -350,7 +418,7 @@ namespace System.Threading {
 			public long Expiration;
 			public TimeSpan Period;
 
-			public int TrackingIndex;
+			public uint TrackingIndex;
 
 			public bool IsOneShot { get { return Period == TimeSpan.Zero; } }
 
@@ -420,7 +488,7 @@ namespace System.Threading {
 			var update = false;
 
 			using( _alarmLock.LockRegion() ) {
-				if( alarm->TrackingIndex == -1 ) return;
+				if( alarm->TrackingIndex == uint.MaxValue ) return;
 
 				AlarmEntry* removed;
 
@@ -438,7 +506,7 @@ namespace System.Threading {
 
 				TraceAlarmRemoved( alarm );
 
-				alarm->TrackingIndex = -1;
+				alarm->TrackingIndex = uint.MaxValue;
 
 				if( removed == alarm ) {
 					if( alarm->Dispose != null ) {
@@ -468,6 +536,17 @@ namespace System.Threading {
 		public void BeginInvoke( DPC* task ) {
 			if( task == null ) return;
 
+			if( IsDispatchingThread ) {
+				task->OnActionDispose( task );
+				return;
+			}
+
+			EnqueueInvoke( task );
+		}
+
+		public void EnqueueInvoke( DPC* task ) {
+			if( task == null ) return;
+
 			task->Next = null;
 
 			using( _taskLock.LockRegion() ) {
@@ -489,6 +568,7 @@ namespace System.Threading {
 
 		protected abstract void NotifyNewDispatcherTasks();
 		public abstract bool IsDispatchingThread { get; }
+		public abstract bool IsDispatchingStarted { get; }
 
 		public DateTime UnbiasedNow, UtcNow; // when first notification wake up blocking thread
 
@@ -548,7 +628,7 @@ namespace System.Threading {
 						alarm->Dispose = null;
 					}
 
-					alarm->TrackingIndex = -1;
+					alarm->TrackingIndex = uint.MaxValue;
 					_alarmsPool.Free( alarm );
 				}
 				else {

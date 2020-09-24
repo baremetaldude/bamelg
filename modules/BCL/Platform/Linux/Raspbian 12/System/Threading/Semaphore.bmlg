@@ -1,0 +1,19 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System.Threading {
+	public partial struct Semaphore {
+		private sem_t _delegate;
+
+		private void _implInitialize( int initialValue ) { LibcApi.Assert( LibcApi.sem_init( &_delegate, 0, ( uint ) initialValue ) ); }
+		private void _implDestroy() { }
+
+		private void _implPost() { _delegate.Post(); }
+		private void _implWait() { _delegate.Wait(); }
+	}
+}

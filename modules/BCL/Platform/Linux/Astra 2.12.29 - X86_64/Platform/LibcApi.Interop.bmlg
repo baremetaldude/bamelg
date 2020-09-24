@@ -12,6 +12,7 @@ using Platform.Kernel;
 namespace Platform.Libc {
 	[ExternLibrary( Image = "/lib/x86_64-linux-gnu/libc.so.6" )]
 	public static partial struct LibcApi {
+		public const int AT_FDCWD = -100;
 		public const int PTHREAD_STACK_MIN = 16384;
 
 		public extern static int __sigsetjmp( __jmp_buf_tag* env, int savemask );
@@ -43,13 +44,13 @@ namespace Platform.Libc {
 		public extern static int mincore( void* start, uint len, byte* vec );
 		public extern static int mlock( void* addr, uint len );
 		public extern static int mlockall( int flags );
-		public extern static void* mmap( void* addr, uint len, int prot, int flags, IOHandle fd, intptr offset );
-		public extern static void* mmap64( void* addr, uint len, int prot, int flags, IOHandle fd, long offset );
+		public extern static void* mmap( void* addr, uintptr len, int prot, int flags, IOHandle fd, intptr offset );
+		public extern static void* mmap64( void* addr, uintptr len, int prot, int flags, IOHandle fd, long offset );
 		public extern static int mprotect( void* addr, uint len, int prot );
 		public extern static int msync( void* addr, uint len, int flags );
 		public extern static int munlock( void* addr, uint len );
 		public extern static int munlockall();
-		public extern static int munmap( void* addr, uint len );
+		public extern static int munmap( void* addr, uintptr len );
 		public extern static int posix_madvise( void* addr, uint len, int advice );
 		public extern static int remap_file_pages( void* start, uint size, int prot, uint pgoff, int flags );
 
@@ -109,7 +110,6 @@ namespace Platform.Libc {
 		public extern static tm* localtime_r( intptr* timer, tm* tp );
 		public extern static intptr mktime( tm* tp );
 		public extern static int nanosleep( timespec* requestedTime, timespec* remaining );
-		public extern static int stime( intptr* when );
 		public extern static uint strftime( sbyte* s, uint maxsize, sbyte* format, tm* tp );
 		public extern static uint strftime_l( sbyte* s, uint maxsize, sbyte* format, tm* tp, locale_t* loc );
 		public extern static sbyte* strptime( sbyte* s, sbyte* fmt, tm* tp );
@@ -134,8 +134,8 @@ namespace Platform.Libc {
 		public extern static EpollHandle epoll_create( int size );
 		public extern static EpollHandle epoll_create1( EpollCreateFlags flags );
 		public extern static int epoll_ctl( EpollHandle epfd, EpollControl op, IOHandle fd, epoll_event* @event );
-		public extern static int epoll_pwait( EpollHandle epfd, epoll_event* events, int maxevents, int timeout, sigset_t* ss );
-		public extern static int epoll_wait( EpollHandle epfd, epoll_event* events, int maxevents, int timeout );
+		public extern static int epoll_pwait( EpollHandle epfd, epoll_event* events, uint maxevents, int timeout, sigset_t* ss );
+		public extern static int epoll_wait( EpollHandle epfd, epoll_event* events, uint maxevents, int timeout );
 
 		public extern static int adjtime( timeval* delta, timeval* olddelta );
 		public extern static int futimes( int fd, timeval* tvp );
@@ -212,8 +212,8 @@ namespace Platform.Libc {
 		public extern static int statfs( CUtf8String file, statfs* buf );
 		public extern static int statfs64( CUtf8String file, statfs64* buf );
 
-		public extern static intptr sendfile( IOHandle outFd, IOHandle inFd, intptr* offset, uintptr count );
-		public extern static intptr sendfile64( IOHandle outFd, IOHandle inFd, intptr* offset, uintptr count );
+		public extern static intptr sendfile( IOHandle outFd, IOHandle inFd, uintptr* offset, uintptr count );
+		public extern static intptr sendfile64( IOHandle outFd, IOHandle inFd, uintptr* offset, uintptr count );
 
 		public extern static int process_vm_readv( int pid, iovec* lvec, uintptr liovcnt, iovec* rvec, uintptr riovcnt, uintptr flags );
 		public extern static int process_vm_writev( int pid, iovec* lvec, uintptr liovcnt, iovec* rvec, uintptr riovcnt, uintptr flags );
@@ -222,8 +222,8 @@ namespace Platform.Libc {
 		public extern static int preadv64( IOHandle fd, iovec* iovec, int count, long offset );
 		public extern static int pwritev( IOHandle fd, iovec* iovec, int count, intptr offset );
 		public extern static int pwritev64( IOHandle fd, iovec* iovec, int count, long offset );
-		public extern static int readv( IOHandle fd, iovec* iovec, int count );
-		public extern static int writev( IOHandle fd, iovec* iovec, int count );
+		public extern static int readv( IOHandle fd, iovec* iovec, uint count );
+		public extern static int writev( IOHandle fd, iovec* iovec, uint count );
 
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
 
@@ -235,15 +235,15 @@ namespace Platform.Libc {
 		public extern static int getsockname( IOHandle fd, void* addr, int& len );
 		public extern static int getsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int& optlen );
 		public extern static int isfdtype( IOHandle fd, int fdtype );
-		public extern static int listen( IOHandle fd, int n );
-		public extern static int recv( IOHandle fd, void* buf, int n, MessageFlags flags );
-		public extern static int recvfrom( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int& addrLen );
+		public extern static int listen( IOHandle fd, uint n );
+		public extern static int recv( IOHandle fd, void* buf, uint n, MessageFlags flags );
+		public extern static int recvfrom( IOHandle fd, void* buf, uint n, MessageFlags flags, sockaddr* addr, int& addrLen );
 		public extern static int recvmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags, timespec* tmo );
 		public extern static int recvmsg( IOHandle fd, msghdr* message, MessageFlags flags );
-		public extern static int send( IOHandle fd, void* buf, int n, MessageFlags flags );
+		public extern static int send( IOHandle fd, void* buf, uint n, MessageFlags flags );
 		public extern static int sendmmsg( IOHandle fd, mmsghdr* vmessages, uint vlen, int flags );
 		public extern static int sendmsg( IOHandle fd, msghdr* message, MessageFlags flags );
-		public extern static int sendto( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int addrLen );
+		public extern static int sendto( IOHandle fd, void* buf, uint n, MessageFlags flags, sockaddr* addr, int addrLen );
 		public extern static int setsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int optlen );
 		public extern static int shutdown( IOHandle fd, SocketShutdownOptions how );
 		public extern static int sockatmark( IOHandle fd );
@@ -497,7 +497,7 @@ namespace Platform.Libc {
 		public extern static int name_to_handle_at( int dfd, CUtf8String name, file_handle* handle, int* mntId, int flags );
 		public extern static int open_by_handle_at( int mountdirfd, file_handle* handle, int flags );
 		public extern static int readahead( int fd, long offset, uint count );
-		public extern static int splice( IOHandle fdin, long* offin, IOHandle fdout, long* offout, uint len, SpliceFlags flags );
+		public extern static int splice( IOHandle fdin, ulong* offin, IOHandle fdout, ulong* offout, uint len, SpliceFlags flags );
 		public extern static int sync_file_range( int fd, long offset, long count, uint flags );
 		public extern static int tee( int fdin, int fdout, uint len, uint flags );
 		public extern static int vmsplice( int fdout, iovec* iov, uint count, uint flags );
@@ -787,8 +787,8 @@ namespace Platform.Libc {
 		public extern static int group_member( uint gid );
 		public extern static int isatty( int fd );
 		public extern static int lchown( sbyte* file, uint owner, uint group );
-		public extern static int link( sbyte* from, sbyte* to );
-		public extern static int linkat( int fromfd, sbyte* from, int tofd, sbyte* to, int flags );
+		public extern static int link( CUtf8String from, CUtf8String to );
+		public extern static int linkat( int fromfd, CUtf8String from, int tofd, CUtf8String to, LinkatFlags flags );
 		public extern static intptr lseek( IOHandle fd, intptr offset, FileSeekOrigin whence );
 		public extern static long lseek64( IOHandle fd, long offset, FileSeekOrigin whence );
 		public extern static int nice( int inc );
@@ -801,7 +801,7 @@ namespace Platform.Libc {
 		public extern static int profil( ushort* sampleBuffer, uint size, uint offset, uint scale );
 		public extern static int pwrite( IOHandle fd, void* buf, uint n, intptr offset );
 		public extern static int pwrite64( IOHandle fd, void* buf, uint n, long offset );
-		public extern static int read( IOHandle fd, void* buf, int nbytes );
+		public extern static int read( IOHandle fd, void* buf, uint nbytes );
 		public extern static int readlink( CUtf8String path, sbyte* buf, uint len );
 		public extern static int readlinkat( IOHandle fd, CUtf8String path, sbyte* buf, uint len );
 		public extern static int rmdir( CUtf8String path );
@@ -841,7 +841,7 @@ namespace Platform.Libc {
 		public extern static int usleep( uint useconds );
 		public extern static int vfork();
 		public extern static int vhangup();
-		public extern static int write( IOHandle fd, void* buf, int n );
+		public extern static int write( IOHandle fd, void* buf, uint n );
 
 		public extern static int getopt( int argc, sbyte** argv, sbyte* shortopts );
 
@@ -999,11 +999,11 @@ namespace Platform.Libc {
 		public extern static int clock_gettime( ClockType clockId, timespec& tp );
 		public extern static int clock_nanosleep( ClockType clockId, int flags, timespec& req, timespec& rem );
 		public extern static int clock_settime( ClockType clockId, timespec& tp );
-		public extern static int timer_create( ClockType clockId, sigevent* evp, void** timerid );
-		public extern static int timer_delete( void* timerid );
-		public extern static int timer_getoverrun( void* timerid );
-		public extern static int timer_gettime( void* timerid, itimerspec* value );
-		public extern static int timer_settime( void* timerid, int flags, itimerspec* value, itimerspec* ovalue );
+		public extern static int timer_create( ClockType clockId, sigevent* evp, PosixTimerHandle* timerid );
+		public extern static int timer_delete( PosixTimerHandle timerid );
+		public extern static int timer_getoverrun( PosixTimerHandle timerid );
+		public extern static int timer_gettime( PosixTimerHandle timerid, itimerspec* value );
+		public extern static int timer_settime( PosixTimerHandle timerid, int flags, itimerspec* value, itimerspec* ovalue );
 	}
 	[ExternLibrary( Image = "/usr/lib/x86_64-linux-gnu/libc_nonshared.a" )]
 	public static partial struct NonSharedApi {
@@ -1029,7 +1029,7 @@ namespace Platform.Libc {
 		public extern static sbyte* dlerror();
 		public extern static int dlinfo( void* handle, int request, void* arg );
 		public extern static void* dlmopen( intptr nsid, sbyte* file, int mode );
-		public extern static void* dlopen( sbyte* file, int mode );
+		public extern static void* dlopen( CUtf8String file, DynamicLibraryLoadFlag mode );
 		public extern static void* dlsym( DynamicLibraryHandle handle, CUtf8String name );
 		public extern static void* dlvsym( DynamicLibraryHandle handle, CUtf8String name, CUtf8String version );
 	}
@@ -1435,7 +1435,7 @@ namespace Platform.Libc {
 	}
 	[ExternLibrary( Image = "/usr/lib/x86_64-linux-gnu/libpthread.a" )]
 	public static partial struct PthreadsStaticApi {
-		public extern static int pthread_atfork( Functors.Action prepare, Functors.Action parent, Functors.Action child );
+		// public extern static int pthread_atfork( Functors.Action prepare, Functors.Action parent, Functors.Action child );
 	}
 	[ExternLibrary( Image = "/usr/lib/x86_64-linux-gnu/audit/sotruss-lib.so" )]
 	public static partial struct SoTrussApi {
@@ -2079,7 +2079,7 @@ namespace Platform.Libc {
 		EFD_CLOEXEC = 524288,
 		EFD_NONBLOCK =  2048,
 	}
-	public enum FctlCommand : uint {
+	public enum FileDescriptorCommand : uint {
 		F_DUPFD =            0,
 		F_GETFD =            1,
 		F_SETFD =            2,
@@ -2101,10 +2101,14 @@ namespace Platform.Libc {
 		F_GETPIPE_SZ =    1032,
 	}
 	[Flags]
-	public enum FctlFlags : int {
+	public enum FileDescriptorFlags : int {
+		None =       0,
+		FD_CLOEXEC = 1,
+	}
+	[Flags]
+	public enum FileOpenFlags : int {
 		O_LARGEFILE =     0,
 		O_RDONLY =        0,
-		FD_CLOEXEC =      1,
 		O_WRONLY =        1,
 		O_RDWR =          2,
 		O_CREAT =        64,
@@ -2114,12 +2118,16 @@ namespace Platform.Libc {
 		O_APPEND =     1024,
 		O_NDELAY =     2048,
 		O_NONBLOCK =   2048,
-		FASYNC =       8192,
+		O_DSYNC =      4096,
+		O_ASYNC =      8192,
 		O_DIRECT =    16384,
 		O_DIRECTORY = 65536,
 		O_NOFOLLOW = 131072,
-		O_ACCMODE =       3,
+		O_NOATIME =  262144,
+		O_CLOEXEC =  524288,
+		O_PATH =    2097152,
 		O_SYNC =    1052672,
+		O_TMPFILE = 4259840,
 	}
 	public enum FileSeekOrigin : int {
 		SEEK_SET =  0,
@@ -2127,6 +2135,15 @@ namespace Platform.Libc {
 		SEEK_END =  2,
 		SEEK_DATA = 3,
 		SEEK_HOLE = 4,
+	}
+	[Flags]
+	public enum FileStatusFlags : int {
+		None =           0,
+		O_APPEND =    1024,
+		O_NONBLOCK =  2048,
+		O_ASYNC =     8192,
+		O_DIRECT =   16384,
+		O_NOATIME = 262144,
 	}
 	public enum FPResult : uint {
 		FP_NAN =       0,
@@ -2206,6 +2223,26 @@ namespace Platform.Libc {
 		P_PID =  1,
 		P_PGID = 2,
 	}
+	[Flags]
+	public enum InterfaceFlag : uint {
+		None =              0,
+		IFF_UP =            1,
+		IFF_BROADCAST =     2,
+		IFF_DEBUG =         4,
+		IFF_LOOPBACK =      8,
+		IFF_POINTOPOINT =  16,
+		IFF_NOTRAILERS =   32,
+		IFF_RUNNING =      64,
+		IFF_NOARP =       128,
+		IFF_PROMISC =     256,
+		IFF_ALLMULTI =    512,
+		IFF_MASTER =     1024,
+		IFF_SLAVE =      2048,
+		IFF_MULTICAST =  4096,
+		IFF_PORTSEL =    8192,
+		IFF_AUTOMEDIA = 16384,
+		IFF_DYNAMIC =   32768,
+	}
 	public enum IPPort : uint {
 		IPPORT_ECHO =            7,
 		IPPORT_DISCARD =         9,
@@ -2261,6 +2298,12 @@ namespace Platform.Libc {
 		IPPROTO_MPLS =    137,
 		IPPROTO_RAW =     255,
 		IPPROTO_MAX =     256,
+	}
+	[Flags]
+	public enum LinkatFlags : uint {
+		None =                 0,
+		AT_SYMLINK_FOLLOW = 1024,
+		AT_EMPTY_PATH =     4096,
 	}
 	public enum LinkMapActivity : uint {
 		LA_ACT_CONSISTENT = 0,
@@ -2480,6 +2523,31 @@ namespace Platform.Libc {
 		PTHREAD_RWLOCK_PREFER_WRITER_NP =              1,
 		PTHREAD_RWLOCK_PREFER_WRITER_NONRECURSIVE_NP = 2,
 		PTHREAD_RWLOCK_DEFAULT_NP =                    0,
+	}
+	public enum RegisterKindX64 : uint {
+		REG_R8 =       0,
+		REG_R9 =       1,
+		REG_R10 =      2,
+		REG_R11 =      3,
+		REG_R12 =      4,
+		REG_R13 =      5,
+		REG_R14 =      6,
+		REG_R15 =      7,
+		REG_RDI =      8,
+		REG_RSI =      9,
+		REG_RBP =     10,
+		REG_RBX =     11,
+		REG_RDX =     12,
+		REG_RAX =     13,
+		REG_RCX =     14,
+		REG_RSP =     15,
+		REG_RIP =     16,
+		REG_EFL =     17,
+		REG_CSGSFS =  18,
+		REG_ERR =     19,
+		REG_TRAPNO =  20,
+		REG_OLDMASK = 21,
+		REG_CR2 =     22,
 	}
 	public enum ResourceLimit : int {
 		RLIMIT_CPU =         0,
@@ -3085,26 +3153,6 @@ namespace Platform.Libc {
 		TCP_SEND_QUEUE = 2,
 		TCP_QUEUES_NR =  3,
 	}
-	[Flags]
-	public enum UnnamedEnum_56A81477 : uint {
-		None =              0,
-		IFF_UP =            1,
-		IFF_BROADCAST =     2,
-		IFF_DEBUG =         4,
-		IFF_LOOPBACK =      8,
-		IFF_POINTOPOINT =  16,
-		IFF_NOTRAILERS =   32,
-		IFF_RUNNING =      64,
-		IFF_NOARP =       128,
-		IFF_PROMISC =     256,
-		IFF_ALLMULTI =    512,
-		IFF_MASTER =     1024,
-		IFF_SLAVE =      2048,
-		IFF_MULTICAST =  4096,
-		IFF_PORTSEL =    8192,
-		IFF_AUTOMEDIA = 16384,
-		IFF_DYNAMIC =   32768,
-	}
 	public enum UnnamedEnum_672DAEF7 : uint {
 		RT_CONSISTENT = 0,
 		RT_ADD =        1,
@@ -3133,31 +3181,6 @@ namespace Platform.Libc {
 		Val_GNU_MIPS_ABI_FP_64 =     6,
 		Val_GNU_MIPS_ABI_FP_64A =    7,
 		Val_GNU_MIPS_ABI_FP_MAX =    7,
-	}
-	public enum UnnamedEnum_FFE585A2 : uint {
-		REG_R8 =       0,
-		REG_R9 =       1,
-		REG_R10 =      2,
-		REG_R11 =      3,
-		REG_R12 =      4,
-		REG_R13 =      5,
-		REG_R14 =      6,
-		REG_R15 =      7,
-		REG_RDI =      8,
-		REG_RSI =      9,
-		REG_RBP =     10,
-		REG_RBX =     11,
-		REG_RDX =     12,
-		REG_RAX =     13,
-		REG_RCX =     14,
-		REG_RSP =     15,
-		REG_RIP =     16,
-		REG_EFL =     17,
-		REG_CSGSFS =  18,
-		REG_ERR =     19,
-		REG_TRAPNO =  20,
-		REG_OLDMASK = 21,
-		REG_CR2 =     22,
 	}
 	[ExplicitSize( Size = 40 )]
 	[Alignment( Boundary = 8 )]
@@ -3380,6 +3403,62 @@ namespace Platform.Libc {
 		public CUtf8String ai_canonname;
 		[ExplicitOffset( Offset = 40 )]
 		public addrinfo* ai_next;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct arpd_request {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort req;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ip;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr dev;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr stamp;
+		[ExplicitOffset( Offset = 24 )]
+		public uintptr updated;
+		[ExplicitOffset( Offset = 32 )]
+		public byte[7] ha;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct arphdr {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ar_hrd;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort ar_pro;
+		[ExplicitOffset( Offset = 4 )]
+		public byte ar_hln;
+		[ExplicitOffset( Offset = 5 )]
+		public byte ar_pln;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort ar_op;
+	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct arpreq {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr arp_pa;
+		[ExplicitOffset( Offset = 16 )]
+		public sockaddr arp_ha;
+		[ExplicitOffset( Offset = 32 )]
+		public int arp_flags;
+		[ExplicitOffset( Offset = 36 )]
+		public sockaddr arp_netmask;
+		[ExplicitOffset( Offset = 52 )]
+		public sbyte[16] arp_dev;
+	}
+	[ExplicitSize( Size = 52 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct arpreq_old {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr arp_pa;
+		[ExplicitOffset( Offset = 16 )]
+		public sockaddr arp_ha;
+		[ExplicitOffset( Offset = 32 )]
+		public int arp_flags;
+		[ExplicitOffset( Offset = 36 )]
+		public sockaddr arp_netmask;
 	}
 	[ExplicitSize( Size = 7 )]
 	public partial struct ax25_address {

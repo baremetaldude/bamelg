@@ -11,7 +11,7 @@ namespace System {
 		Unspecified,
 		Utc,      // UTC
 		Local,    // UTC+TZ
-		Unbiased, // aka monotonic on Linux/FreeBSD
+		Unbiased, // Unbiased interrupt time in Windows, monotonic on Linux/FreeBSD
 	}
 
 	public enum DayOfWeek {
@@ -232,7 +232,7 @@ namespace System {
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private static void EnsureSameKind( [In] DateTime& left, [In] DateTime& right ) {
-			Debug.Assert( left.Kind == right.Kind, string.Format( "left.Kind={0} right.Kind={1}", left.Kind, right.Kind ) );
+			Debug.Assert( left.Kind == right.Kind );
 		}
 
 		public static TimeSpan operator -( [In] DateTime& left, [In] DateTime& right ) { EnsureSameKind( left, right ); return new TimeSpan( left.Ticks - right.Ticks ); }
@@ -405,7 +405,15 @@ namespace System {
 			if( !uint.TryFetch( parsePosition, remaining, values[3] ) || remaining == 0 ) return TextParsingStatus.Format;
 			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
 
-			if( !uint.TryFetch( parsePosition, remaining, values[4] ) || remaining == 0 ) return TextParsingStatus.Format;
+			if( !uint.TryFetch( parsePosition, remaining, values[4] ) ) return TextParsingStatus.Format;
+
+			if( !IsTimeValid( ( int ) values[3], ( int ) values[4], 0 ) ) return TextParsingStatus.Format;
+			if( remaining == 0 ) { // date + time '2011-01-02 01:02'
+				parsedResult = new DateTime( year, month, day, ( int ) values[3], ( int ) values[4], 0 );
+				parsedResult.Kind = DateTimeKind.Utc;
+				return TextParsingStatus.OK;
+			}
+
 			if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
 
 			if( !uint.TryFetch( parsePosition, remaining, values[5] ) ) return TextParsingStatus.Format;

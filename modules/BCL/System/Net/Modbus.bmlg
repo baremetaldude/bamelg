@@ -1,270 +1,270 @@
-﻿//
-// Created by Eugeny Grishul
-//
+﻿// //
+// // Created by Eugeny Grishul
+// //
 
-using System;
-using System.Hash;
-using System.IO;
-using System.Reflection;
+// using System;
+// using System.Hash;
+// using System.IO;
+// using System.Reflection;
 
-namespace System.Net.Modbus {
-	public enum ModbusFunction : byte {
-		ReadCoilStatus =           1, // http://www.simplymodbus.ca/FC01.htm
-		ReadInputStatus =          2, // http://www.simplymodbus.ca/FC02.htm
-		ReadHoldingRegisters =     3, // http://www.simplymodbus.ca/FC03.htm
-		ReadInputRegisters =       4, // http://www.simplymodbus.ca/FC04.htm
-		ForceSingleCoil =          5, // http://www.simplymodbus.ca/FC05.htm
-		PresetSingleRegister =     6, // http://www.simplymodbus.ca/FC06.htm
-		ForceMultipleCoils =      15, // http://www.simplymodbus.ca/FC15.htm
-		PresetMultipleRegisters = 16, // http://www.simplymodbus.ca/FC16.htm
-	}
+// namespace System.Net.Modbus {
+// 	public enum ModbusFunction : byte {
+// 		ReadCoilStatus =           1, // http://www.simplymodbus.ca/FC01.htm
+// 		ReadInputStatus =          2, // http://www.simplymodbus.ca/FC02.htm
+// 		ReadHoldingRegisters =     3, // http://www.simplymodbus.ca/FC03.htm
+// 		ReadInputRegisters =       4, // http://www.simplymodbus.ca/FC04.htm
+// 		ForceSingleCoil =          5, // http://www.simplymodbus.ca/FC05.htm
+// 		PresetSingleRegister =     6, // http://www.simplymodbus.ca/FC06.htm
+// 		ForceMultipleCoils =      15, // http://www.simplymodbus.ca/FC15.htm
+// 		PresetMultipleRegisters = 16, // http://www.simplymodbus.ca/FC16.htm
+// 	}
 
-	public struct ModbusInfo {
-		public static ushort ToModbusRegister( UserType.Field& field ) { return ( ushort ) field.ByteOffset / 2; }
+// 	public struct ModbusInfo {
+// 		public static ushort ToModbusRegister( UserType.Field& field ) { return ( ushort ) field.ByteOffset / 2; }
 
-		public static ushort GetModbusRegisterCount( UserType.Field& field ) { return ( ushort ) field.FieldType.InstanceSize / 2; }
-		public static ushort GetModbusRegisterCount( UserType.Field& start, UserType.Field& stopInclusive ) { return ( ushort )( stopInclusive.ByteOffset - start.ByteOffset + stopInclusive.FieldType.InstanceSize ) / 2; }
-	}
+// 		public static ushort GetModbusRegisterCount( UserType.Field& field ) { return ( ushort ) field.FieldType.InstanceSize / 2; }
+// 		public static ushort GetModbusRegisterCount( UserType.Field& start, UserType.Field& stopInclusive ) { return ( ushort )( stopInclusive.ByteOffset - start.ByteOffset + stopInclusive.FieldType.InstanceSize ) / 2; }
+// 	}
 
-	// CRC template code
-	// /// @{ CRC
-	// public ushort_bigendian CRC;
-	// public ushort ValidCRC { get { return Crc16.ComputeModbus( &this, sizeof( this ) - sizeof( CRC ) ); } }
-	// public bool HasValidCRC { get { return CRC == ValidCRC; } }
-	// public void UpdateCRC() { CRC = ValidCRC; }
-	// /// @}
+// 	// CRC template code
+// 	// /// @{ CRC
+// 	// public ushort_bigendian CRC;
+// 	// public ushort ValidCRC { get { return Crc16.ComputeModbus( &this, sizeof( this ) - sizeof( CRC ) ); } }
+// 	// public bool HasValidCRC { get { return CRC == ValidCRC; } }
+// 	// public void UpdateCRC() { CRC = ValidCRC; }
+// 	// /// @}
 
-	[StructLayoutSequential]
-	public struct ModbusRequestHeader {
-		public ModbusRequestHeader() {
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusRequestHeader {
+// 		public ModbusRequestHeader() {
+// 		}
 
-		public byte Address = 0;
-		public ModbusFunction Function;
-	}
+// 		public byte Address = 0;
+// 		public ModbusFunction Function;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusReadInputRegistersRequestHeader : ModbusRequestHeader {
-		public ModbusReadInputRegistersRequestHeader() {
-			Function = ModbusFunction.ReadInputRegisters;
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusReadInputRegistersRequestHeader : ModbusRequestHeader {
+// 		public ModbusReadInputRegistersRequestHeader() {
+// 			Function = ModbusFunction.ReadInputRegisters;
+// 		}
 
-		public ModbusReadInputRegistersRequestHeader( UserType.Field& start )
-			: this() {
-			StartAddress = ModbusInfo.ToModbusRegister( start );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( start );
-		}
+// 		public ModbusReadInputRegistersRequestHeader( UserType.Field& start )
+// 			: this() {
+// 			StartAddress = ModbusInfo.ToModbusRegister( start );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( start );
+// 		}
 
-		public ModbusReadInputRegistersRequestHeader( UserType.Field& start, UserType.Field& stopInclusive )
-			: this() {
-			StartAddress = ModbusInfo.ToModbusRegister( start );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
-		}
+// 		public ModbusReadInputRegistersRequestHeader( UserType.Field& start, UserType.Field& stopInclusive )
+// 			: this() {
+// 			StartAddress = ModbusInfo.ToModbusRegister( start );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
+// 		}
 
-		public ushort_bigendian StartAddress = 0;
-		public ushort_bigendian RegisterCount = 0;
-	}
+// 		public ushort_bigendian StartAddress = 0;
+// 		public ushort_bigendian RegisterCount = 0;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusPresetMultipleRegistersRequestHeader : ModbusRequestHeader {
-		public ModbusPresetMultipleRegistersRequestHeader() {
-			Function = ModbusFunction.PresetMultipleRegisters;
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusPresetMultipleRegistersRequestHeader : ModbusRequestHeader {
+// 		public ModbusPresetMultipleRegistersRequestHeader() {
+// 			Function = ModbusFunction.PresetMultipleRegisters;
+// 		}
 
-		public ModbusPresetMultipleRegistersRequestHeader( UserType.Field& start )
-			: this() {
-			StartAddress = ModbusInfo.ToModbusRegister( start );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( start );
-			Length = ( byte )( RegisterCount * 2 );
-		}
+// 		public ModbusPresetMultipleRegistersRequestHeader( UserType.Field& start )
+// 			: this() {
+// 			StartAddress = ModbusInfo.ToModbusRegister( start );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( start );
+// 			Length = ( byte )( RegisterCount * 2 );
+// 		}
 
-		public ModbusPresetMultipleRegistersRequestHeader( UserType.Field& start, UserType.Field& stopInclusive )
-			: this() {
-			StartAddress = ModbusInfo.ToModbusRegister( start );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
-			Length = ( byte )( RegisterCount * 2 );
-		}
+// 		public ModbusPresetMultipleRegistersRequestHeader( UserType.Field& start, UserType.Field& stopInclusive )
+// 			: this() {
+// 			StartAddress = ModbusInfo.ToModbusRegister( start );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
+// 			Length = ( byte )( RegisterCount * 2 );
+// 		}
 
-		public ushort_bigendian StartAddress = 0;
-		public ushort_bigendian RegisterCount = 0;
-		public byte Length = 0;
-	}
+// 		public ushort_bigendian StartAddress = 0;
+// 		public ushort_bigendian RegisterCount = 0;
+// 		public byte Length = 0;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusResponseHeader {
-		public ModbusResponseHeader() {
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusResponseHeader {
+// 		public ModbusResponseHeader() {
+// 		}
 
-		public byte Address = 0;
-		public ModbusFunction Function;
-	}
+// 		public byte Address = 0;
+// 		public ModbusFunction Function;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusReadInputRegistersRegistersResponse : ModbusResponseHeader {
-		public ModbusReadInputRegistersRegistersResponse() {
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusReadInputRegistersRegistersResponse : ModbusResponseHeader {
+// 		public ModbusReadInputRegistersRegistersResponse() {
+// 		}
 
-		public byte PayloadLength;
-	}
+// 		public byte PayloadLength;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusPresetMultipleRegistersResponse : ModbusResponseHeader {
-		public ModbusPresetMultipleRegistersResponse() {
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusPresetMultipleRegistersResponse : ModbusResponseHeader {
+// 		public ModbusPresetMultipleRegistersResponse() {
+// 		}
 
-		public ushort_bigendian StartAddress;
-		public ushort_bigendian RegisterCount;
-	}
+// 		public ushort_bigendian StartAddress;
+// 		public ushort_bigendian RegisterCount;
+// 	}
 
-	[StructLayoutSequential]
-	public struct ModbusRTUFrame<T> : T {
-		public ModbusRTUFrame() {
-		}
+// 	[StructLayoutSequential]
+// 	public struct ModbusRTUFrame<T> : T {
+// 		public ModbusRTUFrame() {
+// 		}
 
-		/// @{ CRC
-		public ushort_littleendian CRC;
-		public ushort ValidCRC { get { return Crc16.ComputeModbus( &this, sizeof( this ) - sizeof( CRC ) ); } }
-		public bool HasValidCRC { get { return CRC == ValidCRC; } }
-		public void UpdateCRC() { CRC = ValidCRC; }
-		/// @}
-	}
+// 		/// @{ CRC
+// 		public ushort_littleendian CRC;
+// 		public ushort ValidCRC { get { return CRC16.ComputeModbus( &this, sizeof( this ) - sizeof( CRC ) ); } }
+// 		public bool HasValidCRC { get { return CRC == ValidCRC; } }
+// 		public void UpdateCRC() { CRC = ValidCRC; }
+// 		/// @}
+// 	}
 
-	public interface IModbusEvents {
-		void InvalidCRC( ushort expected, ushort actual );
-	}
+// 	public interface IModbusEvents {
+// 		void InvalidCRC( ushort expected, ushort actual );
+// 	}
 
-	public struct ModbusConsoleEventListener : IModbusEvents {
-		public static ModbusConsoleEventListener Instance;
+// 	public struct ModbusConsoleEventListener : IModbusEvents {
+// 		public static ModbusConsoleEventListener Instance;
 
-		public void InvalidCRC( ushort expected, ushort actual ) {
-			Console.WriteLine( "MODBUS: Invalid CRC, expected {0:X4}, actual is {1:X4}", expected, actual );
-		}
-	}
+// 		public void InvalidCRC( ushort expected, ushort actual ) {
+// 			Console.WriteLine( "MODBUS: Invalid CRC, expected {0:X4}, actual is {1:X4}", expected, actual );
+// 		}
+// 	}
 
-	public struct ReadWriteRequestBuilder {
-		public ushort StartAddress, RegisterCount;
-		public void* Data = null;
-		public byte Address = 1;
-		public IModbusEvents EventListener = ModbusConsoleEventListener.Instance;
+// 	public struct ReadWriteRequestBuilder {
+// 		public ushort StartAddress, RegisterCount;
+// 		public void* Data = null;
+// 		public byte Address = 1;
+// 		public IModbusEvents EventListener = ModbusConsoleEventListener.Instance;
 
-		public ReadWriteRequestBuilder() {
-		}
+// 		public ReadWriteRequestBuilder() {
+// 		}
 
-		public void SetRange( UserType.Field& field ) {
-			StartAddress = ModbusInfo.ToModbusRegister( field );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( field, field );
+// 		public void SetRange( UserType.Field& field ) {
+// 			StartAddress = ModbusInfo.ToModbusRegister( field );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( field, field );
 
-			Assert.IsTrue( RegisterCount <= 128 );
-		}
+// 			Assert.IsTrue( RegisterCount <= 128 );
+// 		}
 
-		public void SetRange( UserType.Field& start, UserType.Field& stopInclusive ) {
-			StartAddress = ModbusInfo.ToModbusRegister( start );
-			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
+// 		public void SetRange( UserType.Field& start, UserType.Field& stopInclusive ) {
+// 			StartAddress = ModbusInfo.ToModbusRegister( start );
+// 			RegisterCount = ModbusInfo.GetModbusRegisterCount( start, stopInclusive );
 
-			Assert.IsTrue( RegisterCount <= 128 );
-		}
+// 			Assert.IsTrue( RegisterCount <= 128 );
+// 		}
 
-		public void ReadRequest( System.IO.IStream stream ) {
-			var request = new ModbusRTUFrame<ModbusReadInputRegistersRequestHeader>() {
-				Address = Address,
-				Function = ModbusFunction.ReadInputRegisters,
-				StartAddress = StartAddress,
-				RegisterCount = RegisterCount
-			};
+// 		public void ReadRequest( System.IO.IStream stream ) {
+// 			var request = new ModbusRTUFrame<ModbusReadInputRegistersRequestHeader>() {
+// 				Address = Address,
+// 				Function = ModbusFunction.ReadInputRegisters,
+// 				StartAddress = StartAddress,
+// 				RegisterCount = RegisterCount
+// 			};
 
-			request.UpdateCRC();
-			stream.Write( &request, sizeof( request ) );
-			stream.Flush( FlushKind.Write );
+// 			request.UpdateCRC();
+// 			stream.Write( &request, sizeof( request ) );
+// 			stream.Flush( FlushKind.Write );
 
-			// Console.WriteLine( "{0} requestLength={1}", thismethod, sizeof( request ) );
-			// Console.WriteHexLine( &request, sizeof( request ) );
-		}
+// 			// Console.WriteLine( "{0} requestLength={1}", thismethod, sizeof( request ) );
+// 			// Console.WriteHexLine( &request, sizeof( request ) );
+// 		}
 
-		public void WriteRequest( System.IO.IStream stream ) {
-			var buffer = stream.BufferInfo;
-			if( !Assert.IsTrue( buffer != null ) ) return;
+// 		public void WriteRequest( System.IO.IStream stream ) {
+// 			var buffer = stream.BufferInfo;
+// 			if( !Assert.IsTrue( buffer != null ) ) return;
 
-			var payloadLength = RegisterCount * 2;
-			var requestLength = sizeof( ModbusPresetMultipleRegistersRequestHeader ) + payloadLength + 2;
-			if( !stream.EnsureWritable( buffer, requestLength ) ) return;
+// 			var payloadLength = RegisterCount * 2;
+// 			var requestLength = ( uint )( sizeof( ModbusPresetMultipleRegistersRequestHeader ) + payloadLength + 2 );
+// 			if( !stream.EnsureWritable( buffer, requestLength ) ) return;
 
-			var request = ( ModbusPresetMultipleRegistersRequestHeader* ) buffer->WriteBufferStart;
-			request->Address = Address;
-			request->Function = ModbusFunction.PresetMultipleRegisters;
-			request->StartAddress = StartAddress;
-			request->RegisterCount = RegisterCount;
-			request->Length = ( byte )( RegisterCount * 2 );
+// 			var request = ( ModbusPresetMultipleRegistersRequestHeader* ) buffer->WriteBufferStart;
+// 			request->Address = Address;
+// 			request->Function = ModbusFunction.PresetMultipleRegisters;
+// 			request->StartAddress = StartAddress;
+// 			request->RegisterCount = RegisterCount;
+// 			request->Length = ( byte )( RegisterCount * 2 );
 
-			System.Runtime.Memory.Copy( buffer->WriteBufferStart + sizeof( ModbusPresetMultipleRegistersRequestHeader ), ( byte* ) Data + StartAddress * 2, payloadLength );
-			*cast<ushort_littleendian*>( buffer->WriteBufferStart + requestLength - 2 ) = Crc16.ComputeModbus( buffer->WriteBufferStart, requestLength - 2 );
+// 			System.Runtime.Memory.Copy( buffer->WriteBufferStart + sizeof( ModbusPresetMultipleRegistersRequestHeader ), ( byte* ) Data + StartAddress * 2, payloadLength );
+// 			*cast<ushort_littleendian*>( buffer->WriteBufferStart + requestLength - 2 ) = CRC16.ComputeModbus( buffer->WriteBufferStart, requestLength - 2 );
 
-			// Console.WriteLine( "{0} requestLength={1} payloadLength={2}", thismethod, requestLength, payloadLength );
-			// Console.WriteHexLine( buffer->WriteBufferStart, ( uint ) requestLength );
+// 			// Console.WriteLine( "{0} requestLength={1} payloadLength={2}", thismethod, requestLength, payloadLength );
+// 			// Console.WriteHexLine( buffer->WriteBufferStart, requestLength );
 
-			buffer->OnWritePerformed( requestLength );
-			stream.Flush( FlushKind.Write );
-		}
+// 			buffer->OnWritePerformed( requestLength );
+// 			stream.Flush( FlushKind.Write );
+// 		}
 
-		public int ReadResponseLength { get { return sizeof( ModbusReadInputRegistersRegistersResponse ) + RegisterCount * 2 + 2; } }
-		public int WriteResponseLength { get { return sizeof( ModbusPresetMultipleRegistersResponse ) + 2; } }
+// 		public uint ReadResponseLength { get { return ( uint )( sizeof( ModbusReadInputRegistersRegistersResponse ) + RegisterCount * 2 + 2 ); } }
+// 		public uint WriteResponseLength { get { return ( uint )( sizeof( ModbusPresetMultipleRegistersResponse ) + 2 ); } }
 
-		public bool ParseReadResponse( IStream stream ) {
-			var buffer = stream.BufferInfo;
-			if( !Assert.IsTrue( buffer != null ) ) return false;
+// 		public bool ParseReadResponse( IStream stream ) {
+// 			var buffer = stream.BufferInfo;
+// 			if( !Assert.IsTrue( buffer != null ) ) return false;
 
-			var responseLength = ReadResponseLength;
-			// Console.WriteLine( "{0} ReadResponseLength={1}", thismethod, ReadResponseLength );
+// 			var responseLength = ReadResponseLength;
+// 			// Console.WriteLine( "{0} ReadResponseLength={1}", thismethod, ReadResponseLength );
 
-			if( !Assert.IsTrue( stream.EnsureReadable( buffer, responseLength ) ) ) return false;
-			// stream.Flush(FlushKind.Read);
-			// Console.WriteLine( "buffer->AvailableToRead={0}", buffer->AvailableToRead );
-			// Console.WriteLine( "responseLength={0}", responseLength );
-			// if( !Assert.IsTrue( buffer->AvailableToRead >= responseLength ) ) return false;
-			finally { buffer->OnReadPerformed( responseLength ); }
-			// Console.WriteHexLine( buffer->ReadBufferStart, (uint)ReadResponseLength );
+// 			if( !Assert.IsTrue( stream.EnsureReadable( buffer, responseLength ) ) ) return false;
+// 			// stream.Flush(FlushKind.Read);
+// 			// Console.WriteLine( "buffer->AvailableToRead={0}", buffer->AvailableToRead );
+// 			// Console.WriteLine( "responseLength={0}", responseLength );
+// 			// if( !Assert.IsTrue( buffer->AvailableToRead >= responseLength ) ) return false;
+// 			finally { buffer->OnReadPerformed( responseLength ); }
+// 			// Console.WriteHexLine( buffer->ReadBufferStart, (uint)ReadResponseLength );
 
-			var payloadLength = RegisterCount * 2;
-			var header = ( ModbusReadInputRegistersRegistersResponse* ) buffer->ReadBufferStart;
+// 			var payloadLength = RegisterCount * 2;
+// 			var header = ( ModbusReadInputRegistersRegistersResponse* ) buffer->ReadBufferStart;
 
-			var expectedCRC = Crc16.ComputeModbus( buffer->ReadBufferStart, responseLength - 2 );
-			var actualCRC = *cast<ushort_littleendian*>( buffer->ReadBufferStart + responseLength - 2 );
-			if( expectedCRC != actualCRC ) {
-				EventListener.InvalidCRC( expectedCRC, actualCRC );
-				return false;
-			}
+// 			var expectedCRC = CRC16.ComputeModbus( buffer->ReadBufferStart, responseLength - 2 );
+// 			var actualCRC = *cast<ushort_littleendian*>( buffer->ReadBufferStart + responseLength - 2 );
+// 			if( expectedCRC != actualCRC ) {
+// 				EventListener.InvalidCRC( expectedCRC, actualCRC );
+// 				return false;
+// 			}
 
-			if( !Assert.IsTrue( Address == header->Address ) ) return false;
-			if( !Assert.IsTrue( ModbusFunction.ReadInputRegisters == header->Function ) ) return false;
-			if( !Assert.IsTrue( payloadLength == header->PayloadLength ) ) return false;
+// 			if( !Assert.IsTrue( Address == header->Address ) ) return false;
+// 			if( !Assert.IsTrue( ModbusFunction.ReadInputRegisters == header->Function ) ) return false;
+// 			if( !Assert.IsTrue( payloadLength == header->PayloadLength ) ) return false;
 
-			System.Runtime.Memory.Copy( ( byte* ) Data + StartAddress * 2, buffer->ReadBufferStart + sizeof( ModbusReadInputRegistersRegistersResponse ), payloadLength );
+// 			System.Runtime.Memory.Copy( ( byte* ) Data + StartAddress * 2, buffer->ReadBufferStart + sizeof( ModbusReadInputRegistersRegistersResponse ), payloadLength );
 
-			return true;
-		}
+// 			return true;
+// 		}
 
-		public bool ParseWriteResponse( IStream stream ) {
-			var buffer = stream.BufferInfo;
-			if( !Assert.IsTrue( buffer != null ) ) return false;
+// 		public bool ParseWriteResponse( IStream stream ) {
+// 			var buffer = stream.BufferInfo;
+// 			if( !Assert.IsTrue( buffer != null ) ) return false;
 
-			var responseLength = sizeof( ModbusPresetMultipleRegistersResponse ) + 2;
-			if( !Assert.IsTrue( stream.EnsureReadable( buffer, responseLength ) ) ) return false;
+// 			var responseLength = sizeof( ModbusPresetMultipleRegistersResponse ) + 2;
+// 			if( !Assert.IsTrue( stream.EnsureReadable( buffer, responseLength ) ) ) return false;
 
-			// Console.WriteLine( "{0} {1} {2}", thismethod, responseLength, buffer->AvailableToRead );
-			// Console.WriteHexLine( buffer->ReadBufferStart, ( uint ) responseLength );
+// 			// Console.WriteLine( "{0} {1} {2}", thismethod, responseLength, buffer->AvailableToRead );
+// 			// Console.WriteHexLine( buffer->ReadBufferStart, ( uint ) responseLength );
 
-			var header = ( ModbusPresetMultipleRegistersResponse* ) buffer->ReadBufferStart;
+// 			var header = ( ModbusPresetMultipleRegistersResponse* ) buffer->ReadBufferStart;
 
-			var crc = Crc16.ComputeModbus( buffer->ReadBufferStart, responseLength - 2 );
-			if( !Assert.IsTrue( *cast<ushort_littleendian*>( buffer->ReadBufferStart + responseLength - 2 ) == crc ) ) return false;
+// 			var crc = CRC16.ComputeModbus( buffer->ReadBufferStart, responseLength - 2 );
+// 			if( !Assert.IsTrue( *cast<ushort_littleendian*>( buffer->ReadBufferStart + responseLength - 2 ) == crc ) ) return false;
 
-			if( !Assert.IsTrue( Address == header->Address ) ) return false;
-			if( !Assert.IsTrue( ModbusFunction.PresetMultipleRegisters == header->Function ) ) return false;
-			if( !Assert.IsTrue( StartAddress == header->StartAddress ) ) return false;
-			if( !Assert.IsTrue( RegisterCount == header->RegisterCount ) ) return false;
+// 			if( !Assert.IsTrue( Address == header->Address ) ) return false;
+// 			if( !Assert.IsTrue( ModbusFunction.PresetMultipleRegisters == header->Function ) ) return false;
+// 			if( !Assert.IsTrue( StartAddress == header->StartAddress ) ) return false;
+// 			if( !Assert.IsTrue( RegisterCount == header->RegisterCount ) ) return false;
 
-			buffer->OnReadPerformed( responseLength );
+// 			buffer->OnReadPerformed( responseLength );
 
-			return true;
-		}
-	}
-}
+// 			return true;
+// 		}
+// 	}
+// }

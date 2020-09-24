@@ -6,10 +6,6 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
-using System.Net;
-using System.Runtime;
-using System.Text;
-using System.Web;
 
 using Platform;
 using Platform.IO;
@@ -42,18 +38,57 @@ namespace Dmm {
 
 		public static bool TraceEvents = true;
 
-		public static string LastComPort;
+		public static string CommandLineSpecifiedPort, LastComPort;
+
+		private enum CommandLineState : byte {
+			None,
+			WaitForPortName,
+		}
 
 		[EntryPoint]
 		private static void Main() {
-			// System.Console.WriteLine( "GetACP() == {0}", Kernel32Api.GetACP() );
-			// System.Console.WriteLine( "GetConsoleCP() = {0}", Kernel32Api.GetConsoleCP() );
-
 			switch( ( uint ) Kernel32Api.GetConsoleCP() ) {
 				case 866:
 					CultureInfo.Default = CultureInfo.Current = CultureInfo.RU;
 					Localizer = AppLocalizer.RU.Instance;
 					break;
+			}
+
+			var showUsage = false;
+			var state = CommandLineState.None;
+			for( uint i = 1; i < Environment.CommandLine.Length; ++i ) {
+				switch( state ) {
+					case CommandLineState.None:
+						switch( Environment.CommandLine[i] ) {
+							case "/port":
+								state = CommandLineState.WaitForPortName;
+								break;
+
+							case "/help":
+							case "/?":
+								showUsage = true;
+								break;
+						}
+						break;
+
+					case CommandLineState.WaitForPortName:
+						state = CommandLineState.None;
+						CommandLineSpecifiedPort = Environment.CommandLine[i];
+						break;
+				}
+			}
+
+			if( state == CommandLineState.WaitForPortName ) {
+				Console.WriteLine( "Serial port name expected" );
+				Environment.ExitCode = 1;
+				return;
+			}
+
+			if( showUsage ) {
+				Console.WriteLine( "Usage:" );
+				Console.WriteLine( "    DMM.EXE" );
+				Console.WriteLine( @"    DMM.EXE /port \\.\COM1" );
+				return;
 			}
 
 			_eventLoop.CatchConsoleQuit();
@@ -71,7 +106,7 @@ namespace Dmm {
 			PrintConnectionOptions();
 
 			_devices.Add( _debugDevice = new DeviceHandler() {
-				SerialPortPath = LastComPort
+				SerialPortPath = CommandLineSpecifiedPort ?? LastComPort
 			} );
 
 			foreach( var device in _devices )
@@ -238,11 +273,11 @@ namespace Dmm {
 				if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
 					AddEvent( "Unable to set timeouts for '{0}'", shortName );
 
-				var bufferedStream = new BufferedStream.ReadStream( fs, 128 );
+				var bufferedStream = new BufferedReadStream( fs, 128 );
 				var dmm = new Dmm.UT61E.Parser();
 
 				var requestBuffer = bufferedStream.BufferInfo;
-				var prevBufferLength = 0;
+				var prevBufferLength = 0U;
 
 				for( ; ; ) {
 					using( Fiber.CancellationRegion() ) {

@@ -41,7 +41,7 @@ namespace System.Threading {
 
 		private static Thread _implCurrentThread() { return new Thread() { _nativeThread = pthread_t.CurrentThread }; }
 
-		private static void _implSleep( int milliseconds ) { pthread_t.Sleep( milliseconds ); }
+		private static void _implSleep( uint milliseconds ) { pthread_t.Sleep( ( int ) milliseconds ); }
 
 		private static void _implYield() { pthread_t.Yield(); }
 

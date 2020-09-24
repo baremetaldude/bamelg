@@ -1,0 +1,101 @@
+﻿//
+// Created by $USER
+//
+
+using System;
+using System.IO;
+using System.Text;
+
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		[EntryPoint]
+		private static void Main() {
+			if( Environment.CommandLine.Length >= 2 ) {
+				switch( Environment.CommandLine[1] ) {
+					case "uapi": MainUapi(); break;
+					case "sysfs": MainSysFs(); break;
+				}
+			}
+			else {
+				Console.WriteLine( "Usage:" );
+				Console.WriteLine( "  {0} uapi {1} {2}", Environment.CommandLine[0], DefaultUapiDeviceName, DefaultUapiDeviceLine );
+				Console.WriteLine( "  {0} sysfs {1}", Environment.CommandLine[0], DefaultGpioSysfsLine );
+			}
+		}
+
+		static Utf8String DefaultUapiDeviceName = "/dev/gpiochip0";
+		static uint DefaultUapiDeviceLine = 4;
+
+		private static void MainUapi() {
+			if( Environment.CommandLine.Length >= 3 ) DefaultUapiDeviceName = Environment.CommandLine[2];
+			if( Environment.CommandLine.Length >= 4 ) DefaultUapiDeviceLine = uint.Parse( Environment.CommandLine[3] );
+
+			System.Threading.ThreadPool.Initialize( 1 );
+
+			using( var eventLoop = new EventLoop() { Tracing = true } ) {
+				eventLoop.CatchExitSignals(); // convert signals to events
+
+				using( IOHandle gpioFile = IOHandle.Invalid ) {
+					var openStatus = IOHandle.Open( gpioFile, DefaultUapiDeviceName, FileOpenFlags.O_RDONLY | FileOpenFlags.O_NONBLOCK, 0 );
+
+					if( openStatus ) {
+						var eventSink = new EventLoop.UapiGpioInputTraceEventSink( eventLoop );
+
+						if( !eventSink.Bind( gpioFile, DefaultUapiDeviceLine, "GpioInputTest" ) ) {
+							Console.WriteLine( "{0}[{1}]: Bind line failed", DefaultUapiDeviceName, DefaultUapiDeviceLine );
+							return;
+						}
+
+						bool initialValue = eventSink.GetValue();
+
+						Console.WriteLine( "{0}[{1}]: Waiting UAPI events. Initial value: {2}", DefaultUapiDeviceName, DefaultUapiDeviceLine, initialValue );
+						eventSink.Register();
+					}
+					else {
+						Console.WriteLine( "{0}: Open failed: {1}", DefaultUapiDeviceName, openStatus );
+						return;
+					}
+				}
+
+				eventLoop.Dispatch(); // wait until RequestExit
+				Console.WriteLine( "Finished" );
+			}
+		}
+
+		static uint DefaultGpioSysfsLine = 4;
+
+		private static void MainSysFs() {
+			if( Environment.CommandLine.Length >= 3 ) DefaultGpioSysfsLine = uint.Parse( Environment.CommandLine[2] );
+
+			System.Threading.ThreadPool.Initialize( 1 );
+
+			using( var eventLoop = new EventLoop() { Tracing = true } ) {
+				eventLoop.CatchExitSignals(); // convert signals to events
+
+				File.WriteAllText( ( Utf8String ) "/sys/class/gpio/export", DefaultGpioSysfsLine, TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader.Skip );
+				finally { File.WriteAllText( "/sys/class/gpio/unexport", DefaultGpioSysfsLine, TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader.Skip ); }
+
+				File.WriteAllText( Utf8String.Format( "/sys/class/gpio/gpio{0}/direction", DefaultGpioSysfsLine ), "in", TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader.Skip );
+				File.WriteAllText( Utf8String.Format( "/sys/class/gpio/gpio{0}/edge", DefaultGpioSysfsLine ), "both", TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader.Skip );
+
+				var eventSink = new EventLoop.SysfsGpioInputTraceEventSink( eventLoop );
+				var pathToPin = Utf8String.Format( "/sys/class/gpio/gpio{0}/value", DefaultGpioSysfsLine );
+				bool initialValue;
+				if( !eventSink.Open( pathToPin, initialValue ) ) {
+					Console.WriteLine( "{0}: Open failed", pathToPin );
+					return;
+				}
+
+				eventSink.Register();
+
+				Console.WriteLine( "{0}: Waiting SysFS events. Initial value: {1}", pathToPin, initialValue );
+				eventLoop.Dispatch(); // wait until RequestExit
+				Console.WriteLine( "Finished" );
+			}
+		}
+	}
+}

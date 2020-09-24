@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -80,7 +80,7 @@ namespace System.Reflection {
 
 		private SbcsString ToSbcsStringNonFlagsImpl<T>( T value ) {
 			var index = GetIndexImpl<T>( value );
-			if( index < 0 ) return value.ToSbcsString();
+			if( index == uint.MaxValue ) return value.ToSbcsString();
 
 			return Names[index];
 		}
@@ -95,10 +95,10 @@ namespace System.Reflection {
 				return "0";
 			}
 
-			var indices = stackalloc int[sizeof( T ) * 8];
-			var indicesCount = 0;
+			var indices = stackalloc uint[sizeof( T ) * 8];
+			var indicesCount = 0U;
 
-			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+			for( var i = ElementCount - 1; i != uint.MaxValue && value != 0; --i ) {
 				if( values[i] == 0 ) break;
 
 				if( BitOperations.MaskTest( value, values[i] ) ) {
@@ -108,7 +108,7 @@ namespace System.Reflection {
 			}
 
 			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
-				for( var i = indicesCount - 1; i >= 0; --i ) {
+				for( var i = indicesCount - 1; i != uint.MaxValue; --i ) {
 					if( builder.Value.Length > 0 )
 						builder.Value.Append( FlagEnumElementsSeparator );
 
@@ -128,7 +128,7 @@ namespace System.Reflection {
 
 		private string ToStringNonFlagsImpl<T>( T value ) {
 			var index = GetIndexImpl<T>( value );
-			if( index < 0 ) return value.ToString();
+			if( index == uint.MaxValue ) return value.ToString();
 
 			return ( string ) Names[index];
 		}
@@ -143,10 +143,10 @@ namespace System.Reflection {
 				return "0";
 			}
 
-			var indices = stackalloc int[sizeof( T ) * 8];
-			var indicesCount = 0;
+			var indices = stackalloc uint[sizeof( T ) * 8];
+			var indicesCount = 0U;
 
-			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+			for( var i = ElementCount - 1; i != uint.MaxValue && value != 0; --i ) {
 				if( values[i] == 0 ) break;
 
 				if( BitOperations.MaskTest( value, values[i] ) ) {
@@ -156,7 +156,7 @@ namespace System.Reflection {
 			}
 
 			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
-				for( var i = indicesCount - 1; i >= 0; --i ) {
+				for( var i = indicesCount - 1; i != uint.MaxValue; --i ) {
 					if( builder.Value.Length > 0 )
 						builder.Value.Append( FlagEnumElementsSeparator );
 
@@ -176,7 +176,7 @@ namespace System.Reflection {
 
 		private void ToStringNonFlagsImpl<T>( StringBuilder builder, T value ) {
 			var index = GetIndexImpl<T>( value );
-			if( index < 0 ) builder.Append( value );
+			if( index == uint.MaxValue ) builder.Append( value );
 			else builder.Append( Names[index] );
 		}
 
@@ -194,10 +194,10 @@ namespace System.Reflection {
 				return;
 			}
 
-			var indices = stackalloc int[sizeof( T ) * 8];
-			var indicesCount = 0;
+			var indices = stackalloc uint[sizeof( T ) * 8];
+			var indicesCount = 0U;
 
-			for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+			for( var i = ElementCount - 1; i != uint.MaxValue && value != 0; --i ) {
 				if( values[i] == 0 ) break;
 
 				if( BitOperations.MaskTest( value, values[i] ) ) {
@@ -207,7 +207,7 @@ namespace System.Reflection {
 			}
 
 			var needSeparator = false;
-			for( var i = indicesCount - 1; i >= 0; --i ) {
+			for( var i = indicesCount - 1; i != uint.MaxValue; --i ) {
 				if( needSeparator )
 					builder.Append( FlagEnumElementsSeparator );
 
@@ -216,17 +216,17 @@ namespace System.Reflection {
 			}
 
 			if( value != 0 ) {
-				if( builder.Length > 0 )
+				if( needSeparator )
 					builder.Append( FlagEnumElementsSeparator );
 
 				builder.Append( value );
 			}
 		}
 
-		private int BinarySearch( CStringSpan value ) {
+		private uint BinarySearch( CStringSpan value ) {
 			if( ElementCount <= 255 ) {
 				var remapping = ( byte* ) SortedIndices;
-				var start = 0;
+				var start = 0U;
 				var end = ElementCount - 1;
 
 				while( start <= end ) {
@@ -239,11 +239,11 @@ namespace System.Reflection {
 					else end = median - 1;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 			else if( ElementCount <= 65535 ) {
 				var remapping = ( ushort* ) SortedIndices;
-				var start = 0;
+				var start = 0U;
 				var end = ElementCount - 1;
 
 				while( start <= end ) {
@@ -255,11 +255,11 @@ namespace System.Reflection {
 					else end = median - 1;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 			else {
-				var remapping = ( int* ) SortedIndices;
-				var start = 0;
+				var remapping = ( uint* ) SortedIndices;
+				var start = 0U;
 				var end = ElementCount - 1;
 
 				while( start <= end ) {
@@ -271,38 +271,43 @@ namespace System.Reflection {
 					else end = median - 1;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
-		private T GetValueImpl<T>( int index ) {
-			if( index < 0 | index >= ElementCount ) return default( T );
+		private T GetValueImpl<T>( uint index ) {
+			if( index >= ElementCount ) return default( T );
 			return ( ( T* ) Values )[index];
 		}
 
-		private int GetIndexImpl<T>( T value ) {
-			var result = CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ElementCount, value );
-			return Math.Max( -1, result );
+		private uint GetIndexImpl<T>( T value ) {
+			uint result;
+			if( CommonCollectionOperations.BinarySearch<T>( ( T* ) Values, ( uint ) ElementCount, value, result ) )
+				return result;
+
+			return uint.MaxValue;
 		}
 
 		private bool IsValidFlagsImpl<T>( T value ) {
 			if( value != 0 && IsDefined( typeof( FlagsAttribute ) ) ) {
 				var values = ( T* ) Values;
 
-				for( var i = ElementCount - 1; i >= 0 && value != 0; --i ) {
+				for( var i = ElementCount - 1; i != uint.MaxValue; --i ) {
 					if( values[i] == 0 ) continue;
+
 					if( ( value & values[i] ) == values[i] ) {
 						value ^= values[i];
-						i = -1;
+
+						if( value == 0 ) break;
 					}
 				}
 
 				return value == 0;
 			}
 
-			return GetIndexImpl<T>( value ) >= 0;
+			return GetIndexImpl<T>( value ) != uint.MaxValue;
 		}
 	}
 }

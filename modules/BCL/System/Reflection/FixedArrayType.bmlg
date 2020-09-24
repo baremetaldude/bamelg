@@ -16,24 +16,24 @@ namespace System.Reflection {
 
 		public Type& ElementType { get { return *( Type* ) _declaringContainer; } }
 
-		public int* Lengths;
+		public uint* Lengths;
 
-		public int ElementCount {
+		public uint ElementCount {
 			get {
 				var result = Lengths[0];
-				for( var i = 1; i < Dimensions; ++i ) result *= Lengths[i];
+				for( var i = 1U; i < Dimensions; ++i ) result *= Lengths[i];
 				return result;
 			}
 		}
 
-		public int Dimensions;
+		public uint Dimensions;
 
-		public new int InstanceSize {
+		public new uint InstanceSize {
 			get {
 				var elementAlignment = ElementType.InstanceAlignment;
-				var tailPadding = Memory.GetTailPadding( ( uint ) ElementType.InstanceSize, elementAlignment );
-				var elementStride = ( int ) Memory.GetStride( ( uint ) ElementType.InstanceSize, elementAlignment );
-				return cast<int>( elementStride * ElementCount - tailPadding );
+				var tailPadding = Memory.GetTailPadding( ElementType.InstanceSize, elementAlignment );
+				var elementStride = Memory.GetStride( ElementType.InstanceSize, elementAlignment );
+				return elementStride * ElementCount - tailPadding;
 			}
 		}
 
