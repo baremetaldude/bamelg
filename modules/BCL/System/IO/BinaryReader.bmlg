@@ -35,12 +35,12 @@ namespace System.IO {
 			value.Deserialize( i.Object, this, context );
 		}
 
-		public bool EnsureReadable( int count ) {
+		public bool EnsureReadable( uint count ) {
 			return BaseStream.EnsureReadable( _bufferInfo, count );
 		}
 
 		private T ReadPrimitive<T>() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
+			if( !EnsureReadable( sizeof( T ) ) ) {
 				EventHandler.EndOfStream( this );
 				IsStreamBroken = true;
 				return default( T );
@@ -52,7 +52,7 @@ namespace System.IO {
 		}
 
 		private T PeekPrimitive<T>() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
+			if( !EnsureReadable( sizeof( T ) ) ) {
 				EventHandler.EndOfStream( this );
 				IsStreamBroken = true;
 				return default( T );
@@ -159,7 +159,7 @@ namespace System.IO {
 
 		/// @{ common types
 		public Guid ReadGuid() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
+			if( !EnsureReadable( sizeof( Guid ) ) ) {
 				EventHandler.EndOfStream( this );
 				IsStreamBroken = true;
 				return default( Guid );
@@ -177,51 +177,81 @@ namespace System.IO {
 		public void Read( [Out] DateTime& value ) { value = ReadDateTime(); }
 		public void Read( [Out] TimeSpan& value ) { value = ReadTimeSpan(); }
 
-		public int ReadValues( byte* buffer, int length ) { return BaseStream.Read( buffer, length ); }
-		public int ReadValues( sbyte* buffer, int length ) { return BaseStream.Read( ( byte* ) buffer, length ); }
+		public uint ReadValues( byte* buffer, uint length ) {
+			var readen = BaseStream.Read( buffer, length );
 
-		public int ReadValues( short* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+			if( readen != length ) {
+				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
+			}
+
+			return readen;
+		}
+
+		public uint ReadValues( sbyte* buffer, uint length ) {
+			return ReadValues( ( byte* ) buffer, length );
+		}
+
+		public uint ReadValues( short* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( ushort* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
-		public int ReadValues( char* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
+		public uint ReadValues( ushort* buffer, uint length ) { return ReadValues( ( short* ) buffer, length ); }
+		public uint ReadValues( char* buffer, uint length ) { return ReadValues( ( short* ) buffer, length ); }
 
-		public int ReadValues( int* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+		public uint ReadValues( int* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( uint* buffer, int length ) { return ReadValues( ( int* ) buffer, length ); }
+		public uint ReadValues( uint* buffer, uint length ) { return ReadValues( ( int* ) buffer, length ); }
 
-		public int ReadValues( long* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+		public uint ReadValues( long* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				EventHandler.EndOfStream( this );
+				IsStreamBroken = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( ulong* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( ulong* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
 
-		public int ReadValues( DateTime* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
-		public int ReadValues( TimeSpan* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( DateTime* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( TimeSpan* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
 
 		public byte[] ReadUInt8Array() {
 			uint_littleendian length;
@@ -231,12 +261,16 @@ namespace System.IO {
 			if( length > MaxPrimitiveLength ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] byte;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -248,12 +282,16 @@ namespace System.IO {
 			if( length > MaxPrimitiveLength ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] sbyte;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -262,15 +300,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( ushort ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( ushort ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] ushort;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -279,15 +321,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( short ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( short ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] short;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -296,15 +342,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( uint ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain(  length * sizeof( uint ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] uint;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -313,15 +363,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( int ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( int ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] int;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -330,15 +384,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( ulong ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( ulong ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] ulong;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -347,15 +405,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( long ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( long ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] long;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -364,15 +426,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( DateTime ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( DateTime ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] DateTime;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -381,15 +447,19 @@ namespace System.IO {
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
+			if( length > MaxPrimitiveLength / sizeof( TimeSpan ) ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length * sizeof( TimeSpan ) );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new[length] TimeSpan;
-			ReadValues( &result[0], ( int ) length );
+			ReadValues( &result[0], length );
+
+			if( IsStreamBroken ) return null;
 			return result;
 		}
 
@@ -404,12 +474,16 @@ namespace System.IO {
 			if( length > MaxPrimitiveLength ) {
 				EventHandler.PrimitiveSizeExceeded( this );
 				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
+				BaseStream.Drain( length );
 				return null;
 			}
 
+			if( IsStreamBroken ) return null;
+
 			var result = new SbcsString.Builder( length, ( System.Text.CodePageID ) codePage );
-			ReadValues( result.GetChars(), ( int ) length );
+			ReadValues( result.GetChars(), length );
+
+			if( IsStreamBroken ) return null;
 			return result.Detach();
 		}
 
@@ -421,10 +495,20 @@ namespace System.IO {
 
 			Read( byteLength );
 
+			if( byteLength > MaxPrimitiveLength ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( byteLength );
+				return null;
+			}
+
+			if( IsStreamBroken ) return null;
+
 			var result = new Utf8String.Builder( byteLength );
 			result.Length = length;
-			ReadValues( result.GetChars(), ( int ) byteLength );
+			ReadValues( result.GetChars(), byteLength );
 
+			if( IsStreamBroken ) return null;
 			return result.Detach();
 		}
 
@@ -434,8 +518,19 @@ namespace System.IO {
 			Read( length );
 			if( length == uint.MaxValue ) return null;
 
+			if( length > MaxPrimitiveLength / sizeof( char ) ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( length * sizeof( char ) );
+				return null;
+			}
+
+			if( IsStreamBroken ) return null;
+
 			var result = new Utf16String.Builder( length );
-			ReadValues( result.GetChars(), ( int ) length );
+			ReadValues( result.GetChars(), length );
+
+			if( IsStreamBroken ) return null;
 			return result.Detach();
 		}
 
@@ -445,8 +540,19 @@ namespace System.IO {
 			Read( length );
 			if( length == uint.MaxValue ) return null;
 
+			if( length > MaxPrimitiveLength / sizeof( uint ) ) {
+				EventHandler.PrimitiveSizeExceeded( this );
+				IsStreamBroken = true;
+				BaseStream.Drain( length * sizeof( uint ) );
+				return null;
+			}
+
+			if( IsStreamBroken ) return null;
+
 			var result = new Utf32String.Builder( length );
-			ReadValues( result.GetChars(), ( int ) length );
+			ReadValues( result.GetChars(), length );
+
+			if( IsStreamBroken ) return null;
 			return result.Detach();
 		}
 
@@ -496,8 +602,8 @@ namespace System.IO {
 		public IEventHandler EventHandler = EventHandlerConsole.Instance;
 
 		public interface IEventHandler {
-			void EndOfStream( BinaryReader context );
-			void PrimitiveSizeExceeded( BinaryReader context );
+			void EndOfStream( RuntimeObjectBase context );
+			void PrimitiveSizeExceeded( RuntimeObjectBase context );
 		}
 
 		public struct EventHandlerNull : IEventHandler {
@@ -505,8 +611,8 @@ namespace System.IO {
 
 			#region IEventHandler Members
 
-			public void EndOfStream( BinaryReader context ) { }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { }
+			public void EndOfStream( RuntimeObjectBase context ) { }
+			public void PrimitiveSizeExceeded( RuntimeObjectBase context ) { }
 
 			#endregion
 		}
@@ -516,8 +622,8 @@ namespace System.IO {
 
 			#region IEventHandler Members
 
-			public void EndOfStream( BinaryReader context ) { Console.WriteLine( "'{0}': EndOfStream", context ); }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { Console.WriteLine( "'{0}': PrimitiveSizeExceeded", context ); }
+			public void EndOfStream( RuntimeObjectBase context ) { Console.WriteLine( "'{0}': EndOfStream", context ); }
+			public void PrimitiveSizeExceeded( RuntimeObjectBase context ) { Console.WriteLine( "'{0}': PrimitiveSizeExceeded", context ); }
 
 			#endregion
 		}
@@ -527,8 +633,8 @@ namespace System.IO {
 
 			#region IEventHandler Members
 
-			public void EndOfStream( BinaryReader context ) { EventHandlerConsole.Instance.EndOfStream( context ); Environment.Abort( 1 ); }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { EventHandlerConsole.Instance.PrimitiveSizeExceeded( context ); Environment.Abort( 1 ); }
+			public void EndOfStream( RuntimeObjectBase context ) { EventHandlerConsole.Instance.EndOfStream( context ); Environment.Abort( 1 ); }
+			public void PrimitiveSizeExceeded( RuntimeObjectBase context ) { EventHandlerConsole.Instance.PrimitiveSizeExceeded( context ); Environment.Abort( 1 ); }
 
 			#endregion
 		}

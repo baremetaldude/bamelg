@@ -220,7 +220,7 @@ namespace System {
 
 		overflow_detected:
 			if( readen != nullref ) readen = 0;
-			return TextParsingStatus.Overflow;
+			return TextParsingStatus.OutOfRange;
 		}
 
 		public static TextParsingStatus TryFetchUnsignedInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
@@ -307,7 +307,7 @@ namespace System {
 
 		overflow_detected:
 			if( readen != nullref ) readen = 0;
-			return TextParsingStatus.Overflow;
+			return TextParsingStatus.OutOfRange;
 		}
 
 		private static TextParsingStatus TryFetchHexInt<TElement, TInteger>( TElement* buffer, uint length, TInteger& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
@@ -315,7 +315,7 @@ namespace System {
 			var trailingWhitespaceStarted = false;
 
 			var maxDigits = sizeof( TInteger ) * 2;
-			var digits = 0;
+			var digits = 0U;
 
 			TInteger result = cast<TInteger>( 0 );
 			TElement digit;
@@ -379,7 +379,7 @@ namespace System {
 				if( result != 0 ) ++digits;
 
 				if( trailingWhitespaceStarted ) return TextParsingStatus.Format;
-				if( digits > maxDigits ) return TextParsingStatus.Overflow;
+				if( digits > maxDigits ) return TextParsingStatus.OutOfRange;
 
 				digitsStarted = true;
 
@@ -573,6 +573,8 @@ namespace System {
 		public static TextParsingStatus TryFetchSpecificChar( char*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
 		public static TextParsingStatus TryFetchSpecificChar( uint*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
 
+		public static TextParsingStatus TryFetchChar( char*& buffer, uint& remaining, char& value ) { if( remaining == 0 ) return TextParsingStatus.Format; value = *buffer++; --remaining; return TextParsingStatus.OK; }
+
 		/// @{ parse 1-byte strings
 		public static TextParsingStatus TryFetchBool( byte*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 
@@ -608,8 +610,8 @@ namespace System {
 		public static TextParsingStatus TryParseHexUInt32( byte* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<byte, uint>( buffer, length, parsedResult ); }
 		public static TextParsingStatus TryParseHexUInt64( byte* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<byte, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParsingStatus TryParseSingleIEEE754( byte* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<byte>( buffer, length, parsedResult ); }
-		public static TextParsingStatus TryParseDoubleIEEE754( byte* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<byte>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( byte* buffer, uint length, float& parsedResult, bool allowMinusZero = false ) { return TryParseSingleIEEE754<byte>( buffer, length, parsedResult, allowMinusZero ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( byte* buffer, uint length, double& parsedResult, bool allowMinusZero = false ) { return TryParseIEEE754<byte>( buffer, length, parsedResult, allowMinusZero ); }
 
 		public static TextParsingStatus TryParseByteArray( byte* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<byte>( buffer, length, parsedResult ); }
 		public static byte[] ParseByteArray( byte* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
@@ -631,8 +633,8 @@ namespace System {
 		public static uint ParseHexUInt32( byte* buffer, uint length ) { uint parsedResult; var status = TryParseHexUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		public static ulong ParseHexUInt64( byte* buffer, uint length ) { ulong parsedResult; var status = TryParseHexUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( byte* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( byte* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static float ParseSingleIEEE754( byte* buffer, uint length, bool allowMinusZero = false ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( byte* buffer, uint length, bool allowMinusZero = false ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		/// @{ parse 2-byte strings
@@ -670,8 +672,8 @@ namespace System {
 		public static TextParsingStatus TryParseHexUInt32( char* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<char, uint>( buffer, length, parsedResult ); }
 		public static TextParsingStatus TryParseHexUInt64( char* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<char, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParsingStatus TryParseSingleIEEE754( char* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<char>( buffer, length, parsedResult ); }
-		public static TextParsingStatus TryParseDoubleIEEE754( char* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<char>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( char* buffer, uint length, float& parsedResult, bool allowMinusZero = false ) { return TryParseSingleIEEE754<char>( buffer, length, parsedResult, allowMinusZero ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( char* buffer, uint length, double& parsedResult, bool allowMinusZero = false ) { return TryParseIEEE754<char>( buffer, length, parsedResult, allowMinusZero ); }
 
 		public static TextParsingStatus TryParseByteArray( char* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<char>( buffer, length, parsedResult ); }
 		public static byte[] ParseByteArray( char* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
@@ -688,8 +690,8 @@ namespace System {
 		public static uint ParseUInt32( char* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		public static ulong ParseUInt64( char* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( char* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( char* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static float ParseSingleIEEE754( char* buffer, uint length, bool allowMinusZero = false ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( char* buffer, uint length, bool allowMinusZero = false ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		/// @{ parse 4-byte strings
@@ -727,8 +729,8 @@ namespace System {
 		public static TextParsingStatus TryParseHexUInt32( uint* buffer, uint length, uint& parsedResult ) { return TryFetchHexInt<uint, uint>( buffer, length, parsedResult ); }
 		public static TextParsingStatus TryParseHexUInt64( uint* buffer, uint length, ulong& parsedResult ) { return TryFetchHexInt<uint, ulong>( buffer, length, parsedResult ); }
 
-		public static TextParsingStatus TryParseSingleIEEE754( uint* buffer, uint length, float& parsedResult ) { return TryParseSingleIEEE754<uint>( buffer, length, parsedResult ); }
-		public static TextParsingStatus TryParseDoubleIEEE754( uint* buffer, uint length, double& parsedResult ) { return TryParseIEEE754<uint>( buffer, length, parsedResult ); }
+		public static TextParsingStatus TryParseSingleIEEE754( uint* buffer, uint length, float& parsedResult, bool allowMinusZero = false ) { return TryParseSingleIEEE754<uint>( buffer, length, parsedResult, allowMinusZero ); }
+		public static TextParsingStatus TryParseDoubleIEEE754( uint* buffer, uint length, double& parsedResult, bool allowMinusZero = false ) { return TryParseIEEE754<uint>( buffer, length, parsedResult, allowMinusZero ); }
 
 		public static TextParsingStatus TryParseByteArray( uint* buffer, uint length, byte[]& parsedResult ) { return TryFetchHexArray<uint>( buffer, length, parsedResult ); }
 		public static byte[] ParseByteArray( uint* buffer, uint length ) { byte[] parsedResult; var status = TryParseByteArray( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
@@ -745,8 +747,8 @@ namespace System {
 		public static uint ParseUInt32( uint* buffer, uint length ) { uint parsedResult; var status = TryParseUInt32( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		public static ulong ParseUInt64( uint* buffer, uint length ) { ulong parsedResult; var status = TryParseUInt64( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
 
-		public static float ParseSingleIEEE754( uint* buffer, uint length ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
-		public static double ParseDoubleIEEE754( uint* buffer, uint length ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static float ParseSingleIEEE754( uint* buffer, uint length, bool allowMinusZero = false ) { float parsedResult; var status = TryParseSingleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
+		public static double ParseDoubleIEEE754( uint* buffer, uint length, bool allowMinusZero = false ) { double parsedResult; var status = TryParseDoubleIEEE754( buffer, length, parsedResult, allowMinusZero ); BclErrorHandler.ParserException( status ); return parsedResult; }
 		/// @}
 
 		private static readonly int[15] ExponentBias = new int[15] { 4, 7, 10, 14, 17, 20, 24, 27, 30, 34, 37, 40, 44, 47, 50 };
@@ -757,13 +759,13 @@ namespace System {
 		private static readonly ulong[21] MantissaPower10By16 = new ulong[21] { 0x8E1BC9BF04000000, 0x9DC5ADA82B70B59E, 0xAF298D050E4395D6, 0xC2781F49FFCFA6D4, 0xD7E77A8F87DAF7FA, 0xEFB3AB16C59B14A0, 0x850FADC09923329C, 0x93BA47C980E98CDE, 0xA402B9C5A8D3A6E6, 0xB616A12B7FE617A8, 0xCA28A291859BBF90, 0xE070F78D39275566, 0xF92E0C3537826140, 0x8A5296FFE33CC92C, 0x9991A6F3D6BF1762, 0xAA7EEBFB9DF9DE8A, 0xBD49D14AA79DBC7E, 0xD226FC195C6A2F88, 0xE950DF20247C83F8, 0x81842F29F2CCE373, 0x8FCAC257558EE4E2 };
 		private static readonly ulong[21] MantissaPower01By16 = new ulong[21] { 0xE69594BEC44DE160, 0xCFB11EAD453994C3, 0xBB127C53B17EC165, 0xA87FEA27A539E9B3, 0x97C560BA6B0919B5, 0x88B402F7FD7553AB, 0xF64335BCF065D3A0, 0xDDD0467C64BCE4C4, 0xC7CABA6E7C5382ED, 0xB3F4E093DB73A0B7, 0xA21727DB38CB0053, 0x91FF83775423CC29, 0x8380DEA93DA4BC82, 0xECE53CEC4A314F00, 0xD5605FCDCF32E217, 0xC0314325637A1978, 0xAD1C8EAB5EE43BA2, 0x9BECCE62836AC5B0, 0x8C71DCD9BA0B495C, 0xFD00B89747823938, 0xE3E27A444D8D991A };
 
-		private static TextParsingStatus TryParseSingleIEEE754<TElement>( TElement* text, uint length, float& parsedResult ) {
+		private static TextParsingStatus TryParseSingleIEEE754<TElement>( TElement* text, uint length, float& parsedResult, bool allowMinusZero ) {
 			double result;
-			var status = TryParseIEEE754<TElement>( text, length, result );
+			var status = TryParseIEEE754<TElement>( text, length, result, allowMinusZero );
 			if( status ) {
 				if( !result.IsSpecial )
 					if( result < float.MinValue || result > float.MaxValue )
-						return TextParsingStatus.Overflow;
+						return TextParsingStatus.OutOfRange;
 
 				parsedResult = ( float ) result;
 			}
@@ -771,7 +773,7 @@ namespace System {
 			return status;
 		}
 
-		private static TextParsingStatus TryParseIEEE754<TElement>( TElement* text, uint length, double& parsedResult ) {
+		private static TextParsingStatus TryParseIEEE754<TElement>( TElement* text, uint length, double& parsedResult, bool allowMinusZero ) {
 			var mainDoublePart = 0UL;
 			var mainPartDigits = 0;
 
@@ -972,7 +974,7 @@ namespace System {
 				mantissa = mantissa * ( uint )( MantissaPower10[auxillaryPartDigits - 1] >> 64 - ExponentBias[auxillaryPartDigits - 1] ) + auxillaryDoublePart;
 
 			var power10 = exponentPart + initialExponent;
-			var absolutePower10 = Math.Abs( power10 );
+			var absolutePower10 = ( uint ) Math.Abs( power10 );
 			bool isPowerNegative = power10 < 0;
 
 			if( absolutePower10 > ( ExponentBias.Length + 1 ) * ( ExponentBias16.Length + 1 ) ) {
@@ -983,8 +985,10 @@ namespace System {
 			}
 
 			if( mantissa == 0 ) {
-				doubleValue = 0;
-				goto doubleValueComputed;
+				if( allowMinusZero ) parsedResult = minusSpecified ? -0.0 : 0.0;
+				else parsedResult = 0.0;
+
+				return TextParsingStatus.OK;
 			}
 
 			var mantissaShift = mantissa;
@@ -1058,27 +1062,244 @@ namespace System {
 			}
 		}
 
-		[UnitTest]
-		public static void ParseTest() {
-			Assert.AreEqual( sbyte.MinValue, sbyte.Parse( sbyte.MinValue.ToString() ) );
-			Assert.AreEqual( sbyte.MaxValue, sbyte.Parse( sbyte.MaxValue.ToString() ) );
-			Assert.AreEqual( short.MinValue, short.Parse( short.MinValue.ToString() ) );
-			Assert.AreEqual( short.MaxValue, short.Parse( short.MaxValue.ToString() ) );
-			Assert.AreEqual( int.MinValue, int.Parse( int.MinValue.ToString() ) );
-			Assert.AreEqual( int.MaxValue, int.Parse( int.MaxValue.ToString() ) );
-			Assert.AreEqual( long.MinValue, long.Parse( long.MinValue.ToString() ) );
-			Assert.AreEqual( long.MaxValue, long.Parse( long.MaxValue.ToString() ) );
+		public struct FixedDecimalPointParser {
+			public FixedDecimalPointParser( byte precision ) {
+				Precision = precision;
+			}
 
-			Assert.AreEqual( byte.MinValue, byte.Parse( byte.MinValue.ToString() ) );
-			Assert.AreEqual( byte.MaxValue, byte.Parse( byte.MaxValue.ToString() ) );
-			Assert.AreEqual( ushort.MinValue, ushort.Parse( ushort.MinValue.ToString() ) );
-			Assert.AreEqual( ushort.MaxValue, ushort.Parse( ushort.MaxValue.ToString() ) );
-			Assert.AreEqual( uint.MinValue, uint.Parse( uint.MinValue.ToString() ) );
-			Assert.AreEqual( uint.MaxValue, uint.Parse( uint.MaxValue.ToString() ) );
-			Assert.AreEqual( ulong.MinValue, ulong.Parse( ulong.MinValue.ToString() ) );
-			Assert.AreEqual( ulong.MaxValue, ulong.Parse( ulong.MaxValue.ToString() ) );
+			#region Settings
 
-			Assert.AreEqual( 123456789.12345, double.Parse( "123456789.12345" ) ); // 15-digit precision
+			public bool AllowMinus { get; set; } = true;
+
+			public int MaxIntegerDigits = 0;
+			public byte Precision = 0;
+
+			#endregion
+
+			#region Result
+
+			public byte TotalDigits = 0;
+			public byte DecimalDigits = 0;
+
+			public bool IsMinusSpecified { get; set; } = false;
+
+			#endregion
+
+			private void Reset() {
+				TotalDigits = DecimalDigits = 0;
+
+				IsMinusSpecified = false;
+			}
+
+			public TextParsingStatus TryParse( char* text, uint length, byte& value, RoundModeKind roundMode = RoundModeKind.HalfTowardsInfinity ) { if( MaxIntegerDigits == 0 ) MaxIntegerDigits = 5; return TryParse<byte>( text, length, value, roundMode ); }
+			public TextParsingStatus TryParse( char* text, uint length, ushort& value, RoundModeKind roundMode = RoundModeKind.HalfTowardsInfinity ) { if( MaxIntegerDigits == 0 ) MaxIntegerDigits = 5; return TryParse<ushort>( text, length, value, roundMode ); }
+			public TextParsingStatus TryParse( char* text, uint length, uint& value, RoundModeKind roundMode = RoundModeKind.HalfTowardsInfinity ) { if( MaxIntegerDigits == 0 ) MaxIntegerDigits = 10; return TryParse<uint>( text, length, value, roundMode ); }
+			public TextParsingStatus TryParse( char* text, uint length, ulong& value, RoundModeKind roundMode = RoundModeKind.HalfTowardsInfinity ) { if( MaxIntegerDigits == 0 ) MaxIntegerDigits = 20; return TryParse<ulong>( text, length, value, roundMode ); }
+
+			public enum RoundModeKind {
+				TowardsInfinity,
+				TowardsZero,
+				HalfTowardsInfinity,
+				HalfTowardsZero,
+				HalfTowardsPositiveInfinity,
+				HalfTowardsNegativeInfinity,
+			}
+
+			private TextParsingStatus TryParse<T>( char* text, uint length, T& value, RoundModeKind roundMode ) {
+				Reset();
+
+				var readIndex = 0U;
+				var maxReached = false;
+				value = 0;
+
+				// handle leading whitespaces
+				for( ; readIndex < length; ++readIndex ) {
+					switch( ( uint ) text[readIndex] ) {
+						// whitespace
+						case '\x0085': [DisableWarningUnreachable] if( sizeof( char ) > 1 ) goto case ' '; goto default;
+						case ' ': case '\t': case '\n': case '\v': case '\f': case '\r':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000': case '\x2001': case '\x2002': case '\x2003': case '\x2004': case '\x2005': case '\x2006': case '\x2007': case '\x2008': case '\x2009':
+						case '\x200A':
+						case '\x2028': case '\x2029':
+						case '\x202F': case '\x205F':
+						case '\x3000':
+							if( IsMinusSpecified ) return TextParsingStatus.Format;
+							continue;
+
+						case '-':
+							if( !AllowMinus ) return TextParsingStatus.Format;
+							if( IsMinusSpecified ) return TextParsingStatus.Format;
+							IsMinusSpecified = true;
+							continue;
+						default: goto fetchIntegerPart;
+					}
+				}
+
+			fetchIntegerPart:
+				if( readIndex < length )
+					switch( text[readIndex] ) {
+						case '\0': break;
+
+						case '0':
+						case '1':
+						case '2':
+						case '3':
+						case '4':
+						case '5':
+						case '6':
+						case '7':
+						case '8':
+						case '9':
+							if( text[readIndex] == '0' && TotalDigits == 0 ) {
+								++readIndex;
+								goto fetchIntegerPart;
+							}
+
+							if( TotalDigits < 20 ) {
+								if( checkwrap( value = ( value * 10 ) + ( byte )( text[readIndex] - '0' ) ) ) return TextParsingStatus.OutOfRange;
+								++TotalDigits;
+							}
+							else {
+								return TextParsingStatus.OutOfRange;
+							}
+
+							if( TotalDigits > MaxIntegerDigits ) return TextParsingStatus.OutOfRange;
+
+							++readIndex;
+							goto fetchIntegerPart;
+					}
+
+				if( readIndex < length )
+					if( text[readIndex] == '.' ) {
+						++readIndex;
+
+					fetchFractionalPart:
+						if( readIndex < length )
+							switch( text[readIndex] ) {
+								case '\0': break;
+
+								case '0':
+								case '1':
+								case '2':
+								case '3':
+								case '4':
+								case '5':
+								case '6':
+								case '7':
+								case '8':
+								case '9':
+									if( TotalDigits < 20 ) {
+										var digit = ( byte )( text[readIndex] - '0' );
+
+										if( DecimalDigits < Precision ) {
+											if( checkwrap( value = ( value * 10 ) + digit ) ) return TextParsingStatus.OutOfRange;
+											++TotalDigits;
+										}
+										else if( DecimalDigits == Precision ) {
+											switch( roundMode ) {
+												case RoundModeKind.TowardsInfinity:
+													if( digit > 0 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													break;
+
+												case RoundModeKind.TowardsZero:
+													break;
+
+												case RoundModeKind.HalfTowardsZero:
+													if( digit > 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													break;
+
+												case RoundModeKind.HalfTowardsInfinity:
+													if( digit >= 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													break;
+
+												case RoundModeKind.HalfTowardsPositiveInfinity:
+													if( IsMinusSpecified ) {
+														if( digit > 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													}
+													else {
+														if( digit >= 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													}
+
+													break;
+
+												case RoundModeKind.HalfTowardsNegativeInfinity:
+													if( IsMinusSpecified ) {
+														if( digit >= 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													}
+													else {
+														if( digit > 5 ) if( checkwrap( ++value ) ) return TextParsingStatus.OutOfRange;
+													}
+
+													break;
+											}
+										}
+									}
+									// skip non-important digits
+									else {
+										++readIndex;
+										goto fetchFractionalPart;
+									}
+
+									++DecimalDigits;
+									++readIndex;
+									goto fetchFractionalPart;
+							}
+					}
+
+				// scientific notation
+				if( readIndex < length )
+					switch( ( uint ) text[readIndex] ) {
+						case '\0': break;
+
+						// whitespace
+						case '\x0085':
+						case ' ': case '\t': case '\n': case '\v': case '\f': case '\r':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000': case '\x2001': case '\x2002': case '\x2003': case '\x2004': case '\x2005': case '\x2006': case '\x2007': case '\x2008': case '\x2009':
+						case '\x200A':
+						case '\x2028': case '\x2029':
+						case '\x202F': case '\x205F':
+						case '\x3000':
+							break;
+
+						default:
+							return TextParsingStatus.Format;
+					}
+
+				// handle trailing whitespaces
+				for( ; readIndex < length; ++readIndex ) {
+					switch( ( uint ) text[readIndex] ) {
+						case '\0': break;
+
+						// whitespace
+						case '\x0085': [DisableWarningUnreachable] if( sizeof( char ) > 1 ) goto case ' '; goto default;
+						case ' ': case '\t': case '\n': case '\v': case '\f': case '\r':
+						case '\x00A0':
+						case '\x1680':
+						case '\x180E':
+						case '\x2000': case '\x2001': case '\x2002': case '\x2003': case '\x2004': case '\x2005': case '\x2006': case '\x2007': case '\x2008': case '\x2009':
+						case '\x200A':
+						case '\x2028': case '\x2029':
+						case '\x202F': case '\x205F':
+						case '\x3000':
+							continue;
+
+						default: return TextParsingStatus.Format;
+					}
+				}
+
+				if( DecimalDigits == Precision ) return TextParsingStatus.OK;
+
+				if( DecimalDigits < Precision )
+					if( checkwrap( value *= ( T ) PrimitiveTypesFormatter.TenPowersTable[Precision - DecimalDigits] ) ) return TextParsingStatus.OutOfRange;
+
+				return TextParsingStatus.OK;
+			}
 		}
 	}
 }

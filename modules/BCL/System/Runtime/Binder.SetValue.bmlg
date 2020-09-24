@@ -12,7 +12,7 @@ using System.Serialization;
 
 namespace System.Runtime {
 	public partial class Binder {
-		public void SetValue( Context& context, int index, bool value ) {
+		public void SetValue( Context& context, uint index, bool value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -52,7 +52,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, sbyte value ) {
+		public void SetValue( Context& context, uint index, sbyte value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -92,7 +92,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, byte value ) {
+		public void SetValue( Context& context, uint index, byte value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -132,7 +132,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, short value ) {
+		public void SetValue( Context& context, uint index, short value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -172,7 +172,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, ushort value ) {
+		public void SetValue( Context& context, uint index, ushort value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -212,7 +212,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, int value ) {
+		public void SetValue( Context& context, uint index, int value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -252,7 +252,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, uint value ) {
+		public void SetValue( Context& context, uint index, uint value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -292,7 +292,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, long value ) {
+		public void SetValue( Context& context, uint index, long value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -332,7 +332,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, ulong value ) {
+		public void SetValue( Context& context, uint index, ulong value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -372,7 +372,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, float value ) {
+		public void SetValue( Context& context, uint index, float value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -384,7 +384,7 @@ namespace System.Runtime {
 				case typeof( Utf16String ): column->SetValue<Utf16String>( context.Object, value.ToString() ); return;
 				case typeof( Utf32String ): column->SetValue<Utf32String>( context.Object, value.ToUtf32String() ); return;
 
-				case typeof( bool ): column->SetValue<bool>( context.Object, !value.IsDenormalizedOrZero ); return;
+				case typeof( bool ): column->SetValue<bool>( context.Object, !value.IsSubnormalOrZero ); return;
 				case typeof( sbyte ): column->SetValue<sbyte>( context.Object, ( sbyte ) Math.Clamp( ( float ) sbyte.MinValue, value, ( float ) sbyte.MaxValue ) ); return;
 				case typeof( byte ): column->SetValue<byte>( context.Object, ( byte ) Math.Clamp( ( float ) byte.MinValue, value, ( float ) byte.MaxValue ) ); return;
 
@@ -412,7 +412,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, double value ) {
+		public void SetValue( Context& context, uint index, double value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -424,7 +424,7 @@ namespace System.Runtime {
 				case typeof( Utf16String ): column->SetValue<Utf16String>( context.Object, value.ToString() ); return;
 				case typeof( Utf32String ): column->SetValue<Utf32String>( context.Object, value.ToUtf32String() ); return;
 
-				case typeof( bool ): column->SetValue<bool>( context.Object, !value.IsDenormalizedOrZero ); return;
+				case typeof( bool ): column->SetValue<bool>( context.Object, !value.IsSubnormalOrZero ); return;
 				case typeof( sbyte ): column->SetValue<sbyte>( context.Object, ( sbyte ) Math.Clamp( ( double ) sbyte.MinValue, value, ( double ) sbyte.MaxValue ) ); return;
 				case typeof( byte ): column->SetValue<byte>( context.Object, ( byte ) Math.Clamp( ( double ) byte.MinValue, value, ( double ) byte.MaxValue ) ); return;
 
@@ -452,7 +452,7 @@ namespace System.Runtime {
 			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
 		}
 
-		public void SetValue( Context& context, int index, SbcsString value ) {
+		public void SetValue( Context& context, uint index, SbcsString value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -530,7 +530,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, Utf8String value ) {
+		public void SetValue( Context& context, uint index, Utf8String value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -608,7 +608,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, string value ) {
+		public void SetValue( Context& context, uint index, string value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -686,7 +686,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, StringBuilder value ) {
+		public void SetValue( Context& context, uint index, StringBuilder value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -766,7 +766,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, Utf32String value ) {
+		public void SetValue( Context& context, uint index, Utf32String value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -844,7 +844,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, BinaryReader value ) {
+		public void SetValue( Context& context, uint index, BinaryReader value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -918,7 +918,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, ITextSerializable value ) {
+		public void SetValue( Context& context, uint index, ITextSerializable value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -929,7 +929,7 @@ namespace System.Runtime {
 			}
 		}
 
-		public void SetValue( Context& context, int index, DateTime value ) {
+		public void SetValue( Context& context, uint index, DateTime value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -958,7 +958,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, TimeSpan value ) {
+		public void SetValue( Context& context, uint index, TimeSpan value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -987,7 +987,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, Guid value ) {
+		public void SetValue( Context& context, uint index, Guid value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -1006,17 +1006,17 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void SetValue( Context& context, int index, byte[] value ) {
+		public void SetValue( Context& context, uint index, byte[] value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): column->SetValue<SbcsString>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexSbcs( &value[0], ( uint ) value.Length, true ) ); return;
-				case typeof( Utf8String ): column->SetValue<Utf8String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf8( &value[0], ( uint ) value.Length, true ) ); return;
-				case typeof( Utf16String ): column->SetValue<Utf16String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf16( &value[0], ( uint ) value.Length, true ) ); return;
-				case typeof( Utf32String ): column->SetValue<Utf32String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf32( &value[0], ( uint ) value.Length, true ) ); return;
+				case typeof( SbcsString ): column->SetValue<SbcsString>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexSbcs( &value[0], value.Length, true ) ); return;
+				case typeof( Utf8String ): column->SetValue<Utf8String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf8( &value[0], value.Length, true ) ); return;
+				case typeof( Utf16String ): column->SetValue<Utf16String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf16( &value[0], value.Length, true ) ); return;
+				case typeof( Utf32String ): column->SetValue<Utf32String>( context.Object, PrimitiveTypesFormatter.FormatMemoryHexUtf32( &value[0], value.Length, true ) ); return;
 
 				case typeof( byte[] ): column->SetValue<byte[]>( context.Object, value ); return;
 			}

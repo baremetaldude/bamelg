@@ -101,8 +101,8 @@ namespace System.Runtime {
 			}
 		}
 
-		private Mapping* GetMapping( Context& context, int index ) {
-			if( index < 0 || index > Mappings.Length ) {
+		private Mapping* GetMapping( Context& context, uint index ) {
+			if( index >= Mappings.Length ) {
 				context.BinderEvent.BadMapping( index );
 				return null;
 			}
@@ -111,7 +111,7 @@ namespace System.Runtime {
 		}
 
 		public interface IEvent {
-			void BadMapping( int mapping );
+			void BadMapping( uint mapping );
 			void NotFound( IFormattable name );
 			void IncompatibleMapping( Mapping* mapping, Type& type );
 			void ParseError( Mapping* mapping );
@@ -120,7 +120,7 @@ namespace System.Runtime {
 		public struct BinderListenerSilent : IEvent {
 			public static readonly BinderListenerSilent Instance;
 
-			public void BadMapping( int mapping ) { }
+			public void BadMapping( uint mapping ) { }
 			public void NotFound( IFormattable name ) { }
 			public void IncompatibleMapping( Mapping* mapping, Type& type ) { }
 			public void ParseError( Mapping* mapping ) { }
@@ -129,7 +129,7 @@ namespace System.Runtime {
 		public struct BinderListenerConsole : IEvent {
 			public static readonly BinderListenerConsole Instance;
 
-			public void BadMapping( int mapping ) {
+			public void BadMapping( uint mapping ) {
 				Console.WriteLine( "Bad mapping {0}", mapping );
 			}
 
@@ -268,25 +268,25 @@ namespace System.Runtime {
 		public static ulong ToUInt64( int value ) { return value >= 0 ? ( ulong ) value : ( ulong ) 0; }
 		public static ulong ToUInt64( long value ) { return value >= 0 ? ( ulong ) value : ( ulong ) 0; }
 
-		private static yield<Mapping> EnumerateMappings( UserType& type ) {
+		private static yield<Mapping> EnumerateMappings( UserType& type, bool publicMembersOnly ) {
 			for( var @base = &type; @base != null; @base = &@base->BaseType ) {
 				if( *@base == typeof( RuntimeObjectBase ) ) break;
 
-				for( var i = 0; i < @base->FieldCount; ++i ) {
+				for( var i = 0U; i < @base->FieldCount; ++i ) {
 					var& field = @base->FieldsStart[i];
 
 					if( field.IsStatic ) continue;
-					if( field.AccessKind != AccessKind.Public ) continue;
+					if( publicMembersOnly && field.AccessKind != AccessKind.Public ) continue;
 					if( field.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 
 					yield return new Mapping( field );
 				}
 
-				for( var i = 0; i < @base->PropertyCount; ++i ) {
+				for( var i = 0U; i < @base->PropertyCount; ++i ) {
 					var& property = @base->PropertiesStart[i];
 
 					if( property.IsStatic ) continue;
-					if( property.AccessKind != AccessKind.Public ) continue;
+					if( publicMembersOnly && property.AccessKind != AccessKind.Public ) continue;
 					if( property.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 					if( property.GetMethod == nullref | property.SetMethod == nullref ) continue;
 
@@ -303,18 +303,18 @@ namespace System.Runtime {
 				_mapping = new List<Binder.Mapping>();
 			}
 
-			public MapperEmpty( UserType& type )
+			public MapperEmpty( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperEmpty( int capacity ) {
+			public MapperEmpty( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) )
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) )
 					_mapping.Add( mapping );
 			}
 
@@ -322,13 +322,13 @@ namespace System.Runtime {
 				_mapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( field ) );
 				return result;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( property ) );
 				return result;
@@ -341,31 +341,31 @@ namespace System.Runtime {
 
 		public struct MapperSbcs {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<SbcsString, int> IdMapping;
+			public readonly Dictionary<SbcsString, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperSbcs() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<SbcsString, int>();
+				IdMapping = new Dictionary<SbcsString, uint>();
 			}
 
-			public MapperSbcs( UserType& type )
+			public MapperSbcs( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperSbcs( int capacity ) {
+			public MapperSbcs( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<SbcsString, int>( capacity );
+				IdMapping = new Dictionary<SbcsString, uint>( capacity );
 			}
 
-			public int this[SbcsString name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[SbcsString name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -376,44 +376,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( field.Name, _mapping.Count ) || IdMapping.Add( field.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( SbcsString name, UserType.Field& field ) {
+			public uint Add( SbcsString name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( property.Name, _mapping.Count ) || IdMapping.Add( property.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( SbcsString name, UserType.Property& property ) {
+			public uint Add( SbcsString name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -423,31 +423,31 @@ namespace System.Runtime {
 
 		public struct MapperUtf8 {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<Utf8String, int> IdMapping;
+			public readonly Dictionary<Utf8String, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperUtf8() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<Utf8String, int>();
+				IdMapping = new Dictionary<Utf8String, uint>();
 			}
 
-			public MapperUtf8( UserType& type )
+			public MapperUtf8( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperUtf8( int capacity ) {
+			public MapperUtf8( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<Utf8String, int>( capacity );
+				IdMapping = new Dictionary<Utf8String, uint>( capacity );
 			}
 
-			public int this[Utf8String name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[Utf8String name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -458,44 +458,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( Utf8String ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( Utf8String name, UserType.Field& field ) {
+			public uint Add( Utf8String name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( Utf8String ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( Utf8String name, UserType.Property& property ) {
+			public uint Add( Utf8String name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -505,31 +505,31 @@ namespace System.Runtime {
 
 		public struct MapperUtf16 {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<string, int> IdMapping;
+			public readonly Dictionary<string, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperUtf16() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<string, int>();
+				IdMapping = new Dictionary<string, uint>();
 			}
 
-			public MapperUtf16( UserType& type )
+			public MapperUtf16( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperUtf16( int capacity ) {
+			public MapperUtf16( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<string, int>( capacity );
+				IdMapping = new Dictionary<string, uint>( capacity );
 			}
 
-			public int this[string name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[string name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -540,44 +540,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( string ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( string name, UserType.Field& field ) {
+			public uint Add( string name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( string ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( string name, UserType.Property& property ) {
+			public uint Add( string name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -587,32 +587,32 @@ namespace System.Runtime {
 
 		public struct MapperCUtf16Span {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<CUtf16StringSpan, int> IdMapping;
+			public readonly Dictionary<CUtf16StringSpan, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 			public HashSet<string> RetainSet = null;
 
 			public MapperCUtf16Span() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<CUtf16StringSpan, int>();
+				IdMapping = new Dictionary<CUtf16StringSpan, uint>();
 			}
 
-			public MapperCUtf16Span( UserType& type )
+			public MapperCUtf16Span( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperCUtf16Span( int capacity ) {
+			public MapperCUtf16Span( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<CUtf16StringSpan, int>( capacity );
+				IdMapping = new Dictionary<CUtf16StringSpan, uint>( capacity );
 			}
 
-			public int this[CUtf16StringSpan name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[CUtf16StringSpan name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -623,7 +623,7 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) field.Name;
@@ -635,20 +635,20 @@ namespace System.Runtime {
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( CUtf16StringSpan name, UserType.Field& field ) {
+			public uint Add( CUtf16StringSpan name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) property.Name;
@@ -660,17 +660,17 @@ namespace System.Runtime {
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( CUtf16StringSpan name, UserType.Property& property ) {
+			public uint Add( CUtf16StringSpan name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {

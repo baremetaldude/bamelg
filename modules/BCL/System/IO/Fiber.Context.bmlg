@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -18,7 +18,7 @@ namespace System.IO {
 			internal static struct ContextSwitch {
 				internal static struct X86 {
 					internal static struct Linux {
-						public static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+						public static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) {
 							switch( Environment.CurrentCpu ) {
 								case CpuID.X86_32: {
 										var alignedStackTop = cast<void**>( cast<byte*>( stack ) + ( ( stackSize - 12 ) & ~0xF ) - sizeof( void* ) );
@@ -127,10 +127,10 @@ namespace System.IO {
 					}
 
 					internal static struct Windows {
-						public static void PrepareContext_NoSSE( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
-						public static void PrepareContext_SSE( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+						public static void PrepareContext_NoSSE( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+						public static void PrepareContext_SSE( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
 
-						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool sse ) {
+						private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter, bool sse ) {
 							switch( Environment.CurrentCpu ) {
 								case CpuID.X86_32: {
 										var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
@@ -322,10 +322,10 @@ namespace System.IO {
 
 				internal static struct ARM32 {
 					internal static struct Linux {
-						public static void PrepareContext_nofpu( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
-						public static void PrepareContext_fpu_d8_d15( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+						public static void PrepareContext_nofpu( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+						public static void PrepareContext_fpu_d8_d15( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
 
-						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool fpu_d8d15 ) {
+						private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter, bool fpu_d8d15 ) {
 							var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
 
 							var sp = alignedStackTop - 13;
@@ -374,7 +374,7 @@ namespace System.IO {
 						[Alignment( Boundary = 4 )]
 						[BackendSection( Name = ".text" )]
 						private static uint_bigendian[1] FiberSwitchSetup = new uint_bigendian[1] {
-							0x03c0bde8  // pop {r0, r1, lr, pc}
+							0x03C0BDE8  // pop {r0, r1, lr, pc}
 						};
 
 						/// @{ Without FPU state
@@ -417,10 +417,10 @@ namespace System.IO {
 
 				internal static struct ARM64 {
 					internal static struct Linux {
-						public static void PrepareContext_FPU( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
-						public static void PrepareContext_NoFPU( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
+						public static void PrepareContext_FPU( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, true ); }
+						public static void PrepareContext_NoFPU( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) { PrepareContext( fiber, stack, stackSize, function, parameter, false ); }
 
-						private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter, bool fpu ) {
+						private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter, bool fpu ) {
 							var alignedStackTop = cast<void**>( ( cast<uintptr>( stack ) + stackSize ) & ~0xF );
 
 							var intRegs = 12;

@@ -8,6 +8,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System {
+	[RelaxedRelease]
 	public sealed partial class Utf32String {
 		public const Utf32String Empty = "";
 
@@ -74,8 +75,8 @@ namespace System {
 
 		internal uint* GetChars() { return this != null ? ( uint* )( bitcast<byte*>( this ) + sizeof( thistype ) ) : null; }
 
-		public uint this[int index] { get { System.Diagnostics.Debug.Assert( ( uint ) index < Length ); return GetChars()[index]; } }
-		public uint this[uint index] { get { System.Diagnostics.Debug.Assert( index < Length ); return GetChars()[index]; } }
+		public uint this[int index] { get { System.Diagnostics.Debug.Assert( System.Runtime.Memory.BoundsCheck( Length, index ) ); return GetChars()[index]; } }
+		public uint this[uint index] { get { System.Diagnostics.Debug.Assert( System.Runtime.Memory.BoundsCheck( Length, index ) ); return GetChars()[index]; } }
 
 		public static bool operator ==( Utf32String left, Utf32String right ) {
 			if( cast<RuntimeObjectBase>( left ) == cast<RuntimeObjectBase>( right ) ) return true;
@@ -84,7 +85,7 @@ namespace System {
 			if( left.Hash != right.Hash ) return false;
 			if( left.Length != right.Length ) return false;
 
-			return Memory.Compare( left.GetChars(), right.GetChars(), ( int ) left.ByteLength );
+			return Memory.Compare( left.GetChars(), right.GetChars(), left.ByteLength );
 		}
 
 		public static bool operator !=( Utf32String left, Utf32String right ) {
@@ -283,15 +284,15 @@ namespace System {
 			return result;
 		}
 
-		public int IndexOf( thistype value ) {
+		public uint IndexOf( thistype value ) {
 			return IndexOf( value, 0 );
 		}
 
-		public int IndexOf( thistype value, int startIndex ) {
-			if( !Assert.IsFalse( startIndex < 0 || ( uint ) startIndex >= Length || value == "" ) )
-				return -1;
+		public uint IndexOf( thistype value, uint startIndex ) {
+			if( !Assert.IsFalse( startIndex >= Length || value == "" ) )
+				return uint.MaxValue;
 
-			for( var i = ( uint ) startIndex; i + value.Length < Length + 1; ++i ) {
+			for( var i = startIndex; i + value.Length < Length + 1; ++i ) {
 				if( this[i] == value[0] ) {
 					uint j;
 
@@ -299,11 +300,11 @@ namespace System {
 						if( this[i + j] != value[j] )
 							break;
 
-					if( j == value.Length ) return ( int ) i;
+					if( j == value.Length ) return i;
 				}
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 	}
 
@@ -359,20 +360,20 @@ namespace System {
 			return ( *left - *right ) == 0;
 		}
 
-		public static bool AreEqual( CUtf32String leftString, CUtf32String rightString, int length ) {
+		public static bool AreEqual( CUtf32String leftString, CUtf32String rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
 			if( ( left == null ) & ( right == null ) ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			int n = length;
+			var count = length;
 
-			while( --n >= 0 && *left == *right++ )
+			while( --count != uint.MaxValue && *left == *right++ )
 				if( *left++ == '\0' )
 					return true;
 
-			return n < 0 ? true : *left - *--right == 0;
+			return count == uint.MaxValue ? true : *left - *--right == 0;
 		}
 
 		public bool StartsWith( CUtf32String prefix ) {
@@ -397,7 +398,7 @@ namespace System {
 				continue;
 		}
 
-		static void Copy( CUtf32String leftString, CUtf32String rightString, int length ) {
+		static void Copy( CUtf32String leftString, CUtf32String rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
@@ -455,7 +456,7 @@ namespace System {
 			var result = 0U;
 			var length = 0U;
 
-			for( int i = 0; chars[i] != '\0'; ++i, ++length )
+			for( var i = 0U; chars[i] != '\0'; ++i, ++length )
 				result = result * 41 + chars[i];
 
 			resultLength = length * sizeof( uint );
@@ -484,7 +485,7 @@ namespace System {
 			if( left == right && leftString.Length == rightString.Length ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			return Memory.Compare( left, right, ( int ) leftString.ByteLength );
+			return Memory.Compare( left, right, leftString.ByteLength );
 		}
 
 		public static bool operator ==( CUtf32StringSpan& left, CUtf32StringSpan& right ) { return AreEqual( left, right ); }
@@ -504,28 +505,28 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( CUtf32StringSpan value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( Utf32String value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( Utf32String value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 	}
 }

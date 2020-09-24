@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -6,7 +6,7 @@
 
 namespace System.Collections {
 	public class TrackablePriorityQueue<T> {
-		private const int DefaultCapacity = 16;
+		private const uint DefaultCapacity = 16;
 
 		// Note:
 		// new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) ); - descending {30,20,10}
@@ -14,9 +14,9 @@ namespace System.Collections {
 		// new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) ); - ascending {10,20,30}
 		public readonly Functors.Func<T, T, int> Comparer;
 
-		private int _count;
+		private uint _count;
 		private T[] _heap;
-		private int[] _heapToTrackingKeyMapping, _trackingKeyToHeapMapping;
+		private uint[] _heapToTrackingKeyMapping, _trackingKeyToHeapMapping;
 
 		private PoolIndexManager _trackingManager = new PoolIndexManager();
 
@@ -24,17 +24,17 @@ namespace System.Collections {
 			: this( DefaultCapacity, comparer ) {
 		}
 
-		public TrackablePriorityQueue( int capacity, Functors.Func<T, T, int> comparer ) {
+		public TrackablePriorityQueue( uint capacity, Functors.Func<T, T, int> comparer ) {
 			if( !BitOperations.IsPowerOf2( capacity ) )
 				capacity = BitOperations.NextPowerOf2( capacity );
 
 			_heap = new[capacity] T;
-			_heapToTrackingKeyMapping = new[capacity] int;
-			_trackingKeyToHeapMapping = new[capacity] int;
+			_heapToTrackingKeyMapping = new[capacity] uint;
+			_trackingKeyToHeapMapping = new[capacity] uint;
 
-			for( int i = 0; i < capacity; i++ ) {
-				_heapToTrackingKeyMapping[i] = -1;
-				_trackingKeyToHeapMapping[i] = -1;
+			for( var i = 0U; i < capacity; i++ ) {
+				_heapToTrackingKeyMapping[i] = uint.MaxValue;
+				_trackingKeyToHeapMapping[i] = uint.MaxValue;
 			}
 
 			_count = 0;
@@ -45,12 +45,10 @@ namespace System.Collections {
 			_count = 0;
 		}
 
-		public T this[int trackingIndex] {
+		public T this[uint trackingIndex] {
 			get {
-				if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
 				if( !Assert.IsTrue( trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
 				var heapIndex = _trackingKeyToHeapMapping[trackingIndex];
-				if( !Assert.IsTrue( heapIndex >= 0 ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
 				if( !Assert.IsTrue( heapIndex < _heap.Length ) ) { Console.WriteLine( "heapIndex={0} _heap.Length={1}", heapIndex, _heap.Length ); return default( T ); }
 				return _heap[heapIndex];
 			}
@@ -58,20 +56,20 @@ namespace System.Collections {
 
 		public Functors.Comparison<T> FindRanker = null;
 
-		private List<int> _heapIndices;
+		private List<uint> _heapIndices;
 
-		public int Find( T value ) {
-			if( FindRanker == null ) return -1;
-			if( _count == 0 ) return -1;
+		public uint Find( T value ) {
+			if( FindRanker == null ) return uint.MaxValue;
+			if( _count == 0 ) return uint.MaxValue;
 
-			if( _heapIndices == null ) _heapIndices = new List<int>( 4 );
+			if( _heapIndices == null ) _heapIndices = new List<uint>( 4 );
 			_heapIndices.Clear();
 
 			_heapIndices.Add( 0 );
-			int resultIndex = -1;
+			var resultIndex = uint.MaxValue;
 
 			while( _heapIndices.Count > 0 ) {
-				for( int i = _heapIndices.Count - 1; i >= 0; --i ) {
+				for( var i = _heapIndices.Count - 1; i != uint.MaxValue; --i ) {
 					var newIndex = _heapIndices[i];
 
 					if( Comparer( value, _heap[newIndex] ) < 0 ) {
@@ -86,7 +84,7 @@ namespace System.Collections {
 					else {
 						_heapIndices.RemoveAt( i );
 
-						if( resultIndex == -1 )
+						if( resultIndex == uint.MaxValue )
 							resultIndex = newIndex;
 						else {
 							if( FindRanker( _heap[resultIndex], _heap[newIndex] ) > 0 )
@@ -96,13 +94,13 @@ namespace System.Collections {
 				}
 			}
 
-			if( resultIndex == -1 ) return -1;
+			if( resultIndex == uint.MaxValue ) return uint.MaxValue;
 
 			return _heapToTrackingKeyMapping[resultIndex];
 		}
 
 		public bool IsValid() {
-			for( var i = 1; i < _count; ++i ) {
+			for( var i = 1U; i < _count; ++i ) {
 				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
 
 				if( Comparer( _heap[i], _heap[parentIndex] ) > 0 )
@@ -117,11 +115,11 @@ namespace System.Collections {
 			return true;
 		}
 
-		public int Enqueue( T value ) {
+		public uint Enqueue( T value ) {
 			EnsureCapacity( 1 );
 
 			var i = _count;
-			int trackingIndex = _trackingManager.Allocate();
+			var trackingIndex = _trackingManager.Allocate();
 
 			while( i > 0 ) {
 				var parentIndex = PriorityQueueCommon.GetParentIndex( i );
@@ -146,18 +144,18 @@ namespace System.Collections {
 			return Remove( 0, _heapToTrackingKeyMapping[0] );
 		}
 
-		public T Remove( int trackingIndex ) {
+		public T Remove( uint trackingIndex ) {
 			return Remove( _trackingKeyToHeapMapping[trackingIndex], trackingIndex );
 		}
 
-		public void Replace( int trackingIndex, T value ) {
+		public void Replace( uint trackingIndex, T value ) {
 			Replace( _trackingKeyToHeapMapping[trackingIndex], trackingIndex, value );
 		}
 
-		private T Remove( int heapIndex, int trackingIndex ) {
+		private T Remove( uint heapIndex, uint trackingIndex ) {
 			if( !Assert.IsTrue( _count > 0 ) ) return default( T );
-			if( !Assert.IsTrue( heapIndex >= 0 ) ) return default( T );
-			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return default( T );
+			if( !Assert.IsTrue( heapIndex < _heap.Length ) ) return default( T );
+			if( !Assert.IsTrue( trackingIndex < _trackingKeyToHeapMapping.Length ) ) return default( T );
 
 			var result = _heap[heapIndex];
 
@@ -192,17 +190,17 @@ namespace System.Collections {
 				}
 			}
 
-			_heapToTrackingKeyMapping[_count - 1] = -1;
-			_trackingKeyToHeapMapping[trackingIndex] = -1;
+			_heapToTrackingKeyMapping[_count - 1] = uint.MaxValue;
+			_trackingKeyToHeapMapping[trackingIndex] = uint.MaxValue;
 			_trackingManager.Deallocate( trackingIndex );
 			--_count;
 			return result;
 		}
 
-		private void Replace( int heapIndex, int trackingIndex, T value ) {
+		private void Replace( uint heapIndex, uint trackingIndex, T value ) {
 			if( !Assert.IsTrue( _count > 0 ) ) return;
-			if( !Assert.IsTrue( heapIndex >= 0 ) ) return;
-			if( !Assert.IsTrue( trackingIndex >= 0 ) ) return;
+			if( !Assert.IsTrue( heapIndex < _heap.Length ) ) return;
+			if( !Assert.IsTrue( trackingIndex < _trackingKeyToHeapMapping.Length ) ) return;
 
 			var i = heapIndex;
 
@@ -240,16 +238,16 @@ namespace System.Collections {
 					newCount = BitOperations.NextPowerOf2( newCount );
 
 				var heap = new[newCount] T;
-				var heapToTrackingKeyMapping = new[newCount] int;
-				var trackingKeyToHeapMapping = new[newCount] int;
+				var heapToTrackingKeyMapping = new[newCount] uint;
+				var trackingKeyToHeapMapping = new[newCount] uint;
 
 				CommonCollectionOperations.Copy<T>( &heap[0], &_heap[0], _count );
-				CommonCollectionOperations.Copy<int>( &heapToTrackingKeyMapping[0], &_heapToTrackingKeyMapping[0], _heapToTrackingKeyMapping.Length );
-				CommonCollectionOperations.Copy<int>( &trackingKeyToHeapMapping[0], &_trackingKeyToHeapMapping[0], _trackingKeyToHeapMapping.Length );
+				CommonCollectionOperations.Copy<uint>( &heapToTrackingKeyMapping[0], &_heapToTrackingKeyMapping[0], _heapToTrackingKeyMapping.Length );
+				CommonCollectionOperations.Copy<uint>( &trackingKeyToHeapMapping[0], &_trackingKeyToHeapMapping[0], _trackingKeyToHeapMapping.Length );
 
-				for( int i = _heapToTrackingKeyMapping.Length; i < newCount; i++ ) {
-					heapToTrackingKeyMapping[i] = -1;
-					trackingKeyToHeapMapping[i] = -1;
+				for( var i = _heapToTrackingKeyMapping.Length; i < newCount; i++ ) {
+					heapToTrackingKeyMapping[i] = uint.MaxValue;
+					trackingKeyToHeapMapping[i] = uint.MaxValue;
 				}
 
 				_heap = heap;
@@ -264,8 +262,8 @@ namespace System.Collections {
 			return result;
 		}
 
-		public int Count { get { return _count; } }
-		public int Capacity { get { return _heap.Length; } }
+		public uint Count { get { return _count; } }
+		public uint Capacity { get { return _heap.Length; } }
 
 		public T Top { get { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; } }
 		public T Peek() { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; }
@@ -277,10 +275,10 @@ namespace System.Collections {
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private readonly declaringtype _parent;
-			private int _index, _count;
+			private uint _index, _count;
 
 			internal Enumerator( declaringtype parent ) {
-				_index = -1;
+				_index = uint.MaxValue;
 				_parent = parent;
 				_count = parent._count;
 			}

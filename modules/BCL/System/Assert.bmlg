@@ -56,6 +56,44 @@ namespace System {
 			return false;
 		}
 
+		public static bool AreExact( float expected, float actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<uint>( expected ) == bitcast<uint>( actual ) ) return true;
+
+			Console.Write( "Assertion failed: " );
+			Console.Write( context.Expression );
+			Console.Write( " expected '" );
+			Console.Write( "{0:@F}", expected );
+			Console.Write( "' but actual is '" );
+			Console.Write( "{0:@F}", actual );
+			Console.Write( "' at line " );
+			Console.Write( context.Row );
+
+			PrintContextInfo( context );
+			Console.WriteLine();
+			return false;
+		}
+
+		public static bool AreExact( double expected, double actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<ulong>( expected ) == bitcast<ulong>( actual ) ) return true;
+
+			Console.Write( "Assertion failed: " );
+			Console.Write( context.Expression );
+			Console.Write( " expected '" );
+			Console.Write( "{0:@F}", expected );
+			Console.Write( "'/" );
+			Console.WriteHex( bitcast<ulong>( expected ) );
+			Console.Write( " but actual is '" );
+			Console.Write( "{0:@F}", actual );
+			Console.Write( "'/" );
+			Console.WriteHex( bitcast<ulong>( actual ) );
+			Console.Write( " at line " );
+			Console.Write( context.Row );
+
+			PrintContextInfo( context );
+			Console.WriteLine();
+			return false;
+		}
+
 		public static bool Verify( bool expression, [In] CallerContext& callercontext = nullref ) {
 			if( expression ) return true;
 

@@ -13,7 +13,7 @@ namespace Example {
 	class Test {
 		// By default metadata for fields, properties, methods not generated for classes/structs
 		// 'ReflectionMetadataAttribute' used to modify default behaviour and specify which metadata you are interesting in. Serialization code use metadata to detect which fields and properties need to be serialized
-		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields )] // generate metadata for public and non-public fields inside 'SerializedStructure'
+		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields | ReflectionMetadata.PublicProperties | ReflectionMetadata.NonPublicProperties )] // generate metadata for public and non-public fields inside 'SerializedStructure'
 		public struct SerializedStructure {
 			SerializedStructure() { }
 
@@ -91,7 +91,7 @@ namespace Example {
 
 		[EntryPoint]
 		public static void Main() {
-			for( var i = 0; i < typeof( TestEnum ).ElementCount; ++i ) {
+			for( var i = 0U; i < typeof( TestEnum ).ElementCount; ++i ) {
 				var element = enumvalue<TestEnum>( i );
 				Console.WriteLine( "Element[{0}]: {1}", element.GetIndex(), element );
 			}
@@ -169,12 +169,12 @@ namespace Example {
 				SerializedStructure y;
 
 				using( var stream = System.IO.File.OpenWrite( "SerializedData2.dfl" ) )
-				using( var writer = new BinaryWriter( new BufferedStream.WriteStream( DeflateStream.CreateWrite( new BufferedStream.WriteStream( stream, 256 ), 9 ), 25 ) ) )
+				using( var writer = new BinaryWriter( new BufferedWriteStream( DeflateStream.CreateWrite( new BufferedWriteStream( stream, 256 ), 9 ), 25 ) ) )
 					// explanation: BinaryWriter -> BufferedStream(25) -> DeflateStream(zlib buffer) -> BufferedStream(256) -> FileStream(kernel buffer)
 					BinarySerializer<SerializedStructure>.Serialize( x, writer );
 
 				using( var stream = System.IO.File.OpenRead( "SerializedData2.dfl" ) )
-				using( var reader = new BinaryReader( new BufferedStream.ReadStream( DeflateStream.CreateRead( new BufferedStream.ReadStream( stream, 30 ) ), 27 ) ) )
+				using( var reader = new BinaryReader( new BufferedReadStream( DeflateStream.CreateRead( new BufferedReadStream( stream, 30 ) ), 27 ) ) )
 					// explanation: FileStream(kernel buffer) -> BufferedStream(30) -> DeflateStream(zlib buffer) -> BufferedStream(27) -> BinaryReader
 					BinarySerializer<SerializedStructure>.Deserialize( y, reader );
 

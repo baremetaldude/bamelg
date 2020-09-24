@@ -11,39 +11,57 @@ namespace System.IO {
 	public static partial struct File {
 		/// @{ WriteAllBytes
 		public static void WriteAllBytes( string filename, MemorySegment segment ) {
-			using( var file = OpenWrite( filename ) )
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
 				file.Write( segment );
+			}
 		}
 
 		public static void WriteAllBytes( Utf8String filename, MemorySegment segment ) {
-			using( var file = OpenWrite( filename ) )
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
 				file.Write( segment );
+			}
 		}
 		/// @}
 
 		/// @{ WriteAllText
 		public static void WriteAllText( string filename, TypedReference text, TextEncodingKind textEncodingKind = TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader headerStyle = StreamWriter.ByteOrderMarkHeader.Auto ) {
-			using( var file = OpenWrite( filename ) )
-			using( var stream = new StreamWriter( file, textEncodingKind, headerStyle ) )
-				stream.Write( text );
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
+				using( var stream = new StreamWriter( file, textEncodingKind, headerStyle ) )
+					stream.Write( text );
+			}
 		}
 
 		public static void WriteAllText( string filename, TypedReference text, CodePageID codePageID ) {
-			using( var file = OpenWrite( filename ) )
-			using( var stream = new StreamWriter( file, codePageID ) )
-				stream.Write( text );
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
+				using( var stream = new StreamWriter( file, codePageID ) )
+					stream.Write( text );
+			}
 		}
 
 		public static void WriteAllText( Utf8String filename, TypedReference text, TextEncodingKind textEncodingKind = TextEncodingKind.Utf8, StreamWriter.ByteOrderMarkHeader headerStyle = StreamWriter.ByteOrderMarkHeader.Auto ) {
-			using( var file = OpenWrite( filename ) )
-			using( var stream = new StreamWriter( file, textEncodingKind, headerStyle ) )
-				stream.Write( text );
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
+				using( var stream = new StreamWriter( file, textEncodingKind, headerStyle ) )
+					stream.Write( text );
+			}
 		}
 
 		public static void WriteAllText( Utf8String filename, TypedReference text, CodePageID codePageID ) {
-			using( var file = OpenWrite( filename ) )
-			using( var stream = new StreamWriter( file, codePageID ) )
-				stream.Write( text );
+			using( var file = OpenWrite( filename ) ) {
+				if( file == null ) return;
+
+				using( var stream = new StreamWriter( file, codePageID ) )
+					stream.Write( text );
+			}
 		}
 		/// @}
 

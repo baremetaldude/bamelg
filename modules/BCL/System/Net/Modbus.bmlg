@@ -185,7 +185,7 @@ namespace System.Net.Modbus {
 			if( !Assert.IsTrue( buffer != null ) ) return;
 
 			var payloadLength = RegisterCount * 2;
-			var requestLength = sizeof( ModbusPresetMultipleRegistersRequestHeader ) + payloadLength + 2;
+			var requestLength = ( uint )( sizeof( ModbusPresetMultipleRegistersRequestHeader ) + payloadLength + 2 );
 			if( !stream.EnsureWritable( buffer, requestLength ) ) return;
 
 			var request = ( ModbusPresetMultipleRegistersRequestHeader* ) buffer->WriteBufferStart;
@@ -199,14 +199,14 @@ namespace System.Net.Modbus {
 			*cast<ushort_littleendian*>( buffer->WriteBufferStart + requestLength - 2 ) = Crc16.ComputeModbus( buffer->WriteBufferStart, requestLength - 2 );
 
 			// Console.WriteLine( "{0} requestLength={1} payloadLength={2}", thismethod, requestLength, payloadLength );
-			// Console.WriteHexLine( buffer->WriteBufferStart, ( uint ) requestLength );
+			// Console.WriteHexLine( buffer->WriteBufferStart, requestLength );
 
 			buffer->OnWritePerformed( requestLength );
 			stream.Flush( FlushKind.Write );
 		}
 
-		public int ReadResponseLength { get { return sizeof( ModbusReadInputRegistersRegistersResponse ) + RegisterCount * 2 + 2; } }
-		public int WriteResponseLength { get { return sizeof( ModbusPresetMultipleRegistersResponse ) + 2; } }
+		public uint ReadResponseLength { get { return ( uint )( sizeof( ModbusReadInputRegistersRegistersResponse ) + RegisterCount * 2 + 2 ); } }
+		public uint WriteResponseLength { get { return ( uint )( sizeof( ModbusPresetMultipleRegistersResponse ) + 2 ); } }
 
 		public bool ParseReadResponse( IStream stream ) {
 			var buffer = stream.BufferInfo;

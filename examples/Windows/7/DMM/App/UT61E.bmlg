@@ -5,12 +5,6 @@
 //
 
 using System;
-using System.IO;
-using System.Net;
-using System.Web;
-
-using Platform;
-using Platform.IO;
 
 namespace Dmm {
 	public enum ParseError {
@@ -42,7 +36,7 @@ namespace Dmm {
 			public Parser() {
 			}
 
-			public int SkipBytes = 0;
+			public uint SkipBytes = 0;
 
 			public const double ResistanceDisconnected = 225800000;
 
@@ -107,7 +101,7 @@ namespace Dmm {
 
 			private const int ExponentBias = 12;
 
-			public ParseError Parse( byte* data, int length ) {
+			public ParseError Parse( byte* data, uint length ) {
 				if( length < 14 ) { SkipBytes = 0; return ParseError.NeedMoreData; }
 				if( data[12] != '\r' || data[13] != '\n' ) { SkipBytes = 1; return ParseError.WrongFraming; }
 

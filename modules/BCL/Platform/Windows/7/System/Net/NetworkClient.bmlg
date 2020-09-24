@@ -16,7 +16,7 @@ namespace System.Net {
 		private NetworkStream _platformStream;
 
 		private void _implInitialize() {
-			_platformStream = new NetworkStream() { 
+			_platformStream = new NetworkStream() {
 				ErrorHandler = ErrorHandler
 			};
 		}
@@ -75,7 +75,7 @@ namespace System.Net {
 			return _implAcceptTcp( ( sockaddr* ) &localAddress, sizeof( localAddress ) );
 		}
 
-		private bool _implAcceptTcp( sockaddr* localAddress, int length ) {
+		private bool _implAcceptTcp( sockaddr* localAddress, uint length ) {
 			WSAPROTOCOL_INFOW& protocolInfo = nullref;
 
 			if( Fiber.IsFiberExecuting ) {
@@ -94,7 +94,7 @@ namespace System.Net {
 						var overlapped = default( OVERLAPPED );
 						overlapped.Event = eventSelector;
 
-						var acceptResult = WinsockApiEx.AcceptEx( serverSocket, clientSocket, &connectBuf[0], 0U, ( uint ) length + 16U, ( uint ) length + 16U, bytesReceived, overlapped );
+						var acceptResult = WinsockApiEx.AcceptEx( serverSocket, clientSocket, &connectBuf[0], 0U, length + 16U, length + 16U, bytesReceived, overlapped );
 						if( acceptResult ) {
 						}
 						else {
@@ -187,5 +187,10 @@ namespace System.Net {
 		}
 
 		protected virtual IPlatformErrorHandler ErrorHandler { get { return PlatformErrorHandlerNull.Instance; } }
+
+		public bool _implIsClosed() { return _platformStream.IsClosed(); }
+
+		private void _implEnableKeepAlive( TimeSpan timeout, TimeSpan interval, uint count ) { _platformStream.EnableKeepAlive( timeout, interval ); }
+		private void _implDisableKeepAlive() { _platformStream.DisableKeepAlive(); }
 	}
 }

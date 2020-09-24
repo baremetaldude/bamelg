@@ -1,0 +1,65 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct EpollHandle : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public EpollHandle() {
+			this = LibcApi.epoll_create1( EpollCreateFlags.EPOLL_CLOEXEC );
+		}
+
+		public bool IsReady {
+			get {
+				epoll_event waitBuffer;
+
+				while( true ) {
+					var polledHandles = LibcApi.epoll_wait( this, &waitBuffer, 1, -1 );
+
+					if( polledHandles > 0 ) return true;
+					else
+						switch( LibcApi.LastError ) {
+							case SystemError.EINTR: continue;
+							default: return false;
+						}
+				}
+
+				return false;
+			}
+		}
+
+
+		public bool Add( IOHandle handle, epoll_event& @event ) { return LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_ADD, handle, &@event ) == 0; }
+
+		public bool Remove( IOHandle handle ) { return LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_DEL, handle, null ) == 0; }
+
+		public void Modify( IOHandle handle, epoll_event& @event ) {
+			LibcApi.AssertErrno( LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_MOD, handle, &@event ) );
+		}
+
+		public void AddOrModify( IOHandle handle, epoll_event& @event ) {
+		restart:
+			var result = LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_MOD, handle, &@event );
+
+			if( result != 0 )
+				switch( LibcApi.LastError ) {
+					case SystemError.EINTR: goto restart;
+
+					case SystemError.ENOENT:
+						LibcApi.AssertErrno( LibcApi.epoll_ctl( this, EpollControl.EPOLL_CTL_ADD, handle, &@event ) );
+						break;
+
+					default:
+						LibcApi.AssertErrno( result );
+						break;
+				}
+		}
+	}
+}

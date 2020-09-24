@@ -6,10 +6,6 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
-using System.Net;
-using System.Runtime;
-using System.Text;
-using System.Web;
 
 using Platform;
 using Platform.IO;
@@ -238,11 +234,11 @@ namespace Dmm {
 				if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
 					AddEvent( "Unable to set timeouts for '{0}'", shortName );
 
-				var bufferedStream = new BufferedStream.ReadStream( fs, 128 );
+				var bufferedStream = new BufferedReadStream( fs, 128 );
 				var dmm = new Dmm.UT61E.Parser();
 
 				var requestBuffer = bufferedStream.BufferInfo;
-				var prevBufferLength = 0;
+				var prevBufferLength = 0U;
 
 				for( ; ; ) {
 					using( Fiber.CancellationRegion() ) {

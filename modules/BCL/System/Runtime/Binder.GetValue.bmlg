@@ -11,7 +11,7 @@ using System.Runtime.CompilerServices;
 
 namespace System.Runtime {
 	public partial class Binder {
-		public void GetValue( Context& context, int index, bool& value ) {
+		public void GetValue( Context& context, uint index, bool& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -56,7 +56,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, sbyte& value ) {
+		public void GetValue( Context& context, uint index, sbyte& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -101,7 +101,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, byte& value ) {
+		public void GetValue( Context& context, uint index, byte& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -146,7 +146,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, short& value ) {
+		public void GetValue( Context& context, uint index, short& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -191,7 +191,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, ushort& value ) {
+		public void GetValue( Context& context, uint index, ushort& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -236,7 +236,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, int& value ) {
+		public void GetValue( Context& context, uint index, int& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -281,7 +281,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, uint& value ) {
+		public void GetValue( Context& context, uint index, uint& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -326,7 +326,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, long& value ) {
+		public void GetValue( Context& context, uint index, long& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -371,7 +371,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, ulong& value ) {
+		public void GetValue( Context& context, uint index, ulong& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -416,7 +416,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, double& value ) {
+		public void GetValue( Context& context, uint index, double& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -461,7 +461,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, StringBuilder value, bool& isNull ) {
+		public void GetValue( Context& context, uint index, StringBuilder value, bool& isNull ) {
 			isNull = false;
 
 			var column = GetMapping( context, index );
@@ -519,7 +519,7 @@ namespace System.Runtime {
 				case typeof( float_bigendian ): value.Append( column->GetValue<float_bigendian>( context.Object ) ); return;
 				case typeof( double_bigendian ): value.Append( column->GetValue<double_bigendian>( context.Object ) ); return;
 
-				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], ( uint ) array.Length, true ); } return;
+				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], array.Length, true ); } return;
 			}
 
 			if( TrySerializeText( context, type, column, value, isNull ) ) return;
@@ -528,7 +528,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, BinaryWriter writer ) {
+		public void GetValue( Context& context, uint index, BinaryWriter writer ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 
@@ -573,7 +573,7 @@ namespace System.Runtime {
 			return;
 		}
 
-		public void GetValue( Context& context, int index, byte[]& value ) {
+		public void GetValue( Context& context, uint index, byte[]& value ) {
 			var column = GetMapping( context, index );
 			if( column == null ) return;
 

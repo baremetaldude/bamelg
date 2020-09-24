@@ -11,15 +11,15 @@ using System.Reflection;
 using System.Runtime;
 
 namespace System.Serialization {
-	/// Binary serializer for LPC/IPC. No backward compatibility or versioning. For long-term persistance use thrift API.
+	/// Binary serializer for LPC/IPC. No backward compatibility or versioning
 	public static class BinarySerializer {
 		public static void Serialize( BinaryWriter writer, Binder.MapperEmpty mapper, Binder.Context& context ) {
-			for( int i = 0, length = mapper.Binder.Mappings.Length; i < length; ++i )
+			for( uint i = 0U, length = mapper.Binder.Mappings.Length; i < length; ++i )
 				context.Binder.GetValue( context, i, writer );
 		}
 
 		public static void Deserialize( BinaryReader reader, Binder.MapperEmpty mapper, Binder.Context& context ) {
-			for( int i = 0, length = mapper.Binder.Mappings.Length; i < length; ++i )
+			for( uint i = 0, length = mapper.Binder.Mappings.Length; i < length; ++i )
 				context.Binder.SetValue( context, i, reader );
 		}
 	}

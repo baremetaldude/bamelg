@@ -133,12 +133,12 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0u;
 		restart_Receive:
 			var error = _handle.Read( ReadTimeout, data, count, transmitted );
 			if( error != SystemError.None ) {
@@ -149,7 +149,7 @@ namespace Platform.IO {
 			return transmitted;
 		}
 
-		public void Write( void* buffer, int count ) {
+		public void Write( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return;
 
 			if( KernelBufferingTCP & !_cork ) {
@@ -164,9 +164,9 @@ namespace Platform.IO {
 			}
 		}
 
-		public int Read( vararg MemorySegment segments ) {
+		public uint Read( vararg MemorySegment segments ) {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
-			int totalReaden;
+			uint totalReaden;
 
 		restart_Receive:
 			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
@@ -206,10 +206,31 @@ namespace Platform.IO {
 			}
 		}
 
+		public bool IsClosed() {
+			return bitcast<SocketHandleTCP>( _handle ).IsClosed();
+		}
+
+		public void EnableKeepAlive( TimeSpan timeout, TimeSpan interval, uint count ) {
+			EnableKeepAlive( ( uint ) timeout.TotalSeconds, ( uint ) interval.TotalSeconds, count );
+		}
+
+		public void EnableKeepAlive( uint timeout, uint interval, uint count ) {
+			var tcp = bitcast<SocketHandleTCP>( _handle );
+			tcp.KeepAliveEnabled = true;
+
+			tcp.KeepAliveProbesMax = count;
+			tcp.KeepAliveIdleSeconds = timeout;
+			tcp.KeepAliveProbingIntervalSeconds = interval;
+		}
+
+		public void DisableKeepAlive() {
+			bitcast<SocketHandleTCP>( _handle ).KeepAliveEnabled = false;
+		}
+
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

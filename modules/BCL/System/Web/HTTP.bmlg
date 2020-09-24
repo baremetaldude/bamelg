@@ -83,7 +83,7 @@ namespace System.Web {
 			_uriStart = _uriEnd = _queryStart = _fragmentStart = null;
 		}
 
-		public void SetInput( void* start, int length ) {
+		public void SetInput( void* start, uint length ) {
 			_state = State.Start;
 
 			_current = ( byte* ) start;
@@ -95,7 +95,7 @@ namespace System.Web {
 		}
 
 		public void SetInput( SbcsString request ) {
-			SetInput( request.GetChars(), ( int ) request.Length );
+			SetInput( request.GetChars(), request.Length );
 		}
 
 		private bool CheckMethod( bool& needMoreData, HttpMethod method, SbcsString value ) {
@@ -396,14 +396,6 @@ namespace System.Web {
 
 			return ParsingResult.Finished;
 		}
-
-		[UnitTest]
-		private static void ParserTest() {
-			var parser = new HttpRequestParser();
-			parser.SetInput( "GET / HTTP/1.1\r\n\r\n" );
-			Assert.IsTrue( parser.MoveNext( null ) == ParsingResult.RequestReady );
-			Assert.IsTrue( parser.MoveNext( null ) == ParsingResult.Finished );
-		}
 	}
 
 	public struct HttpResponseParser {
@@ -464,7 +456,7 @@ namespace System.Web {
 			VersionMajor = VersionMinor = 0;
 		}
 
-		public void SetInput( void* start, int length ) {
+		public void SetInput( void* start, uint length ) {
 			_state = State.Version;
 
 			_current = ( byte* ) start;
@@ -473,7 +465,7 @@ namespace System.Web {
 		}
 
 		public void SetInput( SbcsString request ) {
-			SetInput( request.GetChars(), ( int ) request.Length );
+			SetInput( request.GetChars(), request.Length );
 		}
 
 		private static bool charseq( byte* ptr, char p0 ) { return ptr[0] == p0; }
@@ -674,6 +666,13 @@ namespace System.Web {
 	}
 
 	public class HttpFormatter {
+		public static bool TryParseAcceptEncoding( byte* parsePosition, uint remaining, DecompressionMethods& result ) {
+			if( remaining >= 13 && new CStringSpan( parsePosition, 13 ) == ( CStringSpan ) ( SbcsString ) "gzip, deflate" )
+				result = DecompressionMethods.GZip | DecompressionMethods.Deflate;
+
+			return false;
+		}
+
 		public static bool TryParseDateTime( byte* parsePosition, uint remaining, DateTime& result ) {
 			result = DateTime.MinValue;
 
@@ -833,6 +832,16 @@ namespace System.Web {
 		public static void HeaderKeepAlive( StringBuilder result, bool keepAlive ) {
 			if( keepAlive ) result.AppendLine( "Connection: Keep-Alive" );
 			else result.AppendLine( "Connection: Close" );
+		}
+
+		public static void HeaderContentEncoding( StringBuilder result, DecompressionMethods value ) {
+			result.Append( "Content-Encoding: " );
+			switch( value ) {
+				case DecompressionMethods.GZip: result.Append( "gzip" ); break;
+				case DecompressionMethods.Deflate: result.Append( "deflate" ); break;
+				case DecompressionMethods.Brotli: result.Append( "br" ); break;
+			}
+			result.AppendLine();
 		}
 
 		public static void HeaderContentLength( StringBuilder result, long length ) {
@@ -1108,6 +1117,7 @@ namespace System.Web {
 		None,
 		GZip,
 		Deflate,
+		Brotli,
 	}
 
 	public enum HttpMethod {

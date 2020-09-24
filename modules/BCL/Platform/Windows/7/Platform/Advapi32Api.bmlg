@@ -15,7 +15,7 @@ namespace Platform {
 	[DllImport( Image = "ADVAPI32.dll" )]
 	[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 	public static partial struct Advapi32Api {
-		/// @{ Registry
+		#region Registry
 		/// Limits:
 		///		Key name: 255 characters
 		///		Value name: 16383 characters
@@ -217,7 +217,7 @@ namespace Platform {
 		public extern static SystemErrorCode RegQueryMultipleValues( HKEY key, VALENTW* values, uint count, void* valueBuf, uint& totalSize );
 
 		public extern static SystemErrorCode RegCloseKey( HKEY key );
-		/// @}
+		#endregion
 
 		public extern static bool ImpersonateNamedPipeClient( NamedPipeHandle pipe );
 		public extern static bool RevertToSelf();
@@ -384,7 +384,7 @@ namespace Platform {
 			get {
 				uint result;
 				RegValueType type;
-				Verify( Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, &result, ( uint ) sizeof( result ) ) );
+				Verify( Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, &result, sizeof( result ) ) );
 
 				switch( type ) {
 					case RegValueType.REG_DWORD_LITTLE_ENDIAN:
@@ -397,7 +397,7 @@ namespace Platform {
 				return 0;
 			}
 			set {
-				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_DWORD, &value, ( uint ) sizeof( value ) ) );
+				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_DWORD, &value, sizeof( value ) ) );
 			}
 		}
 
@@ -405,12 +405,12 @@ namespace Platform {
 			get {
 				ulong result;
 				RegValueType type;
-				Verify( Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, &result, ( uint ) sizeof( result ) ) );
+				Verify( Advapi32Api.RegQueryValueEx( this, valueName, nullref, type, &result, sizeof( result ) ) );
 				if( type != RegValueType.REG_QWORD ) return 0;
 				return result;
 			}
 			set {
-				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_QWORD, &value, ( uint ) sizeof( value ) ) );
+				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_QWORD, &value, sizeof( value ) ) );
 			}
 		}
 
@@ -442,7 +442,7 @@ namespace Platform {
 				return result.Detach();
 			}
 			set {
-				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_SZ, value.GetChars(), ( uint ) value.ByteLength + 2 ) ); // store with '\0'
+				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_SZ, value.GetChars(), value.ByteLength + 2 ) ); // store with '\0'
 			}
 		}
 
@@ -470,7 +470,7 @@ namespace Platform {
 				return result;
 			}
 			set {
-				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_SZ, &value[0], ( uint ) value.Length ) );
+				Verify( Advapi32Api.RegSetValueEx( this, valueName, 0, RegValueType.REG_SZ, &value[0], value.Length ) );
 			}
 		}
 
@@ -549,13 +549,13 @@ namespace Platform {
 
 			for( var i = 0U; i < subKeys; ++i ) {
 			refetch:
-				var bufferLength = ( uint ) buffer.Length;
+				var bufferLength = buffer.Length;
 
 				if( !Verify( Advapi32Api.RegEnumKeyEx( this, i, &buffer[0], bufferLength, nullref, null, nullref, nullref ) ) )
 					continue;
 
-				if( bufferLength == ( uint ) buffer.Length ) {
-					buffer = new[( int )( buffer.Length * 1.7 )] char;
+				if( bufferLength == buffer.Length ) {
+					buffer = new[( uint )( buffer.Length * 1.7 )] char;
 					goto refetch;
 				}
 
@@ -574,13 +574,13 @@ namespace Platform {
 
 			for( var i = subKeys - 1; i != uint.MaxValue; --i ) {
 			refetch:
-				var bufferLength = ( uint ) buffer.Length;
+				var bufferLength = buffer.Length;
 
 				if( !Verify( Advapi32Api.RegEnumKeyEx( this, i, &buffer[0], bufferLength, nullref, null, nullref, nullref ) ) )
 					continue;
 
-				if( bufferLength == ( uint ) buffer.Length ) {
-					buffer = new[( int )( buffer.Length * 1.7 )] char;
+				if( bufferLength == buffer.Length ) {
+					buffer = new[( uint )( buffer.Length * 1.7 )] char;
 					goto refetch;
 				}
 
@@ -601,13 +601,13 @@ namespace Platform {
 
 			for( var i = 0U; i < values; ++i ) {
 			refetch:
-				var bufferLength = ( uint ) buffer.Length;
+				var bufferLength = buffer.Length;
 
 				if( !Verify( Advapi32Api.RegEnumValue( this, i, &buffer[0], bufferLength, nullref, type, null, dataLength ) ) )
 					break;
 
-				if( bufferLength == ( uint ) buffer.Length ) {
-					buffer = new[( int )( buffer.Length * 1.7 )] char;
+				if( bufferLength == buffer.Length ) {
+					buffer = new[( uint )( buffer.Length * 1.7 )] char;
 					goto refetch;
 				}
 
@@ -631,13 +631,13 @@ namespace Platform {
 
 			for( var i = values - 1; i != uint.MaxValue; --i ) {
 			refetch:
-				var bufferLength = ( uint ) buffer.Length;
+				var bufferLength = buffer.Length;
 
 				if( !Verify( Advapi32Api.RegEnumValue( this, i, &buffer[0], bufferLength, nullref, type, null, dataLength ) ) )
 					break;
 
-				if( bufferLength == ( uint ) buffer.Length ) {
-					buffer = new[( int )( buffer.Length * 1.7 )] char;
+				if( bufferLength == buffer.Length ) {
+					buffer = new[( uint )( buffer.Length * 1.7 )] char;
 					goto refetch;
 				}
 
@@ -667,7 +667,7 @@ namespace Platform {
 						case typeof( uint_bigendian ): {
 								uint uintValue;
 								context.Binder.GetValue( context, idMapping.Value, uintValue );
-								Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &uintValue, ( uint ) sizeof( uintValue ) ) );
+								Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &uintValue, sizeof( uintValue ) ) );
 							} continue;
 
 						case typeof( sbyte ):
@@ -678,7 +678,7 @@ namespace Platform {
 								uint intValue;
 								context.Binder.GetValue( context, idMapping.Value, intValue );
 								if( intValue >= 0 ) {
-									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &intValue, ( uint ) sizeof( intValue ) ) );
+									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_DWORD, &intValue, sizeof( intValue ) ) );
 									continue;
 								}
 							} break;
@@ -687,7 +687,7 @@ namespace Platform {
 						case typeof( ulong_bigendian ): {
 								ulong ulongValue;
 								context.Binder.GetValue( context, idMapping.Value, ulongValue );
-								Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &ulongValue, ( uint ) sizeof( ulongValue ) ) );
+								Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &ulongValue, sizeof( ulongValue ) ) );
 							} continue;
 
 						case typeof( long_littleendian ):
@@ -695,7 +695,7 @@ namespace Platform {
 								long longValue;
 								context.Binder.GetValue( context, idMapping.Value, longValue );
 								if( longValue >= 0 ) {
-									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &longValue, ( uint ) sizeof( longValue ) ) );
+									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_QWORD, &longValue, sizeof( longValue ) ) );
 									continue;
 								}
 							} break;
@@ -704,7 +704,7 @@ namespace Platform {
 								byte[] arrayValue;
 								context.Binder.GetValue( context, idMapping.Value, arrayValue );
 								if( arrayValue != null )
-									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_BINARY, &arrayValue[0], ( uint ) arrayValue.Length ) );
+									Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_BINARY, &arrayValue[0], arrayValue.Length ) );
 							} continue;
 					}
 
@@ -712,7 +712,7 @@ namespace Platform {
 					context.Binder.GetValue( context, idMapping.Value, valueFormatter, isNull );
 
 					if( !isNull )
-						Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_SZ, valueFormatter.GetNullTerminatingBuffer().GetChars(), ( uint )( valueFormatter.Length + 1 ) * sizeof( char ) ) );
+						Verify( Advapi32Api.RegSetValueEx( this, name, 0, RegValueType.REG_SZ, valueFormatter.GetNullTerminatingBuffer().GetChars(), ( valueFormatter.Length + 1 ) * sizeof( char ) ) );
 					else
 						Verify( Advapi32Api.RegDeleteValue( this, name ) );
 				}

@@ -52,6 +52,7 @@ namespace Example {
 						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
 					}
 
+					SendStatus( HttpStatusCode.NotFound );
 					return null;
 				}
 			}
@@ -91,7 +92,7 @@ namespace Example {
 							Response.WriteLine();
 
 							WriteEventEnd();
-							
+
 							Flush();
 							if( Session.StreamError ) break;
 
@@ -117,7 +118,7 @@ namespace Example {
 
 				public override void OnRender() {
 					var server = ( CustomHttpServer ) Session.Server;
-					var time = Fiber.Now;
+					var time = Fiber.UtcNow;
 
 					Response.Append( "<html>" );
 					{
@@ -162,7 +163,7 @@ namespace Example {
 				Console.WriteLine( "\t" + "HttpServer /path/config.ini" );
 			}
 
-			if( Options.MaxThreads <= 0 ) Options.MaxThreads = Environment.ProcessorCount;
+			if( Options.MaxThreads == 0 ) Options.MaxThreads = Environment.ProcessorCount;
 
 			Memory.MultithreadedEnvironment = Options.MaxThreads > 0;
 			Fiber.UseGuardPage = Options.FiberUseGuardPage;
@@ -191,7 +192,7 @@ namespace Example {
 				var threads = new List<Thread>( Options.MaxThreads );
 				_eventLoops = new List<EventLoop>();
 
-				for( var i = 1; i < Options.MaxThreads; ++i )
+				for( var i = 1U; i < Options.MaxThreads; ++i )
 					threads.Add( Thread.Start( CreateAdditionalServer ) );
 
 				CreateServer();
@@ -297,18 +298,18 @@ namespace Example {
 
 		static void PrintConnectionOptions() {
 			Console.WriteLine( "@{ Possible connection URLs:" );
-			
+
 			foreach( var @interface in LibcApi.GetNetworkInterfaces() ) {
 				if( @interface->ifa_addr == null ) continue;
 
 				switch( @interface->ifa_addr->sa_family ) {
 					case ProtocolFamily.PF_INET:
-					var& address = *( sockaddr_in* ) @interface->ifa_addr;
+						var& address = *( sockaddr_in* ) @interface->ifa_addr;
 						Console.WriteLine( "    interface={0,-10} http://{1}:{2}", @interface->ifa_name, cast<IPv4Endpoint>( address ).Address, Options.ListenEndpoint.Port );
 						break;
 
 					case ProtocolFamily.PF_INET6:
-					var& address = *( sockaddr_in6* ) @interface->ifa_addr;
+						var& address = *( sockaddr_in6* ) @interface->ifa_addr;
 						Console.WriteLine( "    interface={0,-10} http://[{1}]:{2}", @interface->ifa_name, cast<IPv6Endpoint>( address ).Address, Options.ListenEndpoint.Port );
 						break;
 

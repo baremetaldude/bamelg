@@ -8,11 +8,11 @@ using System.Runtime;
 
 namespace System.Hash {
 	public static struct Crc8 {
-		public static byte Compute( void* data, int length ) {
+		public static byte Compute( void* data, uint length ) {
 			var buffer = ( byte* ) data;
 			byte crc = 0;
 
-			for( byte i = 0; i < length; i++ ) {
+			for( var i = 0u; i < length; ++i ) {
 				var b = buffer[i];
 
 				for( byte j = 0; j < 8; j++ ) {
@@ -104,7 +104,7 @@ namespace System.Hash {
 			0x8201, 0x42C0, 0x4380, 0x8341, 0x4100, 0x81C1, 0x8081, 0x4040
 		};
 
-		public static ushort Compute( ushort* table, void* data, int length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) {
+		public static ushort Compute( ushort* table, void* data, uint length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) {
 			var buffer = ( byte* ) data;
 			uint crc = startValue;
 
@@ -125,10 +125,10 @@ namespace System.Hash {
 			return ( ushort ) crc;
 		}
 
-		public static ushort ComputeFor0x8005( void* data, int length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) { return Compute( Crc16tableFor0x8005, data, length, startValue, xorResult, reflectBits, reflectResult ); }
-		public static ushort ComputeFor0xC0C1( void* data, int length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) { return Compute( Crc16tableFor0xC0C1, data, length, startValue, xorResult, reflectBits, reflectResult ); }
+		public static ushort ComputeFor0x8005( void* data, uint length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) { return Compute( Crc16tableFor0x8005, data, length, startValue, xorResult, reflectBits, reflectResult ); }
+		public static ushort ComputeFor0xC0C1( void* data, uint length, ushort startValue, ushort xorResult, bool reflectBits, bool reflectResult ) { return Compute( Crc16tableFor0xC0C1, data, length, startValue, xorResult, reflectBits, reflectResult ); }
 
-		public static ushort ComputeModbus( void* data, int length ) {
+		public static ushort ComputeModbus( void* data, uint length ) {
 			ushort crc = 0xFFFF;
 			byte* buffer = ( byte* ) data;
 
@@ -226,7 +226,7 @@ namespace System.Hash {
 			0x79B737BA, 0x8BDCB4B9, 0x988C474D, 0x6AE7C44E, 0xBE2DA0A5, 0x4C4623A6, 0x5F16D052, 0xAD7D5351
 		};
 
-		public static uint Compute( uint* table, byte* buffer, int length, uint startValue, uint xorResult, bool reflectBits, bool reflectResult ) {
+		public static uint Compute( uint* table, byte* buffer, uint length, uint startValue, uint xorResult, bool reflectBits, bool reflectResult ) {
 			uint crc = startValue;
 
 			if( reflectBits )
@@ -257,7 +257,15 @@ namespace System.Hash {
 			return result ^ 0xFFFFFFFF;
 		}
 
-		public static uint ComputeFor0x1EDC6F41( void* data, int length ) asm {
+		public static uint ComputeFor0x1EDC6F41( uint crc, void* data, uint length ) {
+			var buffer = ( byte* ) data;
+			while( length-- != 0 )
+				crc = Crc32tableFor0x1EDC6F41[( byte )( crc ^ *buffer++ )] ^ ( crc >> 8 );
+
+			return crc;
+		}
+
+		public static uint ComputeFor0x1EDC6F41( void* data, uint length ) asm {
 			X86_32 {
 				feature( SSE4_2 ) {
 					mov edx, [esp + 4] // data
@@ -297,14 +305,130 @@ namespace System.Hash {
 
 				iterateLastBytes:
 					add ecx, 4
-					jmp iterate1b
 
 				iterate1b:
 					crc32 eax, byte ptr [edx]
 					inc edx
 					loop iterate1b
+
 				exit:
 					retn
+				}
+			}
+			X86_64 {
+				feature( SSE4_2 ) {
+					if( System.Runtime.CompilerServices.CompilerInfo.CurrentPlatform == System.Runtime.CompilerServices.PlatformID.Windows ) {
+						// 'data' comes in RCX
+						// 'length' comes in RDX
+						xor rax, rax
+						cmp rdx, 0
+						jle exit
+
+						mov R8, rcx
+						and R8, 3
+						jz mainIteration
+
+						neg R8
+						add R8, 4
+						sub rdx, R8
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+					alignFirstBytes:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec R8
+						jnz alignFirstBytes
+
+					mainIteration:
+						sub rdx, 4
+						jl iterateLastBytes
+
+						crc32 eax, dword ptr [rcx]
+						jz exit
+
+						add rcx, 4
+						jmp mainIteration
+
+					iterateLastBytes:
+						add rdx, 4
+
+					iterate1b:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec rdx
+						jnz iterate1b
+
+					exit:
+						retn
+
+					firstBytesOnly2:
+						add R8, rdx
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rcx]
+						inc rcx
+						dec R8
+						jnz firstBytesOnly
+
+						retn
+					}
+					else {
+						// 'data' comes in 'rdi'
+						// 'length' comes in 'rsi'
+						xor rax, rax
+						cmp rsi, 0
+						jle exit
+
+						mov rcx, rdi
+						and rcx, 7
+						jz mainIteration
+
+						neg rcx
+						add rcx, 8
+						sub rsi, rcx
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+					alignFirstBytes:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rcx
+						jnz alignFirstBytes
+
+					mainIteration:
+						sub rsi, 8
+						jl iterateLastBytes
+
+						crc32 rax, qword ptr [rdi]
+						jz exit
+
+						add rdi, 8
+						jmp mainIteration
+
+					iterateLastBytes:
+						add rsi, 8
+
+					iterate1b:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rsi
+						jnz iterate1b
+
+					exit:
+						retn
+
+					firstBytesOnly2:
+						add rcx, rsi
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rdi]
+						inc rdi
+						dec rcx
+						jnz firstBytesOnly
+
+						retn
+					}
 				}
 			}
 			default {
@@ -316,7 +440,7 @@ namespace System.Hash {
 				//	crc = Crc32tableFor0x1EDC6F41[( byte )( crc ^ *buffer++ )] ^ ( crc >> 8 );
 				/// @}
 
-				var alignmentBytes = Math.Min( ( int ) Memory.GetTailPadding( buffer, 4 ), length );
+				var alignmentBytes = Math.Min( Memory.GetTailPadding( buffer, 4 ), length );
 				length -= alignmentBytes;
 
 				for( ; alignmentBytes != 0; --alignmentBytes )
@@ -342,14 +466,6 @@ namespace System.Hash {
 
 				return crc;
 			}
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			var test = ( SbcsString ) "x^32 + x^26 + x^23 + x^22 + x^16 + x^12 + x^11 + x^10 + x^8 + x^7 + x^5 + x^4 + x^2 + x + 1";
-
-			Assert.AreEqual( 2238396088U, ComputeFor0x04C11DB7( test.GetChars() + 1, test.Length - 2 ) );
-			Assert.AreEqual( 1877612752U, ComputeFor0x1EDC6F41( test.GetChars() + 1, ( int ) test.Length - 2 ) );
 		}
 	}
 }

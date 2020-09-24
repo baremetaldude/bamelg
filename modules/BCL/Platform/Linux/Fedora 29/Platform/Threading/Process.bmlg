@@ -109,7 +109,7 @@ namespace System.Diagnostics {
 				parameters[0] = info.FileName;
 
 				var parameterCounter = 1;
-				for( int i = 0; i < info.Parameters.Length; ++i ) {
+				for( var i = 0U; i < info.Parameters.Length; ++i ) {
 					if( info.Parameters[i].IsNullOrEmpty ) continue;
 					parameters[parameterCounter++] = info.Parameters[i];
 				}
@@ -121,7 +121,7 @@ namespace System.Diagnostics {
 					LibcApi.close( LibcApi.StdErr );
 				}
 
-				var devNull = LibcApi.open( "/dev/null", FctlFlags.O_RDWR, 0 );
+				var devNull = LibcApi.open( "/dev/null", FileOpenFlags.O_RDWR, 0 );
 
 				if( info.StdIn.IsValid ) LibcApi.dup2( info.StdIn, LibcApi.StdIn );
 				else if( info.DetachIO ) LibcApi.dup2( devNull, LibcApi.StdIn );

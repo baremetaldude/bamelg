@@ -17,14 +17,14 @@ namespace Platform {
 	public static partial struct NtApi {
 		public const CallingConvention DefaultCallingConvention = Environment.CurrentCpu == System.Runtime.CompilerServices.CpuID.X86_32 ? CallingConvention.StdCallX86 : CallingConvention.Default;
 
-		/// @{ Time
+		#region Time
 		public extern static NtStatus NtQuerySystemTime( ulong& systemTime );
 		public extern static bool RtlTimeToSecondsSince1970( ulong& time, uint& elapsedSeconds );
 		public extern static bool RtlTimeToSecondsSince1980( ulong& time, uint& elapsedSeconds );
 
 		public extern static NtStatus RtlLocalTimeToSystemTime( ulong& localTime, ulong& systemTime );
 		public extern static NtStatus RtlSystemTimeToLocalTime( ulong& systemTime, ulong& localTime );
-		/// @}
+		#endregion
 
 		public extern static uint NtGetCurrentProcessorNumber();
 		// public extern static uint NtQueryInformationProcess( ProcessHandle processHandle, PROCESSINFOCLASS processInformationClass, void* processInformation, uint processInformationLength, uint& returnLength );
@@ -38,7 +38,7 @@ namespace Platform {
 		public extern static void RtlProtectHeap( HeapHandle heap, bool readOnly );
 		public extern static NtStatus NtClose( HANDLE handle );
 
-		/// @{
+		#region
 		public extern static void RtlFreeUnicodeString( UNICODE_STRING& value );
 		public extern static void RtlFreeAnsiString( STRING& value );
 		public extern static void RtlFreeOemString( STRING& value );
@@ -52,9 +52,9 @@ namespace Platform {
 		public extern static NtStatus RtlUnicodeToMultiByteSize( uint& bytesInMultiByteString, CUtf16String UnicodeString, uint bytesInUnicodeString );
 		public extern static NtStatus RtlUnicodeToUTF8N( byte* UTF8StringDestination, uint UTF8StringMaxByteCount, uint& UTF8StringActualByteCount, CUtf16String unicodeStringSource, uint unicodeStringWCharCount );
 		public extern static NtStatus RtlUTF8ToUnicodeN( char* unicodeStringDestination, uint unicodeStringMaxWCharCount, uint& unicodeStringActualWCharCount, CUtf8String UTF8StringSource, uint UTF8StringByteCount );
-		/// @}
+		#endregion
 
-		/// @{ undocumented LPC api
+		#region undocumented LPC api
 		/// See http://www.rsdn.ru/article/baseserv/lpc.xml
 		public extern static NtStatus NtCreatePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
 		public extern static NtStatus NtCreateWaitablePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
@@ -69,9 +69,9 @@ namespace Platform {
 		public extern static NtStatus NtListenPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* connectionRequest );
 		public extern static NtStatus NtImpersonateClientOfPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* request );
 		// public extern static NtStatus  NtQueryInformationPort( PortHandleLpc portHandle, PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length, uint& resultLength );
-		/// @}
+		#endregion
 
-		/// @{ ALPC api
+		#region ALPC api
 		public extern static uint AlpcMaxAllowedMessageLength();
 		public extern static uint AlpcGetHeaderSize( uint flags );
 
@@ -108,7 +108,7 @@ namespace Platform {
 		// public extern static NtStatus NtAlpcDeleteResourceReserve( PortHandleAlpc portHandle, uint flags, ALPC_HANDLE resourceId );
 		// public extern static NtStatus NtAlpcCreateSectionView( PortHandleAlpc portHandle, uint flags, ALPC_DATA_VIEW_ATTR* viewAttributes );
 		// public extern static NtStatus NtAlpcDeleteSectionView( PortHandleAlpc portHandle, uint flags, void* viewBase );
-		/// @}
+		#endregion
 
 		public static void Assert( NtStatus condition, [In] CallerContext& callercontext = nullref ) {
 			if( condition ) return;
@@ -236,13 +236,13 @@ namespace Platform {
 	}
 
 	public struct PortHandleAlpc : HANDLE {
-		public PortHandleAlpc( int maxMessageLength = 256 ) {
+		public PortHandleAlpc( uint maxMessageLength = 256 ) {
 			var objectAttributes = default( OBJECT_ATTRIBUTES );
 			objectAttributes.Length = sizeof( objectAttributes );
 			// objectAttributes.Length = sizeof(attributes);
 
 			var portAttributes = default( ALPC_PORT_ATTRIBUTES );
-			portAttributes.MaxMessageLength = ( uint ) maxMessageLength;
+			portAttributes.MaxMessageLength = maxMessageLength;
 			NtApi.NtAlpcCreatePort( &this, &objectAttributes, &portAttributes );
 		}
 	}

@@ -141,12 +141,12 @@ namespace Platform.IO {
 		}
 
 		// Read будет возвращать меньше байт чем ожидается только в случае закрытия соединения
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0u;
 			for( ; count > 0; ) {
 			restart_ReadFile:
 				var error = _handle.Read( ReadTimeout, 0, data, count, transmitted );
@@ -161,15 +161,15 @@ namespace Platform.IO {
 				count -= transmitted;
 			}
 
-			return ( int )( data - ( byte* ) buffer );
+			return ( uint )( data - ( byte* ) buffer );
 		}
 
-		public void Write( void* buffer, int count ) {
+		public void Write( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0u;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
 				var error = _handle.Write( WriteTimeout, 0, data, count, transmitted );
@@ -186,14 +186,52 @@ namespace Platform.IO {
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+		uint IStream.Read( vararg MemorySegment segments ) { var result = 0U; foreach( var segment in segments ) result += Read( segment.Start, ( uint ) segment.Count ); return result; }
+		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( uint ) segment.Count ); }
+
+		public bool IsClosed() {
+			return false;
+		}
+
+		public void EnableKeepAlive( TimeSpan timeout, TimeSpan interval ) {
+			System.Diagnostics.Debug.Assert( timeout.Ticks >= 0 );
+			System.Diagnostics.Debug.Assert( interval.Ticks >= 0 );
+
+			EnableKeepAlive( ( uint ) timeout.TotalMilliseconds, ( uint ) interval.TotalMilliseconds );
+		}
+
+		private const uint SIO_KEEPALIVE_VALS = 2550136836;
+		public void EnableKeepAlive( uint timeout, uint interval ) {
+			// Defaults in:
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveTime
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveInterval
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\TcpMaxDataRetransmissions  is set to 10 and cannot be changed
+
+			var setting = new tcp_keepalive {
+				onoff = 1,
+				keepalivetime = timeout,
+				keepaliveinterval = interval
+			};
+
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
+
+		public void DisableKeepAlive() {
+			var setting = default( tcp_keepalive );
+
+			uint SIO_KEEPALIVE_VALS = 2550136836;
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 
 	public class UdpStream : NetworkStream, IStream {
@@ -204,12 +242,12 @@ namespace Platform.IO {
 			: base( handle ) {
 		}
 
-		public new void Write( void* buffer, int count ) {
+		public new void Write( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0u;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
 				var error = _handle.SendTo( WriteTimeout, &WriteEndpoint.Address, WriteEndpoint.Length, data, count, transmitted );
@@ -223,12 +261,12 @@ namespace Platform.IO {
 			}
 		}
 
-		public new int Read( void* buffer, int count ) {
+		public new uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0u;
 			for( ; count > 0; ) {
 			restart_ReadFile:
 				var error = _handle.ReceiveFrom( ReadTimeout, &LastReceiveFrom.Address, LastReceiveFrom.Length, data, count, transmitted );
@@ -243,16 +281,16 @@ namespace Platform.IO {
 				count -= transmitted;
 			}
 
-			return ( int )( data - ( byte* ) buffer );
+			return ( uint )( data - ( byte* ) buffer );
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+		uint IStream.Read( vararg MemorySegment segments ) { var result = 0U; foreach( var segment in segments ) result += Read( segment.Start, ( uint ) segment.Count ); return result; }
+		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( uint ) segment.Count ); }
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

@@ -1,0 +1,37 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct SignalHandle : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SignalHandle( sigset_t& signalSet ) {
+			LibcApi.Assert( this = LibcApi.signalfd( SignalHandle.Invalid, &signalSet, SignalHandleCreateFlag.SFD_NONBLOCK | SignalHandleCreateFlag.SFD_CLOEXEC ) );
+		}
+
+		public SignalHandle( vararg SignalCode signals )
+			: this( new sigset_t( vararg( signals, signals.Length ) ) ) {
+		}
+
+		public void Modify( sigset_t& signalSet ) {
+			LibcApi.Assert( LibcApi.signalfd( this, &signalSet, SignalHandleCreateFlag.None ) );
+		}
+
+		public void Modify( vararg SignalCode signals ) {
+			Modify( new sigset_t( vararg( signals, signals.Length ) ) );
+		}
+
+		public signalfd_siginfo Read() {
+			signalfd_siginfo result;
+			LibcApi.AssertErrno( LibcApi.read( this, &result, sizeof( result ) ) );
+			return result;
+		}
+	}
+}
