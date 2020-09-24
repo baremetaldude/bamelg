@@ -61,8 +61,8 @@ namespace System.Collections {
 					CommonCollectionOperations.Copy<T>( &_items[0], &other._items[other._head], other._count );
 				}
 				else {
-					CommonCollectionOperations.Copy<T>( &_items[0], &other._items[other._head], ( uint ) other._items.Length - other._head );
-					CommonCollectionOperations.Copy<T>( &_items[( uint ) other._items.Length - other._head], &other._items[0], other._tail );
+					CommonCollectionOperations.Copy<T>( &_items[0], &other._items[other._head], other._items.Length - other._head );
+					CommonCollectionOperations.Copy<T>( &_items[other._items.Length - other._head], &other._items[0], other._tail );
 				}
 			}
 		}
@@ -73,9 +73,10 @@ namespace System.Collections {
 			}
 			else if( _count > 0 ) {
 				CommonCollectionOperations.Clear<T>( &_items[0], _tail );
-				CommonCollectionOperations.Clear<T>( &_items[_head], ( uint ) _items.Length - _head );
+				CommonCollectionOperations.Clear<T>( &_items[_head], _items.Length - _head );
 			}
 
+			_staticIndexOffset += _count;
 			_head = 0;
 			_tail = 0;
 			_count = 0;
@@ -90,7 +91,7 @@ namespace System.Collections {
 				if( _items[index] == value )
 					return true;
 
-				index = ( index + 1 ) & ( ( uint ) _items.Length - 1U );
+				index = ( index + 1 ) & ( _items.Length - 1U );
 			}
 
 			return false;
@@ -108,7 +109,7 @@ namespace System.Collections {
 			var result = _items[_head];
 
 			_items[_head] = default( T );
-			_head = ( _head + 1 ) & ( ( uint ) _items.Length - 1U );
+			_head = ( _head + 1 ) & ( _items.Length - 1U );
 			--_count;
 			CommonCollectionOperations.UpdateVersion( &_version );
 
@@ -116,12 +117,12 @@ namespace System.Collections {
 		}
 
 		public uint Enqueue( T item ) {
-			if( _count == ( uint ) _items.Length )
-				SetCapacity( ( uint ) _items.Length * 2U );
+			if( _count == _items.Length )
+				SetCapacity( _items.Length * 2U );
 
 			var result = _count + _staticIndexOffset;
 			_items[_tail] = item;
-			_tail = ( _tail + 1 ) & ( ( uint ) _items.Length - 1U );
+			_tail = ( _tail + 1 ) & ( _items.Length - 1U );
 			++_count;
 			CommonCollectionOperations.UpdateVersion( &_version );
 
@@ -133,7 +134,7 @@ namespace System.Collections {
 			var result = _count + _staticIndexOffset;
 
 			if( _head < _tail ) {
-				var available = ( uint ) _items.Length - _tail;
+				var available = _items.Length - _tail;
 				var firstPart = Math.Min( values.Length, available );
 
 				CommonCollectionOperations.Copy<T>( &_items[_tail], values, firstPart );
@@ -149,7 +150,7 @@ namespace System.Collections {
 				CommonCollectionOperations.Copy<T>( &_items[0], values, values.Length );
 			}
 
-			_tail = ( _tail + values.Length ) & ( ( uint ) _items.Length - 1U );
+			_tail = ( _tail + values.Length ) & ( _items.Length - 1U );
 			_count += values.Length;
 			CommonCollectionOperations.UpdateVersion( &_version );
 
@@ -169,7 +170,7 @@ namespace System.Collections {
 		public T Last() {
 			System.Diagnostics.Debug.Assert( _count > 0 );
 
-			return _items[( _tail - 1U + ( uint ) _items.Length ) & ( ( uint ) _items.Length - 1U )];
+			return _items[( _tail - 1U + _items.Length ) & ( _items.Length - 1U )];
 		}
 
 		public uint Count { get { return _count; } }
@@ -184,23 +185,23 @@ namespace System.Collections {
 			get {
 				System.Diagnostics.Debug.Assert( IsValid( index ) );
 
-				return _items[( _head + index - _staticIndexOffset ) & ( ( uint ) _items.Length - 1U )];
+				return _items[( _head + index - _staticIndexOffset ) & ( _items.Length - 1U )];
 			}
 
 			set {
 				System.Diagnostics.Debug.Assert( IsValid( index ) );
 
-				_items[( _head + index - _staticIndexOffset ) & ( ( uint ) _items.Length - 1U )] = value;
+				_items[( _head + index - _staticIndexOffset ) & ( _items.Length - 1U )] = value;
 			}
 		}
 
 		public uint Capacity {
-			get { return ( uint ) _items.Length; }
+			get { return _items.Length; }
 			set { EnsureCapacity( value ); }
 		}
 
 		private void EnsureCapacity( uint value ) {
-			if( value <= ( uint ) _items.Length ) return;
+			if( value <= _items.Length ) return;
 
 			if( !BitOperations.IsPowerOf2( value ) )
 				value = BitOperations.NextPowerOf2( value );
@@ -214,8 +215,8 @@ namespace System.Collections {
 			if( _head < _tail )
 				CommonCollectionOperations.Copy<T>( &result[0], &_items[_head], _count );
 			else if( _count > 0 ) {
-				CommonCollectionOperations.Copy<T>( &result[0], &_items[_head], ( uint ) _items.Length - _head );
-				CommonCollectionOperations.Copy<T>( &result[( uint ) _items.Length - _head], &_items[0], _tail );
+				CommonCollectionOperations.Copy<T>( &result[0], &_items[_head], _items.Length - _head );
+				CommonCollectionOperations.Copy<T>( &result[_items.Length - _head], &_items[0], _tail );
 			}
 
 			_items = result;
@@ -233,8 +234,8 @@ namespace System.Collections {
 					return result;
 				}
 
-				CommonCollectionOperations.Copy<T>( &result[0], &_items[_head], ( uint ) _items.Length - _head );
-				CommonCollectionOperations.Copy<T>( &result[( uint ) _items.Length - _head], &_items[0], _tail );
+				CommonCollectionOperations.Copy<T>( &result[0], &_items[_head], _items.Length - _head );
+				CommonCollectionOperations.Copy<T>( &result[_items.Length - _head], &_items[0], _tail );
 			}
 
 			return result;
@@ -270,7 +271,7 @@ namespace System.Collections {
 					return false;
 				}
 
-				_currentElement = _parent._items[( _parent._head + _index ) & ( ( uint ) _parent._items.Length - 1U )];
+				_currentElement = _parent._items[( _parent._head + _index ) & ( _parent._items.Length - 1U )];
 				return true;
 			}
 

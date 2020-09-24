@@ -6,15 +6,11 @@ using System;
 using System.Collections;
 using System.Globalization;
 using System.IO;
-using System.Net;
-using System.Runtime;
-using System.Text;
-using System.Web;
 
 using Platform;
 using Platform.IO;
 
-namespace Dmm {
+namespace DMM {
 	public partial class App {
 		public const int TcpConnectionPort = 8080;
 		public const Utf8String NamedPipeConnectionPath = @"\\.\pipe\BamelgDmmServer";
@@ -40,20 +36,87 @@ namespace Dmm {
 
 		public static ILocalizer Localizer = AppLocalizer.EN.Instance;
 
-		public static bool TraceEvents = true;
+		public static bool Trace = false;
+		public static bool TraceVerbose = false;
+		public static bool TraceEvents = !true;
 
-		public static string LastComPort;
+		public static string CommandLineSpecifiedPort, LastComPort;
+		public static string CommandLine_OutputFileName;
+
+		private enum CommandLineState : byte {
+			None,
+			WaitForPortName,
+			WaitForOutputFileName,
+		}
 
 		[EntryPoint]
 		private static void Main() {
-			// System.Console.WriteLine( "GetACP() == {0}", Kernel32Api.GetACP() );
-			// System.Console.WriteLine( "GetConsoleCP() = {0}", Kernel32Api.GetConsoleCP() );
-
 			switch( ( uint ) Kernel32Api.GetConsoleCP() ) {
 				case 866:
 					CultureInfo.Default = CultureInfo.Current = CultureInfo.RU;
 					Localizer = AppLocalizer.RU.Instance;
 					break;
+			}
+
+			var showUsage = false;
+			var state = CommandLineState.None;
+			for( uint i = 1; i < Environment.CommandLine.Length; ++i ) {
+				switch( state ) {
+					case CommandLineState.None:
+						switch( Environment.CommandLine[i] ) {
+							case "/port":
+								state = CommandLineState.WaitForPortName;
+								break;
+
+							case "/output":
+								state = CommandLineState.WaitForOutputFileName;
+								break;
+
+							case "/trace":
+								Trace = true;
+								break;
+
+							case "/verbose":
+								TraceVerbose = true;
+								break;
+
+							case "/help":
+							case "/?":
+								showUsage = true;
+								break;
+						}
+						break;
+
+					case CommandLineState.WaitForPortName:
+						state = CommandLineState.None;
+						CommandLineSpecifiedPort = Environment.CommandLine[i];
+						break;
+
+					case CommandLineState.WaitForOutputFileName:
+						state = CommandLineState.None;
+						CommandLine_OutputFileName = Environment.CommandLine[i];
+						break;
+				}
+			}
+
+			if( state == CommandLineState.WaitForPortName ) {
+				Console.WriteLine( "Serial port name expected" );
+				Environment.ExitCode = 1;
+				return;
+			}
+
+			if( state == CommandLineState.WaitForOutputFileName ) {
+				Console.WriteLine( "Output file name expected" );
+				Environment.ExitCode = 1;
+				return;
+			}
+
+			if( showUsage ) {
+				Console.WriteLine( "Usage:" );
+				Console.WriteLine( "    DMM.EXE" );
+				Console.WriteLine( @"    DMM.EXE /port \\.\COM1 /trace /verbose" );
+				Console.WriteLine( @"    DMM.EXE /port \\.\COM1 /output-raw raw.txt" );
+				return;
 			}
 
 			_eventLoop.CatchConsoleQuit();
@@ -71,7 +134,7 @@ namespace Dmm {
 			PrintConnectionOptions();
 
 			_devices.Add( _debugDevice = new DeviceHandler() {
-				SerialPortPath = LastComPort
+				SerialPortPath = CommandLineSpecifiedPort ?? LastComPort
 			} );
 
 			foreach( var device in _devices )
@@ -96,7 +159,7 @@ namespace Dmm {
 		public string SerialPortPath = @"\\.\COM4";
 		public string Name = "UT61E";
 
-		public FiberSlidingEventQueue<string> Events = new FiberSlidingEventQueue<string>( TimeSpan.FromMinutes( 1 ) );
+		public FiberSlidingEventQueue<string> Events = new FiberSlidingEventQueue<string>( TimeDuration.FromMinutes( 1 ) );
 
 		public bool Enabled = true;
 
@@ -115,7 +178,7 @@ namespace Dmm {
 					Console.WriteLine( text );
 			}
 
-			Events.Add( DateTime.UtcNow, text );
+			Events.Add( DateTimeUTC.UtcNow, text );
 		}
 
 		public void AddEvent( string format, vararg TypedReference parameters ) {
@@ -124,7 +187,7 @@ namespace Dmm {
 					Console.WriteLine( format, vararg( parameters, parameters.Length ) );
 			}
 
-			Events.Add( DateTime.UtcNow, string.Format( format, vararg( parameters, parameters.Length ) ) );
+			Events.Add( DateTimeUTC.UtcNow, string.Format( format, vararg( parameters, parameters.Length ) ) );
 		}
 
 		#endregion
@@ -151,8 +214,8 @@ namespace Dmm {
 		private Fiber.Semaphore _resistanceCompleted = new Fiber.Semaphore( 0 );
 		private Delegates.Action<double> OnResistanceParsed;
 
-		FixedPointSlidingQueue _resistance = new FixedPointSlidingQueue( TimeSpan.FromSeconds( 2 ), 100 );
-		FixedPointSlidingQueue.AverageView _avgView = new FixedPointSlidingQueue.AverageView( _resistance, TimeSpan.FromSeconds( 2 ) );
+		FixedPointSlidingQueue _resistance = new FixedPointSlidingQueue( TimeDuration.FromSeconds( 2 ), 100 );
+		FixedPointSlidingQueue.AverageView _avgView = new FixedPointSlidingQueue.AverageView( _resistance, TimeDuration.FromSeconds( 2 ) );
 
 		private void ShuntTask() {
 			Console.WriteLine( "{0} ...", App.Localizer.MeasureProbeResistance );
@@ -187,17 +250,21 @@ namespace Dmm {
 		private void ConnectorWorker() {
 			StreamError = false;
 
-			var fs = new Platform.IO.FileStream() {
+			var serialPort = new Platform.IO.FileStream() {
 				ErrorHandler = this
 			};
 
+			StreamWriter decodedWriter = null;
+
+			if( !App.CommandLine_OutputFileName.IsNullOrEmpty ) decodedWriter = new StreamWriter( System.IO.File.OpenWrite( App.CommandLine_OutputFileName ) );
+
 			AddEvent( "Connecting to '{0}'", SerialPortPath );
 
-			if( fs.Open( SerialPortPath, FileAccessRights.GENERIC_WRITE | FileAccessRights.GENERIC_READ, FileCreationDisposition.OPEN_EXISTING ) ) {
+			if( serialPort.Open( SerialPortPath, FileAccessRights.GENERIC_WRITE | FileAccessRights.GENERIC_READ, FileCreationDisposition.OPEN_EXISTING ) ) {
 				var shortName = SerialPortPath;
 				if( shortName.StartsWith( @"\\.\" ) ) shortName = shortName.Substring( 4 );
 
-				fs.ReadTimeout = TimeSpan.FromSeconds( 3 );
+				serialPort.ReadTimeout = TimeDuration.FromSeconds( 3 );
 
 				var dcb = new DCB() {
 					// fBinary = true,
@@ -213,14 +280,14 @@ namespace Dmm {
 					// XoffLim = 1
 				};
 
-				if( Kernel32Api.SetCommState( fs.Handle, &dcb ) ) {
+				if( Kernel32Api.SetCommState( serialPort.Handle, &dcb ) ) {
 					AddEvent( "Set DCB '{0}': '{1}'", shortName, dcb );
 				}
 				else {
 					AddEvent( "Unable to set DCB for '{0}': '{1}'", shortName, dcb );
 				}
 
-				if( !Kernel32Api.GetCommState( fs.Handle, &dcb ) )
+				if( !Kernel32Api.GetCommState( serialPort.Handle, &dcb ) )
 					AddEvent( "Unable to get DCB for '{0}'", shortName );
 
 				using( Console.AttributedRegion( RgbColor.Yellow ) )
@@ -235,14 +302,14 @@ namespace Dmm {
 					WriteTotalTimeoutConstant = 0
 				};
 
-				if( !Kernel32Api.SetCommTimeouts( fs.Handle, &timeouts ) )
+				if( !Kernel32Api.SetCommTimeouts( serialPort.Handle, &timeouts ) )
 					AddEvent( "Unable to set timeouts for '{0}'", shortName );
 
-				var bufferedStream = new BufferedStream.ReadStream( fs, 128 );
-				var dmm = new Dmm.UT61E.Parser();
+				var bufferedStream = new BufferedReadStream( serialPort, 128 );
+				var dmm = new DMM.UT61E.Parser();
 
 				var requestBuffer = bufferedStream.BufferInfo;
-				var prevBufferLength = 0;
+				var prevBufferLength = 0U;
 
 				for( ; ; ) {
 					using( Fiber.CancellationRegion() ) {
@@ -253,16 +320,25 @@ namespace Dmm {
 					if( Fiber.IsCancelled || StreamError ) return;
 					if( requestBuffer->AvailableToRead == prevBufferLength ) continue; // skip parsing on timeouts
 
+				reparse:
 					var result = dmm.Parse( requestBuffer->Start, requestBuffer->AvailableToRead );
 					if( result ) {
+						var utcNow = DateTimeUTC.UtcNow;
+
+						if( App.Trace ) {
+							if( App.TraceVerbose ) Console.WriteLine( "{0}\t{1}\t{2:t}\t{2}", utcNow, new CStringSpan( requestBuffer->Start, dmm.SkipBytes - 2 ), dmm );
+							else Console.WriteLine( "{0}\t{1}\t{2:t}", utcNow, new CStringSpan( requestBuffer->Start, dmm.SkipBytes - 2 ), dmm );
+						}
+						if( decodedWriter != null ) decodedWriter.WriteLine( "{0}\t{1}\t{2:t}", utcNow, new CStringSpan( requestBuffer->Start, dmm.SkipBytes - 2 ), dmm );
+
 						AddEvent( "Device data: {0}", dmm );
 
 						if( TaskMeasureResistance ) {
-							if( !TaskMeasureResistanceStarted && dmm.Value == Dmm.UT61E.Parser.ResistanceDisconnected ) {
+							if( !TaskMeasureResistanceStarted && dmm.Value == DMM.UT61E.Parser.ResistanceDisconnected ) {
 								TaskMeasureResistanceStarted = true;
 							}
 
-							if( dmm.Mode == Dmm.UT61E.MeasurementMode.Resistance && TaskMeasureResistanceStarted ) {
+							if( dmm.Mode == DMM.UT61E.MeasurementMode.Resistance && TaskMeasureResistanceStarted ) {
 								_resistance.Add( Fiber.UtcNow, dmm.Value );
 
 								double dev = 0;
@@ -289,10 +365,10 @@ namespace Dmm {
 							}
 						}
 						else {
-							if( dmm.Mode == Dmm.UT61E.MeasurementMode.Volts ) {
+							if( dmm.Mode == DMM.UT61E.MeasurementMode.Volts ) {
 								if( OnResistanceParsed != null ) OnResistanceParsed( dmm.Value );
 							}
-							else if( dmm.Mode == Dmm.UT61E.MeasurementMode.MilliVolts ) {
+							else if( dmm.Mode == DMM.UT61E.MeasurementMode.MilliVolts ) {
 								if( OnResistanceParsed != null ) OnResistanceParsed( dmm.Value );
 							}
 						}
@@ -302,6 +378,7 @@ namespace Dmm {
 
 					bufferedStream.Drain( dmm.SkipBytes );
 					prevBufferLength = requestBuffer->AvailableToRead;
+					if( prevBufferLength >= 14 ) goto reparse;
 				}
 			}
 		}

@@ -77,8 +77,10 @@ namespace Platform.Libc {
 			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_KEEPCAPS, ( uint ) value, 0, 0, 0 ) ); }
 		}
 
-		public static void Sleep( int milleseconds ) {
-			var timeToWait = new timespec( TimeSpan.FromMilliseconds( milleseconds ) );
+		public static void Sleep( uint milleseconds ) { Sleep( TimeDuration.FromMilliseconds( milleseconds ) ); }
+
+		public static void Sleep( TimeDuration value ) {
+			var timeToWait = ( timespec ) value;
 			timespec remaindedTime;
 
 		sleepAgain:
@@ -221,7 +223,7 @@ namespace Platform.Libc {
 		public void SignalCode() { LibcApi.Assert( LibcApi.pthread_cond_signal( &this ) ); }
 		public void Broadcast() { LibcApi.Assert( LibcApi.pthread_cond_broadcast( &this ) ); }
 		public void Wait( pthread_mutex_t& mutex ) { LibcApi.Assert( LibcApi.pthread_cond_wait( &this, &mutex ) ); }
-		public void Wait( pthread_mutex_t& mutex, TimeSpan time ) { LibcApi.Assert( LibcApi.pthread_cond_timedwait( &this, &mutex, new timespec( time ) ) ); }
+		public void Wait( pthread_mutex_t& mutex, TimeDuration time ) { LibcApi.Assert( LibcApi.pthread_cond_timedwait( &this, &mutex, ( timespec ) time ) ); }
 	}
 
 	public partial struct pthread_rwlock_t {
@@ -230,7 +232,7 @@ namespace Platform.Libc {
 		// public void Dispose() { LibcApi.Assert( PthreadsApi.pthread_rwlock_destroy( &this ) ); }
 
 		public void ReadLock() { LibcApi.Assert( PthreadsApi.pthread_rwlock_rdlock( &this ) ); }
-		public void ReadLock( TimeSpan timeout ) { LibcApi.Assert( PthreadsApi.pthread_rwlock_timedrdlock( &this, new timespec( timeout ) ) ); }
+		public void ReadLock( TimeDuration timeout ) { LibcApi.Assert( PthreadsApi.pthread_rwlock_timedrdlock( &this, ( timespec ) timeout ) ); }
 
 		public bool TryReadLock() {
 			SystemError code;
@@ -245,7 +247,7 @@ namespace Platform.Libc {
 		}
 
 		public void WriteLock() { LibcApi.Assert( PthreadsApi.pthread_rwlock_wrlock( &this ) ); }
-		public void WriteLock( TimeSpan timeout ) { LibcApi.Assert( PthreadsApi.pthread_rwlock_timedwrlock( &this, new timespec( timeout ) ) ); }
+		public void WriteLock( TimeDuration timeout ) { LibcApi.Assert( PthreadsApi.pthread_rwlock_timedwrlock( &this, ( timespec ) timeout ) ); }
 
 		public bool TryWriteLock() {
 			SystemError code;
@@ -312,8 +314,8 @@ namespace Platform.Libc {
 		public void Post() { LibcApi.Assert( PthreadsApi.sem_post( &this ) ); }
 		public void Wait() { LibcApi.Assert( PthreadsApi.sem_wait( &this ) ); }
 
-		public bool Wait( TimeSpan timespan ) {
-			var absTime = new timespec( DateTime.UtcNow + timespan );
+		public bool Wait( TimeDuration timespan ) {
+			var absTime = ( timespec )( DateTimeUTC.UtcNow + timespan );
 
 		restart:
 			if( PthreadsApi.sem_timedwait( &this, absTime ) == 0 ) return true;

@@ -162,7 +162,7 @@ namespace Platform.Cairo {
 
 		public void Rectangle( double x, double y, double width, double height ) { CairoApi.cairo_rectangle( &this, x, y, width, height ); }
 
-		public void SetDash( double* dashes, int count, double offset ) { CairoApi.cairo_set_dash( &this, dashes, count, offset ); }
+		public void SetDash( double* dashes, uint count, double offset ) { CairoApi.cairo_set_dash( &this, dashes, count, offset ); }
 
 		public double LineWidth { set { CairoApi.cairo_set_line_width( &this, value ); } }
 
@@ -178,7 +178,7 @@ namespace Platform.Cairo {
 		public void Scale( double x, double y ) { CairoApi.cairo_scale( &this, x, y ); }
 	}
 
-	public partial struct cairo_surface_t {
+	public partial struct cairo_surface_t : IDisposable {
 		public int Width { get { return CairoApi.cairo_image_surface_get_width( &this ); } }
 		public int Height { get { return CairoApi.cairo_image_surface_get_height( &this ); } }
 		public int Stride { get { return CairoApi.cairo_image_surface_get_stride( &this ); } }
@@ -188,6 +188,7 @@ namespace Platform.Cairo {
 		public void ReleaseReference() { CairoApi.cairo_surface_destroy( &this ); }
 		public void Dispose() { ReleaseReference(); }
 
+		public void Flush() { CairoApi.cairo_surface_flush( &this ); }
 		public void Finish() { CairoApi.cairo_surface_finish( &this ); }
 
 		public void Save( CUtf8String filename ) { CairoApi.cairo_surface_write_to_png( &this, filename ); }
@@ -257,7 +258,7 @@ namespace Platform.Cairo {
 
 						var cairoPtr = cast<Tuple<byte, byte, byte, byte>*>( &cairoBuffer[cairoStride * rowsRead] );
 
-						for( var i = 0; i < width; ++i ) {
+						for( var i = 0U; i < width; ++i ) {
 							cairoPtr[i].Item3 = jpegPtr[i].Item1;
 							cairoPtr[i].Item2 = jpegPtr[i].Item2;
 							cairoPtr[i].Item1 = jpegPtr[i].Item3;

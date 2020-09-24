@@ -43,7 +43,8 @@ namespace System.Threading {
 
 		private static Thread _implCurrentThread() { return new Thread() { _threadId = ThreadHandle.CurrentThreadID, _thread = ThreadHandle.Invalid }; }
 
-		private static void _implSleep( int milliseconds ) { ThreadHandle.Sleep( ( uint ) milliseconds ); }
+		private static void _implSleep( uint milliseconds ) { ThreadHandle.Sleep( milliseconds ); }
+		private static void _implSleep( TimeDuration value ) { var milliseconds = value.TotalMilliseconds; if( !Assert.IsTrue( milliseconds < Kernel32Api.INFINITE ) ) milliseconds = Kernel32Api.INFINITE - 1; ThreadHandle.Sleep( ( uint ) milliseconds ); }
 
 		private static void _implYield() { Kernel32Api.SwitchToThread(); }
 

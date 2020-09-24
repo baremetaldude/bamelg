@@ -26,12 +26,12 @@ namespace Platform.IO {
 
 		protected bool _quitRequest;
 
-		/// @{ Events
+		#region Events
 		public KQueueHandle KQueue = new KQueueHandle();
 
 		private List<kevent> _signalledEvents = new List<kevent>();
 
-		internal int _eventChangeVersion = 1;
+		internal uint _eventChangeVersion = 1;
 		internal List<kevent> _eventChangeList = new List<kevent>();
 
 		internal HashSet<uintptr> _eventIds = new HashSet<uintptr>();
@@ -73,7 +73,7 @@ namespace Platform.IO {
 			}
 		}
 
-		public int AddEvent( kevent& @event, bool ensureNonBlocking = true ) {
+		public uint AddEvent( kevent& @event, bool ensureNonBlocking = true ) {
 			var index = _eventChangeList.Count;
 
 			EnsureEventUnique( @event, ensureNonBlocking );
@@ -84,11 +84,11 @@ namespace Platform.IO {
 			return index;
 		}
 
-		public void ModifyEvent( int index, kevent& @event ) {
+		public void ModifyEvent( uint index, kevent& @event ) {
 			_eventChangeList[index] = @event;
 		}
 
-		public void AddOrModifyEvent( int& index, int& eventListVersion, kevent& @event, bool ensureNonBlocking = true ) {
+		public void AddOrModifyEvent( uint& index, uint& eventListVersion, kevent& @event, bool ensureNonBlocking = true ) {
 			if( eventListVersion == _eventChangeVersion ) {
 				ModifyEvent( index, @event );
 
@@ -112,40 +112,20 @@ namespace Platform.IO {
 			++_eventChangeVersion;
 		}
 
-		/// @}
+		#endregion
 
 		private bool _fiberDispatch = false;
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
 		internal HashSet<EventSink> _eventSinks = new HashSet<EventSink>();
 
-		public int EventSinkCount { get { return _eventSinks.Count; } }
+		public uint EventSinkCount { get { return _eventSinks.Count; } }
 
-		/// @{ Dispatching
-		private pthread_t DispatchThread = pthread_t.CurrentThread;
+		#region Dispatching
+		private pthread_t DispatchThread = pthread_t.Invalid;
 
 		public void BeginDispatch() {
-			var started = new Semaphore();
-
-			var dispatchInfo = new Tuple<EventLoop, Semaphore*> {
-				Item1 = this,
-				Item2 = &started
-			};
-
-			new pthread_t( sender => {
-				var info = ( Tuple<EventLoop, Semaphore*>* ) sender;
-
-				var @this = info->Item1;
-
-				@this.DispatchThread = pthread_t.CurrentThread;
-				info->Item2->Post(); // info dies now
-
-				@this.Dispatch();
-
-				return null;
-			}, &dispatchInfo );
-
-			started.Wait();
+			DispatchThread = new pthread_t( Dispatch );
 		}
 
 		public void EndDispatch() {
@@ -156,8 +136,9 @@ namespace Platform.IO {
 		}
 
 		public void Dispatch() {
+			DispatchThread = pthread_t.CurrentThread;
+
 			TraceDispatchStarted();
-			Debug.Assert( DispatchThread.IsCurrent );
 
 			if( EnableFibers ) {
 				_fiberDispatch = true;
@@ -166,7 +147,7 @@ namespace Platform.IO {
 			}
 
 			if( _signalledEvents.Capacity < _eventSinks.Count )
-				_signalledEvents.Capacity = ( int )( _eventSinks.Count * 1.3 );
+				_signalledEvents.Capacity = ( uint )( _eventSinks.Count * 1.3 );
 
 			var waitBufferLength = _signalledEvents.Capacity;
 			var waitBuffer = _signalledEvents.GetBuffer();
@@ -184,13 +165,13 @@ namespace Platform.IO {
 				int polledDescriptors;
 
 				var timeout = GetWaitTime();
-				if( timeout == TimeSpan.MaxValue ) {
+				if( timeout == TimeDuration.MaxValue ) {
 					TraceBeginWait( nullref );
 					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, nullref );
 				}
 				else {
-					TraceBeginWait( new timespec( timeout ) );
-					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, new timespec( timeout ) );
+					TraceBeginWait( ( timespec ) timeout );
+					polledDescriptors = LibcApi.kevent( KQueue, _eventChangeList.GetBuffer(), _eventChangeList.Count, waitBuffer, waitBufferLength, ( timespec ) timeout );
 				}
 
 				TraceEventsArrived( polledDescriptors );
@@ -206,8 +187,8 @@ namespace Platform.IO {
 					}
 				}
 
-				UnbiasedNow = DateTime.UnbiasedNow;
-				UtcNow = DateTime.UtcNow;
+				UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+				UtcNow = DateTimeUTC.UtcNow;
 
 				OnAlarm();
 
@@ -226,7 +207,7 @@ namespace Platform.IO {
 			Dispose();
 		}
 
-		/// @}
+		#endregion
 
 		// It can be implemented as interface, but class provides faster access to fields
 		public abstract class EventSink {
@@ -248,7 +229,7 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			/// @{
+			#region
 			public virtual bool Register() {
 				if( Parent._eventSinks.Add( this ) ) {
 					Parent.TraceEventSinkRegistered( this );
@@ -274,7 +255,7 @@ namespace Platform.IO {
 					return false;
 				}
 			}
-			/// @}
+			#endregion
 
 			[Conditional( ConditionString = "DEBUG" )]
 			internal void EnsureEventSinkRegistered() {
@@ -317,8 +298,8 @@ namespace Platform.IO {
 		}
 
 		public abstract class TimerEventSink : EventSink {
-			private int _index;
-			private int _version;
+			private uint _index;
+			private uint _version;
 
 			public TimerEventSink( EventLoop parent )
 				: base( parent ) {
@@ -516,7 +497,8 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		public override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return DispatchThread != pthread_t.Invalid; } }
 
 		#endregion
 
@@ -527,7 +509,7 @@ namespace Platform.IO {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch started: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch started: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -535,7 +517,7 @@ namespace Platform.IO {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]

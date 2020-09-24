@@ -19,6 +19,8 @@ namespace Example {
 		public struct SerializedStructure {
 			SerializedStructure() { }
 
+			bool Bool;
+
 			sbyte SByte;
 			byte Byte;
 
@@ -46,8 +48,9 @@ namespace Example {
 
 			Guid Guid;
 
-			DateTime DateTime;
+			DateTimeUTC DateTime;
 			TimeSpan TimeSpan;
+			TimeDuration TimeDuration;
 
 			IPv4Address IPv4Address;
 			IPv4Endpoint IPv4Endpoint;
@@ -55,6 +58,7 @@ namespace Example {
 			byte[] Array;
 
 			static void EnsureEquals( SerializedStructure& x, SerializedStructure& y ) {
+				Assert.IsTrue( x.Bool == y.Bool );
 				Assert.IsTrue( x.SByte == y.SByte );
 				Assert.IsTrue( x.Byte == y.Byte );
 				Assert.IsTrue( x.ShortLE == y.ShortLE );
@@ -74,6 +78,7 @@ namespace Example {
 				Assert.IsTrue( x.Guid == y.Guid );
 				Assert.IsTrue( x.DateTime == y.DateTime );
 				Assert.IsTrue( x.TimeSpan == y.TimeSpan );
+				Assert.IsTrue( x.TimeDuration == y.TimeDuration );
 				Assert.IsTrue( x.IPv4Address == y.IPv4Address );
 				Assert.IsTrue( x.IPv4Endpoint == y.IPv4Endpoint );
 				Assert.IsTrue( CommonCollectionOperations.Compare<byte>( x.Array, y.Array ) );
@@ -90,12 +95,13 @@ namespace Example {
 
 		[EntryPoint]
 		public static void Main() {
-			for( var i = 0; i < typeof( TestEnum ).ElementCount; ++i ) {
-				var element = enumvalue<TestEnum>( i );
-				Console.WriteLine( "Element[{0}]: {1}", element.GetIndex(), element );
-			}
+			// for( var i = 0U; i < typeof( TestEnum ).ElementCount; ++i ) {
+			// 	var element = enumvalue<TestEnum>( i );
+			// 	Console.WriteLine( "Element[{0}]: {1}", element.GetIndex(), element );
+			// }
 
 			var x = new SerializedStructure() {
+				Bool = true,
 				SByte = 1,
 				Byte = 2,
 				ShortLE = 3,
@@ -109,18 +115,19 @@ namespace Example {
 				EnumValue = TestEnum.Element2,
 				Array = new[3] byte { 1, 2, 3 },
 
-				SbcsString = new SbcsString( "XYZ1" ),
-				Utf8String = new Utf8String( "XYZ2" ),
-				Utf16String = new Utf16String( "XYZ3" ),
-				Utf32String = new Utf32String( "XYZ4" ),
+				SbcsString = new SbcsString( "тестовая строка" ),
+				Utf8String = new Utf8String( "chaîne de test" ),
+				Utf16String = new Utf16String( "тест җөе" ),
+				Utf32String = new Utf32String( "туршалгын мүр" ),
 
 				Float = 10.5f,
 				Double = 11.5,
 
 				Guid = Guid.Parse( "{4C0B33B7-315A-4EF8-9627-10849850E053}" ),
 
-				DateTime = new DateTime( 1986, 1, 5 ),
+				DateTime = new DateTimeUTC( 1986, 1, 5 ),
 				TimeSpan = TimeSpan.FromMinutes( 6 ),
+				TimeDuration = TimeDuration.FromMinutes( 7 ),
 
 				IPv4Address = IPv4Address.Parse( "192.168.1.1" ),
 				IPv4Endpoint = IPv4Endpoint.Parse( "192.168.1.2:3456" )
@@ -142,14 +149,14 @@ namespace Example {
 			}
 
 			{
-				Console.WriteLine( "== Check ini serializer: FileStream ==" );
+				Console.WriteLine( "== Check json serializer: FileStream ==" );
 				SerializedStructure y;
 
 				using( var stream = File.OpenWrite( "SerializedData.json" ) )
 				using( var writer = new StreamWriter( stream ) )
 					JsonSerializer<SerializedStructure>.Serialize( x, writer );
 
-				// using( var stream = File.OpenRead( "SerializedData.ini" ) )
+				// using( var stream = File.OpenRead( "SerializedData.json" ) )
 				// using( var reader = new StreamReader( stream ) )
 				// 	JsonSerializer<SerializedStructure>.Deserialize( y, reader );
 
@@ -159,6 +166,9 @@ namespace Example {
 			{
 				Console.WriteLine( "== Check ini serializer: FileStream ==" );
 				SerializedStructure y;
+
+				// using( var stream = File.OpenWrite( "SerializedData.ini" ) )
+				// 	IniSerializer<SerializedStructure>.Serialize( x, Console.Out );
 
 				using( var stream = File.OpenWrite( "SerializedData.ini" ) )
 				using( var writer = new StreamWriter( stream ) )

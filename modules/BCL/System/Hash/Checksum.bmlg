@@ -6,11 +6,11 @@
 
 namespace System.Hash {
 	public static struct Checksum {
-		public static uintptr Compute8( void* data, int length ) {
+		public static uintptr Compute8( void* data, uint length ) {
 			uintptr result = 0;
 			var ptr = ( byte* ) data;
 
-			while( --length >= 0 )
+			while( --length != uint.MaxValue )
 				result += *ptr++;
 
 			return result;

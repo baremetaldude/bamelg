@@ -346,36 +346,14 @@ namespace System {
 			return result;
 		}
 
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.IsTrue( ByteSwap( ( short ) 0xFE ) == ( short ) 0xFE00 );
-			Assert.IsTrue( ByteSwap( ( int ) 0xFE ) == ( int ) 0xFE000000 );
-			Assert.IsTrue( ByteSwap( ( long ) 0xFE ) == ( long ) 0xFE00000000000000 );
+		public static sbyte ZigZagEncode( sbyte value ) { return SignedShiftRight( value, ( sbyte ) 7 ) ^ ( value << 1 ); }
+		public static short ZigZagEncode( short value ) { return SignedShiftRight( value, ( short ) 15 ) ^ ( value << 1 ); }
+		public static int ZigZagEncode( int value ) { return SignedShiftRight( value, ( int ) 31 ) ^ ( value << 1 ); }
+		public static long ZigZagEncode( long value ) { return SignedShiftRight( value, ( long ) 63 ) ^ ( value << 1 ); }
 
-			Assert.IsTrue( SignedShiftRight( ( sbyte ) 0x80, ( sbyte ) 2 ) == ( sbyte ) 0xE0 );
-			Assert.IsTrue( SignedShiftRight( ( short ) 0x8000, ( short ) 2 ) == ( short ) 0xE000 );
-			Assert.IsTrue( SignedShiftRight( ( int ) 0x80000000, ( int ) 2 ) == ( int ) 0xE0000000 );
-			Assert.IsTrue( SignedShiftRight( ( long ) 0x8000000000000000, ( long ) 2 ) == ( long ) 0xE000000000000000 );
-
-			Assert.IsTrue( PopulationCount( ( sbyte ) 0b111 ) == 3 );
-			Assert.IsTrue( PopulationCount( ( short ) 0b111 ) == 3 );
-			Assert.IsTrue( PopulationCount( ( int ) 0b111 ) == 3 );
-			Assert.IsTrue( PopulationCount( ( long ) 0b111 ) == 3 );
-
-			Assert.IsTrue( CountLeadingZeros( ( sbyte ) 0b111 ) == 5 );
-			Assert.IsTrue( CountLeadingZeros( ( short ) 0b111 ) == 5 + 8 );
-			Assert.IsTrue( CountLeadingZeros( ( int ) 0b111 ) == 5 + 24 );
-			Assert.IsTrue( CountLeadingZeros( ( long ) 0b111 ) == 5 + 56 );
-
-			Assert.AreEqual( ( sbyte ) 3, CountTrailingZeros( ( sbyte ) 0b1000 ) );
-			Assert.AreEqual( ( short ) 3, CountTrailingZeros( ( short ) 0b1000 ) );
-			Assert.AreEqual( ( int ) 3, CountTrailingZeros( ( int ) 0b1000 ) );
-			Assert.IsTrue( ( long ) 3 == CountTrailingZeros( ( long ) 0b1000 ) );
-
-			Assert.IsTrue( ReverseBits( ( byte ) 0b01011011 ) == ( byte ) 0b11011010 );
-			Assert.IsTrue( ReverseBits( ( ushort ) 0b0101101110111100 ) == ( ushort ) 0b0011110111011010 );
-			Assert.IsTrue( ReverseBits( ( uint ) 0b01011011101111000000000000000000 ) == ( uint ) 0b00000000000000000011110111011010 );
-			Assert.IsTrue( ReverseBits( 0b0101101110111100000000000000000000000000000000000000000000000000 ) == 0b0000000000000000000000000000000000000000000000000011110111011010 );
-		}
+		public static sbyte ZigZagDecode( sbyte value ) { return ( sbyte )( ( ( byte ) value >> 1 ) ^ -( value & 1 ) ); }
+		public static short ZigZagDecode( short value ) { return ( short )( ( ( ushort ) value >> 1 ) ^ -( value & 1 ) ); }
+		public static int ZigZagDecode( int value ) { return ( int )( ( ( uint ) value >> 1 ) ^ -( value & 1 ) ); }
+		public static long ZigZagDecode( long value ) { return ( long )( ( long )( ( ulong ) value >> 1 ) ^ -( value & 1 ) ); }
 	}
 }

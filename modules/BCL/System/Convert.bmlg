@@ -1,0 +1,2700 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System {
+	public static partial struct Convert {
+		#region bool
+
+		public static ConversionResult TryConvert( bool* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? false : true;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+
+			*result = !value.IsSubnormalOrZero;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( bool* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? false : true;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+
+			*result = !value.IsSubnormalOrZero;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( bool* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = bool.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( bool* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = bool.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( bool* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = bool.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( bool* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = bool.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( bool* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadBool();
+			if( value.IsEndOfStream ) {
+				*result = false;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region sbyte
+
+		public static ConversionResult TryConvert( sbyte* result, bool value ) {
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, byte value ) {
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, short value ) {
+			if( value < sbyte.MinValue ) { *result = sbyte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, ushort value ) {
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, int value ) {
+			if( value < sbyte.MinValue ) { *result = sbyte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, uint value ) {
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, long value ) {
+			if( value < sbyte.MinValue ) { *result = sbyte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, ulong value ) {
+			if( value > sbyte.MaxValue ) { *result = sbyte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? sbyte.MinValue : sbyte.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < sbyte.MinValue || value > sbyte.MaxValue ) {
+				*result = value < sbyte.MinValue ? sbyte.MinValue : sbyte.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt8( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? sbyte.MinValue : sbyte.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < sbyte.MinValue || value > sbyte.MaxValue ) {
+				*result = value < sbyte.MinValue ? sbyte.MinValue : sbyte.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt8( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = sbyte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = sbyte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = sbyte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = sbyte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( sbyte* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadInt8();
+			if( value.IsEndOfStream ) {
+				*result = sbyte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region byte
+
+		public static ConversionResult TryConvert( byte* result, bool value ) {
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, sbyte value ) {
+			if( value < byte.MinValue ) { *result = byte.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, short value ) {
+			if( value < byte.MinValue ) { *result = byte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, ushort value ) {
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, int value ) {
+			if( value < byte.MinValue ) { *result = byte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, uint value ) {
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, long value ) {
+			if( value < byte.MinValue ) { *result = byte.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, ulong value ) {
+			if( value > byte.MaxValue ) { *result = byte.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( byte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? byte.MinValue : byte.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < byte.MinValue || value > byte.MaxValue ) {
+				*result = value < byte.MinValue ? byte.MinValue : byte.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt8( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? byte.MinValue : byte.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < byte.MinValue || value > byte.MaxValue ) {
+				*result = value < ushort.MinValue ? byte.MinValue : byte.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt8( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( byte* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = byte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( byte* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = byte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( byte* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = byte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( byte* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = byte.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( byte* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUInt8();
+			if( value.IsEndOfStream ) {
+				*result = byte.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region short
+
+		public static ConversionResult TryConvert( short* result, bool value ) {
+			*result = ( sbyte ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, ushort value ) {
+			if( value > short.MaxValue ) { *result = short.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( short ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, int value ) {
+			if( value < short.MinValue ) { *result = short.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > short.MaxValue ) { *result = short.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( short ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, uint value ) {
+			if( value > short.MaxValue ) { *result = short.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( short ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, long value ) {
+			if( value < short.MinValue ) { *result = short.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > short.MaxValue ) { *result = short.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( short ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, ulong value ) {
+			if( value > short.MaxValue ) { *result = short.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( short ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? short.MinValue : short.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < short.MinValue || value > short.MaxValue ) {
+				*result = value < short.MinValue ? short.MinValue : short.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt16( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? short.MinValue : short.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < short.MinValue || value > short.MaxValue ) {
+				*result = value < short.MinValue ? short.MinValue : short.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt16( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( short* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = short.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( short* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = short.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( short* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = short.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( short* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = short.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( short* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadInt16();
+			if( value.IsEndOfStream ) {
+				*result = short.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region ushort
+
+		public static ConversionResult TryConvert( ushort* result, bool value ) {
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, sbyte value ) {
+			if( value < ushort.MinValue ) { *result = ushort.MinValue; return Convert.ConversionResult.Clamped; } // check
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, short value ) {
+			if( value < ushort.MinValue ) { *result = ushort.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, int value ) {
+			if( value < ushort.MinValue ) { *result = ushort.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > ushort.MaxValue ) { *result = ushort.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, uint value ) {
+			if( value > ushort.MaxValue ) { *result = ushort.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, long value ) {
+			if( value < ushort.MinValue ) { *result = ushort.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > ushort.MaxValue ) { *result = ushort.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, ulong value ) {
+			if( value > ushort.MaxValue ) { *result = ushort.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ushort ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? ushort.MinValue : ushort.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < ushort.MinValue || value > ushort.MaxValue ) {
+				*result = value < ushort.MinValue ? ushort.MinValue : ushort.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt16( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? ushort.MinValue : ushort.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < ushort.MinValue || value > ushort.MaxValue ) {
+				*result = value < ushort.MinValue ? ushort.MinValue : ushort.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt16( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ushort.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ushort.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ushort.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ushort.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ushort* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUInt16();
+			if( value.IsEndOfStream ) {
+				*result = ushort.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region char
+
+		public static ConversionResult TryConvert( char* result, bool value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, sbyte value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, byte value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, short value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, ushort value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, int value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, uint value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, long value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, ulong value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, float value ) { return TryConvert( ( ushort* ) result, value ); }
+		public static ConversionResult TryConvert( char* result, double value ) { return TryConvert( ( ushort* ) result, value ); }
+
+		public static ConversionResult TryConvert( char* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = '\0';
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var conversionTable = System.Text.Encoding.GetConversionTable( System.Runtime.CompilerServices.CompilerInfo.DefaultCodePage );
+			if( conversionTable == null ) return Convert.ConversionResult.MissedMapping;
+
+			*result = conversionTable[value.GetChars()[0]];
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( char* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = '\0';
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			byte byteCount;
+			if( !System.Text.Unicode.DecodeUtf16FromUtf8( result, value.Location, &byteCount, value.ByteLength ) ) {
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( char* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = '\0';
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.GetChars()[0];
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( char* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = '\0';
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var firstChar = value.GetChars()[0];
+			if( System.Text.Unicode.GetUtf32CodeUnitCountInUtf16( firstChar ) > 1 ) {
+				*result = '\0';
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+
+			*result = ( char ) firstChar;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( char* result, System.IO.BinaryReader value ) { return TryConvert( ( ushort* ) result, value ); }
+
+		#endregion
+
+		#region int
+
+		public static ConversionResult TryConvert( int* result, bool value ) {
+			*result = ( int ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, uint value ) {
+			if( value > int.MaxValue ) { *result = int.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( int ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, long value ) {
+			if( value < int.MinValue ) { *result = int.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > int.MaxValue ) { *result = int.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( int ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, ulong value ) {
+			if( value > int.MaxValue ) { *result = int.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( int ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? int.MinValue : int.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < int.MinValue || value > int.MaxValue ) {
+				*result = value < int.MinValue ? int.MinValue : int.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt32( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? int.MinValue : int.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < int.MinValue || value > int.MaxValue ) {
+				*result = value < int.MinValue ? int.MinValue : int.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt32( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( int* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = int.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( int* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = int.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( int* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = int.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( int* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = int.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( int* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadInt32();
+			if( value.IsEndOfStream ) {
+				*result = int.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region uint
+
+		public static ConversionResult TryConvert( uint* result, bool value ) {
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, sbyte value ) {
+			if( value < uint.MinValue ) { *result = uint.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, short value ) {
+			if( value < uint.MinValue ) { *result = uint.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, int value ) {
+			if( value < uint.MinValue ) { *result = uint.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, long value ) {
+			if( value < uint.MinValue ) { *result = uint.MinValue; return Convert.ConversionResult.Clamped; }
+			if( value > uint.MaxValue ) { *result = uint.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, ulong value ) {
+			if( value > uint.MaxValue ) { *result = uint.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( uint ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? uint.MinValue : uint.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < uint.MinValue || value > uint.MaxValue ) {
+				*result = value < uint.MinValue ? uint.MinValue : uint.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt32( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? uint.MinValue : uint.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < uint.MinValue || value > uint.MaxValue ) {
+				*result = value < uint.MinValue ? uint.MinValue : uint.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt32( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( uint* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = uint.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( uint* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = uint.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( uint* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = uint.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( uint* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = uint.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( uint* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUInt32();
+			if( value.IsEndOfStream ) {
+				*result = uint.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region long
+
+		public static ConversionResult TryConvert( long* result, bool value ) {
+			*result = ( long ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( long* result, ulong value ) {
+			if( value > long.MaxValue ) { *result = long.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( long ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( long* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? long.MinValue : long.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < long.MinValue || value > long.MaxValue ) {
+				*result = value < long.MinValue ? long.MinValue : long.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt64( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( long* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? long.MinValue : long.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < long.MinValue || value > long.MaxValue ) {
+				*result = value < long.MinValue ? long.MinValue : long.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToInt64( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( long* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = long.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( long* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = long.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( long* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = long.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( long* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = long.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( long* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadInt64();
+			if( value.IsEndOfStream ) {
+				*result = long.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region ulong
+
+		public static ConversionResult TryConvert( ulong* result, bool value ) {
+			*result = ( ulong ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, sbyte value ) {
+			if( value < ulong.MinValue ) { *result = ulong.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ulong ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, short value ) {
+			if( value < ulong.MinValue ) { *result = ulong.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ulong ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, int value ) {
+			if( value < ulong.MinValue ) { *result = ulong.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ulong ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, long value ) {
+			if( value < ulong.MinValue ) { *result = ulong.MinValue; return Convert.ConversionResult.Clamped; }
+
+			*result = ( ulong ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, float value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? ulong.MinValue : ulong.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < ulong.MinValue || value > ulong.MaxValue ) {
+				*result = value < ulong.MinValue ? ulong.MinValue : ulong.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt64( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, double value ) {
+			if( value.IsSpecial ) {
+				*result = value.IsNegativeInfinity ? ulong.MinValue : ulong.MaxValue;
+				return Convert.ConversionResult.IncompatibleValue;
+			}
+			else if( value < ulong.MinValue || value > ulong.MaxValue ) {
+				*result = value < ulong.MinValue ? ulong.MinValue : ulong.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Math.RoundToUInt64( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ulong.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ulong.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ulong.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = ulong.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( ulong* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUInt64();
+			if( value.IsEndOfStream ) {
+				*result = ulong.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region float
+
+		public static ConversionResult TryConvert( float* result, bool value ) {
+			*result = value ? 1f : 0f;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( float* result, double value ) {
+			*result = ( float ) value;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( float* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = float.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( float* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = float.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( float* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = float.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( float* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = float.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( float* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*( uint* ) result = value.ReadUInt32();
+			if( value.IsEndOfStream ) {
+				*result = float.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region double
+
+		public static ConversionResult TryConvert( double* result, bool value ) {
+			*result = value ? 1.0 : 0.0;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( double* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = double.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( double* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = double.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( double* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = double.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( double* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = double.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( double* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*( ulong* ) result = value.ReadUInt64();
+			if( value.IsEndOfStream ) {
+				*result = double.NaN;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region StringBuilder
+
+		public static ConversionResult TryConvert( StringBuilder* result, bool value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, sbyte value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, byte value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, short value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, ushort value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, int value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, uint value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, long value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, ulong value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, float value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( StringBuilder* result, double value ) { if( *result == null ) *result = new StringBuilder(); else result->Clear(); result->Append( value ); return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( StringBuilder* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) return Convert.ConversionResult.EmptyValue;
+
+			if( *result == null ) *result = new StringBuilder(); else result->Clear();
+			result->Append( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( StringBuilder* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) return Convert.ConversionResult.EmptyValue;
+
+			if( *result == null ) *result = new StringBuilder(); else result->Clear();
+			result->Append( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( StringBuilder* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) return Convert.ConversionResult.EmptyValue;
+
+			if( *result == null ) *result = new StringBuilder(); else result->Clear();
+			result->Append( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( StringBuilder* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) return Convert.ConversionResult.EmptyValue;
+
+			if( *result == null ) *result = new StringBuilder(); else result->Clear();
+			result->Append( value );
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region SbcsString
+
+		public static ConversionResult TryConvert( SbcsString* result, SbcsString value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, Utf8String value ) { *result = ( SbcsString ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, Utf16String value ) { *result = ( SbcsString ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, Utf32String value ) { *result = ( SbcsString ) value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( SbcsString* result, bool value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, sbyte value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, byte value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, short value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, ushort value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, int value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, uint value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, long value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, ulong value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, float value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( SbcsString* result, double value ) { *result = value.ToSbcsString(); return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( SbcsString* result, CUtf16StringSpan value ) {
+			if( value.Location == null ) {
+				*result = null;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Length == 0 ) {
+				*result = "";
+				return Convert.ConversionResult.OK;
+			}
+
+			*result = value.ToSbcsString();
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( SbcsString* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadSbcsString();
+			if( value.IsEndOfStream ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( SbcsString* result, Guid& value ) {
+			*result = value.ToSbcsString();
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region Utf8String
+
+		public static ConversionResult TryConvert( Utf8String* result, SbcsString value ) { *result = ( Utf8String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, Utf8String value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, Utf16String value ) { *result = ( Utf8String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, Utf32String value ) { *result = ( Utf8String ) value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf8String* result, bool value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, sbyte value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, byte value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, short value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, ushort value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, int value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, uint value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, long value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, ulong value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, float value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf8String* result, double value ) { *result = value.ToUtf8String(); return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf8String* result, CUtf16StringSpan value ) {
+			if( value.Location == null ) {
+				*result = null;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Length == 0 ) {
+				*result = "";
+				return Convert.ConversionResult.OK;
+			}
+
+			*result = value.ToUtf8String();
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf8String* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUtf8String();
+			if( value.IsEndOfStream ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf8String* result, Guid& value ) {
+			*result = value.ToUtf8String();
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region Utf16String
+
+		public static ConversionResult TryConvert( Utf16String* result, SbcsString value ) { *result = ( Utf16String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, Utf8String value ) { *result = ( Utf16String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, Utf16String value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, Utf32String value ) { *result = ( Utf16String ) value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf16String* result, bool value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, sbyte value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, byte value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, short value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, ushort value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, int value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, uint value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, long value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, ulong value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, float value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf16String* result, double value ) { *result = value.ToString(); return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf16String* result, CUtf16StringSpan value ) {
+			if( value.Location == null ) {
+				*result = null;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Length == 0 ) {
+				*result = "";
+				return Convert.ConversionResult.OK;
+			}
+
+			*result = value.ToString();
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf16String* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUtf16String();
+			if( value.IsEndOfStream ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf16String* result, Guid& value ) {
+			*result = value.ToString();
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region Utf32String
+
+		public static ConversionResult TryConvert( Utf32String* result, SbcsString value ) { *result = ( Utf32String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, Utf8String value ) { *result = ( Utf32String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, Utf16String value ) { *result = ( Utf32String ) value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, Utf32String value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf32String* result, bool value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, sbyte value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, byte value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, short value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, ushort value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, int value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, uint value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, long value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, ulong value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, float value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( Utf32String* result, double value ) { *result = value.ToUtf32String(); return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Utf32String* result, CUtf16StringSpan value ) {
+			if( value.Location == null ) {
+				*result = null;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Length == 0 ) {
+				*result = "";
+				return Convert.ConversionResult.OK;
+			}
+
+			*result = value.ToUtf32String();
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf32String* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadUtf32String();
+			if( value.IsEndOfStream ) {
+				*result = null;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( Utf32String* result, Guid& value ) {
+			*result = value.ToUtf32String();
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region Guid
+
+		public static ConversionResult TryConvert( Guid* result, Guid value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( Guid* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = Guid.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Guid.Empty;
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( Guid* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = Guid.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Guid.Empty;
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( Guid* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = Guid.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Guid.Empty;
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( Guid* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			var status = Guid.TryParse( value, *result );
+			switch( status ) {
+				case ConversionResult.OK:
+					return Convert.ConversionResult.OK;
+
+				case ConversionResult.EmptyValue:
+					return Convert.ConversionResult.EmptyValue;
+
+				case ConversionResult.OutOfRange_UpperBound:
+				case ConversionResult.OutOfRange_LowerBound:
+					return Convert.ConversionResult.Clamped;
+			}
+
+			*result = Guid.Empty;
+			return Convert.ConversionResult.IncompatibleValue;
+		}
+
+		public static ConversionResult TryConvert( Guid* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadGuid();
+			if( value.IsEndOfStream ) {
+				*result = Guid.Empty;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region TimeSpan
+
+		public static ConversionResult TryConvert( TimeSpan* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeSpan.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeSpan* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeSpan.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeSpan* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeSpan.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeSpan* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeSpan.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeSpan* result, TimeDuration& value ) {
+			if( value.Ticks > ( ulong ) long.MaxValue ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			result->Ticks = ( long ) value.Ticks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( TimeSpan* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadTimeSpan();
+			if( value.IsEndOfStream ) {
+				*result = TimeSpan.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region TimeDuration
+
+		public static ConversionResult TryConvert( TimeDuration* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeDuration.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeDuration* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeDuration.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeDuration* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeDuration.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeDuration* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return TimeDuration.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( TimeDuration* result, TimeSpan& value ) {
+			if( value.Ticks == long.MinValue ) {
+				result->Ticks = ( ulong ) long.MaxValue + 1UL;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Ticks < 0 ) result->Ticks = ( ulong ) -value.Ticks;
+			else result->Ticks = ( ulong ) value.Ticks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( TimeDuration* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadTimeDuration();
+			if( value.IsEndOfStream ) {
+				*result = TimeDuration.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region DateTime
+
+		public static ConversionResult TryConvert( DateTime* result, DateTimeLocal value ) {
+			if( value == DateTimeLocal.MaxValue ) {
+				*result = DateTime.MaxValueLocal;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Ticks > DateTime.MaxTicks ) {
+				*result = DateTime.MaxValueLocal;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = new DateTime( ( long ) value.Ticks, DateTimeKind.Local );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, DateTimeUTC value ) {
+			if( value == DateTimeUTC.MaxValue ) {
+				*result = DateTime.MaxValue;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Ticks > DateTime.MaxTicks ) {
+				*result = DateTime.MaxValue;
+				return Convert.ConversionResult.Clamped;
+			}
+
+			*result = new DateTime( ( long ) value.Ticks, DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTime.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTime.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTime.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTime.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTime* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadDateTime();
+			if( value.IsEndOfStream ) {
+				*result = DateTime.MaxValueUnspecified;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region DateTimeUTC
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeUTC.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeUTC.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeUTC.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeUTC.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, DateTime value ) {
+			if( value.Ticks >= DateTime.MaxTicks ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.OK;
+			}
+
+			if( value.Ticks == 0 ) {
+				*result = DateTimeUTC.MinValue;
+				return Convert.ConversionResult.OK;
+			}
+
+			result->Ticks = ( ulong ) value.ToUniversalTime().Ticks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, DateTimeLocal value ) {
+			// if( value == DateTimeLocal.MaxValue ) {
+			// 	*result = DateTimeUTC.MaxValue;
+			// 	return Convert.ConversionResult.OK;
+			// }
+
+			// if( value == DateTimeLocal.MinValue ) {
+			// 	*result = DateTimeUTC.MinValue;
+			// 	return Convert.ConversionResult.OK;
+			// }
+
+			long utcOffset = TimeZone.GetUtcFromLocalOffset( value );
+			if( new DateTimeUTC( value.Ticks ).TrySubtractTicks( *result, utcOffset ) ) {
+				long localOffset = TimeZone.GetLocalFromUtcOffset( result->Ticks );
+				if( utcOffset == localOffset )
+					return Convert.ConversionResult.OK;
+
+				return Convert.ConversionResult.Inexact;
+			}
+
+			if( utcOffset >= 0 ) *result = DateTimeUTC.MinValue;
+			else *result = DateTimeUTC.MaxValue;
+			return Convert.ConversionResult.Clamped;
+		}
+
+		public static ConversionResult TryConvert_AllowInexact( DateTimeUTC* result, DateTimeLocal value ) {
+			// if( value.Ticks == DateTime.MaxTicks ) {
+			// 	*result = DateTimeUTC.MaxValue;
+			// 	return Convert.ConversionResult.OK;
+			// }
+
+			// if( value == DateTimeLocal.MinValue ) {
+			// 	*result = DateTimeUTC.MinValue;
+			// 	return Convert.ConversionResult.OK;
+			// }
+
+			long utcOffset = TimeZone.GetUtcFromLocalOffset( value );
+			if( new DateTimeUTC( value.Ticks ).TrySubtractTicks( *result, utcOffset ) )
+				return Convert.ConversionResult.OK;
+
+			if( utcOffset >= 0 ) *result = DateTimeUTC.MinValue;
+			else *result = DateTimeUTC.MaxValue;
+			return Convert.ConversionResult.Clamped;
+		}
+
+		public static ConversionResult TryConvert( DateTimeUTC* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadDateTimeUTC();
+			if( value.IsEndOfStream ) {
+				*result = DateTimeUTC.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region DateTimeLocal
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, CStringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeLocal.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, CUtf8StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeLocal.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, CUtf16StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeLocal.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, CUtf32StringSpan value ) {
+			if( value.IsNullOrEmpty ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return DateTimeLocal.TryParse( value, *result );
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, DateTime value ) {
+			if( value.Ticks >= DateTime.MaxTicks ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.OK;
+			}
+
+			result->Ticks = ( ulong ) value.ToLocalTime().Ticks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, DateTimeUTC value ) {
+			// if( value == DateTimeUTC.MaxValue ) {
+			// 	*result = DateTimeLocal.MaxValue;
+			// 	return Convert.ConversionResult.OK;
+			// }
+
+			var offset = TimeZone.GetLocalFromUtcOffset( value );
+			if( new DateTimeLocal( value.Ticks ).TryAddTicks( *result, offset ) )
+				return Convert.ConversionResult.OK;
+
+			if( offset >= 0 ) *result = DateTimeLocal.MaxValue;
+			else *result = DateTimeLocal.MinValue;
+			return Convert.ConversionResult.Clamped;
+		}
+
+		public static ConversionResult TryConvert( DateTimeLocal* result, System.IO.BinaryReader value ) {
+			if( value == null ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			*result = value.ReadDateTimeLocal();
+			if( value.IsEndOfStream ) {
+				*result = DateTimeLocal.MaxValue;
+				return Convert.ConversionResult.EmptyValue;
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		#endregion
+
+		#region Direct
+
+		public static ConversionResult TryConvert( bool* result, bool value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, sbyte value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, byte value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, short value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, ushort value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, int value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, uint value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, long value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( bool* result, ulong value ) { *result = value != 0; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( sbyte* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( byte* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( short* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( short* result, short value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( ushort* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( ushort* result, ushort value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( int* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( int* result, short value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( int* result, int value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( uint* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( uint* result, ushort value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( uint* result, uint value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( long* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( long* result, short value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( long* result, int value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( long* result, long value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( ulong* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( ulong* result, ushort value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( ulong* result, uint value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( ulong* result, ulong value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( float* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, short value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, ushort value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, int value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, uint value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, long value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, ulong value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( float* result, float value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( double* result, sbyte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, byte value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, short value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, ushort value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, int value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, uint value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, long value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, ulong value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, float value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( double* result, double value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( DateTime* result, DateTime value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( DateTimeUTC* result, DateTimeUTC value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( DateTimeLocal* result, DateTimeLocal value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		public static ConversionResult TryConvert( TimeSpan* result, TimeSpan value ) { *result = value; return Convert.ConversionResult.OK; }
+		public static ConversionResult TryConvert( TimeDuration* result, TimeDuration value ) { *result = value; return Convert.ConversionResult.OK; }
+
+		#endregion
+	}
+}

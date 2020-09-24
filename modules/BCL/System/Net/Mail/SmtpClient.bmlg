@@ -1,11 +1,11 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
 //
 
-using System.IO;
 using System.Collections;
+using System.IO;
 
 namespace System.Net.Mail {
 	public partial class SmtpClient : System.Net.NetworkClient {
@@ -81,7 +81,7 @@ namespace System.Net.Mail {
 			if( line == null ) return SmtpStatusCode.Invalid;
 
 			int code;
-			uint remaining = ( uint ) line.Length;
+			uint remaining = line.Length;
 			var start = line.GetChars();
 
 			if( !int.TryFetch( start, remaining, code, true, false ) ) {
@@ -115,7 +115,7 @@ namespace System.Net.Mail {
 			return code == SmtpStatusCode.ServiceReady;
 		}
 
-		protected int FlushCommand() {
+		protected uint FlushCommand() {
 			_writer.WriteLine();
 
 			if( BatchMode ) {
@@ -135,7 +135,7 @@ namespace System.Net.Mail {
 				if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
 				_writer.Flush( FlushKind.Write );
 
-				return -1;
+				return uint.MaxValue;
 			}
 		}
 
@@ -160,7 +160,7 @@ namespace System.Net.Mail {
 					if( Trace ) using( Console.AttributedRegion( ConsoleColor.Yellow ) ) Console.Write( _writer );
 					_writer.Flush( FlushKind.Write );
 
-					for( var i = 0; i < _commands.Count; ++i ) {
+					for( var i = 0U; i < _commands.Count; ++i ) {
 						_commands[i] = ( int ) WaitResponse();
 					}
 				}
@@ -173,12 +173,12 @@ namespace System.Net.Mail {
 		}
 
 		// Get status codes for last batch
-		public SmtpStatusCode GetStatus( int transactionId ) {
-			if( transactionId < 0 || transactionId >= _commands.Count ) return SmtpStatusCode.Invalid;
+		public SmtpStatusCode GetStatus( uint transactionId ) {
+			if( transactionId >= _commands.Count ) return SmtpStatusCode.Invalid;
 			return ( SmtpStatusCode ) _commands[transactionId];
 		}
 
-		protected SmtpStatusCode WaitResponse( int transactionId ) {
+		protected SmtpStatusCode WaitResponse( uint transactionId ) {
 			if( BatchMode & Capabilities.Pipelining ) return SmtpStatusCode.Pipelined;
 			if( !BatchMode ) return WaitResponse();
 			return GetStatus( transactionId );
@@ -209,7 +209,7 @@ namespace System.Net.Mail {
 				if( line == null ) break;
 
 				int code;
-				uint remaining = ( uint ) line.Length;
+				uint remaining = line.Length;
 				var start = line.GetChars();
 
 				if( !int.TryFetch( start, remaining, code, true, false ) ) {
@@ -312,7 +312,7 @@ namespace System.Net.Mail {
 			return WaitResponse( transactionId );
 		}
 
-		public int BatchAuthPlain( string login, string password ) {
+		public uint BatchAuthPlain( string login, string password ) {
 			_writer.Write( "AUTH PLAIN " );
 
 			var logpass = ( "\0" + login + "\0" + password ).ToUtf8String();
@@ -327,7 +327,7 @@ namespace System.Net.Mail {
 			return WaitResponse( transactionId );
 		}
 
-		public int BatchMailFrom( string source ) {
+		public uint BatchMailFrom( string source ) {
 			_writer.Write( "MAIL FROM: " );
 			_writer.Write( source );
 
@@ -340,7 +340,7 @@ namespace System.Net.Mail {
 			return WaitResponse( transactionId );
 		}
 
-		public int BatchRecipientTo( string recipient ) {
+		public uint BatchRecipientTo( string recipient ) {
 			_writer.Write( "RCPT TO: " );
 			_writer.Write( recipient );
 
@@ -353,7 +353,7 @@ namespace System.Net.Mail {
 			return WaitResponse( transactionId );
 		}
 
-		public int BatchBeginData() {
+		public uint BatchBeginData() {
 			_writer.Write( "DATA" );
 
 			return FlushCommand();

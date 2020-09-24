@@ -9,17 +9,18 @@ namespace Example {
 	public partial class App {
 		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields )]
 		private struct AppSettings {
-			public bool Trace = true;                    // trace app execution
-			public int MaxThreads = 0;                   // thread count
+			public bool Trace = true; // trace app execution
+			public bool TraceFiber = true;
+			public uint MaxThreads = 4;       // thread count
 
-			public int ListenBacklog = 1024;             // queue length for completely established sockets waiting to be accepted
+			public uint ListenBacklog = 1024; // queue length for completely established sockets waiting to be accepted
 			public IPv4Endpoint ListenEndpoint = new IPv4Endpoint( 0, 0, 0, 0, 8080 );
 			public Utf8String ListenUnixPath = "/var/run/HttpServer.socket";
 
-			public int MaxClientRequestLength = 2048;
-			public int ClientFiberStackPages = 2;
+			public uint MaxClientRequestLength = 2048;
+			public uint ClientFiberStackPages = 2;
 			public bool FiberUseGuardPage = true;
-			public int MaxSessions = 0;
+			public uint MaxSessions = 0;
 
 			public AppSettings() {
 			}

@@ -27,10 +27,10 @@ namespace System.Runtime {
 			if( !_extendable ) return;
 
 			foreach( var segment in _manager.EnumerateFree() )
-				Memory.FreePages( ( void* ) segment.Start, ( int )( segment.Count / Memory.DefaultPageSize ) );
+				Memory.FreePages( ( void* ) segment.Start, ( uint ) segment.Count / Memory.DefaultPageSize );
 		}
 
-		public void* AllocatePages( int count ) {
+		public void* AllocatePages( uint count ) {
 			var allocationLength = count * Memory.DefaultPageSize;
 			var cached = _manager.Allocate( allocationLength );
 			if( cached.Start != null ) return cached.Start;
@@ -42,13 +42,13 @@ namespace System.Runtime {
 			var result = ( byte* ) Memory.AllocatePages( reserveBlocks * Memory.DefaultPageReserveCount );
 			if( result == null ) return null;
 
-			_manager.Extend( new MemorySegment( result, ( uintptr ) reserveLength ) );
+			_manager.Extend( new MemorySegment( result, reserveLength ) );
 
 			cached = _manager.Allocate( allocationLength );
 			return cached.Start;
 		}
 
-		public void FreePages( void* ptr, int count ) {
+		public void FreePages( void* ptr, uint count ) {
 			var allocationLength = ( uintptr )( count * Memory.DefaultPageSize );
 			var block = new MemorySegment( ptr, allocationLength );
 
@@ -65,7 +65,7 @@ namespace System.Runtime {
 				if( start < ( uintptr ) segment.Start ) start += Memory.DefaultPageReserveSize;
 				if( start >= end ) continue;
 
-				Memory.FreePages( ( void* ) start, ( int )( ( end - start ) / Memory.DefaultPageSize ) );
+				Memory.FreePages( ( void* ) start, ( uint )( ( end - start ) / Memory.DefaultPageSize ) );
 				_manager.Deallocate( new MemorySegment( ( void* ) start, end - start ) );
 			}
 		}

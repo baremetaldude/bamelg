@@ -1,0 +1,64 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.Sctp {
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libsctp.so.1" )]
+	public static partial struct SctpApi {
+		public extern static int sctp_bindx( int sd, sockaddr* addrs, int addrcnt, int flags );
+		public extern static int sctp_connectx( int sd, sockaddr* addrs, int addrcnt, int* id );
+		public extern static int sctp_freeladdrs( sockaddr* addrs );
+		public extern static int sctp_freepaddrs( sockaddr* addrs );
+		public extern static int sctp_getaddrlen( ushort family );
+		public extern static int sctp_getladdrs( int sd, int id, sockaddr** addrs );
+		public extern static int sctp_getpaddrs( int sd, int id, sockaddr** addrs );
+		public extern static int sctp_opt_info( int sd, int id, int opt, void* arg, uint* size );
+		public extern static int sctp_peeloff( int sd, int assocId );
+		public extern static int sctp_recvmsg( int s, void* msg, uint len, sockaddr* from, uint* fromlen, sctp_sndrcvinfo* sinfo, int* msgFlags );
+		public extern static int sctp_recvv( int s, iovec* iov, int iovlen, sockaddr* from, uint* fromlen, void* info, uint* infolen, uint* infotype, int* flags );
+		public extern static int sctp_send( int s, void* msg, uint len, sctp_sndrcvinfo* sinfo, int flags );
+		public extern static int sctp_sendmsg( int s, void* msg, uint len, sockaddr* to, uint tolen, uint ppid, uint flags, ushort streamNo, uint timetolive, uint context );
+		public extern static int sctp_sendv( int s, iovec* iov, int iovcnt, sockaddr* addrs, int addrcnt, void* info, uint infolen, uint infotype, int flags );
+	}
+	public enum UnnamedEnum_AE77C9B3 : uint {
+		SCTP_RECVV_NOINFO =  0,
+		SCTP_RECVV_RCVINFO = 1,
+		SCTP_RECVV_NXTINFO = 2,
+		SCTP_RECVV_RN =      3,
+	}
+	public enum UnnamedEnum_AE77CDF2 : uint {
+		SCTP_SENDV_NOINFO =   0,
+		SCTP_SENDV_SNDINFO =  1,
+		SCTP_SENDV_PRINFO =   2,
+		SCTP_SENDV_AUTHINFO = 3,
+		SCTP_SENDV_SPA =      4,
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_recvv_rn {
+		[ExplicitOffset( Offset = 0 )]
+		public sctp_rcvinfo recvv_rcvinfo;
+		[ExplicitOffset( Offset = 28 )]
+		public sctp_nxtinfo recvv_nxtinfo;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct sctp_sendv_spa {
+		[ExplicitOffset( Offset = 0 )]
+		public uint sendv_flags;
+		[ExplicitOffset( Offset = 4 )]
+		public sctp_sndinfo sendv_sndinfo;
+		[ExplicitOffset( Offset = 20 )]
+		public sctp_prinfo sendv_prinfo;
+		[ExplicitOffset( Offset = 28 )]
+		public sctp_authinfo sendv_authinfo;
+	}
+}

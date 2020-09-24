@@ -18,7 +18,102 @@ namespace System.Runtime {
 		public struct Context {
 			public void* Object;
 			public Binder Binder;
-			public IEvent BinderEvent;
+			public IErrorHandler BinderEvent;
+
+			private Convert.ConversionResult CheckResult( Convert.ConversionResult result, uint index ) {
+				switch( result ) {
+					case Convert.ConversionResult.MissedMapping: BinderEvent.MissedMapping( index ); break;
+
+					case Convert.ConversionResult.Clamped: BinderEvent.Clamped( index ); break;
+					case Convert.ConversionResult.IncompatibleType: BinderEvent.IncompatibleType( 0 ); break;
+					case Convert.ConversionResult.IncompatibleValue: BinderEvent.IncompatibleValue( 0 ); break;
+					case Convert.ConversionResult.EmptyValue: BinderEvent.EmptyValue( 0 ); break;
+				}
+
+				return result;
+			}
+
+			public Convert.ConversionResult SetValue( uint index, bool value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, sbyte value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, byte value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, short value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, ushort value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, int value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, uint value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, long value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, ulong value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, float value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, double value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, SbcsString value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, Utf8String value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, CUtf16StringSpan value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, string value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, Utf32String value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, DateTime value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, TimeSpan value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, Guid value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, byte[] value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, BinaryReader value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, ITextSerializable value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult SetValue( uint index, StringBuilder value ) { return CheckResult( Binder.SetValue( Object, index, value ), index ); }
+
+			public Convert.ConversionResult GetValue( uint index, bool& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, sbyte& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, byte& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, short& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, ushort& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, int& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, uint& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, long& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, ulong& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, float& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, double& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+			public Convert.ConversionResult GetValue( uint index, BinaryWriter writer ) { return CheckResult( Binder.GetValue( Object, index, writer ), index ); }
+			public Convert.ConversionResult GetValue( uint index, byte[]& value ) { return CheckResult( Binder.GetValue( Object, index, value ), index ); }
+		}
+
+		public interface IErrorHandler {
+			void MissedMapping( uint mapping );
+
+			void Clamped( uint mapping );
+			void IncompatibleType( uint mapping );
+			void IncompatibleValue( uint mapping );
+			void EmptyValue( uint mapping );
+		}
+
+		public struct BinderListenerSilent : IErrorHandler {
+			public static readonly BinderListenerSilent Instance;
+
+			public void MissedMapping( uint mapping ) { }
+
+			public void Clamped( uint mapping ) { }
+			public void IncompatibleType( uint mapping ) { }
+			public void IncompatibleValue( uint mapping ) { }
+			public void EmptyValue( uint mapping ) { }
+		}
+
+		public struct BinderListenerConsole : IErrorHandler {
+			public static readonly BinderListenerConsole Instance;
+
+			public void MissedMapping( uint mapping ) {
+				Console.WriteLine( "Binder[{0}]: Not found", mapping );
+			}
+
+			public void Clamped( uint mapping ) {
+				Console.WriteLine( "Binder[{0}]: Clamped", mapping );
+			}
+
+			public void IncompatibleType( uint mapping ) {
+				Console.WriteLine( "Binder[{0}]: Incompatible type", mapping );
+			}
+
+			public void IncompatibleValue( uint mapping ) {
+				Console.WriteLine( "Binder[{0}]: Incompatible value", mapping );
+			}
+
+			public void EmptyValue( uint mapping ) {
+				Console.WriteLine( "Binder[{0}]: Empty", mapping );
+			}
 		}
 
 		public Binder() {
@@ -27,8 +122,8 @@ namespace System.Runtime {
 		public Context CreateContext( void* object ) { return new Context { Binder = this, Object = object, BinderEvent = BinderListenerConsole.Instance }; }
 		public Context CreateContext( RuntimeObjectBase* object ) { return new Context { Binder = this, Object = bitcast<void*>( *object ), BinderEvent = BinderListenerConsole.Instance }; }
 
-		public Context CreateContext( void* object, IEvent binderEvent ) { return new Context { Binder = this, Object = object, BinderEvent = binderEvent }; }
-		public Context CreateContext( RuntimeObjectBase* object, IEvent binderEvent ) { return new Context { Binder = this, Object = bitcast<void*>( *object ), BinderEvent = binderEvent }; }
+		public Context CreateContext( void* object, IErrorHandler binderEvent ) { return new Context { Binder = this, Object = object, BinderEvent = binderEvent }; }
+		public Context CreateContext( RuntimeObjectBase* object, IErrorHandler binderEvent ) { return new Context { Binder = this, Object = bitcast<void*>( *object ), BinderEvent = binderEvent }; }
 
 		public Binder( Mapping[] mappings ) {
 			Mappings = mappings;
@@ -101,49 +196,9 @@ namespace System.Runtime {
 			}
 		}
 
-		private Mapping* GetMapping( Context& context, int index ) {
-			if( index < 0 || index > Mappings.Length ) {
-				context.BinderEvent.BadMapping( index );
-				return null;
-			}
-
+		private Mapping* GetMapping( uint index ) {
+			if( index >= Mappings.Length ) return null;
 			return &Mappings[index];
-		}
-
-		public interface IEvent {
-			void BadMapping( int mapping );
-			void NotFound( IFormattable name );
-			void IncompatibleMapping( Mapping* mapping, Type& type );
-			void ParseError( Mapping* mapping );
-		}
-
-		public struct BinderListenerSilent : IEvent {
-			public static readonly BinderListenerSilent Instance;
-
-			public void BadMapping( int mapping ) { }
-			public void NotFound( IFormattable name ) { }
-			public void IncompatibleMapping( Mapping* mapping, Type& type ) { }
-			public void ParseError( Mapping* mapping ) { }
-		}
-
-		public struct BinderListenerConsole : IEvent {
-			public static readonly BinderListenerConsole Instance;
-
-			public void BadMapping( int mapping ) {
-				Console.WriteLine( "Bad mapping {0}", mapping );
-			}
-
-			public void NotFound( IFormattable name ) {
-				Console.WriteLine( "Mapping for '{0}' not found", name );
-			}
-
-			public void IncompatibleMapping( Mapping* mapping, Type& type ) {
-				Console.WriteLine( "Incompatible mapping '{0}' for type '{1}'", *mapping, type );
-			}
-
-			public void ParseError( Mapping* mapping ) {
-				Console.WriteLine( "Parse error for mapping '{0}'", *mapping );
-			}
 		}
 
 		public static sbyte ToInt8( bool value ) { return value ? ( sbyte ) 1 : ( sbyte ) 0; }
@@ -268,25 +323,25 @@ namespace System.Runtime {
 		public static ulong ToUInt64( int value ) { return value >= 0 ? ( ulong ) value : ( ulong ) 0; }
 		public static ulong ToUInt64( long value ) { return value >= 0 ? ( ulong ) value : ( ulong ) 0; }
 
-		private static yield<Mapping> EnumerateMappings( UserType& type ) {
+		private static yield<Mapping> EnumerateMappings( UserType& type, bool publicMembersOnly ) {
 			for( var @base = &type; @base != null; @base = &@base->BaseType ) {
 				if( *@base == typeof( RuntimeObjectBase ) ) break;
 
-				for( var i = 0; i < @base->FieldCount; ++i ) {
+				for( var i = 0U; i < @base->FieldCount; ++i ) {
 					var& field = @base->FieldsStart[i];
 
 					if( field.IsStatic ) continue;
-					if( field.AccessKind != AccessKind.Public ) continue;
+					if( publicMembersOnly && field.AccessKind != AccessKind.Public ) continue;
 					if( field.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 
 					yield return new Mapping( field );
 				}
 
-				for( var i = 0; i < @base->PropertyCount; ++i ) {
+				for( var i = 0U; i < @base->PropertyCount; ++i ) {
 					var& property = @base->PropertiesStart[i];
 
 					if( property.IsStatic ) continue;
-					if( property.AccessKind != AccessKind.Public ) continue;
+					if( publicMembersOnly && property.AccessKind != AccessKind.Public ) continue;
 					if( property.IsDefined( typeof( NonSerializableAttribute ) ) ) continue;
 					if( property.GetMethod == nullref | property.SetMethod == nullref ) continue;
 
@@ -295,26 +350,26 @@ namespace System.Runtime {
 			}
 		}
 
-		public struct MapperEmpty {
+		public struct MapperIndexed {
 			private List<Binder.Mapping> _mapping;
 			public readonly Binder Binder = new Binder();
 
-			public MapperEmpty() {
+			public MapperIndexed() {
 				_mapping = new List<Binder.Mapping>();
 			}
 
-			public MapperEmpty( UserType& type )
+			public MapperIndexed( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperEmpty( int capacity ) {
+			public MapperIndexed( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) )
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) )
 					_mapping.Add( mapping );
 			}
 
@@ -322,13 +377,13 @@ namespace System.Runtime {
 				_mapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( field ) );
 				return result;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				_mapping.Add( new Binder.Mapping( property ) );
 				return result;
@@ -341,31 +396,31 @@ namespace System.Runtime {
 
 		public struct MapperSbcs {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<SbcsString, int> IdMapping;
+			public readonly Dictionary<SbcsString, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperSbcs() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<SbcsString, int>();
+				IdMapping = new Dictionary<SbcsString, uint>();
 			}
 
-			public MapperSbcs( UserType& type )
+			public MapperSbcs( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperSbcs( int capacity ) {
+			public MapperSbcs( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<SbcsString, int>( capacity );
+				IdMapping = new Dictionary<SbcsString, uint>( capacity );
 			}
 
-			public int this[SbcsString name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[SbcsString name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -376,44 +431,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( field.Name, _mapping.Count ) || IdMapping.Add( field.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( SbcsString name, UserType.Field& field ) {
+			public uint Add( SbcsString name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( property.Name, _mapping.Count ) || IdMapping.Add( property.ToSbcsString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( SbcsString name, UserType.Property& property ) {
+			public uint Add( SbcsString name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -423,31 +478,31 @@ namespace System.Runtime {
 
 		public struct MapperUtf8 {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<Utf8String, int> IdMapping;
+			public readonly Dictionary<Utf8String, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperUtf8() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<Utf8String, int>();
+				IdMapping = new Dictionary<Utf8String, uint>();
 			}
 
-			public MapperUtf8( UserType& type )
+			public MapperUtf8( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperUtf8( int capacity ) {
+			public MapperUtf8( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<Utf8String, int>( capacity );
+				IdMapping = new Dictionary<Utf8String, uint>( capacity );
 			}
 
-			public int this[Utf8String name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[Utf8String name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -458,44 +513,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( Utf8String ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( Utf8String name, UserType.Field& field ) {
+			public uint Add( Utf8String name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( Utf8String ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToUtf8String(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( Utf8String name, UserType.Property& property ) {
+			public uint Add( Utf8String name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -505,31 +560,31 @@ namespace System.Runtime {
 
 		public struct MapperUtf16 {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<string, int> IdMapping;
+			public readonly Dictionary<string, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 
 			public MapperUtf16() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<string, int>();
+				IdMapping = new Dictionary<string, uint>();
 			}
 
-			public MapperUtf16( UserType& type )
+			public MapperUtf16( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperUtf16( int capacity ) {
+			public MapperUtf16( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<string, int>( capacity );
+				IdMapping = new Dictionary<string, uint>( capacity );
 			}
 
-			public int this[string name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[string name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -540,44 +595,44 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				var result = _mapping.Count;
-				if( IdMapping.Add( ( string ) field.Name, _mapping.Count ) || IdMapping.Add( field.ToString(), _mapping.Count ) ) {
+				if( IdMapping.Add( ( string ) field.Name, result ) || IdMapping.Add( field.ToString(), result ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( string name, UserType.Field& field ) {
+			public uint Add( string name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( ( string ) property.Name, _mapping.Count ) || IdMapping.Add( property.ToString(), _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( string name, UserType.Property& property ) {
+			public uint Add( string name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -587,32 +642,32 @@ namespace System.Runtime {
 
 		public struct MapperCUtf16Span {
 			private List<Binder.Mapping> _mapping;
-			public readonly Dictionary<CUtf16StringSpan, int> IdMapping;
+			public readonly Dictionary<CUtf16StringSpan, uint> IdMapping;
 			public readonly Binder Binder = new Binder();
 			public HashSet<string> RetainSet = null;
 
 			public MapperCUtf16Span() {
 				_mapping = new List<Binder.Mapping>();
-				IdMapping = new Dictionary<CUtf16StringSpan, int>();
+				IdMapping = new Dictionary<CUtf16StringSpan, uint>();
 			}
 
-			public MapperCUtf16Span( UserType& type )
+			public MapperCUtf16Span( UserType& type, bool publicMembersOnly = false )
 				: this( 8 ) {
-				Add( type );
+				Add( type, publicMembersOnly );
 				Apply();
 			}
 
-			public MapperCUtf16Span( int capacity ) {
+			public MapperCUtf16Span( uint capacity ) {
 				_mapping = new List<Binder.Mapping>( capacity );
-				IdMapping = new Dictionary<CUtf16StringSpan, int>( capacity );
+				IdMapping = new Dictionary<CUtf16StringSpan, uint>( capacity );
 			}
 
-			public int this[CUtf16StringSpan name] {
-				get { int result; return IdMapping.TryGetValue( name, result ) ? result : -1; }
+			public uint this[CUtf16StringSpan name] {
+				get { uint result; return IdMapping.TryGetValue( name, result ) ? result : uint.MaxValue; }
 			}
 
-			public void Add( UserType& type ) {
-				foreach( var mapping in EnumerateMappings( type ) ) {
+			public void Add( UserType& type, bool publicMembersOnly = false ) {
+				foreach( var mapping in EnumerateMappings( type, publicMembersOnly ) ) {
 					if( mapping.Field != null ) Add( *mapping.Field );
 					else if( mapping.Property != null ) Add( *mapping.Property );
 				}
@@ -623,7 +678,7 @@ namespace System.Runtime {
 				IdMapping.Clear();
 			}
 
-			public int Add( UserType.Field& field ) {
+			public uint Add( UserType.Field& field ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) field.Name;
@@ -635,20 +690,20 @@ namespace System.Runtime {
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( CUtf16StringSpan name, UserType.Field& field ) {
+			public uint Add( CUtf16StringSpan name, UserType.Field& field ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( field ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( UserType.Property& property ) {
+			public uint Add( UserType.Property& property ) {
 				if( RetainSet == null ) RetainSet = new HashSet<string>();
 
 				var name = ( string ) property.Name;
@@ -660,17 +715,17 @@ namespace System.Runtime {
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			public int Add( CUtf16StringSpan name, UserType.Property& property ) {
+			public uint Add( CUtf16StringSpan name, UserType.Property& property ) {
 				var result = _mapping.Count;
 				if( IdMapping.Add( name, _mapping.Count ) ) {
 					_mapping.Add( new Binder.Mapping( property ) );
 					return result;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
 			public void Apply() {
@@ -678,49 +733,50 @@ namespace System.Runtime {
 			}
 		}
 
-		private bool TryDeserializeText( Context& context, Type& type, Mapping* column, TypedReference textValue ) {
-			if( !type.IsUserType ) return false;
+		private Convert.ConversionResult TryDeserializeText( void* object, Type& type, Mapping* column, TypedReference textValue ) {
+			if( !type.IsUserType ) return Convert.ConversionResult.IncompatibleType;
 
 			var& userType = type.AsUserType;
 			var& field = *column->Field;
 			var& property = *column->Property;
 			var holderSize = userType.InstanceSize;
-			var result = false;
 
 			if( type.IsRuntimeObject ) {
 				if( field != nullref ) {
-					var fieldAddress = cast<byte*>( context.Object ) + field.ByteOffset;
-					result = DeserializeText( textValue, fieldAddress, *bitcast<void**>( fieldAddress ), type );
+					var fieldAddress = cast<byte*>( object ) + field.ByteOffset;
+					return DeserializeText( textValue, fieldAddress, *bitcast<void**>( fieldAddress ), type );
 				}
 				else if( property != nullref ) {
 					void* holder = null;
 
-					if( result = DeserializeText( textValue, &holder, holder, type ) )
-						property.UnsafeSetValue( context.Object, &holder );
+					var result = DeserializeText( textValue, &holder, holder, type );
+					if( result )
+						property.UnsafeSetValue( object, &holder );
 
 					type.FreeHolder( &holder );
 				}
 			}
 			else if( userType.QueryInterface( typeof( ITextSerializable ) ) != null ) {
 				if( field != nullref ) {
-					var fieldAddress = cast<byte*>( context.Object ) + field.ByteOffset;
-					result = DeserializeText( textValue, fieldAddress, fieldAddress, type );
+					var fieldAddress = cast<byte*>( object ) + field.ByteOffset;
+					return DeserializeText( textValue, fieldAddress, fieldAddress, type );
 				}
 				else if( property != nullref ) {
 					var holder = stackalloc byte[holderSize];
 					Memory.Clear( holder, ( uint ) holderSize );
 
-					if( result = DeserializeText( textValue, holder, holder, type ) )
-						property.UnsafeSetValue( context.Object, holder );
+					var result = DeserializeText( textValue, holder, holder, type );
+					if( result )
+						property.UnsafeSetValue( object, holder );
 
 					type.FreeHolder( holder );
 				}
 			}
 
-			return result;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool DeserializeText( TypedReference textValue, void* result, void* target, Type& type ) {
+		private Convert.ConversionResult DeserializeText( TypedReference textValue, void* result, void* target, Type& type ) {
 			var serializable = type.QueryInterface<ITextSerializable>( target );
 			var @interface = bitcast<InterfaceInstance>( serializable );
 
@@ -731,174 +787,184 @@ namespace System.Runtime {
 					serializable.Deserialize( result, builder.Value, null );
 				}
 
-				return true;
+				return Convert.ConversionResult.OK;
 			}
 
-			return false;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool TryDeserializeBinary( Context& context, Type& type, Mapping* column, BinaryReader reader ) {
-			if( !type.IsUserType ) return false;
+		private Convert.ConversionResult TryDeserializeBinary( void* object, Type& type, Mapping* column, BinaryReader reader ) {
+			if( !type.IsUserType ) return Convert.ConversionResult.IncompatibleType;
 
 			var& userType = type.AsUserType;
 			var& field = *column->Field;
 			var& property = *column->Property;
 			var holderSize = userType.InstanceSize;
-			var result = false;
 
 			if( type.IsRuntimeObject ) {
 				if( field != nullref ) {
-					var fieldAddress = cast<byte*>( context.Object ) + field.ByteOffset;
-					result = DeserializeBinary( reader, fieldAddress, *cast<void**>( fieldAddress ), type );
+					var fieldAddress = cast<byte*>( object ) + field.ByteOffset;
+					return DeserializeBinary( reader, fieldAddress, *cast<void**>( fieldAddress ), type );
 				}
 				else if( property != nullref ) {
 					void* holder = null;
 
-					if( result = DeserializeBinary( reader, &holder, holder, type ) )
-						property.UnsafeSetValue( context.Object, &holder );
+					var result = DeserializeBinary( reader, &holder, holder, type );
+					if( result )
+						property.UnsafeSetValue( object, &holder );
 
 					type.FreeHolder( &holder );
+
+					return result;
 				}
 			}
 			else if( userType.QueryInterface( typeof( IBinarySerializable ) ) != null ) {
 				if( field != nullref ) {
-					var fieldAddress = cast<byte*>( context.Object ) + field.ByteOffset;
-					result = DeserializeBinary( reader, fieldAddress, fieldAddress, type );
+					var fieldAddress = cast<byte*>( object ) + field.ByteOffset;
+					return DeserializeBinary( reader, fieldAddress, fieldAddress, type );
 				}
 				else if( property != nullref ) {
 					var holder = stackalloc byte[holderSize];
 					Memory.Clear( holder, ( uint ) holderSize );
 
-					if( result = DeserializeBinary( reader, holder, holder, type ) )
-						property.UnsafeSetValue( context.Object, holder );
+					var result = DeserializeBinary( reader, holder, holder, type );
+					if( result )
+						property.UnsafeSetValue( object, holder );
 
 					type.FreeHolder( holder );
+					return result;
 				}
 			}
 
-			return result;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool DeserializeBinary( BinaryReader reader, void* result, void* target, Type& type ) {
+		private Convert.ConversionResult DeserializeBinary( BinaryReader reader, void* result, void* target, Type& type ) {
 			var serializable = type.QueryInterface<IBinarySerializable>( target );
 			var @interface = bitcast<InterfaceInstance>( serializable );
 
 			if( @interface.Type != null ) {
 				serializable.Deserialize( result, reader, null );
 
-				return true;
+				return Convert.ConversionResult.OK;
 			}
 
-			return false;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool TrySerializeText( Context& context, Type& type, Mapping* column, StringBuilder textValue, bool& isNull ) {
-			if( !type.IsUserType ) return false;
+		private Convert.ConversionResult TrySerializeText( void* object, Type& type, Mapping* column, StringBuilder textValue ) {
+			if( !type.IsUserType ) return Convert.ConversionResult.IncompatibleType;
 
 			var& userType = type.AsUserType;
 			var& field = *column->Field;
 			var& property = *column->Property;
 			var holderSize = userType.InstanceSize;
-			var result = false;
 
 			if( type.IsRuntimeObject ) {
 				if( field != nullref ) {
-					var holder = *cast<void**>( cast<byte*>( context.Object ) + field.ByteOffset );
-					isNull = holder == null;
-					result = SerializeText( textValue, holder, type );
+					var holder = *cast<void**>( cast<byte*>( object ) + field.ByteOffset );
+					if( holder == null ) return Convert.ConversionResult.EmptyValue;
+					return SerializeText( textValue, holder, type );
 				}
 				else if( property != nullref ) {
 					void* holder = null;
 
-					property.UnsafeGetValue( context.Object, &holder );
-					isNull = holder == null;
-					result = SerializeText( textValue, holder, type );
+					property.UnsafeGetValue( object, &holder );
+					if( holder == null ) return Convert.ConversionResult.EmptyValue;
+					var result = SerializeText( textValue, holder, type );
 
 					type.FreeHolder( &holder );
+
+					return result;
 				}
 			}
 			else if( userType.QueryInterface( typeof( ITextSerializable ) ) != null ) {
 				if( field != nullref ) {
-					result = SerializeText( textValue, cast<byte*>( context.Object ) + field.ByteOffset, type );
+					return SerializeText( textValue, cast<byte*>( object ) + field.ByteOffset, type );
 				}
 				else if( property != nullref ) {
 					var holder = stackalloc byte[holderSize];
 					Memory.Clear( holder, ( uint ) holderSize );
 
-					property.UnsafeGetValue( context.Object, holder );
-					result = SerializeText( textValue, holder, type );
+					property.UnsafeGetValue( object, holder );
+					var result = SerializeText( textValue, holder, type );
 
 					type.FreeHolder( holder );
+
+					return result;
 				}
 			}
 
-			return result;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool SerializeText( StringBuilder textValue, void* target, Type& type ) {
+		private Convert.ConversionResult SerializeText( StringBuilder textValue, void* target, Type& type ) {
 			var serializable = type.QueryInterface<ITextSerializable>( target );
 			var @interface = bitcast<InterfaceInstance>( serializable );
 
 			if( @interface.Type != null ) {
 				serializable.Serialize( textValue, "", null );
 
-				return true;
+				return Convert.ConversionResult.OK;
 			}
 
-			return false;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool TrySerializeBinary( Context& context, Type& type, Mapping* column, BinaryWriter writer ) {
-			if( !type.IsUserType ) return false;
+		private Convert.ConversionResult TrySerializeBinary( void* object, Type& type, Mapping* column, BinaryWriter writer ) {
+			if( !type.IsUserType ) return Convert.ConversionResult.IncompatibleType;
 
 			var& userType = type.AsUserType;
 			var& field = *column->Field;
 			var& property = *column->Property;
 			var holderSize = userType.InstanceSize;
-			var result = false;
 
 			if( type.IsRuntimeObject ) {
 				if( field != nullref ) {
-					result = SerializeBinary( writer, *cast<void**>( cast<byte*>( context.Object ) + field.ByteOffset ), type );
+					return SerializeBinary( writer, *cast<void**>( cast<byte*>( object ) + field.ByteOffset ), type );
 				}
 				else if( property != nullref ) {
 					void* holder = null;
 
-					property.UnsafeGetValue( context.Object, &holder );
-					result = SerializeBinary( writer, holder, type );
+					property.UnsafeGetValue( object, &holder );
+					var result = SerializeBinary( writer, holder, type );
 
 					type.FreeHolder( &holder );
+
+					return result;
 				}
 			}
 			else if( userType.QueryInterface( typeof( IBinarySerializable ) ) != null ) {
 				if( field != nullref ) {
-					result = SerializeBinary( writer, cast<byte*>( context.Object ) + field.ByteOffset, type );
+					return SerializeBinary( writer, cast<byte*>( object ) + field.ByteOffset, type );
 				}
 				else if( property != nullref ) {
 					var holder = stackalloc byte[holderSize];
 					Memory.Clear( holder, ( uint ) holderSize );
 
-					property.UnsafeGetValue( context.Object, holder );
-					result = SerializeBinary( writer, holder, type );
+					property.UnsafeGetValue( object, holder );
+					var result = SerializeBinary( writer, holder, type );
 
 					type.FreeHolder( holder );
+
+					return result;
 				}
 			}
 
-			return result;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		private bool SerializeBinary( BinaryWriter writer, void* target, Type& type ) {
+		private Convert.ConversionResult SerializeBinary( BinaryWriter writer, void* target, Type& type ) {
 			var serializable = type.QueryInterface<IBinarySerializable>( target );
 			var @interface = bitcast<InterfaceInstance>( serializable );
 
 			if( @interface.Type != null ) {
 				serializable.Serialize( writer, null );
 
-				return true;
+				return Convert.ConversionResult.OK;
 			}
 
-			return false;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 	}
 }

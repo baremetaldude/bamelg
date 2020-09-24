@@ -1,0 +1,32 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Serialization;
+
+namespace System {
+	public sealed partial struct DateTimeLocal : IBinarySerializable, ITextSerializable, IFormattable {
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadDateTimeLocal(); }
+
+		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "S" ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { PrimitiveTypesParser.TryParseDateTime<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); }
+
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, Ticks, DateTimeKind.Local, format ?? "G" ); }
+
+		public DateTimeUTC ToUniversalTime() { DateTimeUTC result; Assert.IsTrue( Convert.TryConvert_AllowInexact( &result, this ) ); return result; }
+
+		public static explicit operator DateTimeUTC( DateTimeLocal value ) { DateTimeUTC result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeLocal( DateTimeUTC value ) { DateTimeLocal result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+
+		public static DateTimeLocal Now {
+			get {
+				var utcNow = DateTimeUTC.UtcNow;
+				return new DateTimeLocal( utcNow.Ticks + TimeZone.GetLocalFromUtcOffset( utcNow.Ticks ) );
+			}
+		}
+	}
+}

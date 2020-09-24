@@ -130,14 +130,14 @@ namespace System {
 	[AttributeUsage( Targets = AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Field )]
 	public struct AlignmentAttribute : Attribute {
 		[RequiredField]
-		public int Boundary;
+		public uint Boundary;
 	}
 
 	// Используется для указания точного расположения поля внутри типа
 	[AttributeUsage( Targets = AttributeTargets.Field )]
 	public struct ExplicitOffsetAttribute : Attribute {
 		[RequiredField]
-		public int Offset;
+		public uint Offset;
 	}
 
 	// Overlapped fields did not participate in destructors and postblit constructors
@@ -145,21 +145,21 @@ namespace System {
 	[AttributeUsage( Targets = AttributeTargets.Field )]
 	public struct OverlappedAttribute : Attribute {
 		[RequiredField]
-		public int Offset;
+		public uint Offset;
 	}
 
 	// выравнивание размеров типов
 	[AttributeUsage( Targets = AttributeTargets.Class | AttributeTargets.Struct )]
 	public struct PadAttribute : Attribute {
 		[RequiredField]
-		public int Boundary;
+		public uint Boundary;
 	}
 
 	// точное указание размера типа
 	[AttributeUsage( Targets = AttributeTargets.Class | AttributeTargets.Struct )]
 	public struct ExplicitSizeAttribute : Attribute {
 		[RequiredField]
-		public int Size;
+		public uint Size;
 	}
 
 	/// Этим атрибутом помечаются статические методы, которые будут использоваться при юнит-тестировании.
@@ -201,7 +201,7 @@ namespace System {
 	[AttributeUsage( Targets = AttributeTargets.Struct )]
 	public struct PrimitiveTypeAttribute : Attribute {
 		[RequiredField]
-		public int Size;
+		public uint Size;
 	}
 
 	[Flags]
@@ -219,7 +219,7 @@ namespace System {
 	}
 
 	// Упраляет генерацией метаданных. По-умолчанию поля 'Properties', 'Fields', 'Methods', 'Constants'
-	[AttributeUsage( Targets = AttributeTargets.Struct | AttributeTargets.Class )]
+	[AttributeUsage( Targets = AttributeTargets.Struct | AttributeTargets.Class | AttributeTargets.Enum )]
 	public struct ReflectionMetadataAttribute : Attribute {
 		public ReflectionMetadata Mask;
 	}
@@ -269,5 +269,15 @@ namespace System {
 	// Simplify error code checking by marking success error code values in enum
 	[AttributeUsage( Targets = AttributeTargets.Field )]
 	public struct ErrorCodeSuccessAttribute : Attribute {
+	}
+
+	[AttributeUsage( Targets = AttributeTargets.Class )]
+	public struct RelaxedReleaseAttribute : Attribute {
+	}
+
+	[AttributeUsage( Targets = AttributeTargets.Method )]
+	public struct MethodBoundaryActionAttribute : Attribute {
+		//	public void Enter() { }
+		//	public void Leave() { }
 	}
 }

@@ -243,7 +243,7 @@ namespace Example {
 						case 0:
 							if( field.Type == TypeKind.Set ) {
 								var localSet = reader.ReadSetBegin();
-								Success = new HashSet<Utf8String>( localSet.Count );
+								Success = new HashSet<Utf8String>( ( uint ) localSet.Count );
 								for( var localCounter = 0; localCounter < localSet.Count; ++localCounter ) {
 									var localElement = reader.ReadString();
 									_success.Add( localElement );
@@ -269,7 +269,7 @@ namespace Example {
 					if( Success != null ) {
 						writer.WriteFieldBegin( "Success", TypeKind.Set, 0 );
 						{
-							writer.WriteSetBegin( TypeKind.String, _success.Count );
+							writer.WriteSetBegin( TypeKind.String, ( int ) _success.Count );
 							foreach( var item in _success ) {
 								writer.WriteString( item );
 							}

@@ -11,9 +11,9 @@ using System.Net;
 namespace Platform.IO {
 	// Должен использоваться с неблокирующими сокетами в Fiber'ах либо с блокирующими в тредах
 	public class NetworkStream : IStream {
-		public TimeSpan ConnectTimeout { get; set; }
-		public TimeSpan WriteTimeout { get; set; }
-		public TimeSpan ReadTimeout { get; set; }
+		public TimeDuration ConnectTimeout { get; set; }
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
 
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
@@ -141,35 +141,38 @@ namespace Platform.IO {
 		}
 
 		// Read будет возвращать меньше байт чем ожидается только в случае закрытия соединения
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
-			for( ; count > 0; ) {
+			var transmitted = 0U;
+			for( ; count != 0; ) {
 			restart_ReadFile:
 				var error = _handle.Read( ReadTimeout, 0, data, count, transmitted );
+				data += transmitted;
+
+				if( error == SystemErrorCode.ERROR_HANDLE_EOF )
+					break;
+
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 					break;
 				}
 
-				data += transmitted;
 				if( transmitted < count ) break;
-
 				count -= transmitted;
 			}
 
-			return ( int )( data - ( byte* ) buffer );
+			return ( uint )( data - ( byte* ) buffer );
 		}
 
-		public void Write( void* buffer, int count ) {
-			if( !_handle.IsValid || count == 0 || buffer == null ) return;
+		public uint Write( void* buffer, uint count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0U;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
 				var error = _handle.Write( WriteTimeout, 0, data, count, transmitted );
@@ -181,19 +184,81 @@ namespace Platform.IO {
 				data += transmitted;
 				count -= transmitted;
 			}
+
+			return transmitted;
 		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+		uint IStream.Read( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var readen = Read( segment.Start, ( uint ) segment.Count );
+				result += readen;
+
+				if( readen != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var written = Write( segment.Start, ( uint ) segment.Count );
+				result += written;
+
+				if( written != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		public bool IsClosed() {
+			return false;
+		}
+
+		public void EnableKeepAlive( TimeDuration timeout, TimeDuration interval ) {
+			EnableKeepAlive( ( uint ) timeout.TotalMilliseconds, ( uint ) interval.TotalMilliseconds );
+		}
+
+		private const uint SIO_KEEPALIVE_VALS = 2550136836;
+		public void EnableKeepAlive( uint timeout, uint interval ) {
+			// Defaults in:
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveTime
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveInterval
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\TcpMaxDataRetransmissions  is set to 10 and cannot be changed
+
+			var setting = new tcp_keepalive {
+				onoff = 1,
+				keepalivetime = timeout,
+				keepaliveinterval = interval
+			};
+
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
+
+		public void DisableKeepAlive() {
+			var setting = default( tcp_keepalive );
+
+			uint SIO_KEEPALIVE_VALS = 2550136836;
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 
 	public class UdpStream : NetworkStream, IStream {
@@ -204,15 +269,15 @@ namespace Platform.IO {
 			: base( handle ) {
 		}
 
-		public new void Write( void* buffer, int count ) {
-			if( !_handle.IsValid || count == 0 || buffer == null ) return;
+		public new uint Write( void* buffer, uint count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0U;
 			for( ; transmitted < count; ) {
 			restart_WriteFile:
-				var error = _handle.SendTo( WriteTimeout, &WriteEndpoint.Address, WriteEndpoint.Length, data, count, transmitted );
+				var error = _handle.SendTo( WriteTimeout, transmitted, &WriteEndpoint.Address, WriteEndpoint.Length, data, count );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "SendTo", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
 					break;
@@ -221,17 +286,19 @@ namespace Platform.IO {
 				data += transmitted;
 				count -= transmitted;
 			}
+
+			return transmitted;
 		}
 
-		public new int Read( void* buffer, int count ) {
+		public new uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
-			for( ; count > 0; ) {
+			var transmitted = 0U;
+			for( ; count != 0; ) {
 			restart_ReadFile:
-				var error = _handle.ReceiveFrom( ReadTimeout, &LastReceiveFrom.Address, LastReceiveFrom.Length, data, count, transmitted );
+				var error = _handle.ReceiveFrom( ReadTimeout, transmitted, &LastReceiveFrom.Address, LastReceiveFrom.Length, data, count );
 				if( error != SystemErrorCode.NO_ERROR ) {
 					if( OnLastError( "ReceiveFrom", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 					break;
@@ -243,16 +310,41 @@ namespace Platform.IO {
 				count -= transmitted;
 			}
 
-			return ( int )( data - ( byte* ) buffer );
+			return ( uint )( data - ( byte* ) buffer );
 		}
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+		uint IStream.Read( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var readen = Read( segment.Start, ( uint ) segment.Count );
+				result += readen;
+
+				if( readen != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var written = Write( segment.Start, ( uint ) segment.Count );
+				result += written;
+
+				if( written != segment.Count )
+					break;
+			}
+
+			return result;
+		}
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

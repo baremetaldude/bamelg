@@ -14,7 +14,7 @@ namespace System.Runtime {
 			FindRanker = ( x, y ) => {
 				var lengthCheck = x.Count.CompareTo( y.Count );
 				if( lengthCheck < 0 ) return -1;
-				if( lengthCheck == 0 ) return ( ( uintptr ) x.Start ).CompareTo( ( uintptr ) y.Start );
+				if( lengthCheck == 0 ) return bitcast<uintptr>( x.Start ).CompareTo( bitcast<uintptr>( y.Start ) );
 				return 1;
 			}
 		};
@@ -22,7 +22,7 @@ namespace System.Runtime {
 		public TrackablePriorityQueue<MemorySegment>.Enumerator EnumerateFree() { return Free.GetEnumerator(); }
 		public MemorySegment[] GetFree() { return Free.ToArray(); }
 
-		private Dictionary<intptr, int> _merger = new Dictionary<intptr, int>();
+		private Dictionary<uintptr, uint> _merger = new Dictionary<uintptr, uint>();
 
 		private HashSet<MemorySegment> _allocated;
 
@@ -56,12 +56,12 @@ namespace System.Runtime {
 					Assert.Fail( string.Format( "MemoryManager: block {0} overlaps with allocated", segment ) );
 
 			foreach( var free in Free )
-				if( segment.IsOverlapping( new MemorySegment { Start = ( void* ) free.Start, Count = ( uint ) free.Count } ) )
+				if( segment.IsOverlapping( new MemorySegment { Start = ( void* ) free.Start, Count = free.Count } ) )
 					Assert.Fail( string.Format( "MemoryManager: block {0} overlaps with free", segment ) );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
-		private void DebugCheckFreeIndex( int findIndex ) {
+		private void DebugCheckFreeIndex( uint findIndex ) {
 			Debug.Assert( !_merger.ContainsValue( findIndex ) );
 			Debug.Assert( !_merger.ContainsValue( findIndex ) );
 		}
@@ -70,22 +70,22 @@ namespace System.Runtime {
 			DebugInitialize();
 		}
 
-		public MemorySegment Allocate( int length ) {
-			Debug.Assert( length > 0 );
+		public MemorySegment Allocate( uint length ) {
+			Debug.Assert( length != 0 );
 
-			var findIndex = Free.Find( new MemorySegment { Count = ( uint ) length } );
-			if( findIndex == -1 ) return default( MemorySegment );
+			var findIndex = Free.Find( new MemorySegment { Count = length } );
+			if( findIndex == uint.MaxValue ) return default( MemorySegment );
 
 			var freeBlock = Free.Remove( findIndex );
-			int leftFreeIndex, rightFreeIndex;
-			if( _merger.TryGetValue( ( intptr ) freeBlock.Start, leftFreeIndex ) ) {
+			uint leftFreeIndex, rightFreeIndex;
+			if( _merger.TryGetValue( ( uintptr ) freeBlock.Start, leftFreeIndex ) ) {
 				Debug.Assert( leftFreeIndex == findIndex );
-				_merger.Remove( ( intptr ) freeBlock.Start );
+				_merger.Remove( ( uintptr ) freeBlock.Start );
 			}
 
-			if( _merger.TryGetValue( ( intptr ) freeBlock.EndExclusive, rightFreeIndex ) ) {
+			if( _merger.TryGetValue( ( uintptr ) freeBlock.EndExclusive, rightFreeIndex ) ) {
 				Debug.Assert( rightFreeIndex == findIndex );
-				_merger.Remove( ( intptr ) freeBlock.EndExclusive );
+				_merger.Remove( ( uintptr ) freeBlock.EndExclusive );
 			}
 
 			DebugCheckFreeIndex( findIndex );
@@ -94,11 +94,11 @@ namespace System.Runtime {
 				var segment = new MemorySegment { Start = ( byte* ) freeBlock.Start + length, Count = freeBlock.Count - length };
 				var tracking = Free.Enqueue( segment );
 
-				_merger.Add( ( intptr ) segment.Start, tracking );
-				_merger.Add( ( intptr ) segment.EndExclusive, tracking );
+				_merger.Add( ( uintptr ) segment.Start, tracking );
+				_merger.Add( ( uintptr ) segment.EndExclusive, tracking );
 			}
 
-			var result = new MemorySegment { Start = ( void* ) freeBlock.Start, Count = ( uint ) length };
+			var result = new MemorySegment { Start = ( void* ) freeBlock.Start, Count = length };
 			DebugAllocate( result );
 
 			return result;
@@ -123,42 +123,42 @@ namespace System.Runtime {
 		}
 
 		private void NewMemorySegment( MemorySegment allocation ) {
-			var startIndex = ( intptr ) allocation.Start;
-			var endIndexExclusive = ( intptr )( startIndex + allocation.Count );
+			var startIndex = ( uintptr ) allocation.Start;
+			var endIndexExclusive = ( uintptr )( startIndex + allocation.Count );
 
-			int leftFreeIndex, rightFreeIndex;
+			uint leftFreeIndex, rightFreeIndex;
 			if( !_merger.TryGetValue( startIndex, leftFreeIndex ) )
-				leftFreeIndex = -1;
+				leftFreeIndex = uint.MaxValue;
 
 			if( !_merger.TryGetValue( endIndexExclusive, rightFreeIndex ) )
-				rightFreeIndex = -1;
+				rightFreeIndex = uint.MaxValue;
 
 			MemorySegment segment;
-			if( leftFreeIndex != -1 && rightFreeIndex != -1 ) {
+			if( leftFreeIndex != uint.MaxValue && rightFreeIndex != uint.MaxValue ) {
 				var left = Free.Remove( leftFreeIndex );
 				var right = Free.Remove( rightFreeIndex );
 
-				_merger.Remove( ( intptr ) left.Start );
-				_merger.Remove( ( intptr ) left.EndExclusive );
+				_merger.Remove( ( uintptr ) left.Start );
+				_merger.Remove( ( uintptr ) left.EndExclusive );
 
-				_merger.Remove( ( intptr ) right.Start );
-				_merger.Remove( ( intptr ) right.EndExclusive );
+				_merger.Remove( ( uintptr ) right.Start );
+				_merger.Remove( ( uintptr ) right.EndExclusive );
 
 				segment = new MemorySegment { Start = left.Start, Count = left.Count + allocation.Count + right.Count };
 			}
-			else if( leftFreeIndex != -1 ) {
+			else if( leftFreeIndex != uint.MaxValue ) {
 				var left = Free.Remove( leftFreeIndex );
 
-				_merger.Remove( ( intptr ) left.Start );
-				_merger.Remove( ( intptr ) left.EndExclusive );
+				_merger.Remove( ( uintptr ) left.Start );
+				_merger.Remove( ( uintptr ) left.EndExclusive );
 
 				segment = new MemorySegment { Start = left.Start, Count = left.Count + allocation.Count };
 			}
-			else if( rightFreeIndex != -1 ) {
+			else if( rightFreeIndex != uint.MaxValue ) {
 				var right = Free.Remove( rightFreeIndex );
 
-				_merger.Remove( ( intptr ) right.Start );
-				_merger.Remove( ( intptr ) right.EndExclusive );
+				_merger.Remove( ( uintptr ) right.Start );
+				_merger.Remove( ( uintptr ) right.EndExclusive );
 
 				segment = new MemorySegment { Start = ( void* ) startIndex, Count = allocation.Count + right.Count };
 			}
@@ -168,10 +168,10 @@ namespace System.Runtime {
 
 			var tracking = Free.Enqueue( segment );
 
-			_merger.Add( ( intptr ) segment.Start, tracking );
-			_merger.Add( ( intptr ) segment.EndExclusive, tracking );
+			_merger.Add( ( uintptr ) segment.Start, tracking );
+			_merger.Add( ( uintptr ) segment.EndExclusive, tracking );
 		}
 
-		public int FreeBlockCount { get { return Free.Count; } }
+		public uint FreeBlockCount { get { return Free.Count; } }
 	}
 }

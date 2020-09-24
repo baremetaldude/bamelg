@@ -10,7 +10,7 @@ using System.Runtime;
 
 namespace System.Reflection {
 	public partial struct Assembly {
-		public DateTime BuildDate { get { return *( DateTime* ) &_buildDate; } }
+		public DateTimeUTC BuildDate { get { return *( DateTimeUTC* ) &_buildDate; } }
 
 		public MemoryEnumerator<UserType> UserTypes { get { return new MemoryEnumerator<UserType>( UserTypesStart, UserTypeCount ); } }
 		public MemoryEnumerator<InterfaceType> InterfaceTypes { get { return new MemoryEnumerator<InterfaceType>( InterfacesStart, InterfaceCount ); } }
@@ -41,8 +41,8 @@ namespace System.Reflection {
 		public new T* GetAttribute<T>() { return ( T* ) GetAttribute( typeof( T ) ); }
 
 		public static struct AttributeAccessor {
-			public static Attribute* GetAttribute( Attribute** attributes, int attributesCount, [In] UserType& type ) {
-				for( int i = 0; i < attributesCount; ++i )
+			public static Attribute* GetAttribute( Attribute** attributes, uint attributesCount, [In] UserType& type ) {
+				for( var i = 0U; i < attributesCount; ++i )
 					if( attributes[i]->Type == type )
 						return attributes[i];
 

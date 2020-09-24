@@ -1,0 +1,66 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Designed to use with glibc 2.3.6
+//
+
+using System;
+using System.Runtime;
+using System.Runtime.InteropServices;
+
+using Platform.Kernel;
+
+namespace Platform.Libc {
+	public static partial struct PthreadsApi {
+		// public static Functors.Action __ctype_init = bitcast<Functors.Action>( LoaderApi.dlsym( DynamicLibraryHandle.RTLD_NEXT, "__ctype_init" ) );
+		// public static Functors.Action __libc_thread_freeres = bitcast<Functors.Action>( LoaderApi.dlsym( DynamicLibraryHandle.RTLD_NEXT, "__libc_thread_freeres" ) );
+
+		// [BackendHintKeep]
+		// [BackendSymbol( Name = "__ctype_init" )]
+		// public static void ctype_init() {
+		// 	Console.WriteLine( ( Utf8String ) "TLS()" );
+		// 	__ctype_init();
+		// 	System.Runtime.Loader.InitializeTls();
+		// }
+
+		// [BackendHintKeep]
+		// [BackendSymbol( Name = "__libc_thread_freeres" )]
+		// public static void libc_thread_freeres() {
+		// 	Console.WriteLine( ( Utf8String ) "~TLS()" );
+		// 	System.Runtime.Loader.FinalizeTls();
+		// 	__libc_thread_freeres();
+		// }
+
+		private static Functors.Func<pthread_t*, pthread_attr_t*, System.Functors.Func<void*, void*>, void*, SystemError> __pthread_create = bitcast<Functors.Func<pthread_t*, pthread_attr_t*, System.Functors.Func<void*, void*>, void*, SystemError>>( LibcApi.dlsym( DynamicLibraryHandle.RTLD_NEXT, "pthread_create" ) );
+
+		private extern static int __cxa_thread_atexit_impl( Functors.Action<void*> destructor, void* object, void* dso );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man3/pthread_create.3.html
+		[NoInline]
+		[BackendSymbol( Name = "pthread_create" )]
+		public static SystemError pthread_create( pthread_t* handle, pthread_attr_t* attr, System.Functors.Func<void*, void*> start, void* parameter ) {
+			var payload = heapalloc Tuple<System.Functors.Func<void*, void*>, void*> {
+				Item1 = start,
+				Item2 = parameter
+			};
+
+			return __pthread_create( handle, attr, data => {
+				var p = ( Tuple<System.Functors.Func<void*, void*>, void*>* ) data;
+				var payloadCopy = *p;
+				heapfree p;
+
+				Loader.InitializeTls();
+				__cxa_thread_atexit_impl( unused => Loader.FinalizeTls(), null, &__pthread_create );
+
+				var result = payloadCopy.Item1( payloadCopy.Item2 );
+				return result;
+			}, payload );
+		}
+
+		static PthreadsApi() {
+			System.Diagnostics.Debug.Assert( LibcApi.getpagesize() == Memory.DefaultPageSize );
+		}
+	}
+}

@@ -3,6 +3,8 @@
 //
 // See license at http://bamelg.com/license.txt
 //
+// All files must be created with overlapped flag, otherwise them cannot be used in fibers later
+//
 
 using System;
 using System.IO;
@@ -14,9 +16,9 @@ using Platform;
 
 namespace Platform.IO {
 	public class FileStream : IStream {
-		public TimeSpan WriteTimeout { get; set; }
-		public TimeSpan ReadTimeout { get; set; }
-		
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
+
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerAbort.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
 
@@ -82,7 +84,6 @@ namespace Platform.IO {
 		}
 
 		public bool Open( string name, FileAccessRights fDesiredAccess, FileCreationDisposition fCreationDisposition, FileShareMode fShareMode, FileCreationFlags fFlagsAndAttributes = 0 ) {
-			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
 			Close();
 
 			Context = name;
@@ -120,13 +121,15 @@ namespace Platform.IO {
 			restart_SetFilePointerEx:
 				long length;
 				if( !Kernel32Api.SetFilePointerEx( _handle, value, length, FileSeekOrigin.FILE_BEGIN ) ) {
-					if( OnLastError( "SetFilePointerEx" ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
+					var error = Kernel32Api.LastError;
+					if( OnLastError( "SetFilePointerEx", error ) == PlatformErrorAction.Restart ) goto restart_SetFilePointerEx;
 					return;
 				}
 
 			restart_SetEndOfFile:
 				if( !Kernel32Api.SetEndOfFile( _handle ) ) { // SystemErrorCode.ERROR_DISK_FULL occurs here
-					if( OnLastError( "SetEndOfFile" ) == PlatformErrorAction.Restart ) goto restart_SetEndOfFile;
+					var error = Kernel32Api.LastError;
+					if( OnLastError( "SetEndOfFile", error ) == PlatformErrorAction.Restart ) goto restart_SetEndOfFile;
 					return;
 				}
 			}
@@ -166,38 +169,81 @@ namespace Platform.IO {
 
 		private PlatformErrorAction OnLastError( string operation, IFormattable context, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
 		private PlatformErrorAction OnLastError( string operation, SystemErrorCode errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
-		private PlatformErrorAction OnLastError( string operation ) { return ErrorHandler.OnError( operation, Context, Kernel32Api.LastError ); }
 
 		#region IStream Members
 
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid ) return 0;
 
 		restart_ReadFile:
-			int readen;
+			uint readen;
 			var error = _handle.Read( ReadTimeout, Offset, buffer, count, readen );
+			Offset += readen;
+
+			if( error == SystemErrorCode.ERROR_HANDLE_EOF )
+				return readen;
+
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_ReadFile;
 				return readen;
 			}
 
-			Offset += readen;
-			return ( int ) readen;
+			return readen;
 		}
 
-		public void Write( void* buffer, int count ) {
-			if( !_handle.IsValid ) return;
+		public uint Write( void* buffer, uint count ) {
+			if( !_handle.IsValid ) return 0;
 
 		restart_WriteFile:
-			int written;
+			uint written;
 			var error = _handle.Write( WriteTimeout, Offset, buffer, count, written );
 			if( error != SystemErrorCode.NO_ERROR ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
-				return;
+				return 0;
 			}
 
 			Offset += count;
-			Assert.IsTrue( written == count );
+			return written;
+
+			// restart_WriteFile:
+			// 			uint lastWritten;
+			// 			uint totalWritten = 0;
+
+			// 			if( _handle.Write( buffer, count, out lastWritten, null ) == 0 ) {
+			// 				var lastError = Kernel32Api.LastErrorCode;
+			// 				if( lastError == SystemErrorCode.ERROR_DISK_FULL ) {
+			// 					var partialCount = count / 2;
+
+			// 					while( partialCount != 0 ) {
+			// restart_WriteFile2:
+			// 						if( Kernel32Api.WriteFile( _handle, buffer, partialCount, out lastWritten, null ) == 0 ) {
+			// 							lastError = Kernel32Api.LastErrorCode;
+			// 							if( lastError == SystemErrorCode.ERROR_DISK_FULL ) {
+			// 								partialCount >>= 1;
+			// 								continue;
+			// 							}
+
+			// 							if( ErrorHandler.OnError( "WriteFile", Context, lastError ) == PlatformErrorAction.Restart ) goto restart_WriteFile2;
+			// 							return totalWritten;
+			// 						}
+
+			// 						buffer = ( byte* ) buffer + lastWritten;
+			// 						count -= lastWritten;
+			// 						totalWritten += lastWritten;
+			// 					}
+			// 				}
+
+			// 				if( ErrorHandler.OnError( "WriteFile", Context, lastError ) == PlatformErrorAction.Restart ) goto restart_WriteFile;
+			// 				return totalWritten;
+			// 			}
+
+			// 			buffer = ( byte* ) buffer + lastWritten;
+			// 			count -= lastWritten;
+			// 			totalWritten += lastWritten;
+
+			// 			if( count != 0 ) goto restart_WriteFile;
+
+			// 			return totalWritten;
 		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
@@ -207,7 +253,8 @@ namespace Platform.IO {
 				case FlushKind.SynchronizeWrite:
 				restart_FlushFileBuffers:
 					if( !Kernel32Api.FlushFileBuffers( _handle ) ) {
-						if( OnLastError( "FlushFileBuffers" ) == PlatformErrorAction.Restart ) goto restart_FlushFileBuffers;
+						var error = Kernel32Api.LastError;
+						if( OnLastError( "FlushFileBuffers", error ) == PlatformErrorAction.Restart ) goto restart_FlushFileBuffers;
 						return;
 					}
 
@@ -217,10 +264,35 @@ namespace Platform.IO {
 
 		#endregion
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		uint IStream.Read( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var readen = Read( segment.Start, ( uint ) segment.Count );
+				result += readen;
+
+				if( readen != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var written = Write( segment.Start, ( uint ) segment.Count );
+				result += written;
+
+				if( written != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

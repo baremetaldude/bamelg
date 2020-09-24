@@ -11,585 +11,837 @@ using System.Runtime.CompilerServices;
 
 namespace System.Runtime {
 	public partial class Binder {
-		public void GetValue( Context& context, int index, bool& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, bool& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( bool ): value = column->GetValue<bool>( context.Object ); return;
-				case typeof( sbyte ): value = column->GetValue<sbyte>( context.Object ) != 0; return;
-				case typeof( byte ): value = column->GetValue<byte>( context.Object ) != 0; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( SbcsString ): if( !bool.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !bool.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !bool.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !bool.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = column->GetValue<short_littleendian>( context.Object ) != 0; return;
-				case typeof( ushort_littleendian ): value = column->GetValue<ushort_littleendian>( context.Object ) != 0; return;
-				case typeof( short_bigendian ): value = column->GetValue<short_bigendian>( context.Object ) != 0; return;
-				case typeof( ushort_bigendian ): value = column->GetValue<ushort_bigendian>( context.Object ) != 0; return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = column->GetValue<int_littleendian>( context.Object ) != 0; return;
-				case typeof( uint_littleendian ): value = column->GetValue<uint_littleendian>( context.Object ) != 0; return;
-				case typeof( int_bigendian ): value = column->GetValue<int_bigendian>( context.Object ) != 0; return;
-				case typeof( uint_bigendian ): value = column->GetValue<uint_bigendian>( context.Object ) != 0; return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = column->GetValue<long_littleendian>( context.Object ) != 0; return;
-				case typeof( ulong_littleendian ): value = column->GetValue<ulong_littleendian>( context.Object ) != 0; return;
-				case typeof( long_bigendian ): value = column->GetValue<long_bigendian>( context.Object ) != 0; return;
-				case typeof( ulong_bigendian ): value = column->GetValue<ulong_bigendian>( context.Object ) != 0; return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = column->GetValue<float_littleendian>( context.Object ) != 0; return;
-				case typeof( double_littleendian ): value = column->GetValue<double_littleendian>( context.Object ) != 0; return;
-				case typeof( float_bigendian ): value = column->GetValue<float_bigendian>( context.Object ) != 0; return;
-				case typeof( double_bigendian ): value = column->GetValue<double_bigendian>( context.Object ) != 0; return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, sbyte& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, sbyte& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !sbyte.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !sbyte.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !sbyte.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !sbyte.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToInt8( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToInt8( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToInt8( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToInt8( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToInt8( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToInt8( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToInt8( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToInt8( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToInt8( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToInt8( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToInt8( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToInt8( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToInt8( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToInt8( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToInt8( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToInt8( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToInt8( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToInt8( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToInt8( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, byte& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, byte& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !byte.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !byte.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !byte.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !byte.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToUInt8( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToUInt8( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToUInt8( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToUInt8( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToUInt8( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToUInt8( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToUInt8( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToUInt8( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToUInt8( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToUInt8( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToUInt8( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToUInt8( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToUInt8( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToUInt8( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToUInt8( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToUInt8( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToUInt8( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToUInt8( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToUInt8( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, short& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, short& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !short.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !short.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !short.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !short.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToInt16( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToInt16( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToInt16( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToInt16( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToInt16( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToInt16( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToInt16( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToInt16( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToInt16( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToInt16( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToInt16( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToInt16( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToInt16( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToInt16( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToInt16( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToInt16( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToInt16( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToInt16( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToInt16( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, ushort& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, ushort& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !ushort.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !ushort.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !ushort.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !ushort.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToUInt16( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToUInt16( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToUInt16( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToUInt16( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToUInt16( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToUInt16( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToUInt16( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToUInt16( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToUInt16( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToUInt16( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToUInt16( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToUInt16( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToUInt16( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToUInt16( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToUInt16( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToUInt16( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToUInt16( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToUInt16( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToUInt16( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, int& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, int& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !int.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !int.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !int.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !int.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToInt32( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToInt32( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToInt32( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToInt32( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToInt32( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToInt32( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToInt32( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToInt32( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToInt32( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToInt32( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToInt32( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToInt32( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToInt32( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToInt32( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToInt32( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToInt32( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToInt32( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToInt32( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToInt32( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, uint& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, uint& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !uint.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !uint.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !uint.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !uint.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToUInt32( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToUInt32( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToUInt32( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToUInt32( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToUInt32( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToUInt32( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToUInt32( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToUInt32( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToUInt32( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToUInt32( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToUInt32( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToUInt32( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToUInt32( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToUInt32( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToUInt32( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToUInt32( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToUInt32( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToUInt32( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToUInt32( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, long& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, long& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !long.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !long.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !long.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !long.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToInt64( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToInt64( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToInt64( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToInt64( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToInt64( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToInt64( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToInt64( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToInt64( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToInt64( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToInt64( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToInt64( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToInt64( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToInt64( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToInt64( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToInt64( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToInt64( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToInt64( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToInt64( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToInt64( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, ulong& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, ulong& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !ulong.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !ulong.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !ulong.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !ulong.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = ToUInt64( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value = ToUInt64( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value = ToUInt64( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = ToUInt64( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value = ToUInt64( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value = ToUInt64( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value = ToUInt64( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = ToUInt64( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value = ToUInt64( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value = ToUInt64( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value = ToUInt64( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = ToUInt64( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value = ToUInt64( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value = ToUInt64( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value = ToUInt64( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = ToUInt64( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value = ToUInt64( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value = ToUInt64( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value = ToUInt64( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, double& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, float& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): if( !double.TryParse( column->GetValue<SbcsString>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf8String ): if( !double.TryParse( column->GetValue<Utf8String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf16String ): if( !double.TryParse( column->GetValue<Utf16String>( context.Object ), value ) ) goto parseError; return;
-				case typeof( Utf32String ): if( !double.TryParse( column->GetValue<Utf32String>( context.Object ), value ) ) goto parseError; return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value = column->GetValue<bool>( context.Object ) ? 1.0 : 0.0; return;
-				case typeof( sbyte ): value = column->GetValue<sbyte>( context.Object ); return;
-				case typeof( byte ): value = column->GetValue<byte>( context.Object ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value = column->GetValue<short_littleendian>( context.Object ); return;
-				case typeof( ushort_littleendian ): value = column->GetValue<ushort_littleendian>( context.Object ); return;
-				case typeof( short_bigendian ): value = column->GetValue<short_bigendian>( context.Object ); return;
-				case typeof( ushort_bigendian ): value = column->GetValue<ushort_bigendian>( context.Object ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value = column->GetValue<int_littleendian>( context.Object ); return;
-				case typeof( uint_littleendian ): value = column->GetValue<uint_littleendian>( context.Object ); return;
-				case typeof( int_bigendian ): value = column->GetValue<int_bigendian>( context.Object ); return;
-				case typeof( uint_bigendian ): value = column->GetValue<uint_bigendian>( context.Object ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value = column->GetValue<long_littleendian>( context.Object ); return;
-				case typeof( ulong_littleendian ): value = column->GetValue<ulong_littleendian>( context.Object ); return;
-				case typeof( long_bigendian ): value = column->GetValue<long_bigendian>( context.Object ); return;
-				case typeof( ulong_bigendian ): value = column->GetValue<ulong_bigendian>( context.Object ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value = column->GetValue<float_littleendian>( context.Object ); return;
-				case typeof( double_littleendian ): value = column->GetValue<double_littleendian>( context.Object ); return;
-				case typeof( float_bigendian ): value = column->GetValue<float_bigendian>( context.Object ); return;
-				case typeof( double_bigendian ): value = column->GetValue<double_bigendian>( context.Object ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
-
-		parseError:
-			context.BinderEvent.ParseError( column );
-			return;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, StringBuilder value, bool& isNull ) {
-			isNull = false;
+		public Convert.ConversionResult GetValue( void* object, uint index, double& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
+
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
+
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
+
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
+
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, SbcsString& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
+
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
+
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
+
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
+
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, Utf8String& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
+
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
+
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
+
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
+
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, Utf16String& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
+
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
+
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
+
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
+
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, Utf32String& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
+
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
+
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
+
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
+
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, StringBuilder& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 			var& realType = column->GetDirectType();
 			var& enumType = realType.AsEnum;
-
-			value.Clear();
 
 			if( enumType != nullref ) {
 				var holderSize = enumType.InstanceSize;
 				var typeRef = new TypedReference { Type = realType };
 
 				if( column->Field != null ) {
-					typeRef.Address = cast<byte*>( context.Object ) + column->Field->ByteOffset;
+					typeRef.Address = cast<byte*>( object ) + column->Field->ByteOffset;
 				}
 				else if( column->Property != null ) {
 					typeRef.Address = stackalloc byte[holderSize];
-					column->Property->UnsafeGetValue( context.Object, typeRef.Address );
+					column->Property->UnsafeGetValue( object, typeRef.Address );
 				}
 
+				if( value == null ) value = new StringBuilder();
+				else value.Clear();
+
 				value.Append( typeRef );
-				return;
+				return Convert.ConversionResult.OK;
 			}
 
 			switch( type ) {
-				case typeof( SbcsString ): { var p = column->GetValue<SbcsString>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
-				case typeof( Utf8String ): { var p = column->GetValue<Utf8String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
-				case typeof( Utf16String ): { var p = column->GetValue<Utf16String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
-				case typeof( Utf32String ): { var p = column->GetValue<Utf32String>( context.Object ); if( p == null ) isNull = true; value.Append( p ); return; }
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): value.Append( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): value.Append( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): value.Append( column->GetValue<byte>( context.Object ) ); return;
+				case typeof( bool ): return Convert.TryConvert( &value, column->GetValue<bool>( object ) );
+				case typeof( sbyte ): return Convert.TryConvert( &value, column->GetValue<sbyte>( object ) );
+				case typeof( byte ): return Convert.TryConvert( &value, column->GetValue<byte>( object ) );
 
-				case typeof( short_littleendian ): value.Append( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): value.Append( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): value.Append( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): value.Append( column->GetValue<ushort_bigendian>( context.Object ) ); return;
+				case typeof( short_littleendian ): return Convert.TryConvert( &value, column->GetValue<short_littleendian>( object ) );
+				case typeof( short_bigendian ): return Convert.TryConvert( &value, column->GetValue<short_bigendian>( object ) );
+				case typeof( ushort_littleendian ): return Convert.TryConvert( &value, column->GetValue<ushort_littleendian>( object ) );
+				case typeof( ushort_bigendian ): return Convert.TryConvert( &value, column->GetValue<ushort_bigendian>( object ) );
 
-				case typeof( int_littleendian ): value.Append( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): value.Append( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): value.Append( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): value.Append( column->GetValue<uint_bigendian>( context.Object ) ); return;
+				case typeof( int_littleendian ): return Convert.TryConvert( &value, column->GetValue<int_littleendian>( object ) );
+				case typeof( int_bigendian ): return Convert.TryConvert( &value, column->GetValue<int_bigendian>( object ) );
+				case typeof( uint_littleendian ): return Convert.TryConvert( &value, column->GetValue<uint_littleendian>( object ) );
+				case typeof( uint_bigendian ): return Convert.TryConvert( &value, column->GetValue<uint_bigendian>( object ) );
 
-				case typeof( long_littleendian ): value.Append( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): value.Append( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): value.Append( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): value.Append( column->GetValue<ulong_bigendian>( context.Object ) ); return;
+				case typeof( long_littleendian ): return Convert.TryConvert( &value, column->GetValue<long_littleendian>( object ) );
+				case typeof( long_bigendian ): return Convert.TryConvert( &value, column->GetValue<long_bigendian>( object ) );
+				case typeof( ulong_littleendian ): return Convert.TryConvert( &value, column->GetValue<ulong_littleendian>( object ) );
+				case typeof( ulong_bigendian ): return Convert.TryConvert( &value, column->GetValue<ulong_bigendian>( object ) );
 
-				case typeof( float_littleendian ): value.Append( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): value.Append( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): value.Append( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): value.Append( column->GetValue<double_bigendian>( context.Object ) ); return;
+				case typeof( float_littleendian ): return Convert.TryConvert( &value, column->GetValue<float_littleendian>( object ) );
+				case typeof( float_bigendian ): return Convert.TryConvert( &value, column->GetValue<float_bigendian>( object ) );
+				case typeof( double_littleendian ): return Convert.TryConvert( &value, column->GetValue<double_littleendian>( object ) );
+				case typeof( double_bigendian ): return Convert.TryConvert( &value, column->GetValue<double_bigendian>( object ) );
 
-				case typeof( byte[] ): { var array = column->GetValue<byte[]>( context.Object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], ( uint ) array.Length, true ); } return;
+				case typeof( byte[] ): { var array = column->GetValue<byte[]>( object ); PrimitiveTypesFormatter.FormatMemoryHexUtf16( value, &array[0], array.Length, true ); } return Convert.ConversionResult.OK;
 			}
 
-			if( TrySerializeText( context, type, column, value, isNull ) ) return;
-
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
+			return TrySerializeText( object, type, column, value );
 		}
 
-		public void GetValue( Context& context, int index, BinaryWriter writer ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, Guid& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): writer.Write( column->GetValue<SbcsString>( context.Object ) ); return;
-				case typeof( Utf8String ): writer.Write( column->GetValue<Utf8String>( context.Object ) ); return;
-				case typeof( Utf16String ): writer.Write( column->GetValue<Utf16String>( context.Object ) ); return;
-				case typeof( Utf32String ): writer.Write( column->GetValue<Utf32String>( context.Object ) ); return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( bool ): writer.Write( column->GetValue<bool>( context.Object ) ); return;
-				case typeof( sbyte ): writer.Write( column->GetValue<sbyte>( context.Object ) ); return;
-				case typeof( byte ): writer.Write( column->GetValue<byte>( context.Object ) ); return;
-
-				case typeof( short_littleendian ): writer.Write( column->GetValue<short_littleendian>( context.Object ) ); return;
-				case typeof( ushort_littleendian ): writer.Write( column->GetValue<ushort_littleendian>( context.Object ) ); return;
-				case typeof( short_bigendian ): writer.Write( column->GetValue<short_bigendian>( context.Object ) ); return;
-				case typeof( ushort_bigendian ): writer.Write( column->GetValue<ushort_bigendian>( context.Object ) ); return;
-
-				case typeof( int_littleendian ): writer.Write( column->GetValue<int_littleendian>( context.Object ) ); return;
-				case typeof( uint_littleendian ): writer.Write( column->GetValue<uint_littleendian>( context.Object ) ); return;
-				case typeof( int_bigendian ): writer.Write( column->GetValue<int_bigendian>( context.Object ) ); return;
-				case typeof( uint_bigendian ): writer.Write( column->GetValue<uint_bigendian>( context.Object ) ); return;
-
-				case typeof( long_littleendian ): writer.Write( column->GetValue<long_littleendian>( context.Object ) ); return;
-				case typeof( ulong_littleendian ): writer.Write( column->GetValue<ulong_littleendian>( context.Object ) ); return;
-				case typeof( long_bigendian ): writer.Write( column->GetValue<long_bigendian>( context.Object ) ); return;
-				case typeof( ulong_bigendian ): writer.Write( column->GetValue<ulong_bigendian>( context.Object ) ); return;
-
-				case typeof( float_littleendian ): writer.Write( column->GetValue<float_littleendian>( context.Object ) ); return;
-				case typeof( double_littleendian ): writer.Write( column->GetValue<double_littleendian>( context.Object ) ); return;
-				case typeof( float_bigendian ): writer.Write( column->GetValue<float_bigendian>( context.Object ) ); return;
-				case typeof( double_bigendian ): writer.Write( column->GetValue<double_bigendian>( context.Object ) ); return;
-
-				case typeof( byte[] ): writer.WriteArray( column->GetValue<byte[]>( context.Object ) ); return;
+				case typeof( Guid ): return Convert.TryConvert( &value, column->GetValue<Guid>( object ) );
 			}
 
-			if( TrySerializeBinary( context, type, column, writer ) ) return;
-
-			context.BinderEvent.IncompatibleMapping( column, typeof( writer ) );
-			return;
+			value = Guid.Empty;
+			return Convert.ConversionResult.IncompatibleType;
 		}
 
-		public void GetValue( Context& context, int index, byte[]& value ) {
-			var column = GetMapping( context, index );
-			if( column == null ) return;
+		public Convert.ConversionResult GetValue( void* object, uint index, DateTime& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
 
 			var& type = column->GetType();
 
 			switch( type ) {
-				case typeof( SbcsString ): { var text = column->GetValue<SbcsString>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
-				case typeof( Utf8String ): { var text = column->GetValue<Utf8String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
-				case typeof( Utf16String ): { var text = column->GetValue<Utf16String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
-				case typeof( Utf32String ): { var text = column->GetValue<Utf32String>( context.Object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return;
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
 
-				case typeof( byte[] ): value = column->GetValue<byte[]>( context.Object ); return;
+				case typeof( DateTime ): return Convert.TryConvert( &value, column->GetValue<DateTime>( object ) );
+				case typeof( DateTimeUTC ): return Convert.TryConvert( &value, column->GetValue<DateTimeUTC>( object ) );
+				case typeof( DateTimeLocal ): return Convert.TryConvert( &value, column->GetValue<DateTimeLocal>( object ) );
 			}
 
-			context.BinderEvent.IncompatibleMapping( column, typeof( value ) );
-			return;
+			value = DateTime.MinValueUnspecified;
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, DateTimeUTC& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( DateTime ): return Convert.TryConvert( &value, column->GetValue<DateTime>( object ) );
+				case typeof( DateTimeUTC ): return Convert.TryConvert( &value, column->GetValue<DateTimeUTC>( object ) );
+				case typeof( DateTimeLocal ): return Convert.TryConvert( &value, column->GetValue<DateTimeLocal>( object ) );
+			}
+
+			value = DateTimeUTC.MinValue;
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, DateTimeLocal& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): return Convert.TryConvert( &value, column->GetValue<SbcsString>( object ) );
+				case typeof( Utf8String ): return Convert.TryConvert( &value, column->GetValue<Utf8String>( object ) );
+				case typeof( Utf16String ): return Convert.TryConvert( &value, column->GetValue<Utf16String>( object ) );
+				case typeof( Utf32String ): return Convert.TryConvert( &value, column->GetValue<Utf32String>( object ) );
+
+				case typeof( DateTime ): return Convert.TryConvert( &value, column->GetValue<DateTime>( object ) );
+				case typeof( DateTimeUTC ): return Convert.TryConvert( &value, column->GetValue<DateTimeUTC>( object ) );
+				case typeof( DateTimeLocal ): return Convert.TryConvert( &value, column->GetValue<DateTimeLocal>( object ) );
+			}
+
+			value = DateTimeLocal.MinValue;
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, TimeSpan& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( TimeSpan ): return Convert.TryConvert( &value, column->GetValue<TimeSpan>( object ) );
+			}
+
+			value = TimeSpan.MaxValue;
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, TimeDuration& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( TimeDuration ): return Convert.TryConvert( &value, column->GetValue<TimeDuration>( object ) );
+			}
+
+			value = TimeDuration.MaxValue;
+			return Convert.ConversionResult.IncompatibleType;
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, BinaryWriter writer ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): writer.Write( column->GetValue<SbcsString>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( Utf8String ): writer.Write( column->GetValue<Utf8String>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( Utf16String ): writer.Write( column->GetValue<Utf16String>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( Utf32String ): writer.Write( column->GetValue<Utf32String>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( bool ): writer.Write( column->GetValue<bool>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( sbyte ): writer.Write( column->GetValue<sbyte>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( byte ): writer.Write( column->GetValue<byte>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( short_littleendian ): writer.Write( column->GetValue<short_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( ushort_littleendian ): writer.Write( column->GetValue<ushort_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( short_bigendian ): writer.Write( column->GetValue<short_bigendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( ushort_bigendian ): writer.Write( column->GetValue<ushort_bigendian>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( int_littleendian ): writer.Write( column->GetValue<int_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( uint_littleendian ): writer.Write( column->GetValue<uint_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( int_bigendian ): writer.Write( column->GetValue<int_bigendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( uint_bigendian ): writer.Write( column->GetValue<uint_bigendian>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( long_littleendian ): writer.Write( column->GetValue<long_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( ulong_littleendian ): writer.Write( column->GetValue<ulong_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( long_bigendian ): writer.Write( column->GetValue<long_bigendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( ulong_bigendian ): writer.Write( column->GetValue<ulong_bigendian>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( float_littleendian ): writer.Write( column->GetValue<float_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( double_littleendian ): writer.Write( column->GetValue<double_littleendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( float_bigendian ): writer.Write( column->GetValue<float_bigendian>( object ) ); return Convert.ConversionResult.OK;
+				case typeof( double_bigendian ): writer.Write( column->GetValue<double_bigendian>( object ) ); return Convert.ConversionResult.OK;
+
+				case typeof( byte[] ): writer.WriteArray( column->GetValue<byte[]>( object ) ); return Convert.ConversionResult.OK;
+			}
+
+			return TrySerializeBinary( object, type, column, writer );
+		}
+
+		public Convert.ConversionResult GetValue( void* object, uint index, byte[]& value ) {
+			var column = GetMapping( index );
+			if( column == null ) return Convert.ConversionResult.MissedMapping;
+
+			var& type = column->GetType();
+
+			switch( type ) {
+				case typeof( SbcsString ): { var text = column->GetValue<SbcsString>( object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return Convert.ConversionResult.OK;
+				case typeof( Utf8String ): { var text = column->GetValue<Utf8String>( object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return Convert.ConversionResult.OK;
+				case typeof( Utf16String ): { var text = column->GetValue<Utf16String>( object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return Convert.ConversionResult.OK;
+				case typeof( Utf32String ): { var text = column->GetValue<Utf32String>( object ); value = PrimitiveTypesParser.ParseByteArray( text.GetChars(), text.Length ); } return Convert.ConversionResult.OK;
+
+				case typeof( byte[] ): value = column->GetValue<byte[]>( object ); return Convert.ConversionResult.OK;
+			}
+
+			return Convert.ConversionResult.IncompatibleType;
 		}
 	}
 }

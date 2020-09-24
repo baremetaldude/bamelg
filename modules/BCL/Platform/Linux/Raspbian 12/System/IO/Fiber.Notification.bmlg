@@ -1,0 +1,468 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Notification functionality
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Threading;
+
+using Platform.IO;
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System.IO {
+	public partial struct Fiber {
+		internal partial struct FiberInfo {
+			private IOHandle _waitHandle;
+			private EPOLL_EVENTS _waitEvents;
+
+			private Dispatcher.AlarmUnbiased* _alarmID;
+
+			internal partial class Manager {
+				private System.Threading.Mutex _readyListAsyncLock = new System.Threading.Mutex();
+				private List<FiberInfo*> _readyListAsync = new List<FiberInfo*>();
+
+				public EpollHandle Epoll = new EpollHandle();
+				private List<epoll_event> _signalledEvents = new List<epoll_event>( 32 );
+
+				public EventLoop CurrentEventLoop;
+
+				private void OnBeforeDispatch() { }
+				private void OnAfterDispatch() { }
+
+				public void OnEvent() {
+					if( _signalledEvents.Capacity < _fibers.Count )
+						_signalledEvents.Capacity = ( uint )( _fibers.Count * 1.3 );
+
+					var waitBufferLength = _signalledEvents.Capacity;
+					var waitBuffer = _signalledEvents.GetBuffer();
+
+					while( true ) {
+						var polledHandles = LibcApi.epoll_wait( Epoll, &waitBuffer[0], waitBufferLength, 0 ); // dont block
+						if( polledHandles == 0 ) return;
+
+						TraceIOEvents( ( uint ) polledHandles );
+						if( polledHandles < 0 ) {
+							switch( LibcApi.LastError ) {
+								case SystemError.EINTR: continue;
+								default: LibcApi.AssertErrno( polledHandles ); continue;
+							}
+						}
+
+						for( var i = 0U; i < ( uint ) polledHandles; ++i ) {
+							var& currentEvent = waitBuffer[i];
+							var fiber = ( FiberInfo* ) currentEvent.Data;
+
+							TraceIONotify( fiber, currentEvent );
+
+							fiber->_waitEvents = currentEvent.Events;
+							ReadyIO( fiber );
+						}
+
+						Dispatch();
+						break; // we need to dispatch from outer loop
+					}
+				}
+
+				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeDuration interval, Functors.Action<void*> action, void* data, bool oneShot = false ) {
+					return CurrentEventLoop.ScheduleUnbiased( interval, action, data );
+				}
+
+				private void EndTimeout( Dispatcher.AlarmUnbiased* alarmId ) {
+					CurrentEventLoop.RemoveAlarm( alarmId );
+				}
+
+				private void ReadyIO( FiberInfo* fiber ) {
+					if( fiber->_isReady | !fiber->_isAlive ) return;
+
+					TraceReady( fiber );
+
+					_readyList.Add( fiber );
+					fiber->_isReady = true;
+				}
+
+				// MT-unsafe
+				public void Ready( FiberInfo* fiber ) {
+					if( fiber->_isReady | !fiber->_isAlive ) return;
+
+					TraceReady( fiber );
+
+					_fiberReadyEventSink.Notify();
+
+					_readyList.Add( fiber );
+					fiber->_isReady = true;
+				}
+
+				// MT-safe
+				public void ReadyAsync( FiberInfo* fiber ) {
+					TraceReadyAsync( fiber );
+
+					using( _readyListAsyncLock.LockRegion() )
+						_readyListAsync.Add( fiber );
+
+					_fiberReadyEventSink.Notify();
+				}
+
+				private SystemError Wait( TimeDuration timeout, IOHandle handle, EPOLL_EVENTS events ) {
+					CurrentFiber->_waitHandle = handle;
+					Epoll.AddOrModify( handle, new epoll_event { Events = EPOLL_EVENTS.EPOLLONESHOT | events, Data = CurrentFiber } );
+
+					BeginTimeout( timeout );
+
+					Suspend();
+					CurrentFiber->_waitHandle = IOHandle.Invalid;
+
+					if( EndTimeout( timeout ) ) {
+						Epoll.Remove( handle );
+						return SystemError.ETIMEDOUT;
+					}
+
+					if( CurrentFiber->IsCancelled ) return SystemError.EINTR;
+					return SystemError.None;
+				}
+
+				public SystemError WaitForConnect( TimeDuration timeout, SocketHandle handle ) {
+					TraceWait( CurrentFiber, thismethod, timeout );
+
+					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLIN | EPOLL_EVENTS.EPOLLOUT );
+
+					if( result != SystemError.None ) return result;
+					if( ( CurrentFiber->_waitEvents & ~( EPOLL_EVENTS.EPOLLIN | EPOLL_EVENTS.EPOLLOUT ) ) != 0 ) return handle.LastError;
+					return SystemError.None;
+				}
+
+				public SystemError WaitForConnectWithData( TimeDuration timeout, SocketHandle handle ) {
+					TraceWait( CurrentFiber, thismethod, timeout );
+
+					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLIN );
+
+					if( result != SystemError.None ) return result;
+					if( ( CurrentFiber->_waitEvents & ~( EPOLL_EVENTS.EPOLLIN | EPOLL_EVENTS.EPOLLOUT ) ) != 0 ) return handle.LastError;
+					return SystemError.None;
+				}
+
+				// \return
+				//  'SystemError.None' if IO-event successfully arrived
+				//  'SystemError.ETIMEDOUT' if wait timed out
+				//  'SystemError.ECONNRESET' on bad epoll notification
+				public SystemError WaitForRead( TimeDuration timeout, IOHandle handle ) {
+					TraceWait( CurrentFiber, thismethod, timeout );
+
+					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLIN );
+
+					if( result != SystemError.None ) return result;
+					if( ( CurrentFiber->_waitEvents & ~EPOLL_EVENTS.EPOLLIN ) != 0 ) return SystemError.ECONNRESET;
+					return SystemError.None;
+				}
+
+				public SystemError WaitForWrite( TimeDuration timeout, IOHandle handle ) {
+					TraceWait( CurrentFiber, thismethod, timeout );
+
+					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLOUT | EPOLL_EVENTS.EPOLLRDHUP | EPOLL_EVENTS.EPOLLHUP );
+
+					if( result != SystemError.None ) return result;
+					if( ( CurrentFiber->_waitEvents & ~EPOLL_EVENTS.EPOLLOUT ) != 0 ) return SystemError.ECONNRESET;
+					return SystemError.None;
+				}
+
+				#region IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
+
+				public SystemError ConnectNonBlocking( TimeDuration timeout, SocketHandle socket, sockaddr* address, int addressLength ) {
+					socket.EnsureNonBlocking();
+
+				restart:
+					var result = LibcApi.connect( socket, address, addressLength );
+					if( result == 0 ) return SystemError.None;
+
+					var errno = LibcApi.LastError;
+					TraceSocketConnect( socket, errno );
+
+					switch( errno ) {
+						case SystemError.EAGAIN:
+						case SystemError.EINPROGRESS:
+							return WaitForConnect( timeout, socket );
+					}
+
+					return errno;
+				}
+
+				public SystemError WriteNonBlocking( TimeDuration timeout, uint& totalWritten, IOHandle socket, void* buffer, uint count ) {
+					socket.EnsureNonBlocking();
+					totalWritten = 0U;
+					if( count == 0 ) return SystemError.None;
+
+				restart:
+					var writeResult = LibcApi.write( socket, buffer, count );
+
+					if( writeResult < 0 ) {
+						var errno = LibcApi.LastError;
+						TraceNonBlockingWrite( socket, errno, writeResult, count, totalWritten );
+
+						switch( errno ) {
+							case SystemError.EINTR: goto restart;
+
+							case SystemError.EAGAIN:
+							case SystemError.EINPROGRESS:
+								var waitResult = WaitForWrite( timeout, socket );
+								if( waitResult != SystemError.None ) return waitResult;
+
+								goto restart;
+
+							default:
+								return errno;
+						}
+					}
+					else {
+						var written = ( uint ) writeResult;
+						TraceNonBlockingWrite( socket, SystemError.None, writeResult, count, totalWritten );
+
+						buffer = cast<byte*>( buffer ) + written;
+						totalWritten += written;
+						count -= written;
+						if( count > 0 && written != 0 ) goto restart; // ensure all bytes are send
+
+						return SystemError.None;
+					}
+				}
+
+				public SystemError WriteNonBlocking( TimeDuration timeout, uint& totalWritten, IOHandle socket, iovec* segment, uint segmentCount ) {
+					socket.EnsureNonBlocking();
+					totalWritten = 0U;
+					if( segmentCount == 0 ) return SystemError.None;
+
+				restart:
+					var writeResult = LibcApi.writev( socket, segment, segmentCount );
+
+					if( writeResult < 0 ) {
+						var errno = LibcApi.LastError;
+
+						switch( errno ) {
+							case SystemError.EINTR: goto restart;
+
+							case SystemError.EAGAIN:
+							case SystemError.EINPROGRESS:
+								var waitResult = WaitForWrite( timeout, socket );
+								if( waitResult != SystemError.None ) return waitResult;
+
+								goto restart;
+
+							default:
+								return errno;
+						}
+					}
+					else {
+						var written = ( uint ) writeResult;
+						totalWritten += written;
+
+						if( written != 0 ) {
+							while( segmentCount != 0 ) {
+								if( written < segment[0].iov_len ) {
+									segment[0].iov_len -= written;
+									break;
+								}
+
+								written -= ( uint ) segment[0].iov_len;
+								++segment;
+								--segmentCount;
+							}
+
+							if( segmentCount != 0 ) goto restart; // ensure all bytes are written
+						}
+
+						return SystemError.None;
+					}
+				}
+
+				public SystemError ReadNonBlocking( TimeDuration timeout, uint& totalReceived, IOHandle socket, void* buffer, uint count ) {
+					socket.EnsureNonBlocking();
+					totalReceived = 0;
+
+				restart:
+					var readResult = LibcApi.read( socket, buffer, count );
+
+					if( readResult < 0 ) {
+						var errno = LibcApi.LastError;
+						TraceNonBlockingRead( socket, errno, readResult, count, totalReceived );
+
+						switch( errno ) {
+							case SystemError.EINTR:
+								goto restart;
+
+							case SystemError.EAGAIN:
+							case SystemError.EINPROGRESS: {
+									if( readResult == -1 ) {
+										var waitResult = WaitForRead( timeout, socket );
+										if( waitResult != SystemError.None ) return waitResult;
+
+										goto restart;
+									}
+
+									totalReceived += ( uint ) readResult;
+									return SystemError.None;
+								}
+
+							default:
+								return errno;
+						}
+					}
+					else {
+						var readen = ( uint ) readResult;
+						TraceNonBlockingRead( socket, SystemError.None, readResult, count, totalReceived );
+
+						totalReceived += readen;
+						return SystemError.None;
+					}
+				}
+
+				public SystemError ReadNonBlocking( TimeDuration timeout, uint& totalReceived, IOHandle socket, iovec* segments, uint segmentsCount ) {
+					socket.EnsureNonBlocking();
+					totalReceived = 0;
+
+				restart:
+					var readResult = LibcApi.readv( socket, segments, segmentsCount );
+					if( readResult < 0 ) {
+						var errno = LibcApi.LastError;
+
+						switch( errno ) {
+							case SystemError.EINTR: goto restart;
+
+							case SystemError.EAGAIN:
+							case SystemError.EINPROGRESS:
+								var waitResult = WaitForRead( timeout, socket );
+								if( waitResult != SystemError.None ) return waitResult;
+
+								goto restart;
+
+							default:
+								return errno;
+						}
+					}
+					else {
+						var readen = ( uint ) readResult;
+						totalReceived += readen;
+
+						if( readen != 0 ) {
+							while( segmentsCount != 0 ) {
+								if( readen < segments[0].iov_len ) {
+									segments[0].iov_len -= readen;
+									break;
+								}
+
+								readen -= ( uint ) segments[0].iov_len;
+								++segments;
+								--segmentsCount;
+							}
+
+							if( segmentsCount != 0 ) goto restart; // ensure all bytes are readen
+						}
+
+						return SystemError.None;
+					}
+				}
+
+				#endregion
+
+				#region EventLoop support
+
+				private FiberReadyEventSink _fiberReadyEventSink;
+				private FiberIOEventSink _fiberIOEventSink;
+
+				public void Attach( EventLoop eventLoop ) {
+					if( !Assert.IsTrue( _fiberReadyEventSink == null ) ) return;
+					CurrentEventLoop = eventLoop;
+
+					_fiberReadyEventSink = new FiberReadyEventSink( this );
+					_fiberReadyEventSink.Register();
+
+					_fiberIOEventSink = new FiberIOEventSink( this );
+					_fiberIOEventSink.Register();
+				}
+
+				public void Detach( EventLoop eventLoop ) {
+					if( !Assert.IsTrue( _fiberReadyEventSink != null ) ) return;
+
+					_fiberReadyEventSink.Unregister();
+					_fiberIOEventSink.Unregister();
+				}
+
+				private sealed class FiberIOEventSink : EventLoop.EventSink {
+					private Manager _manager;
+
+					public override void OnEvent( epoll_event& @event ) { _manager.OnEvent(); }
+
+					public FiberIOEventSink( Manager manager )
+						: base( manager.CurrentEventLoop ) {
+						_listenedEvents = EPOLL_EVENTS.EPOLLIN;
+
+						_manager = manager;
+						EventHandle = _manager.Epoll;
+					}
+
+					public override void Dispose() {
+						_manager = null;
+
+						base.Dispose();
+					}
+				}
+
+				private sealed class FiberReadyEventSink : EventLoop.NotificationEventSink {
+					private Manager _manager;
+
+					public FiberReadyEventSink( Manager manager )
+						: base( manager.CurrentEventLoop ) {
+						_manager = manager;
+					}
+
+					public override void OnNotified() {
+						_manager.Dispatch();
+					}
+
+					public override void Dispose() {
+						_manager = null;
+
+						base.Dispose();
+					}
+				}
+
+				#endregion
+
+				#region Tracing
+
+				[Conditional( ConditionString = TraceConditionString )]
+				private static void TraceIONotify( FiberInfo* fiber, epoll_event& @event ) {
+					if( !FiberManager?.Tracing ) return;
+
+					Trace.Write( "Fiber: Event for fiber [{0}]: {1}", *fiber, @event );
+				}
+
+				[Conditional( ConditionString = TraceConditionString )]
+				private void TraceSocketConnect( SocketHandle socket, SystemError errno ) {
+					if( !FiberManager?.Tracing ) return;
+
+					Trace.Write( "Fiber: [{0:D2}] Socket {1} connect: errno={2}", *CurrentFiber, socket.ID, errno );
+				}
+
+				[Conditional( ConditionString = TraceConditionString )]
+				private void TraceNonBlockingWrite( IOHandle socket, SystemError errno, intptr writeResult, uint count, uint bytesSended ) {
+					if( !FiberManager?.Tracing ) return;
+
+					Trace.Write( "Fiber: [{0:D2}] Handle {1} write: errno={2} writeResult={3} count={4} total={5}", *CurrentFiber, socket.ID, errno, writeResult, count, bytesSended );
+				}
+
+				[Conditional( ConditionString = TraceConditionString )]
+				private void TraceNonBlockingRead( IOHandle socket, SystemError errno, intptr readResult, uint count, uint bytesReceived ) {
+					if( !FiberManager?.Tracing ) return;
+
+					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readResult={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readResult, count, socket.AvailableBytes, bytesReceived );
+				}
+
+				#endregion
+			}
+		}
+	}
+}

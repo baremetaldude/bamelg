@@ -17,6 +17,8 @@ namespace System.IO {
 
 		protected StreamingBufferInfo* _bufferInfo;
 
+		public bool IsEndOfStream { get; set; }
+
 		public BinaryWriter( IStream stream ) {
 			BaseStream = stream.GetBufferedWriteStream( _bufferInfo );
 		}
@@ -26,13 +28,19 @@ namespace System.IO {
 
 		private void Cleanup() {
 			if( BaseStream != null ) {
-				BaseStream.Flush( FlushKind.Write );
+				if( !IsEndOfStream ) BaseStream.Flush( FlushKind.Write );
 				BaseStream = null;
 			}
 		}
 
+		#region Primitive types
+
 		private void WritePrimitive<T>( T& value ) {
-			if( !Assert.IsTrue( BaseStream.EnsureWritable( _bufferInfo, sizeof( T ) ) ) ) return;
+			if( !BaseStream.EnsureWritable( _bufferInfo, sizeof( T ) ) ) {
+				IsEndOfStream = true;
+				return;
+			}
+
 			unaligned( *cast<T*>( _bufferInfo->WriteBufferStart ) ) = value;
 			_bufferInfo->OnWritePerformed( sizeof( value ) );
 		}
@@ -63,22 +71,267 @@ namespace System.IO {
 		public void WriteBigEndian( double_bigendian value ) { WritePrimitive<double_bigendian>( value ); }
 
 		public void Write( [In] Guid& value ) {
-			var bytes = value.Bytes;
-			BaseStream.Write( &bytes[0], bytes.Length );
+			if( !BaseStream.EnsureWritable( _bufferInfo, sizeof( value ) ) ) {
+				IsEndOfStream = true;
+				return;
+			}
+
+			if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
+				var bytes = value.Bytes;
+				unaligned( *cast<byte[16]*>( _bufferInfo->WriteBufferStart ) ) = bytes;
+			}
+			else {
+				unaligned( *cast<Guid*>( _bufferInfo->WriteBufferStart ) ) = value;
+			}
+
+			_bufferInfo->OnWritePerformed( sizeof( value ) );
 		}
 
-		public void Write( [In] DateTime& value ) { Write( *( long* ) &value ); }
-		public void Write( [In] TimeSpan& value ) { Write( *( long* ) &value ); }
+		public void Write( [In] DateTime& value ) { Write( *( ulong* ) &value ); }
+		public void Write( [In] DateTimeUTC& value ) { Write( *( ulong* ) &value ); }
+		public void Write( [In] DateTimeLocal& value ) { Write( *( ulong* ) &value ); }
+		public void Write( [In] TimeSpan& value ) { Write( *( ulong* ) &value ); }
+		public void Write( [In] TimeDuration& value ) { Write( *( ulong* ) &value ); }
 
 		// public void Write( [In] void* buffer, int length ) { BaseStream.Write( buffer, length ); } // BaseStream always buffered
 
 		public void Write( System.Serialization.IBinarySerializable value, System.Serialization.SerializerContext context ) { value.Serialize( this, context ); }
 
-		public void WriteValues( sbyte* value, int count ) {
-			BaseStream.Write( ( byte* ) value, count );
+		#endregion
+
+		#region MemorySegment operations
+
+		public void WriteValues( sbyte* value, uint count ) {
+			if( BaseStream.Write( ( byte* ) value, count ) != count )
+				IsEndOfStream = true;
 		}
 
-		public void WriteArray( sbyte* value, int count ) {
+		public void WriteValues( byte* value, uint count ) {
+			if( BaseStream.Write( value, count ) != count )
+				IsEndOfStream = true;
+		}
+
+		public void WriteValues( short* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( ushort* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( char* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( int* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( uint* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( long* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( ulong* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( DateTime* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( DateTimeUTC* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( DateTimeLocal* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( TimeSpan* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( TimeDuration* value, uint count ) {
+			if( !CompilerInfo.BigEndian ) {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+			else
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+		}
+
+		public void WriteValues( Guid* value, uint count ) {
+			if( CompilerInfo.CurrentPlatform == PlatformID.Windows ) {
+				for( var i = 0U; i < count; ++i )
+					Write( value[i] );
+			}
+			else {
+				var byteCount = sizeof( value[0] ) * count;
+				if( BaseStream.Write( value, byteCount ) != byteCount )
+					IsEndOfStream = true;
+			}
+		}
+
+		public void WriteValues( sbyte[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( byte[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( short[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( ushort[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( int[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( uint[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( long[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		public void WriteValues( ulong[] buffer, uint offset, uint length ) {
+			if( buffer == null ) { Debug.Fail(); return; }
+			if( length > buffer.Length ) { Debug.Fail(); return; }
+			if( offset >= buffer.Length ) { Debug.Fail(); return; }
+			if( offset + length > buffer.Length ) { Debug.Fail(); return; }
+
+			WriteValues( &buffer[offset], length );
+		}
+
+		#endregion
+
+		#region Array operations
+
+		public void WriteArray( sbyte* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -91,11 +344,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( byte* value, int count ) {
-			BaseStream.Write( value, count );
-		}
-
-		public void WriteArray( byte* value, int count ) {
+		public void WriteArray( byte* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -108,15 +357,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( short* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( short* value, int count ) {
+		public void WriteArray( short* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -129,15 +370,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( ushort* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( ushort* value, int count ) {
+		public void WriteArray( ushort* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -150,15 +383,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( char* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( char* value, int count ) {
+		public void WriteArray( char* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -171,15 +396,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( int* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( int* value, int count ) {
+		public void WriteArray( int* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -192,15 +409,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( uint* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( uint* value, int count ) {
+		public void WriteArray( uint* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -213,15 +422,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( long* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( long* value, int count ) {
+		public void WriteArray( long* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -234,15 +435,7 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( ulong* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
-		}
-
-		public void WriteArray( ulong* value, int count ) {
+		public void WriteArray( ulong* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -255,15 +448,21 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( DateTime* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
+		public void WriteArray( DateTime* value, uint count ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			Write( count );
+			WriteValues( value, count );
 		}
 
-		public void WriteArray( DateTime* value, int count ) {
+		public void WriteArray( DateTimeUTC* value, uint count ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			Write( count );
+			WriteValues( value, count );
+		}
+
+		public void WriteArray( DateTimeLocal* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -276,15 +475,13 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteValues( TimeSpan* value, int count ) {
-			if( !CompilerInfo.BigEndian )
-				BaseStream.Write( value, ( int )( sizeof( value[0] ) * count ) );
-			else
-				for( int i = 0; i < count; ++i )
-					Write( value[i] );
+		public void WriteArray( DateTimeUTC[] value ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			WriteArray( &value[0], value.Length );
 		}
 
-		public void WriteArray( TimeSpan* value, int count ) {
+		public void WriteArray( TimeSpan* value, uint count ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( count );
@@ -297,13 +494,43 @@ namespace System.IO {
 			WriteArray( &value[0], value.Length );
 		}
 
+		public void WriteArray( TimeDuration* value, uint count ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			Write( count );
+			WriteValues( value, count );
+		}
+
+		public void WriteArray( TimeDuration[] value ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			WriteArray( &value[0], value.Length );
+		}
+
+		public void WriteArray( Guid* value, uint count ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			Write( count );
+			WriteValues( value, count );
+		}
+
+		public void WriteArray( Guid[] value ) {
+			if( value == null ) { Write( uint.MaxValue ); return; }
+
+			WriteArray( &value[0], value.Length );
+		}
+
+		#endregion
+
+		#region String operations
+
 		public void Write( CString value ) {
 			if( value.IsNullOrEmpty ) { Write( uint.MaxValue ); return; }
 
 			var length = value.Length;
 			Write( length );
 			Write( System.Environment.DefaultCodePage );
-			WriteValues( value.GetChars(), ( int ) length * sizeof( value[0] ) );
+			WriteValues( value.GetChars(), length * sizeof( value[0] ) );
 		}
 
 		public void Write( SbcsString value ) {
@@ -311,7 +538,7 @@ namespace System.IO {
 
 			Write( value.Length );
 			Write( value.CodePage );
-			WriteValues( value.GetChars(), ( int ) value.ByteLength );
+			WriteValues( value.GetChars(), value.ByteLength );
 		}
 
 		public void Write( Utf8String value ) {
@@ -319,52 +546,54 @@ namespace System.IO {
 
 			Write( value.Length );
 			Write( value.ByteLength );
-			WriteValues( value.GetChars(), ( int ) value.ByteLength );
+			WriteValues( value.GetChars(), value.ByteLength );
 		}
 
 		public void Write( Utf16String value ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( value.Length );
-			WriteValues( value.GetChars(), ( int ) value.Length );
+			WriteValues( value.GetChars(), value.Length );
 		}
 
 		public void Write( Utf32String value ) {
 			if( value == null ) { Write( uint.MaxValue ); return; }
 
 			Write( value.Length );
-			WriteValues( value.GetChars(), ( int ) value.Length );
+			WriteValues( value.GetChars(), value.Length );
 		}
 
 		public void WriteNullTerminated( CString value ) {
 			if( value.IsNullOrEmpty ) { Write( ( byte ) 0 ); return; }
 
-			BaseStream.Write( value.GetChars(), ( int ) value.Length + 1 );
+			WriteValues( value.GetChars(), value.Length + 1 );
 		}
 
 		public void WriteNullTerminated( SbcsString value ) {
 			if( value == null ) { Write( ( byte ) 0 ); return; }
 
-			WriteValues( value.GetChars(), ( int ) value.Length + 1 );
+			WriteValues( value.GetChars(), value.Length + 1 );
 		}
 
 		public void WriteNullTerminated( Utf8String value ) {
 			if( value == null ) { Write( ( byte ) 0 ); return; }
 
-			WriteValues( value.GetChars(), ( int ) value.ByteLength + 1 );
+			WriteValues( value.GetChars(), value.ByteLength + 1 );
 		}
 
 		public void WriteNullTerminated( Utf16String value ) {
 			if( value == null ) { Write( ( ushort ) 0 ); return; }
 
-			WriteValues( value.GetChars(), ( int ) value.Length + 1 );
+			WriteValues( value.GetChars(), value.Length + 1 );
 		}
 
 		public void WriteNullTerminated( Utf32String value ) {
 			if( value == null ) { Write( ( uint ) 0 ); return; }
 
-			WriteValues( value.GetChars(), ( int ) value.Length + 1 );
+			WriteValues( value.GetChars(), value.Length + 1 );
 		}
+
+		#endregion
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) { BaseStream.Flush( flushKind ); }
 

@@ -103,7 +103,6 @@ namespace System.Runtime {
 			TrackReleaseReference();
 
 			var finalSharedRefcount = IsReferenceCounterAtomic ? atomic( --_sharedReferenceCount, Release ) - 1 : --_sharedReferenceCount;
-			Assert.IsTrue( finalSharedRefcount >= 0 );
 
 			if( finalSharedRefcount == 0 ) {
 				var& type = GetType();
@@ -112,12 +111,12 @@ namespace System.Runtime {
 					if( IsReferenceCounterAtomic ) atomic( _sharedReferenceCount += int.MaxValue / 2, Acquire );
 					else _sharedReferenceCount += int.MaxValue / 2;
 
-					type.Destructor( bitcast<void*>( this ) ); // invoke dtor; do not free space
+					type.Destructor( bitcast<void*>( this ) ); // invoke Destructor; do not free space
 
 					finalSharedRefcount = IsReferenceCounterAtomic ? atomic( _sharedReferenceCount -= int.MaxValue / 2, Relaxed ) - int.MaxValue / 2 : _sharedReferenceCount -= int.MaxValue / 2;
 					Assert.IsTrue( finalSharedRefcount == 0 ); // refcount increased ==> bad destructor code
 				}
-				
+
 				var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( _weakReferenceCount, Relaxed ) : _weakReferenceCount;
 				if( finalWeakRefcount == 0 ) {
 					TrackDeallocation();
@@ -126,6 +125,7 @@ namespace System.Runtime {
 					else Memory.Deallocate( bitcast<void*>( this ) ); // free space
 				}
 			}
+			else Assert.IsTrue( finalSharedRefcount > 0 );
 		}
 
 		public void ReleaseWeakReference() {
@@ -133,8 +133,7 @@ namespace System.Runtime {
 
 			TrackReleaseWeakReference();
 
-			var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( --_weakReferenceCount, Release ) - 1 : --_weakReferenceCount;
-			Assert.IsTrue( finalWeakRefcount >= 0 );
+			var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( --_weakReferenceCount, Relaxed ) - 1 : --_weakReferenceCount;
 
 			if( finalWeakRefcount == 0 ) {
 				if( atomic( _sharedReferenceCount, Relaxed ) == 0 ) {
@@ -144,9 +143,46 @@ namespace System.Runtime {
 					else Memory.Deallocate( bitcast<void*>( this ) ); // free space
 				}
 			}
+			else Assert.IsTrue( finalWeakRefcount > 0 );
 		}
 
-		/// Single-threaded assignment, e.g. assume multiple threads will not write to same place in same time
+		public void ReleaseReferenceRelaxed() {
+			if( this == null || IsConstant ) return;
+
+			TrackReleaseReference();
+
+			var finalSharedRefcount = IsReferenceCounterAtomic ? atomic( --_sharedReferenceCount, Relaxed ) - 1 : --_sharedReferenceCount;
+
+			if( finalSharedRefcount == 0 ) {
+				var& type = GetType();
+
+				if( type.Destructor != null ) {
+					if( IsReferenceCounterAtomic ) atomic( _sharedReferenceCount += int.MaxValue / 2, Relaxed );
+					else _sharedReferenceCount += int.MaxValue / 2;
+
+					type.Destructor( bitcast<void*>( this ) ); // invoke Destructor; do not free space
+
+					finalSharedRefcount = IsReferenceCounterAtomic ? atomic( _sharedReferenceCount -= int.MaxValue / 2, Relaxed ) - int.MaxValue / 2 : _sharedReferenceCount -= int.MaxValue / 2;
+					Assert.IsTrue( finalSharedRefcount == 0 ); // refcount increased ==> bad destructor code
+				}
+
+				var finalWeakRefcount = IsReferenceCounterAtomic ? atomic( _weakReferenceCount, Relaxed ) : _weakReferenceCount;
+				if( finalWeakRefcount == 0 ) {
+					TrackDeallocation();
+
+					if( AlignedAllocation ) Memory.DeallocateAligned( bitcast<void*>( this ) ); // free space
+					else Memory.Deallocate( bitcast<void*>( this ) ); // free space
+				}
+			}
+			else Assert.IsTrue( finalSharedRefcount > 0 );
+		}
+
+		/// Multi-threaded assignment
+		public static void AssignAtomic( RuntimeObjectBase* left, RuntimeObjectBase right ) {
+			AtomicOperations.Exchange( left, right );
+		}
+
+		/// Single-threaded assignment, e.g. assuming multiple threads will not write to same place at same time
 		public static void Assign( RuntimeObjectBase* left, RuntimeObjectBase right ) {
 			// eliminate unnecessary bus sync
 			if( *left == right ) return;
@@ -156,7 +192,7 @@ namespace System.Runtime {
 			*( void** ) left = *( void** ) &right;
 		}
 
-		/// Single-threaded assignment where 'left' non-constant and 'right' is constant
+		/// Single-threaded assignment where 'left' non-constant and 'right' is constant, e.g. assuming multiple threads will not write to same place at same time
 		public static void AssignConstant( RuntimeObjectBase* left, RuntimeObjectBase right ) {
 			left->ReleaseReference();
 			*( void** ) left = *( void** ) &right;

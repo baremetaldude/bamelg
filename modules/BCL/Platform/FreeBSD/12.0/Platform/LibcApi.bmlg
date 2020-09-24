@@ -33,20 +33,20 @@ namespace Platform.Libc {
 		public extern static CUtf8String* environ;
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=open
-		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
-		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlFlags flags, SymlinkFollowOption option );
+		public extern static IOHandle open( CUtf8String name, FileOpenFlags flags, uint permissions );
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption option );
 
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=ioctl
-		public extern static int ioctl( IOHandle handle, IoctlCommand option, void* result );
+		public extern static int ioctl( IOHandle handle, FileDriverCommand option, void* result );
 		/// http://www.freebsd.org/cgi/man.cgi?sektion=2&query=fcntl
-		// public extern static int fcntl( IOHandle handle, FctlCommand option );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
+		// public extern static int fcntl( IOHandle handle, FileDescriptorCommand option );
+		public extern static int fcntl( IOHandle handle, FileDescriptorCommand option, int value );
 
 		/// http://linux.die.net/man/3/makecontext
 		public extern static void makecontext( ucontext_t* ucp, Functors.Action<Functors.Action<void*>, void*> nonTerminatingMethod, int argc, Functors.Action<void*> method, void* parameter );
 
 		internal static int uname( utsname& value ) {
-			return __xuname( value.sysname.Length, &value );
+			return __xuname( ( int ) value.sysname.Length, &value );
 		}
 
 		internal const uint RawErrorsMax = 125;
@@ -337,11 +337,11 @@ namespace Platform.Libc {
 
 		public bool Contains( SignalCode signal ) { return LibcApi.sigismember( &this, signal ) == 0; }
 
-		private const int MaxSignals = sizeof( thistype ) * 8;
+		private const uint MaxSignals = sizeof( thistype ) * 8;
 
 		public yield<SignalCode> GetEnumerator() {
 			var accessor = new BitArrayAccessor( ( uint* ) &this, MaxSignals );
-			for( var i = 0; i < MaxSignals; ++i ) {
+			for( var i = 0U; i < MaxSignals; ++i ) {
 				if( accessor[i] )
 					yield return ( SignalCode )( i + 1 );
 			}
@@ -498,129 +498,535 @@ namespace Platform.Libc {
 	}
 
 	public partial struct timeval : IFormattable {
+		public static readonly thistype Zero = new thistype { tv_sec = 0, tv_usec = 0 };
+		public static readonly thistype MaxValue = new thistype { tv_sec = int.MaxValue, tv_usec = 999999 };
+		public static readonly thistype MinValue = new thistype { tv_sec = int.MinValue, tv_usec = 0 };
+
 		public timeval() { tv_sec = 0; tv_usec = 0; }
-		public timeval( intptr seconds ) { tv_sec = seconds; tv_usec = 0; }
-		public timeval( intptr seconds, intptr microseconds ) { tv_sec = seconds; tv_usec = microseconds; }
 
-		public timeval( TimeSpan& span ) {
-			tv_sec = ( int ) span.TotalSeconds;
-			tv_usec = ( int )( ( span.Ticks / 10 ) % 1000000 );
-		}
-
-		public int TotalMilliseconds {
+		public static thistype UtcNow {
 			get {
-				return ( int )( tv_sec * 1000 + tv_usec / 1000 );
-			}
-		}
-
-		public static timeval UtcNow {
-			get {
-				timeval result;
+				thistype result;
 				LibcApi.gettimeofday( &result, null );
 				return result;
 			}
 		}
 
-		public static timeval Now {
-			get {
-				var result = UtcNow;
-				result.tv_sec += GetCurrentTimezoneSecondsOffset( result.tv_sec );
-				return result;
+		public static explicit operator thistype( TimeSpan value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeSpan( thistype value ) { TimeSpan result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( TimeDuration value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeDuration( thistype value ) { TimeDuration result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTime value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTime( thistype value ) { DateTime result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public long TimeSpanTicks { get { EnsureNormalized(); return tv_sec * 10000000L + ( uint ) tv_usec * 10U; } }
+		public ulong TimeDurationTicks { get { EnsureNormalized(); return tv_sec >= 0 ? ( uint ) tv_sec * 10000000UL + ( uint ) tv_usec * 10U : ( ulong )( ( long ) tv_sec * -10000000L ) - ( uint ) tv_usec * 10U; } }
+		public ulong DateTimeTicks { get { EnsureNormalized(); return ( ulong ) TimeSpanTicks + TimeDuration.Ticks_1970_1_1; } }
+
+		public long TotalSeconds { get { EnsureNormalized(); return tv_sec; } }
+		public long TotalMilliseconds { get { EnsureNormalized(); return tv_sec * 1000L + ( int )( ( uint ) tv_usec / 1000UL ); } }
+
+		public static thistype FromMilliseconds( uint value ) {
+			return new thistype {
+				tv_sec = ( int )( value / 1000U ),
+				tv_usec = ( int )( value % 1000U * 1000U )
+			};
+		}
+
+		public static thistype FromSeconds( uint value ) {
+			if( value > ( uint ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( ulong value ) {
+			if( value > ( ulong ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( int value ) {
+			return new thistype {
+				tv_sec = value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( long value ) {
+			if( value > int.MaxValue ) return MaxValue;
+			if( value < int.MinValue ) return MinValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeSpan value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( value.Ticks <= -21474836480000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_usec = ( int )( ( value.Ticks / 10 ) % 1000000 );
+
+			if( result->tv_usec < 0 ) {
+				result->tv_usec += 1000000;
+				if( checkwrap( --result->tv_sec ) ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
 			}
+
+			return Convert.ConversionResult.OK;
 		}
 
-		// int unixSeconds = LibcApi.time( null );
-		public static int GetCurrentTimezoneSecondsOffset( intptr unixSeconds ) {
-			tm holder;
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeDuration value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
 
-			var local = LibcApi.localtime_r( &unixSeconds, &holder );
-			if( local == null ) {
-				Assert.Fail( "cannot get localtime" );
-				LibcApi.exit( 1 );
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_usec = ( int )( ( value.Ticks / 10U ) % 1000000U );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTime time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeSpan.TicksPerSecond - TimeSpan.Ticks_1970_1_1 / TimeSpan.TicksPerSecond );
+			result->tv_usec = ( int )( result->tv_sec >= 0 ? ( uint )( ticks % TimeSpan.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond : ( uint )( ( ticks + 9 ) % TimeSpan.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeDuration.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerSecond );
+			result->tv_usec = ( int )( result->tv_sec >= 0 ? ( uint )( ticks % TimeDuration.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond : ( uint )( ( ticks + 9 ) % TimeDuration.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeSpan* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeSpanTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeDuration* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeDurationTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTime* result, thistype value ) {
+			value.EnsureNormalized();
+
+			*result = new DateTime( ( long ) value.DateTimeTicks, DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.DateTimeTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public Convert.ConversionResult Normalize() {
+			while( tv_usec >= 1000000 ) {
+				tv_usec -= 1000000;
+				if( checkwrap( ++tv_sec ) ) { this = MaxValue; return Convert.ConversionResult.Clamped; }
 			}
 
-			return ( int ) local->tm_gmtoff;
+			while( tv_usec < 0 ) {
+				tv_usec += 1000000;
+				if( checkwrap( --tv_sec ) ) { this = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
 		}
 
-		internal const long AdjustEpochSeconds = 62135596800;
-		internal const long AdjustEpochTicks = 621355968000000000;
-
-		public long TimeSpanTicks {
-			get { return tv_sec * 1000000L * 10 + tv_usec * 10; }
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureNormalized() {
+			Assert.IsTrue( tv_usec < 1000000 );
+			Assert.IsTrue( tv_usec >= 0 );
 		}
 
-		public long DateTimeTicks {
-			get { return TimeSpanTicks + AdjustEpochTicks; }
+		public static Convert.ConversionResult TryAdd( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec + right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_usec = left.tv_usec + right.tv_usec;
+			return result->Normalize();
 		}
 
-		public void ToString( StringBuilder builder, string format ) {
-			var time = ( DateTime ) this;
-			builder.Append( time, format );
-		}
-	}
+		public static Convert.ConversionResult TrySubtract( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
 
-	public partial struct timespec : IFormattable {
-		public timespec() { }
-		public timespec( intptr seconds, intptr nanoseconds ) { tv_sec = seconds; tv_nsec = nanoseconds; }
-
-		public timespec( TimeSpan& span ) {
-			tv_sec = ( int ) span.TotalSeconds;
-			tv_nsec = ( int )( ( span.Ticks * 100 ) % 1000000000L );
+			if( checkwrap( result->tv_sec = left.tv_sec - right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_usec = left.tv_usec - right.tv_usec;
+			return result->Normalize();
 		}
 
-		public timespec( DateTime& time )
-			: this( new TimeSpan( time.Ticks - timeval.AdjustEpochTicks ) ) { } // dont convert to Universal Time
+		public thistype operator -() {
+			EnsureNormalized();
+			if( tv_sec == int.MinValue ) return MaxValue;
 
-		public static timespec operator +( timespec& left, timespec& right ) {
-			var result = new timespec( left.tv_sec + right.tv_sec, left.tv_nsec + right.tv_nsec );
+			var result = new thistype {
+				tv_sec = -tv_sec,
+				tv_usec = -tv_usec
+			};
 
-			if( result.tv_nsec >= 1000000000 ) {
-				++result.tv_sec;
-				result.tv_nsec -= 1000000000;
+			if( result.tv_usec < 0 ) {
+				result.tv_usec += 1000000;
+				if( checkwrap( --result.tv_sec ) ) return MinValue;
 			}
 
 			return result;
 		}
 
-		public static timespec FromDays( double value ) { return ( timespec ) TimeSpan.FromDays( value ); }
-		public static timespec FromHours( double value ) { return ( timespec ) TimeSpan.FromHours( value ); }
-		public static timespec FromMinutes( double value ) { return ( timespec ) TimeSpan.FromMinutes( value ); }
-		public static timespec FromSeconds( double value ) { return ( timespec ) TimeSpan.FromSeconds( value ); }
-		public static timespec FromMilliseconds( double value ) { return ( timespec ) TimeSpan.FromMilliseconds( value ); }
+		public static thistype operator +( thistype left, thistype right ) { thistype result; Assert.IsTrue( TryAdd( &result, left, right ) ); return result; }
+		public static thistype operator -( thistype left, thistype right ) { thistype result; Assert.IsTrue( TrySubtract( &result, left, right ) ); return result; }
+
+		public static bool operator ==( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec == right.tv_sec && left.tv_usec == right.tv_usec; }
+		public static bool operator !=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec; }
+
+		public static bool operator <( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec < right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec < right.tv_usec ); }
+		public static bool operator <=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec <= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec <= right.tv_usec ); }
+		public static bool operator >( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec > right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec > right.tv_usec ); }
+		public static bool operator >=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec >= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec >= right.tv_usec ); }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( ( DateTimeUTC ) this, format ?? "Q" );
+		}
+	}
+
+	public partial struct timespec : IFormattable {
+		public static readonly thistype Zero = new thistype { tv_sec = 0, tv_nsec = 0 };
+		public static readonly thistype MaxValue = new thistype { tv_sec = int.MaxValue, tv_nsec = 999999999 };
+		public static readonly thistype MinValue = new thistype { tv_sec = int.MinValue, tv_nsec = 0 };
+
+		public timespec() { tv_sec = 0; tv_nsec = 0; }
+
+		public static timespec UtcNow { get { return RealTime; } }
 
 		public static timespec RealTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_REALTIME, &result ) ); return result; } }
 		public static timespec MonotonicTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_MONOTONIC, &result ) ); return result; } }
+		// public static timespec BootTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_BOOTTIME, &result ) ); return result; } }
+		// public static timespec InternationalAtomicTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_TAI, &result ) ); return result; } }
+		public static timespec ProcessTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_PROCESS_CPUTIME_ID, &result ) ); return result; } }
 		public static timespec ThreadTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_THREAD_CPUTIME_ID, &result ) ); return result; } }
 
 		public static timespec RealTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_REALTIME, &result ) ); return result; } }
 		public static timespec MonotonicTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_MONOTONIC, &result ) ); return result; } }
+		// public static timespec BootTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_BOOTTIME, &result ) ); return result; } }
+		// public static timespec InternationalAtomicTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_TAI, &result ) ); return result; } }
+		public static timespec ProcessTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_PROCESS_CPUTIME_ID, &result ) ); return result; } }
 		public static timespec ThreadTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_THREAD_CPUTIME_ID, &result ) ); return result; } }
 
-		public static timespec UtcNow { get { return RealTime; } }
+		public static explicit operator thistype( TimeSpan value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeSpan( thistype value ) { TimeSpan result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
 
-		public static timespec Now {
-			get {
-				var result = UtcNow;
-				result.tv_sec += timeval.GetCurrentTimezoneSecondsOffset( result.tv_sec );
-				return result;
+		public static explicit operator thistype( TimeDuration value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeDuration( thistype value ) { TimeDuration result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTime value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTime( thistype value ) { DateTime result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public long TimeSpanTicks { get { EnsureNormalized(); return tv_sec * 10000000L + ( long )( ( uint ) tv_nsec / 100U ); } }
+		public ulong TimeDurationTicks { get { EnsureNormalized(); return tv_sec >= 0 ? ( uint ) tv_sec * 10000000UL + ( uint ) tv_nsec / 100U : ( ulong )( ( long ) tv_sec * -10000000L ) - ( uint ) tv_nsec / 100U; } }
+		public ulong DateTimeTicks { get { EnsureNormalized(); return ( ulong ) TimeSpanTicks + TimeDuration.Ticks_1970_1_1; } }
+
+		public long TotalSeconds { get { EnsureNormalized(); return tv_sec; } }
+		public long TotalMilliseconds { get { EnsureNormalized(); return tv_sec * 1000L + ( int )( ( uint ) tv_nsec / 1000000UL ); } }
+
+		public static thistype FromMilliseconds( uint value ) {
+			return new thistype {
+				tv_sec = ( int )( value / 1000U ),
+				tv_nsec = ( int )( value % 1000U * 1000000U )
+			};
+		}
+
+		public static thistype FromSeconds( uint value ) {
+			if( value > ( uint ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( ulong value ) {
+			if( value > ( ulong ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( int value ) {
+			return new thistype {
+				tv_sec = value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( long value ) {
+			if( value > int.MaxValue ) return MaxValue;
+			if( value < int.MinValue ) return MinValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeSpan value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( value.Ticks <= -21474836480000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_nsec = ( int )( value.Ticks % TimeSpan.TicksPerSecond * 100 );
+
+			if( result->tv_nsec < 0 ) {
+				result->tv_nsec += 1000000000;
+				if( checkwrap( --result->tv_sec ) ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
 			}
+
+			return Convert.ConversionResult.OK;
 		}
 
-		public long TimeSpanTicks {
-			get { return tv_sec * ( 10L * 1000000 ) + tv_nsec / 100; }
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeDuration value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_nsec = ( int )( value.Ticks % TimeDuration.TicksPerSecond * 100U );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
 		}
 
-		public long DateTimeTicks {
-			get { return TimeSpanTicks + timeval.AdjustEpochTicks; }
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTime time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeSpan.TicksPerSecond - TimeSpan.Ticks_1970_1_1 / TimeSpan.TicksPerSecond );
+			result->tv_nsec = ( int )( ticks % TimeSpan.TicksPerSecond * 100 - TimeSpan.Ticks_1970_1_1 % TimeSpan.TicksPerSecond * 100 );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
 		}
 
-		public static explicit operator timespec( TimeSpan& value ) { return new timespec( value ); }
-		public static explicit operator timespec( DateTime& value ) { return new timespec( value ); }
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC time ) {
+			if( time.Ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( time.Ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( time.Ticks / TimeDuration.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerSecond );
+			result->tv_nsec = ( int )( time.Ticks % TimeDuration.TicksPerSecond * 100 - TimeDuration.Ticks_1970_1_1 % TimeDuration.TicksPerSecond * 100 );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeSpan* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeSpanTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeDuration* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeDurationTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTime* result, thistype value ) {
+			value.EnsureNormalized();
+
+			*result = new DateTime( ( long ) value.DateTimeTicks, DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.DateTimeTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public Convert.ConversionResult Normalize() {
+			while( tv_nsec >= 1000000000 ) {
+				tv_nsec -= 1000000000;
+				if( checkwrap( ++tv_sec ) ) { this = MaxValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			while( tv_nsec < 0 ) {
+				tv_nsec += 1000000000;
+				if( checkwrap( --tv_sec ) ) { this = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureNormalized() {
+			Assert.IsTrue( tv_nsec < 1000000000 );
+			Assert.IsTrue( tv_nsec >= 0 );
+		}
+
+		public static Convert.ConversionResult TryAdd( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec + right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_nsec = left.tv_nsec + right.tv_nsec;
+			return result->Normalize();
+		}
+
+		public static Convert.ConversionResult TrySubtract( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec - right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_nsec = left.tv_nsec - right.tv_nsec;
+			return result->Normalize();
+		}
+
+		public thistype operator -() {
+			EnsureNormalized();
+			if( tv_sec == int.MinValue ) return MaxValue;
+
+			var result = new thistype {
+				tv_sec = -tv_sec,
+				tv_nsec = -tv_nsec
+			};
+
+			if( result.tv_nsec < 0 ) {
+				result.tv_nsec += 1000000000;
+				if( checkwrap( --result.tv_sec ) ) return MinValue;
+			}
+
+			return result;
+		}
+
+		public static thistype operator +( thistype left, thistype right ) { thistype result; Assert.IsTrue( TryAdd( &result, left, right ) ); return result; }
+		public static thistype operator -( thistype left, thistype right ) { thistype result; Assert.IsTrue( TrySubtract( &result, left, right ) ); return result; }
+
+		public static bool operator ==( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec == right.tv_sec && left.tv_nsec == right.tv_nsec; }
+		public static bool operator !=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec != right.tv_sec || left.tv_nsec != right.tv_nsec; }
+
+		public static bool operator <( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec < right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec < right.tv_nsec ); }
+		public static bool operator <=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec <= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec <= right.tv_nsec ); }
+		public static bool operator >( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec > right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec > right.tv_nsec ); }
+		public static bool operator >=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec >= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec >= right.tv_nsec ); }
 
 		public void ToString( StringBuilder builder, string format ) {
-			var time = ( DateTime ) this;
-			builder.Append( time, format );
+			builder.Append( ( DateTimeUTC ) this, format ?? "Q" );
 		}
+	}
+
+	public partial struct tm : IFormattable {
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			// if( value.Day > 31 || ( value.Month - 1 ) > 11 ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+			// if( value.Day > 31 || ( value.Month - 1 ) > 11 ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			ulong dateTicks;
+			if( !DateValues.TryDateToTicks( dateTicks, 1900 + ( ushort ) value.tm_year, ( byte ) value.tm_mon + 1, ( byte ) value.tm_mday ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			ulong timeTicks;
+			if( !DateValues.TryTimeToTicks( timeTicks, ( byte ) value.tm_hour, ( byte ) value.tm_min, ( byte ) value.tm_sec ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			if( checkwrap( result->Ticks = dateTicks + timeTicks ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC value ) {
+			var dateValues = value.GetDateValues();
+
+			result->tm_year = dateValues.Year - 1900;
+			result->tm_mon = dateValues.Month - 1;
+			result->tm_wday = ( dateValues.DayOfWeek.Value() + 1 ) % 7;
+			result->tm_mday = dateValues.Day;
+			result->tm_hour = value.Hour;
+			result->tm_min = value.Minute;
+			result->tm_sec = value.Second;
+			result->tm_isdst = 0;
+			result->tm_yday = dateValues.DayOfYear - 1;
+			result->tm_gmtoff = 0;
+			result->tm_zone = ( sbyte* ) cast<SbcsString>( "GMT" ).GetChars();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			if( format == null ) {
+				builder.Append( 1900 + tm_year, "D4" );
+				builder.Append( '-' );
+				builder.Append( tm_mon + 1, "D2" );
+				builder.Append( '-' );
+				builder.Append( tm_mday, "D2" );
+				builder.Append( ' ' );
+				builder.Append( tm_hour, "D2" );
+				builder.Append( ':' );
+				builder.Append( tm_min, "D2" );
+				builder.Append( ':' );
+				builder.Append( tm_sec, "D2" );
+
+				builder.Append( " tm_isdst:" );
+				builder.Append( tm_isdst );
+
+				builder.Append( " tm_wday:" );
+				builder.Append( tm_wday );
+
+				builder.Append( " tm_yday:" );
+				builder.Append( tm_yday );
+
+				builder.Append( " tm_gmtoff:" );
+				builder.Append( tm_gmtoff );
+
+				builder.Append( " tm_zone:" );
+				builder.Append( new CString( tm_zone ) );
+			}
+			else
+				builder.Append( ( DateTimeUTC ) this, "Q" );
+		}
+
+		public static bool operator ==( thistype left, thistype right ) {
+			return left.tm_year == right.tm_year && left.tm_mon == right.tm_mon && left.tm_mday == right.tm_mday && left.tm_hour == right.tm_hour && left.tm_min == right.tm_min && left.tm_sec == right.tm_sec && left.tm_isdst == right.tm_isdst && left.tm_wday == right.tm_wday && left.tm_yday == right.tm_yday && left.tm_gmtoff == right.tm_gmtoff && new CString( left.tm_zone ) == new CString( right.tm_zone );
+		}
+
+		public static bool operator !=( thistype left, thistype right ) { return !( left == right ); }
 	}
 
 	public partial struct pollfd : IFormattable {
@@ -637,23 +1043,23 @@ namespace Platform.Libc {
 		}
 	}
 	public struct AlarmRegion : IDisposable {
-		private TimeSpan _timeout;
+		private TimeDuration _timeout;
 
-		public AlarmRegion( TimeSpan timeout ) {
+		public AlarmRegion( TimeDuration timeout ) {
 			_timeout = timeout;
-			if( timeout <= TimeSpan.Zero ) return;
+			if( timeout == TimeDuration.Zero ) return;
 
 			// LibcApi.signal( SignalCode.SIGALRM, AlarmSignalHandler );
 			var sa = default( sigaction );
 			var& handler = sa.__sigaction_u.__sa_handler; *&handler = AlarmSignalHandler;
 			LibcApi.sigaction( SignalCode.SIGALRM, &sa, null );
 
-			var @new = new itimerval { it_interval = default( timeval ), it_value = new timeval( timeout ) };
+			var @new = new itimerval { it_interval = default( timeval ), it_value = ( timeval ) timeout };
 			LibcApi.setitimer( 0, &@new, null );
 		}
 
 		public void Dispose() {
-			if( _timeout <= TimeSpan.Zero ) return;
+			if( _timeout == TimeDuration.Zero ) return;
 			LibcApi.signal( SignalCode.SIGALRM, LibcApi.SIG_IGN );
 		}
 

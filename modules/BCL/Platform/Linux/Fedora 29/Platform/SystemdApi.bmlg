@@ -26,7 +26,7 @@ namespace Platform.Systemd {
 		public static SocketHandleLocal ServiceNotifySocket;
 		public static Utf8String ServiceNotifyPath;
 		public static sockaddr_un ServiceNotifyEndpoint;
-		public static TimeSpan WatchdogNotifyTimeout;
+		public static TimeDuration WatchdogNotifyTimeout;
 
 		public static IOHandle GetPassedHandle( int index ) {
 			if( index < 0 || index >= PassedHandles ) return IOHandle.Invalid;
@@ -47,10 +47,10 @@ namespace Platform.Systemd {
 			var watchdog_usec = LibcApi.getenv( "WATCHDOG_USEC" );
 			if( watchdog_usec.IsNullOrEmpty ) return;
 
-			int watchdogNotifyTimeout;
-			if( !int.TryParse( watchdog_usec, watchdogNotifyTimeout ) ) return;
+			uint watchdogNotifyTimeout;
+			if( !uint.TryParse( watchdog_usec, watchdogNotifyTimeout ) ) return;
 
-			WatchdogNotifyTimeout = TimeSpan.FromMicroseconds( watchdogNotifyTimeout );
+			WatchdogNotifyTimeout = TimeDuration.FromMicroseconds( watchdogNotifyTimeout );
 
 			var notify_socket = LibcApi.getenv( "NOTIFY_SOCKET" );
 			if( notify_socket.IsNullOrEmpty ) return;
@@ -59,13 +59,8 @@ namespace Platform.Systemd {
 			var isAbstract = ServiceNotifyPath.GetChars()[0] == ( byte ) '@';
 
 			ServiceNotifyEndpoint = new sockaddr_un( ServiceNotifyPath );
-			if( isAbstract ) {
-				Console.WriteLine( "abstract" );
+			if( isAbstract )
 				ServiceNotifyEndpoint.sun_path[0] = 0;
-			}
-			else {
-				Console.WriteLine( "not abstract" );
-			}
 
 			ServiceNotifySocket = new SocketHandleLocal( __socket_type.SOCK_DGRAM, true );
 
@@ -89,7 +84,7 @@ namespace Platform.Systemd {
 			m.msg_namelen = ( uint )( memberinfo( sockaddr_un.sun_path ).ByteOffset + ServiceNotifyPath.ByteLength );
 
 			m.msg_iov = &data[0];
-			m.msg_iovlen = ( uint ) data.Length;
+			m.msg_iovlen = data.Length;
 
 			LibcApi.sendmsg( ServiceNotifySocket, &m, MessageFlags.None );
 		}
@@ -113,10 +108,10 @@ namespace Platform.Systemd {
 
 			var m = default( msghdr );
 			m.msg_name = &ServiceNotifyEndpoint;
-			m.msg_namelen = ( uint )( memberinfo( sockaddr_un.sun_path ).ByteOffset + ServiceNotifyPath.ByteLength );
+			m.msg_namelen = memberinfo( sockaddr_un.sun_path ).ByteOffset + ServiceNotifyPath.ByteLength;
 
 			m.msg_iov = &data[0];
-			m.msg_iovlen = ( uint ) data.Length;
+			m.msg_iovlen = data.Length;
 
 			LibcApi.sendmsg( ServiceNotifySocket, &m, MessageFlags.None );
 		}

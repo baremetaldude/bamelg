@@ -13,27 +13,25 @@ namespace System {
 		private const int _maxPrecomputedSieveLength = 65535;
 		private const int _maxPrecomputedPrime = 65521;
 
-		public static bool IsPrime( int value ) {
-			if( !Assert.Verify( value > 0 ) ) return false;
-
+		public static bool IsPrime( uint value ) {
 			if( ( value & 1 ) == 0 )
 				return value == 2;
 
 			return IsPrimeNon2( value );
 		}
 
-		private static bool IsPrimeNon2( int candidate ) {
+		private static bool IsPrimeNon2( uint candidate ) {
 			if( candidate < _maxPrecomputedPrime )
 				return _sieve[( candidate - 1 ) / 2];
 
-			var maxFactor = ( int ) Math.Sqrt( ( double ) candidate );
-			for( var factor = 3; factor <= maxFactor; ) {
+			var maxFactor = ( uint ) Math.Sqrt( ( double ) candidate );
+			for( var factor = 3U; factor <= maxFactor; ) {
 				if( ( candidate % factor ) == 0 )
 					return false;
 
 				factor += 2; // get next
 				if( factor <= _maxPrecomputedPrime ) {
-					for( int k = ( factor - 1 ) / 2, j = factor; j < _maxPrecomputedPrime; ++k, j += 2 ) {
+					for( uint k = ( factor - 1 ) / 2, j = factor; j < _maxPrecomputedPrime; ++k, j += 2 ) {
 						if( _sieve[k] ) {
 							factor = j;
 							break;
@@ -45,13 +43,11 @@ namespace System {
 			return true;
 		}
 
-		public static int GetClosestPrime( int min ) {
-			if( !Assert.Verify( min > 0 ) ) return 1;
-
+		public static uint GetClosestPrime( uint min ) {
 			if( min <= 3 ) return min;
 			min |= 1;
 
-			for( int k = ( min - 1 ) / 2, j = min; j < _maxPrecomputedPrime; ++k, j += 2 )
+			for( uint k = ( min - 1 ) / 2, j = min; j < _maxPrecomputedPrime; ++k, j += 2 )
 				if( _sieve[k] )
 					return j;
 

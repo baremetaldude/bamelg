@@ -6,7 +6,7 @@
 
 namespace System.Collections {
 	public class PriorityQueue<T> {
-		private const int DefaultCapacity = 16;
+		private const uint DefaultCapacity = 16;
 
 		// Note:
 		// new PriorityQueue<int>( ( x, y ) => x.CompareTo( y ) ); - descending {30,20,10}
@@ -14,14 +14,14 @@ namespace System.Collections {
 		// new PriorityQueue<int>( ( x, y ) => y.CompareTo( x ) ); - ascending {10,20,30}
 		private Functors.Func<T, T, int> Comparer;
 
-		private int _count;
+		private uint _count;
 		private T[] _heap;
 
 		public PriorityQueue( Functors.Func<T, T, int> comparer )
 			: this( DefaultCapacity, comparer ) {
 		}
 
-		public PriorityQueue( int capacity, Functors.Func<T, T, int> comparer ) {
+		public PriorityQueue( uint capacity, Functors.Func<T, T, int> comparer ) {
 			if( !BitOperations.IsPowerOf2( capacity ) )
 				capacity = BitOperations.NextPowerOf2( capacity );
 
@@ -35,10 +35,10 @@ namespace System.Collections {
 			_count = 0;
 		}
 
-		public void AddRange( T* items, int count ) {
+		public void AddRange( T* items, uint count ) {
 			EnsureCapacity( count );
 
-			for( var i = 0; i < count; ++i )
+			for( var i = 0U; i < count; ++i )
 				Enqueue( items[i] );
 		}
 
@@ -67,7 +67,7 @@ namespace System.Collections {
 			var result = Top;
 
 			if( _count > 1 ) {
-				var i = 0;
+				var i = 0U;
 
 				for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
 					var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
@@ -101,7 +101,7 @@ namespace System.Collections {
 
 			var result = Top;
 
-			var i = 0;
+			var i = 0U;
 
 			for( var leftChild = PriorityQueueCommon.GetLeftChildIndex( i ); leftChild < _count; leftChild = PriorityQueueCommon.GetLeftChildIndex( i ) ) {
 				var rightChild = PriorityQueueCommon.GetRightChildIndexFromLeft( leftChild );
@@ -126,7 +126,7 @@ namespace System.Collections {
 			return result;
 		}
 
-		public void EnsureCapacity( int count ) {
+		public void EnsureCapacity( uint count ) {
 			var newCount = _count + count;
 
 			if( newCount >= _heap.Length ) {
@@ -141,8 +141,8 @@ namespace System.Collections {
 			}
 		}
 
-		public int Count { get { return _count; } }
-		public int Capacity { get { return _heap.Length; } }
+		public uint Count { get { return _count; } }
+		public uint Capacity { get { return _heap.Length; } }
 
 		public T Top { get { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; } }
 		public T Peek() { System.Diagnostics.Debug.Assert( _count > 0 ); return _heap[0]; }
@@ -154,10 +154,10 @@ namespace System.Collections {
 		[EnumeratorAttribute]
 		public struct Enumerator {
 			private readonly declaringtype _parent;
-			private int _index, _count;
+			private uint _index, _count;
 
 			internal Enumerator( declaringtype parent ) {
-				_index = -1;
+				_index = uint.MaxValue;
 				_parent = parent;
 				_count = parent._count;
 			}

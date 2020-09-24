@@ -11,7 +11,7 @@ using System.Runtime;
 namespace System.Reflection {
 	public partial struct EnumType : Type {
 		public struct ElementAttribute {
-			public int AttributeCount;
+			public uint AttributeCount;
 			public Attribute** Attributes;
 			public bool IsDefined( [In] UserType& type ) { return GetAttribute( type ) != null; }
 			public Attribute* GetAttribute( [In] UserType& type ) { return GetAttribute( Attributes, AttributeCount, type ); }
@@ -40,41 +40,41 @@ namespace System.Reflection {
 		public new Attribute* GetAttribute( [In] UserType& type ) { return GetAttribute( Attributes, AttributeCount, type ); }
 		public new T* GetAttribute<T>() { return ( T* ) GetAttribute( typeof( T ) ); }
 
-		public int AttributeCount;
-		public int ElementCount;
+		public uint AttributeCount;
+		public uint ElementCount;
 
 		public const string FlagEnumElementsSeparator = " | ";
 
-		public byte GetUInt8Value( int index ) { return GetValueImpl<byte>( index ); }
-		public ushort GetUInt16Value( int index ) { return GetValueImpl<ushort>( index ); }
-		public uint GetUInt32Value( int index ) { return GetValueImpl<uint>( index ); }
-		public ulong GetUInt64Value( int index ) { return GetValueImpl<ulong>( index ); }
+		public byte GetUInt8Value( uint index ) { return GetValueImpl<byte>( index ); }
+		public ushort GetUInt16Value( uint index ) { return GetValueImpl<ushort>( index ); }
+		public uint GetUInt32Value( uint index ) { return GetValueImpl<uint>( index ); }
+		public ulong GetUInt64Value( uint index ) { return GetValueImpl<ulong>( index ); }
 
-		public bool IsValid( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( value ) : GetIndex( value ) != -1; }
-		public bool IsValid( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( value ) : GetIndex( value ) != -1; }
-		public bool IsValid( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( value ) : GetIndex( value ) != -1; }
-		public bool IsValid( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( value ) : GetIndex( value ) != -1; }
+		public bool IsValid( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( value ) : GetIndex( value ) != uint.MaxValue; }
 
-		public bool IsValid( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( ( byte ) value ) : GetIndex( value ) != -1; }
-		public bool IsValid( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( ( ushort ) value ) : GetIndex( value ) != -1; }
-		public bool IsValid( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( ( uint ) value ) : GetIndex( value ) != -1; }
-		public bool IsValid( long value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( ( ulong ) value ) : GetIndex( value ) != -1; }
+		public bool IsValid( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<byte>( ( byte ) value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ushort>( ( ushort ) value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<uint>( ( uint ) value ) : GetIndex( value ) != uint.MaxValue; }
+		public bool IsValid( long value ) { return IsDefined( typeof( FlagsAttribute ) ) ? IsValidFlagsImpl<ulong>( ( ulong ) value ) : GetIndex( value ) != uint.MaxValue; }
 
-		public int GetIndex( byte value ) { return GetIndexImpl<byte>( value ); }
-		public int GetIndex( ushort value ) { return GetIndexImpl<ushort>( value ); }
-		public int GetIndex( uint value ) { return GetIndexImpl<uint>( value ); }
-		public int GetIndex( ulong value ) { return GetIndexImpl<ulong>( value ); }
+		public uint GetIndex( byte value ) { return GetIndexImpl<byte>( value ); }
+		public uint GetIndex( ushort value ) { return GetIndexImpl<ushort>( value ); }
+		public uint GetIndex( uint value ) { return GetIndexImpl<uint>( value ); }
+		public uint GetIndex( ulong value ) { return GetIndexImpl<ulong>( value ); }
 
-		public int GetIndex( sbyte value ) { return GetIndexImpl<sbyte>( value ); }
-		public int GetIndex( short value ) { return GetIndexImpl<short>( value ); }
-		public int GetIndex( int value ) { return GetIndexImpl<int>( value ); }
-		public int GetIndex( long value ) { return GetIndexImpl<long>( value ); }
+		public uint GetIndex( sbyte value ) { return GetIndexImpl<sbyte>( value ); }
+		public uint GetIndex( short value ) { return GetIndexImpl<short>( value ); }
+		public uint GetIndex( int value ) { return GetIndexImpl<int>( value ); }
+		public uint GetIndex( long value ) { return GetIndexImpl<long>( value ); }
 
 		public SbcsString ToSbcsString( byte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<byte>( value ) : ToSbcsStringNonFlagsImpl<byte>( value ); }
 		public SbcsString ToSbcsString( ushort value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ushort>( value ) : ToSbcsStringNonFlagsImpl<ushort>( value ); }
 		public SbcsString ToSbcsString( uint value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<uint>( value ) : ToSbcsStringNonFlagsImpl<uint>( value ); }
 		public SbcsString ToSbcsString( ulong value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ulong>( value ) : ToSbcsStringNonFlagsImpl<ulong>( value ); }
-			   				
+
 		public SbcsString ToSbcsString( sbyte value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<byte>( ( byte ) value ) : ToSbcsStringNonFlagsImpl<sbyte>( value ); }
 		public SbcsString ToSbcsString( short value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<ushort>( ( ushort ) value ) : ToSbcsStringNonFlagsImpl<short>( value ); }
 		public SbcsString ToSbcsString( int value ) { return IsDefined( typeof( FlagsAttribute ) ) ? ToSbcsStringFlagsImpl<uint>( ( uint ) value ) : ToSbcsStringNonFlagsImpl<int>( value ); }
@@ -112,7 +112,7 @@ namespace System.Reflection {
 
 		public bool TryParse( CStringSpan name, void* result ) {
 			var index = BinarySearch( name );
-			if( index == -1 ) return false;
+			if( index == uint.MaxValue ) return false;
 
 			switch( ElementType.InstanceSize ) {
 				case 1: *( byte* ) result = cast<byte*>( Values )[index]; break;

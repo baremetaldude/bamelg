@@ -13,7 +13,7 @@ namespace System.Collections {
 		private float _invScale32 = 1f / _scale;
 		private double _invScale64 = 1.0 / _scale;
 
-		public FixedPointSlidingQueue( TimeSpan timeframe, int scale = 100 ) {
+		public FixedPointSlidingQueue( TimeDuration timeframe, int scale = 100 ) {
 			Timeframe = timeframe;
 			_scale = scale;
 			_invScale32 = 1f / scale;
@@ -21,7 +21,7 @@ namespace System.Collections {
 		}
 
 		public struct ValueInfo {
-			public DateTime Date;
+			public DateTimeUTC Date;
 			public int Value;
 		}
 
@@ -32,16 +32,16 @@ namespace System.Collections {
 		public double ToFloating( int value ) { return value * _invScale64; }
 
 		public PagedQueue<ValueInfo> _values = new PagedQueue<ValueInfo>();
-		public readonly TimeSpan Timeframe;
+		public readonly TimeDuration Timeframe;
 
-		public TimeSpan BufferedTimeframe { get { return _values.Count > 1 ? _values.Last()->Date - _values.First()->Date : new TimeSpan( 0 ); } }
+		public TimeDuration BufferedTimeframe { get { return _values.Count > 1 ? ( _values.Last()->Date - _values.First()->Date ).Duration() : new TimeDuration( 0 ); } }
 
-		public int Count { get { return _values.Count; } }
+		public uint Count { get { return _values.Count; } }
 
 		public double First() { return ToFloating( _values.First()->Value ); }
 		public double Last() { return ToFloating( _values.Last()->Value ); }
 
-		public int Capacity {
+		public uint Capacity {
 			get { return _values.Capacity; }
 		}
 
@@ -52,7 +52,7 @@ namespace System.Collections {
 						continue;
 
 					foreach( var element in _values.GetEnumerator( view.FrameStart ) )
-						view.OnValueRemoved( this, element );
+						view.OnValueRemoved( element );
 
 					view.FrameStart = null;
 				}
@@ -62,7 +62,7 @@ namespace System.Collections {
 			}
 		}
 
-		public int Update( DateTime time ) {
+		public int Update( DateTimeUTC time ) {
 			int dropped = 0;
 			if( _values.Count > 0 )
 				foreach( var view in Views ) {
@@ -71,12 +71,12 @@ namespace System.Collections {
 
 					ValueInfo* newStart = null;
 					foreach( var element in _values.GetEnumerator( view.FrameStart ) ) {
-						if( ( time - element->Date ) < view.Timeframe ) {
+						if( ( time - element->Date ).Duration() < view.Timeframe ) {
 							newStart = element;
 							break;
 						}
 
-						view.OnValueRemoved( this, element );
+						view.OnValueRemoved( element );
 					}
 
 					view.FrameStart = newStart;
@@ -86,7 +86,7 @@ namespace System.Collections {
 			if( _values.Count > 0 ) {
 				var top = _values.First()->Date;
 
-				if( ( time - top ) >= Timeframe ) {
+				if( ( time - top ).Duration() >= Timeframe ) {
 					_values.Dequeue();
 					++dropped;
 
@@ -97,7 +97,7 @@ namespace System.Collections {
 			return dropped;
 		}
 
-		public void AddRaw( DateTime time, int value ) {
+		public void AddRaw( DateTimeUTC time, int value ) {
 			Update( time );
 
 			var ptr = _values.Enqueue();
@@ -106,20 +106,24 @@ namespace System.Collections {
 
 			foreach( var view in Views ) {
 				if( view.FrameStart == null ) view.FrameStart = ptr;
-				view.OnValueAdded( this, ptr );
+				view.OnValueAdded( ptr );
 			}
 		}
 
-		public void Add( DateTime time, float value ) { AddRaw( time, ToFixed( value ) ); }
-		public void Add( DateTime time, double value ) { AddRaw( time, ToFixed( value ) ); }
+		public void Add( DateTimeUTC time, float value ) { AddRaw( time, ToFixed( value ) ); }
+		public void Add( DateTimeUTC time, double value ) { AddRaw( time, ToFixed( value ) ); }
 
 		public List<SlidingView> Views = new List<SlidingView>();
 
 		public class SlidingView {
-			public TimeSpan Timeframe;
+			protected void* _parent;
+
+			public TimeDuration Timeframe;
 			public ValueInfo* FrameStart = null;
 
-			public SlidingView( declaringtype parent, TimeSpan timeframe ) {
+			public SlidingView( declaringtype parent, TimeDuration timeframe ) {
+				_parent = bitcast<void*>( parent );
+
 				if( timeframe > parent.Timeframe ) timeframe = parent.Timeframe;
 
 				Timeframe = timeframe;
@@ -130,135 +134,95 @@ namespace System.Collections {
 				: this( parent, parent.Timeframe ) {
 			}
 
-			public virtual void OnValueAdded( declaringtype parent, ValueInfo* value ) { }
-			public virtual void OnValueRemoved( declaringtype parent, ValueInfo* value ) { }
+			public virtual void OnValueAdded( ValueInfo* value ) { }
+			public virtual void OnValueRemoved( ValueInfo* value ) { }
 		}
 
 		public class AverageView : SlidingView {
 			private int _sum = 0;
 
 			public int Count { get; private set; }
-			public double Value { get; private set; }
 
-			public AverageView( declaringtype parent, TimeSpan timeframe )
+			public int RawValue { get; private set; }
+			public double Value { get { return bitcast<declaringtype>( _parent ).ToFloating( RawValue ); } }
+
+			public AverageView( declaringtype parent, TimeDuration timeframe )
 				: base( parent, timeframe ) {
 				Count = 0;
-				Value = 0;
+				RawValue = 0;
 			}
 
 			public AverageView( declaringtype parent )
 				: this( parent, parent.Timeframe ) {
 			}
 
-			private void UpdateValue( declaringtype parent ) {
-				Value = Count > 0 ? parent.ToFloating( _sum / Count ) : 0.0;
-			}
-
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
-				++Count;
-				_sum += value->Value;
-
-				UpdateValue( parent );
-			}
-
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
-				--Count;
-				_sum -= value->Value;
-
-				UpdateValue( parent );
-			}
-		}
-
-		public class AverageViewRaw : SlidingView {
-			private int _sum = 0;
-
-			public int Count { get; private set; }
-			public int RawValue { get; private set; }
-
-			public AverageViewRaw( declaringtype parent, TimeSpan timeframe )
-				: base( parent, timeframe ) {
-				Count = 0;
-				RawValue = 0;
-			}
-
-			public AverageViewRaw( declaringtype parent )
-				: this( parent, parent.Timeframe ) {
-			}
-
-			private void UpdateValue( declaringtype parent ) {
+			private void UpdateValue() {
 				RawValue = Count > 0 ? _sum / Count : 0;
 			}
 
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueAdded( ValueInfo* value ) {
 				++Count;
 				_sum += value->Value;
 
-				UpdateValue( parent );
+				UpdateValue();
 			}
 
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueRemoved( ValueInfo* value ) {
 				--Count;
 				_sum -= value->Value;
 
-				UpdateValue( parent );
+				UpdateValue();
+			}
+		}
+
+		public class SumView : SlidingView {
+			public int RawValue { get; private set; }
+			public double Value { get { return bitcast<declaringtype>( _parent ).ToFloating( RawValue ); } }
+
+			public SumView( declaringtype parent, TimeDuration timeframe )
+				: base( parent, timeframe ) {
+				RawValue = 0;
+			}
+
+			public SumView( declaringtype parent )
+				: this( parent, parent.Timeframe ) {
+			}
+
+			public override void OnValueAdded( ValueInfo* value ) {
+				RawValue += value->Value;
+			}
+
+			public override void OnValueRemoved( ValueInfo* value ) {
+				RawValue -= value->Value;
 			}
 		}
 
 		public class MaxView : SlidingView {
 			private TrackablePriorityQueue<int> _maxValues = new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) );
-			private Queue<int> _indices = new Queue<int>();
+			private Queue<uint> _indices = new Queue<uint>();
 
-			public double Value { get; private set; }
+			public uint Count { get { return _maxValues.Count; } }
 
-			public MaxView( declaringtype parent, TimeSpan timeframe )
+			public int RawValue { get; private set; }
+			public double Value { get { return bitcast<declaringtype>( _parent ).ToFloating( RawValue ); } }
+
+			public MaxView( declaringtype parent, TimeDuration timeframe )
 				: base( parent, timeframe ) {
-				Value = double.MinValue;
+				RawValue = int.MinValue;
 			}
 
 			public MaxView( declaringtype parent )
 				: this( parent, parent.Timeframe ) {
 			}
 
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
-				var trackingIndex = _maxValues.Enqueue( value->Value );
-				_indices.Enqueue( trackingIndex );
-
-				Value = parent.ToFloating( _maxValues.Top );
-			}
-
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
-				var trackingIndex = _indices.Dequeue();
-
-				Debug.Assert( value->Value == _maxValues[trackingIndex] );
-				_maxValues.Remove( trackingIndex );
-
-				Value = _maxValues.Count > 0 ? parent.ToFloating( _maxValues.Top ) : double.MinValue;
-			}
-		}
-
-		public class MaxViewRaw : SlidingView {
-			private TrackablePriorityQueue<int> _maxValues = new TrackablePriorityQueue<int>( ( x, y ) => x.CompareTo( y ) );
-			private Queue<int> _indices = new Queue<int>();
-
-			public int RawValue { get; private set; }
-
-			public MaxViewRaw( declaringtype parent, TimeSpan timeframe )
-				: base( parent, timeframe ) {
-				RawValue = int.MinValue;
-			}
-
-			public MaxViewRaw( declaringtype parent )
-				: this( parent, parent.Timeframe ) {
-			}
-
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueAdded( ValueInfo* value ) {
 				var trackingIndex = _maxValues.Enqueue( value->Value );
 				_indices.Enqueue( trackingIndex );
 
 				RawValue = _maxValues.Top;
 			}
 
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueRemoved( ValueInfo* value ) {
 				var trackingIndex = _indices.Dequeue();
 
 				Debug.Assert( value->Value == _maxValues[trackingIndex] );
@@ -270,59 +234,30 @@ namespace System.Collections {
 
 		public class MinView : SlidingView {
 			private TrackablePriorityQueue<int> _minValues = new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) );
-			private Queue<int> _indices = new Queue<int>();
+			private Queue<uint> _indices = new Queue<uint>();
 
-			public double Value { get; private set; }
+			public uint Count { get { return _minValues.Count; } }
 
-			public MinView( declaringtype parent, TimeSpan timeframe )
+			public int RawValue { get; private set; }
+			public double Value { get { return bitcast<declaringtype>( _parent ).ToFloating( RawValue ); } }
+
+			public MinView( declaringtype parent, TimeDuration timeframe )
 				: base( parent, timeframe ) {
-				Value = double.MaxValue;
+				RawValue = int.MaxValue;
 			}
 
 			public MinView( declaringtype parent )
 				: this( parent, parent.Timeframe ) {
 			}
 
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
-				var trackingIndex = _minValues.Enqueue( value->Value );
-				_indices.Enqueue( trackingIndex );
-
-				Value = parent.ToFloating( _minValues.Top );
-			}
-
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
-				var trackingIndex = _indices.Dequeue();
-
-				Debug.Assert( value->Value == _minValues[trackingIndex] );
-				_minValues.Remove( trackingIndex );
-
-				Value = _minValues.Count > 0 ? parent.ToFloating( _minValues.Top ) : double.MaxValue;
-			}
-		}
-
-		public class MinViewRaw : SlidingView {
-			private TrackablePriorityQueue<int> _minValues = new TrackablePriorityQueue<int>( ( x, y ) => y.CompareTo( x ) );
-			private Queue<int> _indices = new Queue<int>();
-
-			public int RawValue { get; private set; }
-
-			public MinViewRaw( declaringtype parent, TimeSpan timeframe )
-				: base( parent, timeframe ) {
-				RawValue = int.MaxValue;
-			}
-
-			public MinViewRaw( declaringtype parent )
-				: this( parent, parent.Timeframe ) {
-			}
-
-			public override void OnValueAdded( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueAdded( ValueInfo* value ) {
 				var trackingIndex = _minValues.Enqueue( value->Value );
 				_indices.Enqueue( trackingIndex );
 
 				RawValue = _minValues.Top;
 			}
 
-			public override void OnValueRemoved( declaringtype parent, ValueInfo* value ) {
+			public override void OnValueRemoved( ValueInfo* value ) {
 				var trackingIndex = _indices.Dequeue();
 
 				Debug.Assert( value->Value == _minValues[trackingIndex] );

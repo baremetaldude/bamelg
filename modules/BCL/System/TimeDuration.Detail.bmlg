@@ -1,0 +1,20 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Serialization;
+
+namespace System {
+	public sealed partial struct TimeDuration : IBinarySerializable, ITextSerializable, IFormattable {
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadTimeDuration(); }
+
+		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "c" ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { PrimitiveTypesParser.TryParseTimeDuration<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); }
+
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatTimeDuration( builder, this, format ?? "c" ); }
+	}
+}

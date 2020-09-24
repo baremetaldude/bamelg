@@ -1,0 +1,79 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	[PrimitiveType( Size = sizeof( uintptr ) )]
+	public struct PosixTimerHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( uintptr.MaxValue ); } }
+
+		public static PosixTimerHandle CreateThreadTimeout( ClockType clockType = ClockType.CLOCK_MONOTONIC ) {
+			PosixTimerHandle result;
+
+			var eventInfo = default( sigevent );
+			eventInfo.sigev_notify = ( int ) SignalNotify.SIGEV_THREAD_ID;
+			eventInfo.sigev_signo = ( int ) SignalCode.SIGALRM;
+
+			uintptr tid;
+			KernelApi.gettid( tid );
+			eventInfo._sigev_un._tid = ( int ) tid;
+
+			RealTimeApi.timer_create( clockType, &eventInfo, &result );
+
+			return result;
+		}
+
+		public void Close() {
+			if( this != Invalid )
+				RealTimeApi.timer_delete( this );
+
+			this = Invalid;
+		}
+
+		public void SetInterval( TimeDuration interval ) { SetInterval( interval, interval ); }
+
+		public void SetInterval( TimeDuration interval, TimeDuration initialExpiration ) {
+			var nativeInterval = new itimerspec {
+				it_interval = ( timespec ) interval,
+				it_value = ( timespec ) initialExpiration
+			};
+
+			SetInterval( nativeInterval );
+		}
+
+		public void SetInterval( itimerspec& interval ) {
+			LibcApi.AssertErrno( RealTimeApi.timer_settime( this, 0, interval, nullref ) );
+		}
+
+		// initialExpiration value depends on clockid
+		public void SetInterval( TimeDuration interval, DateTime initialExpiration ) {
+			var timer = new itimerspec {
+				it_interval = ( timespec ) interval,
+				it_value = ( timespec ) initialExpiration
+			};
+
+			LibcApi.AssertErrno( RealTimeApi.timer_settime( this, ( int ) PosixTimerHandleSetFlag.TIMER_ABSTIME, timer, nullref ) );
+		}
+
+		public void Stop() {
+			var stop = default( itimerspec );
+			LibcApi.AssertErrno( RealTimeApi.timer_settime( this, 0, stop, nullref ) );
+		}
+
+		public itimerspec GetInterval() {
+			itimerspec result;
+			LibcApi.AssertErrno( RealTimeApi.timer_gettime( this, result ) );
+			return result;
+		}
+
+		public enum PosixTimerHandleSetFlag {
+			TIMER_ABSTIME = 1,
+		}
+	}
+}

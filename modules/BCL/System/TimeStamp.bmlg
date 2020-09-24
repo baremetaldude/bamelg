@@ -1,0 +1,108 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+
+namespace System {
+	public sealed partial struct TimeStamp {
+		internal static ulong Ceil( ulong ticks, ulong interval ) {
+			var result = ticks;
+			var remainder = result % interval;
+
+			result -= remainder;
+			if( remainder != 0 ) result += interval;
+
+			return result;
+		}
+
+		public sealed partial struct UTC : IFormattable {
+			public static readonly thistype Zero = new thistype { Ticks = 0 };
+
+			public static thistype Now { get { return new thistype { Ticks = UTC_Ticks }; } }
+
+			public readonly ulong Ticks;
+
+			public thistype Ceil( TimeDuration interval ) { return new thistype { Ticks = Ceil( Ticks, interval.Ticks ) }; }
+
+			public static TimeSpan operator -( thistype left, thistype right ) { return new TimeSpan( ( long )( left.Ticks - right.Ticks ) ); }
+
+			public static thistype operator +( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static thistype operator +( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static bool operator ==( thistype left, thistype right ) { return left.Ticks == right.Ticks; }
+			public static bool operator !=( thistype left, thistype right ) { return left.Ticks != right.Ticks; }
+
+			public static bool operator <( thistype left, thistype right ) { return left.Ticks < right.Ticks; }
+			public static bool operator >( thistype left, thistype right ) { return left.Ticks > right.Ticks; }
+
+			public static bool operator <=( thistype left, thistype right ) { return left.Ticks <= right.Ticks; }
+			public static bool operator >=( thistype left, thistype right ) { return left.Ticks >= right.Ticks; }
+
+			public void ToString( StringBuilder builder, string format ) { builder.Append( ( DateTimeUTC ) this, format ); }
+		}
+
+		public sealed partial struct BootTime_IncludeSuspend : IFormattable {
+			public static readonly thistype Zero = new thistype { Ticks = 0 };
+
+			public static thistype Now { get { return new thistype { Ticks = BootTime_IncludeSuspend_Ticks }; } }
+
+			public readonly ulong Ticks;
+
+			public thistype Ceil( TimeDuration interval ) { return new thistype { Ticks = Ceil( Ticks, interval.Ticks ) }; }
+
+			public static TimeSpan operator -( thistype left, thistype right ) { return new TimeSpan( ( long )( left.Ticks - right.Ticks ) ); }
+
+			public static thistype operator +( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static thistype operator +( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static bool operator ==( thistype left, thistype right ) { return left.Ticks == right.Ticks; }
+			public static bool operator !=( thistype left, thistype right ) { return left.Ticks != right.Ticks; }
+
+			public static bool operator <( thistype left, thistype right ) { return left.Ticks < right.Ticks; }
+			public static bool operator >( thistype left, thistype right ) { return left.Ticks > right.Ticks; }
+
+			public static bool operator <=( thistype left, thistype right ) { return left.Ticks <= right.Ticks; }
+			public static bool operator >=( thistype left, thistype right ) { return left.Ticks >= right.Ticks; }
+
+			public void ToString( StringBuilder builder, string format ) { builder.Append( new TimeDuration( Ticks ), format ); }
+		}
+
+		public sealed partial struct BootTime_ExcludeSuspend : IFormattable {
+			public static readonly thistype Zero = new thistype { Ticks = 0 };
+
+			public static thistype Now { get { return new thistype { Ticks = BootTime_ExcludeSuspend_Ticks }; } }
+
+			public readonly ulong Ticks;
+
+			public thistype Ceil( TimeDuration interval ) { return new thistype { Ticks = Ceil( Ticks, interval.Ticks ) }; }
+
+			public static TimeSpan operator -( thistype left, thistype right ) { return new TimeSpan( ( long )( left.Ticks - right.Ticks ) ); }
+
+			public static thistype operator +( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeSpan right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static thistype operator +( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks + right.Ticks }; }
+			public static thistype operator -( thistype left, TimeDuration right ) { return new thistype { Ticks = left.Ticks - right.Ticks }; }
+
+			public static bool operator ==( thistype left, thistype right ) { return left.Ticks == right.Ticks; }
+			public static bool operator !=( thistype left, thistype right ) { return left.Ticks != right.Ticks; }
+
+			public static bool operator <( thistype left, thistype right ) { return left.Ticks < right.Ticks; }
+			public static bool operator >( thistype left, thistype right ) { return left.Ticks > right.Ticks; }
+
+			public static bool operator <=( thistype left, thistype right ) { return left.Ticks <= right.Ticks; }
+			public static bool operator >=( thistype left, thistype right ) { return left.Ticks >= right.Ticks; }
+
+			public void ToString( StringBuilder builder, string format ) { builder.Append( new TimeDuration( Ticks ), format ); }
+		}
+	}
+}

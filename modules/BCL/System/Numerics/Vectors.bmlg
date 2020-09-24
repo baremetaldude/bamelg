@@ -55,7 +55,7 @@ namespace System.Numerics {
 		public static bool operator ==( thistype& left, thistype& right ) { return left.X == right.X & left.Y == right.Y; }
 		public static bool operator !=( thistype& left, thistype& right ) { return left.X != right.X | left.Y != right.Y; }
 
-		public bool Equals( thistype& other, int tolerance ) { return float.AreEqual( X, other.X, tolerance ) && float.AreEqual( Y, other.Y, tolerance ); }
+		public bool Equals( thistype& other, uint tolerance ) { return float.AreEqual( X, other.X, tolerance ) && float.AreEqual( Y, other.Y, tolerance ); }
 
 		public static explicit operator thistype( Vector2d& value ) { return new Vector2f( ( float ) value.X, ( float ) value.Y ); }
 		public static explicit operator thistype( Vector2i& value ) { return new Vector2f( value.X, value.Y ); }
@@ -114,7 +114,7 @@ namespace System.Numerics {
 		public static bool operator ==( thistype& left, thistype& right ) { return left.X == right.X & left.Y == right.Y; }
 		public static bool operator !=( thistype& left, thistype& right ) { return left.X != right.X | left.Y != right.Y; }
 
-		public bool Equals( thistype& other, int tolerance ) { return double.AreEqual( X, other.X, tolerance ) && double.AreEqual( Y, other.Y, tolerance ); }
+		public bool Equals( thistype& other, uint tolerance ) { return double.AreEqual( X, other.X, tolerance ) && double.AreEqual( Y, other.Y, tolerance ); }
 
 		public static implicit operator thistype( Vector2f& value ) { return new Vector2d( value.X, value.Y ); }
 		public static explicit operator thistype( Vector2i& value ) { return new Vector2d( value.X, value.Y ); }
@@ -217,11 +217,12 @@ namespace System.Numerics {
 
 		public static explicit operator thistype( Vector2f& value ) { return new thistype( value.X, value.Y, 0 ); }
 
-		public bool Equals( thistype& other, int tolerance ) { return float.AreEqual( X, other.X, tolerance ) && float.AreEqual( Y, other.Y, tolerance ) && float.AreEqual( Z, other.Z, tolerance ); }
+		public bool Equals( thistype& other, uint tolerance ) { return float.AreEqual( X, other.X, tolerance ) && float.AreEqual( Y, other.Y, tolerance ) && float.AreEqual( Z, other.Z, tolerance ); }
 
 		void IFormattable.ToString( StringBuilder builder, string format ) { builder.AppendFormat( "({0};{1};{2})", X, Y, Z ); }
 	}
 
+	[Alignment( Boundary = 16 )]
 	public struct Vector4 : IFormattable {
 		public float X, Y, Z, W;
 
@@ -289,7 +290,7 @@ namespace System.Numerics {
 		private static uint _mnull = 0x80000001;
 		private static int _minus1 = -1;
 
-		public bool Equals( thistype& other, int tolerance ) asm {
+		public bool Equals( thistype& other, uint tolerance ) asm {
 			X86_32 {
 				feature( SSSE3 ) {
 					if( thismethod.CallingConvention == CallingConvention.FastCallX86 ) {

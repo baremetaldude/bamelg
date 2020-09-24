@@ -20,7 +20,7 @@ namespace System.Hash {
 			var evaluator = new Evaluator();
 
 			foreach( var segment in segments )
-				evaluator.Process( segment.Start, segment.Count );
+				evaluator.Process( segment.Start, ( uint ) segment.Count );
 
 			this = evaluator.Finish();
 		}
@@ -39,7 +39,7 @@ namespace System.Hash {
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], ( uint ) Hash.Length, true );
+			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], Hash.Length, true );
 		}
 
 		public struct Evaluator {
@@ -155,16 +155,16 @@ namespace System.Hash {
 				for( var i = 0; i < 8; ++i ) _h[i] ^= _s[i % 4];
 			}
 
-			public void Process( void* data, uintptr length ) {
+			public void Process( void* data, uint length ) {
 				ProcessBits( data, length * 8 );
 			}
 
-			private void ProcessBits( void* data, uintptr length ) {
+			private void ProcessBits( void* data, uint length ) {
 				var left = _bitsCount >> 3;
 				var fill = 128 - left;
 
 				if( left != 0 && ( ( ( length >> 3 ) & 0x7F ) >= fill ) ) {
-					Memory.Copy( &_buffer[left], data, ( uint ) fill );
+					Memory.Copy( &_buffer[left], data, fill );
 					_t[0] += 1024;
 					ProcessBlock( _buffer );
 					data = cast<byte*>( data ) + fill;
@@ -181,7 +181,7 @@ namespace System.Hash {
 
 				if( length > 0 ) {
 					Memory.Copy( &_buffer[left], data, ( length >> 3 ) & 0x7F );
-					_bitsCount = ( left << 3 ) + ( uint ) length;
+					_bitsCount = ( left << 3 ) + length;
 				}
 				else
 					_bitsCount = 0;
@@ -230,12 +230,6 @@ namespace System.Hash {
 
 				return result;
 			}
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.AreEqual( "A8CFBBD73726062DF0C6864DDA65DEFE58EF0CC52A5625090FA17601E1EECD1B628E94F396AE402A00ACC9EAB77B4D4C2E852AAAA25A636D80AF3FC7913EF5B8", new thistype( new MemorySegment( null, 0 ) ).ToString() );
-			Assert.AreEqual( "1F7E26F63B6AD25A0896FD978FD050A1766391D2FD0471A77AFB975E5034B7AD2D9CCF8DFB47ABBBE656E1B82FBC634BA42CE186E8DC5E1CE09A885D41F43451", new thistype( ( SbcsString ) "The quick brown fox jumps over the lazy dog" ).ToString() );
 		}
 	}
 }

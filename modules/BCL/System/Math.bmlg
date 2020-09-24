@@ -56,198 +56,302 @@ namespace System {
 		public const float FloatPi = bitcast<float>( 0x40490FDB );
 		public const double Pi = bitcast<double>( 0x400921FB54442D18 );
 
-		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
-		//  -3.0                               -3                               -3              -3                    -3                   -3    -3      -3       -3                -3  -3.0
-		//  -2.9                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.9
-		//  -2.8                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.8
-		//  -2.7                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.7
-		//  -2.6                               -3                               -3              -3                    -3                   -3    -3      -2       -2                -3  -2.6
-		//  -2.5                               -2                               -3              -2                    -3                   -2    -3      -2       -2                -3  -2.5
-		//  -2.4                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.4
-		//  -2.3                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.3
-		//  -2.2                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.2
-		//  -2.1                               -2                               -2              -2                    -2                   -2    -3      -2       -2                -3  -2.1
-		//  -2.0                               -2                               -2              -2                    -2                   -2    -2      -2       -2                -2  -2.0
-		//  -1.9                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.9
-		//  -1.8                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.8
-		//  -1.7                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.7
-		//  -1.6                               -2                               -2              -2                    -2                   -2    -2      -1       -1                -2  -1.6
-		//  -1.5                               -1                               -2              -2                    -2                   -1    -2      -1       -1                -2  -1.5
-		//  -1.4                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.4
-		//  -1.3                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.3
-		//  -1.2                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.2
-		//  -1.1                               -1                               -1              -1                    -1                   -1    -2      -1       -1                -2  -1.1
-		//  -1.0                               -1                               -1              -1                    -1                   -1    -1      -1       -1                -1  -1.0
-		//  -0.9                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.9
-		//  -0.8                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.8
-		//  -0.7                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.7
-		//  -0.6                               -1                               -1              -1                    -1                   -1    -1       0        0                -1  -0.6
-		//  -0.5                                0                               -1               0                    -1                    0    -1       0        0                -1  -0.5
-		//  -0.4                                0                                0               0                     0                    0    -1       0        0                -1  -0.4
-		//  -0.3                                0                                0               0                     0                    0    -1       0        0                -1  -0.3
-		//  -0.2                                0                                0               0                     0                    0    -1       0        0                -1  -0.2
-		//  -0.1                                0                                0               0                     0                    0    -1       0        0                -1  -0.1
-		//  -0.0                                0                                0               0                     0                    0     0       0        0                 0  -0.0
-		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
-		//   0.0                                0                                0               0                     0                    0     0       0        0                 0   0.0
-		//   0.1                                0                                0               0                     0                    0     0       1        0                 1   0.1
-		//   0.2                                0                                0               0                     0                    0     0       1        0                 1   0.2
-		//   0.3                                0                                0               0                     0                    0     0       1        0                 1   0.3
-		//   0.4                                0                                0               0                     0                    0     0       1        0                 1   0.4
-		//   0.5                                1                                0               0                     1                    0     0       1        0                 1   0.5
-		//   0.6                                1                                1               1                     1                    1     0       1        0                 1   0.6
-		//   0.7                                1                                1               1                     1                    1     0       1        0                 1   0.7
-		//   0.8                                1                                1               1                     1                    1     0       1        0                 1   0.8
-		//   0.9                                1                                1               1                     1                    1     0       1        0                 1   0.9
-		//   1.0                                1                                1               1                     1                    1     1       1        1                 1   1.0
-		//   1.1                                1                                1               1                     1                    1     1       2        1                 2   1.1
-		//   1.2                                1                                1               1                     1                    1     1       2        1                 2   1.2
-		//   1.3                                1                                1               1                     1                    1     1       2        1                 2   1.3
-		//   1.4                                1                                1               1                     1                    1     1       2        1                 2   1.4
-		//   1.5                                2                                1               2                     2                    1     1       2        1                 2   1.5
-		//   1.6                                2                                2               2                     2                    2     1       2        1                 2   1.6
-		//   1.7                                2                                2               2                     2                    2     1       2        1                 2   1.7
-		//   1.8                                2                                2               2                     2                    2     1       2        1                 2   1.8
-		//   1.9                                2                                2               2                     2                    2     1       2        1                 2   1.9
-		//   2.0                                2                                2               2                     2                    2     2       2        2                 2   2.0
-		//   2.1                                2                                2               2                     2                    2     2       3        2                 3   2.1
-		//   2.2                                2                                2               2                     2                    2     2       3        2                 3   2.2
-		//   2.3                                2                                2               2                     2                    2     2       3        2                 3   2.3
-		//   2.4                                2                                2               2                     2                    2     2       3        2                 3   2.4
-		//   2.5                                3                                2               2                     3                    2     2       3        2                 3   2.5
-		//   2.6                                3                                3               3                     3                    3     2       3        2                 3   2.6
-		//   2.7                                3                                3               3                     3                    3     2       3        2                 3   2.7
-		//   2.8                                3                                3               3                     3                    3     2       3        2                 3   2.8
-		//   2.9                                3                                3               3                     3                    3     2       3        2                 3   2.9
-		//   3.0                                3                                3               3                     3                    3     3       3        3                 3   3.0
-		// Value RoundHalfTowardsPositiveInfinity RoundHalfTowardsNegativeInfinity RoundHalfToEven RoundHalfAwayFromZero RoundHalfTowardsZero Floor Ceiling Truncate RoundAwayFromZero Value
+		#region Default hardware-assisted rounding with platform defined tie-breaking rules
 
+		public static float Round( float value ) { return Impl.RoundHalfToEven( value ); }
+		public static double Round( double value ) { return Impl.RoundHalfToEven( value ); }
 
-		/// @{ Default hardware-assisted rounding for current processor architecture. Use it if you dont care about midpoint rounding.
-		[ForceInline] public static float Round( float value ) { return RoundToInt64( value ); }
-		[ForceInline] public static double Round( double value ) { return RoundToInt64( value ); }
+		public static sbyte RoundToInt8( float value ) { return Impl.RoundHalfToInt8( value ); }
+		public static short RoundToInt16( float value ) { return Impl.RoundHalfToInt16( value ); }
+		public static int RoundToInt32( float value ) { return Impl.RoundHalfToInt32( value ); }
+		public static long RoundToInt64( float value ) { return Impl.RoundHalfToInt64( value ); }
 
-		[ForceInline] public static int RoundToInt32( float value ) { return ( int ) RoundToInt64( value ); }
-		[ForceInline] public static int RoundToInt32( double value ) { return ( int ) RoundToInt64( value ); }
+		public static byte RoundToUInt8( float value ) { return Impl.RoundHalfToUInt8( value ); }
+		public static ushort RoundToUInt16( float value ) { return Impl.RoundHalfToUInt16( value ); }
+		public static uint RoundToUInt32( float value ) { return Impl.RoundHalfToUInt32( value ); }
+		public static ulong RoundToUInt64( float value ) { return Impl.RoundHalfToUInt64( value ); }
 
-		/// x86, x64: round half to even
-		/// Note: In MS .NET 'Math.Round(double)' uses round to even on x86/x64
-		[ForceInline] public static long RoundToInt64( float value ) { return Impl.RoundHalfToEvenInt64( value ); }
-		[ForceInline] public static long RoundToInt64( double value ) { return Impl.RoundHalfToEvenInt64( value ); }
-		/// @}
+		public static sbyte RoundToInt8( double value ) { return Impl.RoundHalfToEvenToInt8( value ); }
+		public static short RoundToInt16( double value ) { return Impl.RoundHalfToEvenToInt16( value ); }
+		public static int RoundToInt32( double value ) { return Impl.RoundHalfToInt32( value ); }
+		public static long RoundToInt64( double value ) { return Impl.RoundHalfToEvenToInt64( value ); }
 
-		/// @{ Round half to positive infinity
-		[ForceInline] public static float RoundHalfTowardsPositiveInfinity( float value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static double RoundHalfTowardsPositiveInfinity( double value ) { return RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		public static byte RoundToUInt8( double value ) { return Impl.RoundHalfToEvenToUInt8( value ); }
+		public static ushort RoundToUInt16( double value ) { return Impl.RoundHalfToEvenToUInt16( value ); }
+		public static uint RoundToUInt32( double value ) { return Impl.RoundHalfToEvenToUInt32( value ); }
+		public static ulong RoundToUInt64( double value ) { return Impl.RoundHalfToEvenToUInt64( value ); }
 
-		[ForceInline] public static int RoundHalfTowardsPositiveInfinityToInt32( float value ) { return ( int ) RoundHalfTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static int RoundHalfTowardsPositiveInfinityToInt32( double value ) { return ( int ) RoundHalfTowardsPositiveInfinityToInt64( value ); }
+		#endregion
 
-		[ForceInline] public static long RoundHalfTowardsPositiveInfinityToInt64( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
-		[ForceInline] public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
-		/// @}
+		#region Round half to positive infinity
 
-		/// @{ Round half to negative infinity
-		[ForceInline] public static float RoundHalfTowardsNegativeInfinity( float value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static double RoundHalfTowardsNegativeInfinity( double value ) { return RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		public static float RoundHalfTowardsPositiveInfinity( float value ) { return Impl.RoundHalfTowardsPositiveInfinity( value ); }
+		public static double RoundHalfTowardsPositiveInfinity( double value ) { return Impl.RoundHalfTowardsPositiveInfinity( value ); }
 
-		[ForceInline] public static int RoundHalfTowardsNegativeInfinityToInt32( float value ) { return ( int ) RoundHalfTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static int RoundHalfTowardsNegativeInfinityToInt32( double value ) { return ( int ) RoundHalfTowardsNegativeInfinityToInt64( value ); }
+		public static sbyte RoundHalfTowardsPositiveInfinityToInt8( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt8( value ); }
+		public static short RoundHalfTowardsPositiveInfinityToInt16( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt16( value ); }
+		public static int RoundHalfTowardsPositiveInfinityToInt32( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt32( value ); }
+		public static long RoundHalfTowardsPositiveInfinityToInt64( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
 
-		[ForceInline] public static long RoundHalfTowardsNegativeInfinityToInt64( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
-		[ForceInline] public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
-		/// @}
+		public static byte RoundHalfTowardsPositiveInfinityToUInt8( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt8( value ); }
+		public static ushort RoundHalfTowardsPositiveInfinityToUInt16( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt16( value ); }
+		public static uint RoundHalfTowardsPositiveInfinityToUInt32( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt32( value ); }
+		public static ulong RoundHalfTowardsPositiveInfinityToUInt64( float value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt64( value ); }
 
-		/// @{ Round half to closest even integer
-		// default cpu rounding mode for most OS'es on X86
-		
-		// CRuntime.rintf
-		[ForceInline] public static float RoundHalfToEven( float value ) { return RoundHalfToEvenInt64( value ); }
-		// CRuntime.rint
-		[ForceInline] public static double RoundHalfToEven( double value ) { return RoundHalfToEvenInt64( value ); }
+		public static sbyte RoundHalfTowardsPositiveInfinityToInt8( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt8( value ); }
+		public static short RoundHalfTowardsPositiveInfinityToInt16( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt16( value ); }
+		public static int RoundHalfTowardsPositiveInfinityToInt32( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt32( value ); }
+		public static long RoundHalfTowardsPositiveInfinityToInt64( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToInt64( value ); }
 
-		// CRuntime.lrintf
-		[ForceInline] public static int RoundHalfToEvenInt32( float value ) { return ( int ) RoundHalfToEvenInt64( value ); }
-		// CRuntime.lrint
-		[ForceInline] public static int RoundHalfToEvenInt32( double value ) { return ( int ) RoundHalfToEvenInt64( value ); }
+		public static byte RoundHalfTowardsPositiveInfinityToUInt8( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt8( value ); }
+		public static ushort RoundHalfTowardsPositiveInfinityToUInt16( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt16( value ); }
+		public static uint RoundHalfTowardsPositiveInfinityToUInt32( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt32( value ); }
+		public static ulong RoundHalfTowardsPositiveInfinityToUInt64( double value ) { return Impl.RoundHalfTowardsPositiveInfinityToUInt64( value ); }
 
-		// CRuntime.lrintf
-		[ForceInline] public static long RoundHalfToEvenInt64( float value ) { return Impl.RoundHalfToEvenInt64( value ); }
-		// CRuntime.lrint
-		[ForceInline] public static long RoundHalfToEvenInt64( double value ) { return Impl.RoundHalfToEvenInt64( value ); }
-		
-		/// @}
+		#endregion
 
-		/// @{ Round half away from zero / llround
-		[ForceInline] public static float RoundHalfAwayFromZero( float value ) { return RoundHalfAwayFromZeroToInt64( value ); }
-		[ForceInline] public static double RoundHalfAwayFromZero( double value ) { return RoundHalfAwayFromZeroToInt64( value ); }
+		#region Round half to negative infinity
 
-		// CRuntime.lroundf
-		[ForceInline] public static int RoundHalfAwayFromZeroToInt32( float value ) { return ( int ) RoundHalfAwayFromZeroToInt64( value ); }
-		// CRuntime.lround
-		[ForceInline] public static int RoundHalfAwayFromZeroToInt32( double value ) { return ( int ) RoundHalfAwayFromZeroToInt64( value ); }
+		public static float RoundHalfTowardsNegativeInfinity( float value ) { return Impl.RoundHalfTowardsNegativeInfinity( value ); }
+		public static double RoundHalfTowardsNegativeInfinity( double value ) { return Impl.RoundHalfTowardsNegativeInfinity( value ); }
 
-		// CRuntime.llroundf
-		[ForceInline] public static long RoundHalfAwayFromZeroToInt64( float value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
-		// CRuntime.llround
-		[ForceInline] public static long RoundHalfAwayFromZeroToInt64( double value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
-		
-		/// @}
+		public static sbyte RoundHalfTowardsNegativeInfinityToInt8( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt8( value ); }
+		public static short RoundHalfTowardsNegativeInfinityToInt16( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt16( value ); }
+		public static int RoundHalfTowardsNegativeInfinityToInt32( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt32( value ); }
+		public static long RoundHalfTowardsNegativeInfinityToInt64( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
 
-		/// @{ Round half towards zero
-		[ForceInline] public static float RoundHalfTowardsZero( float value ) { return RoundHalfTowardsZeroToInt64( value ); }
-		[ForceInline] public static double RoundHalfTowardsZero( double value ) { return RoundHalfTowardsZeroToInt64( value ); }
+		public static byte RoundHalfTowardsNegativeInfinityToUInt8( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt8( value ); }
+		public static ushort RoundHalfTowardsNegativeInfinityToUInt16( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt16( value ); }
+		public static uint RoundHalfTowardsNegativeInfinityToUInt32( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt32( value ); }
+		public static ulong RoundHalfTowardsNegativeInfinityToUInt64( float value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt64( value ); }
 
-		[ForceInline] public static int RoundHalfTowardsZeroToInt32( float value ) { return ( int ) RoundHalfTowardsZeroToInt64( value ); }
-		[ForceInline] public static int RoundHalfTowardsZeroToInt32( double value ) { return ( int ) RoundHalfTowardsZeroToInt64( value ); }
+		public static sbyte RoundHalfTowardsNegativeInfinityToInt8( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt8( value ); }
+		public static short RoundHalfTowardsNegativeInfinityToInt16( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt16( value ); }
+		public static int RoundHalfTowardsNegativeInfinityToInt32( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt32( value ); }
+		public static long RoundHalfTowardsNegativeInfinityToInt64( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToInt64( value ); }
 
-		[ForceInline] public static long RoundHalfTowardsZeroToInt64( float value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
-		[ForceInline] public static long RoundHalfTowardsZeroToInt64( double value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
-		/// @}
+		public static byte RoundHalfTowardsNegativeInfinityToUInt8( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt8( value ); }
+		public static ushort RoundHalfTowardsNegativeInfinityToUInt16( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt16( value ); }
+		public static uint RoundHalfTowardsNegativeInfinityToUInt32( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt32( value ); }
+		public static ulong RoundHalfTowardsNegativeInfinityToUInt64( double value ) { return Impl.RoundHalfTowardsNegativeInfinityToUInt64( value ); }
 
-		/// @{ Rounding down / Round towards minus infinity
-		[ForceInline] public static float Floor( float value ) { return FloorToInt64( value ); }
-		[ForceInline] public static double Floor( double value ) { return FloorToInt64( value ); }
+		#endregion
 
-		[ForceInline] public static int FloorToInt32( float value ) { return ( int ) FloorToInt64( value ); }
-		[ForceInline] public static int FloorToInt32( double value ) { return ( int ) FloorToInt64( value ); }
+		#region Round half to closest even integer ( rint, lrint, llrint )
 
-		[ForceInline] public static long FloorToInt64( float value ) { return Impl.RoundTowardsMinusInfinityInt64( value ); }
-		[ForceInline] public static long FloorToInt64( double value ) { return Impl.RoundTowardsMinusInfinityInt64( value ); }
-		/// @}
+		public static float RoundHalfToEven( float value ) { return Impl.RoundHalfToEven( value ); }
+		public static double RoundHalfToEven( double value ) { return Impl.RoundHalfToEven( value ); }
 
-		/// @{ Rounding up / Round towards positive infinity
-		[ForceInline] public static float Ceiling( float value ) { return CeilingToInt64( value ); }
-		[ForceInline] public static double Ceiling( double value ) { return CeilingToInt64( value ); }
+		public static sbyte RoundHalfToEvenToInt8( float value ) { return Impl.RoundHalfToEvenToInt8( value ); }
+		public static short RoundHalfToEvenToInt16( float value ) { return Impl.RoundHalfToEvenToInt16( value ); }
+		public static int RoundHalfToEvenToInt32( float value ) { return Impl.RoundHalfToEvenToInt32( value ); }
+		public static long RoundHalfToEvenToInt64( float value ) { return Impl.RoundHalfToEvenToInt64( value ); }
 
-		[ForceInline] public static int CeilingToInt32( float value ) { return ( int ) CeilingToInt64( value ); }
-		[ForceInline] public static int CeilingToInt32( double value ) { return ( int ) CeilingToInt64( value ); }
+		public static byte RoundHalfToEvenToUInt8( float value ) { return Impl.RoundHalfToEvenToUInt8( value ); }
+		public static ushort RoundHalfToEvenToUInt16( float value ) { return Impl.RoundHalfToEvenToUInt16( value ); }
+		public static uint RoundHalfToEvenToUInt32( float value ) { return Impl.RoundHalfToEvenToUInt32( value ); }
+		public static ulong RoundHalfToEvenToUInt64( float value ) { return Impl.RoundHalfToEvenToUInt64( value ); }
 
-		[ForceInline] public static long CeilingToInt64( float value ) { return Impl.RoundTowardsPlusInfinityInt64( value ); }
-		[ForceInline] public static long CeilingToInt64( double value ) { return Impl.RoundTowardsPlusInfinityInt64( value ); }
-		/// @}
+		public static sbyte RoundHalfToEvenToInt8( double value ) { return Impl.RoundHalfToEvenToInt8( value ); }
+		public static short RoundHalfToEvenToInt16( double value ) { return Impl.RoundHalfToEvenToInt16( value ); }
+		public static int RoundHalfToEvenToInt32( double value ) { return Impl.RoundHalfToEvenToInt32( value ); }
+		public static long RoundHalfToEvenToInt64( double value ) { return Impl.RoundHalfToEvenToInt64( value ); }
 
-		/// @{ Round away from zero / round towards infinity
-		[ForceInline] public static float RoundAwayFromZero( float value ) { return RoundAwayFromZeroToInt64( value ); }
-		[ForceInline] public static double RoundAwayFromZero( double value ) { return RoundAwayFromZeroToInt64( value ); }
+		public static byte RoundHalfToEvenToUInt8( double value ) { return Impl.RoundHalfToEvenToUInt8( value ); }
+		public static ushort RoundHalfToEvenToUInt16( double value ) { return Impl.RoundHalfToEvenToUInt16( value ); }
+		public static uint RoundHalfToEvenToUInt32( double value ) { return Impl.RoundHalfToEvenToUInt32( value ); }
+		public static ulong RoundHalfToEvenToUInt64( double value ) { return Impl.RoundHalfToEvenToUInt64( value ); }
 
-		[ForceInline] public static int RoundAwayFromZeroToInt32( float value ) { return ( int ) Impl.RoundAwayFromZeroToInt64( value ); }
-		[ForceInline] public static int RoundAwayFromZeroToInt32( double value ) { return ( int ) Impl.RoundAwayFromZeroToInt64( value ); }
+		#endregion
 
-		[ForceInline] public static long RoundAwayFromZeroToInt64( float value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
-		[ForceInline] public static long RoundAwayFromZeroToInt64( double value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
-		/// @}
+		#region Round half to closest odd integer
 
-		/// @{ Round towards zero. Default mode for expressions like 'someInt = ( int ) someFloat'
-		[ForceInline] public static float Truncate( float value ) { return TruncateToInt64( value ); }
-		[ForceInline] public static double Truncate( double value ) { return TruncateToInt64( value ); }
+		public static float RoundHalfToOdd( float value ) { return Impl.RoundHalfToOdd( value ); }
+		public static double RoundHalfToOdd( double value ) { return Impl.RoundHalfToOdd( value ); }
 
-		[ForceInline] public static int TruncateToInt32( float value ) { return ( int ) Impl.TruncateToInt64( value ); }
-		[ForceInline] public static int TruncateToInt32( double value ) { return ( int ) Impl.TruncateToInt64( value ); }
+		public static sbyte RoundHalfToOddToInt8( float value ) { return Impl.RoundHalfToOddToInt8( value ); }
+		public static short RoundHalfToOddToInt16( float value ) { return Impl.RoundHalfToOddToInt16( value ); }
+		public static int RoundHalfToOddToInt32( float value ) { return Impl.RoundHalfToOddToInt32( value ); }
+		public static long RoundHalfToOddToInt64( float value ) { return Impl.RoundHalfToOddToInt64( value ); }
 
-		[ForceInline] public static long TruncateToInt64( float value ) { return Impl.TruncateToInt64( value ); }
-		[ForceInline] public static long TruncateToInt64( double value ) { return Impl.TruncateToInt64( value ); }
-		/// @}
+		public static byte RoundHalfToOddToUInt8( float value ) { return Impl.RoundHalfToOddToUInt8( value ); }
+		public static ushort RoundHalfToOddToUInt16( float value ) { return Impl.RoundHalfToOddToUInt16( value ); }
+		public static uint RoundHalfToOddToUInt32( float value ) { return Impl.RoundHalfToOddToUInt32( value ); }
+		public static ulong RoundHalfToOddToUInt64( float value ) { return Impl.RoundHalfToOddToUInt64( value ); }
+
+		public static sbyte RoundHalfToOddToInt8( double value ) { return Impl.RoundHalfToOddToInt8( value ); }
+		public static short RoundHalfToOddToInt16( double value ) { return Impl.RoundHalfToOddToInt16( value ); }
+		public static int RoundHalfToOddToInt32( double value ) { return Impl.RoundHalfToOddToInt32( value ); }
+		public static long RoundHalfToOddToInt64( double value ) { return Impl.RoundHalfToOddToInt64( value ); }
+
+		public static byte RoundHalfToOddToUInt8( double value ) { return Impl.RoundHalfToOddToUInt8( value ); }
+		public static ushort RoundHalfToOddToUInt16( double value ) { return Impl.RoundHalfToOddToUInt16( value ); }
+		public static uint RoundHalfToOddToUInt32( double value ) { return Impl.RoundHalfToOddToUInt32( value ); }
+		public static ulong RoundHalfToOddToUInt64( double value ) { return Impl.RoundHalfToOddToUInt64( value ); }
+
+		#endregion
+
+		#region Round half away from zero ( round, roundf, llround )
+
+		public static float RoundHalfAwayFromZero( float value ) { return Impl.RoundHalfAwayFromZero( value ); }
+		public static double RoundHalfAwayFromZero( double value ) { return Impl.RoundHalfAwayFromZero( value ); }
+
+		public static sbyte RoundHalfAwayFromZeroToInt8( float value ) { return Impl.RoundHalfAwayFromZeroToInt8( value ); }
+		public static short RoundHalfAwayFromZeroToInt16( float value ) { return Impl.RoundHalfAwayFromZeroToInt16( value ); }
+		public static int RoundHalfAwayFromZeroToInt32( float value ) { return Impl.RoundHalfAwayFromZeroToInt32( value ); }
+		public static long RoundHalfAwayFromZeroToInt64( float value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
+
+		public static byte RoundHalfAwayFromZeroToUInt8( float value ) { return Impl.RoundHalfAwayFromZeroToUInt8( value ); }
+		public static ushort RoundHalfAwayFromZeroToUInt16( float value ) { return Impl.RoundHalfAwayFromZeroToUInt16( value ); }
+		public static uint RoundHalfAwayFromZeroToUInt32( float value ) { return Impl.RoundHalfAwayFromZeroToUInt32( value ); }
+		public static ulong RoundHalfAwayFromZeroToUInt64( float value ) { return Impl.RoundHalfAwayFromZeroToUInt64( value ); }
+
+		public static sbyte RoundHalfAwayFromZeroToInt8( double value ) { return Impl.RoundHalfAwayFromZeroToInt8( value ); }
+		public static short RoundHalfAwayFromZeroToInt16( double value ) { return Impl.RoundHalfAwayFromZeroToInt16( value ); }
+		public static int RoundHalfAwayFromZeroToInt32( double value ) { return Impl.RoundHalfAwayFromZeroToInt32( value ); }
+		public static long RoundHalfAwayFromZeroToInt64( double value ) { return Impl.RoundHalfAwayFromZeroToInt64( value ); }
+
+		public static byte RoundHalfAwayFromZeroToUInt8( double value ) { return Impl.RoundHalfAwayFromZeroToUInt8( value ); }
+		public static ushort RoundHalfAwayFromZeroToUInt16( double value ) { return Impl.RoundHalfAwayFromZeroToUInt16( value ); }
+		public static uint RoundHalfAwayFromZeroToUInt32( double value ) { return Impl.RoundHalfAwayFromZeroToUInt32( value ); }
+		public static ulong RoundHalfAwayFromZeroToUInt64( double value ) { return Impl.RoundHalfAwayFromZeroToUInt64( value ); }
+
+		#endregion
+
+		#region Round half towards zero
+
+		public static float RoundHalfTowardsZero( float value ) { return Impl.RoundHalfTowardsZero( value ); }
+		public static double RoundHalfTowardsZero( double value ) { return Impl.RoundHalfTowardsZero( value ); }
+
+		public static sbyte RoundHalfTowardsZeroToInt8( float value ) { return Impl.RoundHalfTowardsZeroToInt8( value ); }
+		public static short RoundHalfTowardsZeroToInt16( float value ) { return Impl.RoundHalfTowardsZeroToInt16( value ); }
+		public static int RoundHalfTowardsZeroToInt32( float value ) { return Impl.RoundHalfTowardsZeroToInt32( value ); }
+		public static long RoundHalfTowardsZeroToInt64( float value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
+
+		public static byte RoundHalfTowardsZeroToUInt8( float value ) { return Impl.RoundHalfTowardsZeroToUInt8( value ); }
+		public static ushort RoundHalfTowardsZeroToUInt16( float value ) { return Impl.RoundHalfTowardsZeroToUInt16( value ); }
+		public static uint RoundHalfTowardsZeroToUInt32( float value ) { return Impl.RoundHalfTowardsZeroToUInt32( value ); }
+		public static ulong RoundHalfTowardsZeroToUInt64( float value ) { return Impl.RoundHalfTowardsZeroToUInt64( value ); }
+
+		public static sbyte RoundHalfTowardsZeroToInt8( double value ) { return Impl.RoundHalfTowardsZeroToInt8( value ); }
+		public static short RoundHalfTowardsZeroToInt16( double value ) { return Impl.RoundHalfTowardsZeroToInt16( value ); }
+		public static int RoundHalfTowardsZeroToInt32( double value ) { return Impl.RoundHalfTowardsZeroToInt32( value ); }
+		public static long RoundHalfTowardsZeroToInt64( double value ) { return Impl.RoundHalfTowardsZeroToInt64( value ); }
+
+		public static byte RoundHalfTowardsZeroToUInt8( double value ) { return Impl.RoundHalfTowardsZeroToUInt8( value ); }
+		public static ushort RoundHalfTowardsZeroToUInt16( double value ) { return Impl.RoundHalfTowardsZeroToUInt16( value ); }
+		public static uint RoundHalfTowardsZeroToUInt32( double value ) { return Impl.RoundHalfTowardsZeroToUInt32( value ); }
+		public static ulong RoundHalfTowardsZeroToUInt64( double value ) { return Impl.RoundHalfTowardsZeroToUInt64( value ); }
+
+		#endregion
+
+		#region Rounding down / Round towards minus infinity
+
+		public static float Floor( float value ) { return Impl.RoundTowardsNegativeInfinity( value ); }
+		public static double Floor( double value ) { return Impl.RoundTowardsNegativeInfinity( value ); }
+
+		public static sbyte FloorToInt8( float value ) { return Impl.RoundTowardsNegativeInfinityToInt8( value ); }
+		public static short FloorToInt16( float value ) { return Impl.RoundTowardsNegativeInfinityToInt16( value ); }
+		public static int FloorToInt32( float value ) { return Impl.RoundTowardsNegativeInfinityToInt32( value ); }
+		public static long FloorToInt64( float value ) { return Impl.RoundTowardsNegativeInfinityToInt64( value ); }
+
+		public static byte FloorToUInt8( float value ) { return Impl.RoundTowardsNegativeInfinityToUInt8( value ); }
+		public static ushort FloorToUInt16( float value ) { return Impl.RoundTowardsNegativeInfinityToUInt16( value ); }
+		public static uint FloorToUInt32( float value ) { return Impl.RoundTowardsNegativeInfinityToUInt32( value ); }
+		public static ulong FloorToUInt64( float value ) { return Impl.RoundTowardsNegativeInfinityToUInt64( value ); }
+
+		public static sbyte FloorToInt8( double value ) { return Impl.RoundTowardsNegativeInfinityToInt8( value ); }
+		public static short FloorToInt16( double value ) { return Impl.RoundTowardsNegativeInfinityToInt16( value ); }
+		public static int FloorToInt32( double value ) { return Impl.RoundTowardsNegativeInfinityToInt32( value ); }
+		public static long FloorToInt64( double value ) { return Impl.RoundTowardsNegativeInfinityToInt64( value ); }
+
+		public static byte FloorToUInt8( double value ) { return Impl.RoundTowardsNegativeInfinityToUInt8( value ); }
+		public static ushort FloorToUInt16( double value ) { return Impl.RoundTowardsNegativeInfinityToUInt16( value ); }
+		public static uint FloorToUInt32( double value ) { return Impl.RoundTowardsNegativeInfinityToUInt32( value ); }
+		public static ulong FloorToUInt64( double value ) { return Impl.RoundTowardsNegativeInfinityToUInt64( value ); }
+
+		#endregion
+
+		#region Rounding up / Round towards positive infinity
+
+		public static float Ceiling( float value ) { return Impl.RoundTowardsPositiveInfinity( value ); }
+		public static double Ceiling( double value ) { return Impl.RoundTowardsPositiveInfinity( value ); }
+
+		public static sbyte CeilingToInt8( float value ) { return Impl.RoundTowardsPositiveInfinityToInt8( value ); }
+		public static short CeilingToInt16( float value ) { return Impl.RoundTowardsPositiveInfinityToInt16( value ); }
+		public static int CeilingToInt32( float value ) { return Impl.RoundTowardsPositiveInfinityToInt32( value ); }
+		public static long CeilingToInt64( float value ) { return Impl.RoundTowardsPositiveInfinityToInt64( value ); }
+
+		public static byte CeilingToUInt8( float value ) { return Impl.RoundTowardsPositiveInfinityToUInt8( value ); }
+		public static ushort CeilingToUInt16( float value ) { return Impl.RoundTowardsPositiveInfinityToUInt16( value ); }
+		public static uint CeilingToUInt32( float value ) { return Impl.RoundTowardsPositiveInfinityToUInt32( value ); }
+		public static ulong CeilingToUInt64( float value ) { return Impl.RoundTowardsPositiveInfinityToUInt64( value ); }
+
+		public static sbyte CeilingToInt8( double value ) { return Impl.RoundTowardsPositiveInfinityToInt8( value ); }
+		public static short CeilingToInt16( double value ) { return Impl.RoundTowardsPositiveInfinityToInt16( value ); }
+		public static int CeilingToInt32( double value ) { return Impl.RoundTowardsPositiveInfinityToInt32( value ); }
+		public static long CeilingToInt64( double value ) { return Impl.RoundTowardsPositiveInfinityToInt64( value ); }
+
+		public static byte CeilingToUInt8( double value ) { return Impl.RoundTowardsPositiveInfinityToUInt8( value ); }
+		public static ushort CeilingToUInt16( double value ) { return Impl.RoundTowardsPositiveInfinityToUInt16( value ); }
+		public static uint CeilingToUInt32( double value ) { return Impl.RoundTowardsPositiveInfinityToUInt32( value ); }
+		public static ulong CeilingToUInt64( double value ) { return Impl.RoundTowardsPositiveInfinityToUInt64( value ); }
+
+		#endregion
+
+		#region Round away from zero / round towards infinity
+
+		public static float RoundAwayFromZero( float value ) { return Impl.RoundAwayFromZero( value ); }
+		public static double RoundAwayFromZero( double value ) { return Impl.RoundAwayFromZero( value ); }
+
+		public static sbyte RoundAwayFromZeroToInt8( float value ) { return Impl.RoundAwayFromZeroToInt8( value ); }
+		public static short RoundAwayFromZeroToInt16( float value ) { return Impl.RoundAwayFromZeroToInt16( value ); }
+		public static int RoundAwayFromZeroToInt32( float value ) { return Impl.RoundAwayFromZeroToInt32( value ); }
+		public static long RoundAwayFromZeroToInt64( float value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
+
+		public static byte RoundAwayFromZeroToUInt8( float value ) { return Impl.RoundAwayFromZeroToUInt8( value ); }
+		public static ushort RoundAwayFromZeroToUInt16( float value ) { return Impl.RoundAwayFromZeroToUInt16( value ); }
+		public static uint RoundAwayFromZeroToUInt32( float value ) { return Impl.RoundAwayFromZeroToUInt32( value ); }
+		public static ulong RoundAwayFromZeroToUInt64( float value ) { return Impl.RoundAwayFromZeroToUInt64( value ); }
+
+		public static sbyte RoundAwayFromZeroToInt8( double value ) { return Impl.RoundAwayFromZeroToInt8( value ); }
+		public static short RoundAwayFromZeroToInt16( double value ) { return Impl.RoundAwayFromZeroToInt16( value ); }
+		public static int RoundAwayFromZeroToInt32( double value ) { return Impl.RoundAwayFromZeroToInt32( value ); }
+		public static long RoundAwayFromZeroToInt64( double value ) { return Impl.RoundAwayFromZeroToInt64( value ); }
+
+		public static byte RoundAwayFromZeroToUInt8( double value ) { return Impl.RoundAwayFromZeroToUInt8( value ); }
+		public static ushort RoundAwayFromZeroToUInt16( double value ) { return Impl.RoundAwayFromZeroToUInt16( value ); }
+		public static uint RoundAwayFromZeroToUInt32( double value ) { return Impl.RoundAwayFromZeroToUInt32( value ); }
+		public static ulong RoundAwayFromZeroToUInt64( double value ) { return Impl.RoundAwayFromZeroToUInt64( value ); }
+
+		#endregion
+
+		#region Round towards zero ( trunc, truncf )
+
+		public static float Truncate( float value ) { return Impl.RoundTowardsZero( value ); }
+		public static double Truncate( double value ) { return Impl.RoundTowardsZero( value ); }
+
+		public static sbyte TruncateToInt8( float value ) { return Impl.RoundTowardsZeroToInt8( value ); }
+		public static short TruncateToInt16( float value ) { return Impl.RoundTowardsZeroToInt16( value ); }
+		public static int TruncateToInt32( float value ) { return Impl.RoundTowardsZeroToInt32( value ); }
+		public static long TruncateToInt64( float value ) { return Impl.RoundTowardsZeroToInt64( value ); }
+
+		public static byte TruncateToUInt8( float value ) { return Impl.RoundTowardsZeroToUInt8( value ); }
+		public static ushort TruncateToUInt16( float value ) { return Impl.RoundTowardsZeroToUInt16( value ); }
+		public static uint TruncateToUInt32( float value ) { return Impl.RoundTowardsZeroToUInt32( value ); }
+		public static ulong TruncateToUInt64( float value ) { return Impl.RoundTowardsZeroToUInt64( value ); }
+
+		public static sbyte TruncateToInt8( double value ) { return Impl.RoundTowardsZeroToInt8( value ); }
+		public static short TruncateToInt16( double value ) { return Impl.RoundTowardsZeroToInt16( value ); }
+		public static int TruncateToInt32( double value ) { return Impl.RoundTowardsZeroToInt32( value ); }
+		public static long TruncateToInt64( double value ) { return Impl.RoundTowardsZeroToInt64( value ); }
+
+		public static byte TruncateToUInt8( double value ) { return Impl.RoundTowardsZeroToUInt8( value ); }
+		public static ushort TruncateToUInt16( double value ) { return Impl.RoundTowardsZeroToUInt16( value ); }
+		public static uint TruncateToUInt32( double value ) { return Impl.RoundTowardsZeroToUInt32( value ); }
+		public static ulong TruncateToUInt64( double value ) { return Impl.RoundTowardsZeroToUInt64( value ); }
+
+		#endregion
 
 		[ForceInline]
 		public static float Abs( float value ) { return bitcast<float>( bitcast<int>( value ) & ~( 1 << 31 ) ); }
@@ -313,6 +417,16 @@ namespace System {
 		[ForceInline] public static double Clamp( double minValue, double value, double maxValue ) { return value > maxValue ? maxValue : value < minValue ? minValue : value; }
 
 		public static double Hypotenuse( double a, double b ) { return Sqrt( a * a + b * b ); }
+
+		public static sbyte Average( sbyte a, sbyte b ) { return BitOperations.SignedShiftRight( a, ( sbyte ) 1 ) + BitOperations.SignedShiftRight( b, ( sbyte ) 1 ) + ( a & b & 1 ); }
+		public static short Average( short a, short b ) { return BitOperations.SignedShiftRight( a, ( short ) 1 ) + BitOperations.SignedShiftRight( b, ( short ) 1 ) + ( a & b & 1 ); }
+		public static int Average( int a, int b ) { return BitOperations.SignedShiftRight( a, ( int ) 1 ) + BitOperations.SignedShiftRight( b, ( int ) 1 ) + ( a & b & 1 ); }
+		public static long Average( long a, long b ) { return BitOperations.SignedShiftRight( a, ( long ) 1 ) + BitOperations.SignedShiftRight( b, ( long ) 1 ) + ( a & b & 1 ); }
+
+		public static byte Average( byte a, byte b ) { return ( a & b ) + ( ( a ^ b ) >> 1 ); }
+		public static ushort Average( ushort a, ushort b ) { return ( a & b ) + ( ( a ^ b ) >> 1 ); }
+		public static uint Average( uint a, uint b ) { return ( a & b ) + ( ( a ^ b ) >> 1 ); }
+		public static ulong Average( ulong a, ulong b ) { return ( a & b ) + ( ( a ^ b ) >> 1 ); }
 
 		/// @{ saturated arith
 		[ForceInline] public static byte SaturatedAdd( byte a, byte b ) { return SaturatedAdd<byte>( a, b ); }

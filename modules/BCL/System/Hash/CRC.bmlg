@@ -1,0 +1,1188 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+
+namespace System.Hash {
+	public static partial struct CRC8 {
+		public static byte Lookup1( byte* table, byte crc, byte data ) { return table[crc ^ data]; }
+
+		public static byte Lookup1( byte* table, byte crc, byte* data, uint dataLength ) {
+			for( uint i = 0; i < dataLength; ++i )
+				crc = table[crc ^ data[i]];
+
+			return crc;
+		}
+
+		public static byte Lookup2( byte* table, byte crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x1 ) != 0 ) {
+				--dataLength;
+				crc = table[crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 1;
+			for( uint i = 0; i < blockCount; ++i ) {
+				byte low = crc ^ *data;
+
+				crc = table[1 * 256 + low] ^ table[0 * 256 + data[1]];
+
+				data += 2;
+			}
+
+			if( ( dataLength & 1 ) != 0 )
+				crc = table[crc ^ *data++];
+
+			return crc;
+		}
+
+		public static byte Lookup4( byte* table, byte crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x3 ) != 0 ) {
+				--dataLength;
+				crc = table[( byte ) crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 2;
+			for( uint i = 0; i < blockCount; ++i ) {
+				byte low = crc ^ *data;
+
+				crc = table[3 * 256 + low] ^ table[2 * 256 + data[1]] ^ table[1 * 256 + data[2]] ^ table[0 * 256 + data[3]];
+
+				data += 4;
+			}
+
+			dataLength &= 3;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = table[( byte ) crc ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static byte Lookup8( byte* table, byte crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x7 ) != 0 ) {
+				--dataLength;
+				crc = table[( byte ) crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 3;
+			for( uint i = 0; i < blockCount; ++i ) {
+				byte low = crc ^ *data;
+
+				crc = table[7 * 256 + low] ^ table[6 * 256 + data[1]] ^ table[5 * 256 + data[2]] ^ table[4 * 256 + data[3]] ^ table[3 * 256 + data[4]] ^ table[2 * 256 + data[5]] ^ table[1 * 256 + data[6]] ^ table[0 * 256 + data[7]];
+
+				data += 8;
+			}
+
+			dataLength &= 7;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = table[( byte ) crc ^ *data++];
+			}
+
+			return crc;
+		}
+
+
+		public static byte LowCachePressure_ShiftLeft( byte polynom, byte crc, byte data ) {
+			crc ^= data;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 0x80 ) != 0 )
+					crc = ( crc << 1 ) ^ polynom;
+				else
+					crc <<= 1;
+			}
+
+			return crc;
+		}
+
+		public static byte LowCachePressure_ShiftLeft( byte polynom, byte crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+
+			while( current < dataEnd ) {
+				crc ^= *( byte* ) current;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 0x80 ) != 0 )
+						crc = ( crc << 1 ) ^ polynom;
+					else
+						crc = ( crc << 1 );
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+
+		public static byte LowCachePressure_ShiftRight( byte polynom, byte crc, byte data ) {
+			crc ^= data;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 1 ) != 0 )
+					crc = ( crc >> 1 ) ^ polynom;
+				else
+					crc >>= 1;
+			}
+
+			return crc;
+		}
+
+		public static byte LowCachePressure_ShiftRight( byte polynom, byte crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+
+			while( current < dataEnd ) {
+				crc ^= *( byte* ) current;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 1 ) != 0 )
+						crc = ( crc >> 1 ) ^ polynom;
+					else
+						crc >>= 1;
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+	}
+
+	public static partial struct CRC16 {
+		public static ushort Lookup1_ShiftLeft( ushort* table, ushort crc, byte data ) { return ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ data]; }
+
+		public static ushort Lookup1_ShiftLeft( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			for( uint i = 0; i < dataLength; ++i )
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ data[i]];
+
+			return crc;
+		}
+
+		public static ushort Lookup2_ShiftLeft( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x1 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+			}
+
+			ushort* table1 = &table[1 * 256];
+			ushort* table0 = &table[0 * 256];
+
+			uint blockCount = dataLength >> 1;
+			for( uint i = 0; i < blockCount; ++i ) {
+				ushort low = crc ^ *( ushort_bigendian* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table1[plow[1]] ^ table0[plow[0]];
+
+				data += 2;
+			}
+
+			if( ( dataLength & 1 ) != 0 )
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+
+			return crc;
+		}
+
+		public static ushort Lookup4_ShiftLeft( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x3 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 2;
+			for( uint i = 0; i < blockCount; ++i ) {
+				uint low = BitOperations.ByteSwap( crc ) ^ *( uint_littleendian* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table[3 * 256 + plow[0]] ^ table[2 * 256 + plow[1]] ^ table[1 * 256 + plow[2]] ^ table[0 * 256 + plow[3]];
+
+				data += 4;
+			}
+
+			dataLength &= 3;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static ushort Lookup8_ShiftLeft( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x7 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 3;
+			for( uint i = 0; i < blockCount; ++i ) {
+				uint low = BitOperations.ByteSwap( crc ) ^ *( uint_littleendian* ) data;
+				byte* plow = ( byte* ) &low;
+
+				uint high = *( uint_littleendian* )( data + 4 );
+				byte* phigh = ( byte* ) &high;
+
+				crc = table[7 * 256 + plow[0]] ^ table[6 * 256 + plow[1]] ^ table[5 * 256 + plow[2]] ^ table[4 * 256 + plow[3]] ^ table[3 * 256 + phigh[0]] ^ table[2 * 256 + phigh[1]] ^ table[1 * 256 + phigh[2]] ^ table[0 * 256 + phigh[3]];
+
+				data += 8;
+			}
+
+			dataLength &= 7;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 8 ) ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static ushort Lookup1_ShiftRight( ushort* table, ushort crc, byte data ) { return ( crc >> 8 ) ^ table[( byte ) crc ^ data]; }
+
+		public static ushort Lookup1_ShiftRight( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			for( uint i = 0; i < dataLength; ++i )
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ data[i]];
+
+			return crc;
+		}
+
+		public static ushort Lookup2_ShiftRight( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			ushort* table1 = &table[1 * 256];
+			ushort* table0 = &table[0 * 256];
+
+			while( dataLength != 0 && ( ( uintptr ) data & 0x1 ) != 0 ) {
+				--dataLength;
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 1;
+			for( uint i = 0; i < blockCount; ++i ) {
+				var fetched = *( ushort* ) data;
+
+				ushort low = crc ^ fetched;
+				byte* plow = ( byte* ) &low;
+
+				crc = table1[plow[0]] ^ table0[plow[1]];
+
+				data += 2;
+			}
+
+			if( ( dataLength & 1 ) != 0 )
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+
+			return crc;
+		}
+
+		public static ushort Lookup4_ShiftRight( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x3 ) != 0 ) {
+				--dataLength;
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 2;
+			for( uint i = 0; i < blockCount; ++i ) {
+				ushort low = crc ^ *( ushort* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table[3 * 256 + plow[0]] ^ table[2 * 256 + plow[1]] ^ table[1 * 256 + data[2]] ^ table[0 * 256 + data[3]];
+
+				data += 4;
+			}
+
+			dataLength &= 3;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static ushort Lookup8_ShiftRight( ushort* table, ushort crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x7 ) != 0 ) {
+				--dataLength;
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 3;
+			for( uint i = 0; i < blockCount; ++i ) {
+				ushort low = crc ^ *( ushort* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table[7 * 256 + plow[0]] ^ table[6 * 256 + plow[1]] ^ table[5 * 256 + data[2]] ^ table[4 * 256 + data[3]] ^ table[3 * 256 + data[4]] ^ table[2 * 256 + data[5]] ^ table[1 * 256 + data[6]] ^ table[0 * 256 + data[7]];
+
+				data += 8;
+			}
+
+			dataLength &= 7;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static ushort LowCachePressure_ShiftLeft( ushort polynom, ushort crc, byte data ) {
+			crc ^= data << 8;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 0x8000 ) != 0 )
+					crc = ( crc << 1 ) ^ polynom;
+				else
+					crc <<= 1;
+			}
+
+			return crc;
+		}
+
+		public static ushort LowCachePressure_ShiftLeft( ushort polynom, ushort crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 1 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 2 ) & ~1 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( current < alignedDataStart ) {
+						crc ^= ( ushort ) *( byte* ) current << 8;
+
+						for( byte index = 0; index < 8; ++index ) {
+							if( ( crc & 0x8000 ) != 0 )
+								crc = ( crc << 1 ) ^ polynom;
+							else
+								crc = ( crc << 1 );
+						}
+
+						++current;
+					}
+				}
+			}
+
+			while( current < alignedDataEnd ) {
+				crc ^= *( ushort_bigendian* ) current;
+
+				for( byte index = 0; index < 16; ++index ) {
+					if( ( crc & 0x8000 ) != 0 )
+						crc = ( crc << 1 ) ^ polynom;
+					else
+						crc = ( crc << 1 );
+				}
+
+				current += 2;
+			}
+
+			while( current < dataEnd ) {
+				crc ^= ( ushort ) *( byte* ) current << 8;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 0x8000 ) != 0 )
+						crc = ( crc << 1 ) ^ polynom;
+					else
+						crc = ( crc << 1 );
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+
+		public static ushort LowCachePressure_ShiftRight( ushort polynom, ushort crc, byte data ) {
+			crc ^= data;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 1 ) != 0 )
+					crc = ( crc >> 1 ) ^ polynom;
+				else
+					crc >>= 1;
+			}
+
+			return crc;
+		}
+
+		public static ushort LowCachePressure_ShiftRight( ushort polynom, ushort crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 1;
+
+			if( ( ( uintptr ) data & 1 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 2 ) & ~1 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( current < alignedDataStart ) {
+						crc ^= *( byte* ) current;
+
+						for( byte index = 0; index < 8; ++index ) {
+							if( ( crc & 1 ) != 0 )
+								crc = ( crc >> 1 ) ^ polynom;
+							else
+								crc >>= 1;
+						}
+
+						++current;
+					}
+				}
+			}
+
+			while( current < alignedDataEnd ) {
+				crc ^= *( ushort* ) current;
+
+				for( byte index = 0; index < 16; ++index ) {
+					if( ( crc & 1 ) != 0 )
+						crc = ( crc >> 1 ) ^ polynom;
+					else
+						crc >>= 1;
+				}
+
+				current += 2;
+			}
+
+			while( current < dataEnd ) {
+				crc ^= *( byte* ) current;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 1 ) != 0 )
+						crc = ( crc >> 1 ) ^ polynom;
+					else
+						crc >>= 1;
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+	}
+
+	public static partial struct CRC32 {
+		public static uint Lookup1_ShiftLeft( uint* table, uint crc, byte data ) { return ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ data]; }
+
+		public static uint Lookup1_ShiftLeft( uint* table, uint crc, byte* data, uint dataLength ) {
+			for( uint i = 0; i < dataLength; ++i )
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ data[i]];
+
+			return crc;
+		}
+
+		public static uint Lookup2_ShiftLeft( uint* table, uint crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x1 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 1;
+			for( uint i = 0; i < blockCount; ++i ) {
+				uint low = crc ^ ( ( uint ) *( ushort_bigendian* ) data << 16 );
+				byte* plow = ( byte* ) &low;
+
+				crc = table[1 * 256 + plow[3]] ^ table[0 * 256 + plow[2]] ^ ( crc << 16 );
+
+				data += 2;
+			}
+
+			if( ( dataLength & 1 ) != 0 )
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+
+			return crc;
+		}
+
+
+		public static uint Lookup4_ShiftLeft( uint* table, uint crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x3 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 2;
+			for( uint i = 0; i < blockCount; ++i ) {
+				uint low = crc ^ *( uint_bigendian* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table[3 * 256 + plow[3]] ^ table[2 * 256 + plow[2]] ^ table[1 * 256 + plow[1]] ^ table[0 * 256 + plow[0]];
+
+				data += 4;
+			}
+
+			dataLength &= 3;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static uint Lookup8_ShiftLeft( uint* table, uint crc, byte* data, uint dataLength ) {
+			while( dataLength != 0 && ( ( uintptr ) data & 0x1 ) != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+			}
+
+			uint blockCount = dataLength >> 3;
+			for( uint i = 0; i < blockCount; ++i ) {
+				uint low = crc ^ *( uint_bigendian* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table[7 * 256 + plow[3]] ^ table[6 * 256 + plow[2]] ^ table[5 * 256 + plow[1]] ^ table[4 * 256 + plow[0]] ^ table[3 * 256 + data[4]] ^ table[2 * 256 + data[5]] ^ table[1 * 256 + data[6]] ^ table[0 * 256 + data[7]];
+
+				data += 8;
+			}
+
+			dataLength &= 7;
+			while( dataLength != 0 ) {
+				--dataLength;
+				crc = ( crc << 8 ) ^ table[( byte )( crc >> 24 ) ^ *data++];
+			}
+
+			return crc;
+		}
+
+		public static uint Lookup1_ShiftRight( uint* table, uint crc, byte data ) { return ( crc >> 8 ) ^ table[( byte ) crc ^ data]; }
+
+		public static uint Lookup1_ShiftRight( uint* table, uint crc, byte* data, uint dataLength ) {
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 3 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 4 ) & ~3 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( data < alignedDataStart )
+						crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+				}
+			}
+
+			while( data < alignedDataEnd ) {
+				uint low = *( uint* ) data;
+				var plow = ( byte* ) &low;
+
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ plow[0]];
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ plow[1]];
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ plow[2]];
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ plow[3]];
+
+				data += 4;
+			}
+
+			while( data < dataEnd )
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+
+			return crc;
+		}
+
+		public static uint Lookup2_ShiftRight( uint* table, uint crc, byte* data, uint dataLength ) {
+			var table1 = &table[1 * 256];
+			var table0 = &table[0 * 256];
+
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 3 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 4 ) & ~3 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( data < alignedDataStart )
+						crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+				}
+			}
+
+			while( data < alignedDataEnd ) {
+				var fetched = *( uint* ) data;
+
+				ushort low = ( ushort )( crc ^ fetched );
+				var plow = ( byte* ) &low;
+
+				crc = table1[plow[0]] ^ table0[plow[1]] ^ ( crc >> 16 );
+				low = ( ushort )( crc ^ ( fetched >> 16 ) );
+				crc = table1[plow[0]] ^ table0[plow[1]] ^ ( crc >> 16 );
+
+				data += 4;
+			}
+
+			while( data < dataEnd )
+				crc = ( crc >> 8 ) ^ table[( byte ) crc ^ *data++];
+
+			return crc;
+		}
+
+		public static uint Lookup4_ShiftRight( uint* table, uint crc, byte* data, uint dataLength ) {
+			var table3 = &table[3 * 256];
+			var table2 = &table[2 * 256];
+			var table1 = &table[1 * 256];
+			var table0 = &table[0 * 256];
+
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 3 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 4 ) & ~3 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( data < alignedDataStart )
+						crc = ( crc >> 8 ) ^ table0[( byte ) crc ^ *data++];
+				}
+			}
+
+			while( data < alignedDataEnd ) {
+				uint low = crc ^ *( uint* ) data;
+				byte* plow = ( byte* ) &low;
+
+				crc = table3[plow[0]] ^ table2[plow[1]] ^ table1[plow[2]] ^ table0[plow[3]];
+
+				data += 4;
+			}
+
+			while( data < dataEnd )
+				crc = ( crc >> 8 ) ^ table0[( byte ) crc ^ *data++];
+
+			return crc;
+		}
+
+		public static uint Lookup8_ShiftRight( uint* table, uint crc, byte* data, uint dataLength ) {
+			var table7 = &table[7 * 256];
+			var table6 = &table[6 * 256];
+			var table5 = &table[5 * 256];
+			var table4 = &table[4 * 256];
+			var table3 = &table[3 * 256];
+			var table2 = &table[2 * 256];
+			var table1 = &table[1 * 256];
+			var table0 = &table[0 * 256];
+
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 7;
+
+			if( ( ( uintptr ) data & 7 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 8 ) & ~7 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( data < alignedDataStart )
+						crc = ( crc >> 8 ) ^ table0[( byte ) crc ^ *data++];
+				}
+			}
+
+			while( data < alignedDataEnd ) {
+				uint fetch0 = *( uint* ) data;
+				uint fetch1 = *( uint* )( data + 4 );
+
+				uint low = crc ^ fetch0;
+				byte* plow = ( byte* ) &low;
+				byte* phigh1 = ( byte* ) &fetch1;
+
+				crc = table7[plow[0]] ^ table6[plow[1]] ^ table5[plow[2]] ^ table4[plow[3]] ^ table3[phigh1[0]] ^ table2[phigh1[1]] ^ table1[phigh1[2]] ^ table0[phigh1[3]];
+
+				data += 8;
+			}
+
+			while( data < dataEnd )
+				crc = ( crc >> 8 ) ^ table0[( byte ) crc ^ *data++];
+
+			return crc;
+		}
+
+		public static uint LowCachePressure_CRC_32c_ShiftRight( uint crc, byte data ) { return LowCachePressure_ShiftRight( 0x82F63B78, crc, data ); }
+		public static uint LowCachePressure_CRC_32c_ShiftRight( uint crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftRight( 0x82F63B78, crc, data, dataLength ); }
+
+		public static uint LowCachePressure_ShiftLeft( uint polynom, uint crc, byte data ) {
+			crc ^= data << 24;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 0x80000000 ) != 0 )
+					crc = ( crc << 1 ) ^ polynom;
+				else
+					crc <<= 1;
+			}
+
+			return crc;
+		}
+
+		public static uint LowCachePressure_ShiftLeft( uint polynom, uint crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 3 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 4 ) & ~3 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( current < alignedDataStart ) {
+						crc ^= *( byte* ) current << 24;
+
+						for( byte index = 0; index < 8; ++index ) {
+							if( ( crc & 0x80000000 ) != 0 )
+								crc = ( crc << 1 ) ^ polynom;
+							else
+								crc = ( crc << 1 );
+						}
+
+						++current;
+					}
+				}
+			}
+
+			while( current < alignedDataEnd ) {
+				crc ^= *( uint_bigendian* ) current;
+
+				for( byte index = 0; index < 32; ++index ) {
+					if( ( crc & 0x80000000 ) != 0 )
+						crc = ( crc << 1 ) ^ polynom;
+					else
+						crc = ( crc << 1 );
+				}
+
+				current += 4;
+			}
+
+			while( current < dataEnd ) {
+				crc ^= *( byte* ) current << 24;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 0x80000000 ) != 0 )
+						crc = ( crc << 1 ) ^ polynom;
+					else
+						crc = ( crc << 1 );
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+
+		public static uint LowCachePressure_ShiftLeft_SwapInput4( uint polynom, uint crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + ( dataLength & ~3 );
+
+			if( ( ( ( uintptr ) data ) & 3 ) != 0 ) {
+				while( current < dataEnd ) {
+					crc ^= unaligned( *( uint* ) current );
+
+					for( byte index = 0; index < 32; ++index ) {
+						if( ( crc & 0x80000000 ) != 0 )
+							crc = ( crc << 1 ) ^ polynom;
+						else
+							crc = ( crc << 1 );
+					}
+
+					current += 4;
+				}
+			} else {
+				while( current < dataEnd ) {
+					crc ^= *( uint* ) current;
+
+					for( byte index = 0; index < 32; ++index ) {
+						if( ( crc & 0x80000000 ) != 0 )
+							crc = ( crc << 1 ) ^ polynom;
+						else
+							crc = ( crc << 1 );
+					}
+
+					current += 4;
+				}
+			}
+
+			switch( dataLength & 3 ) {
+				case 0: return crc;
+				case 1: crc ^= *current; break;
+				case 2: crc ^= *current | ( *( current + 1 ) << 8 ); break;
+				case 3: crc ^= *current | ( *( current + 1 ) << 8 ) | ( *( current + 2 ) << 16 ); break;
+			}
+
+			for( byte index = 0; index < 32; ++index ) {
+				if( ( crc & 0x80000000 ) != 0 )
+					crc = ( crc << 1 ) ^ polynom;
+				else
+					crc = ( crc << 1 );
+			}
+
+			return crc;
+		}
+
+		public static uint LowCachePressure_ShiftRight( uint polynom, uint crc, byte data ) {
+			crc ^= data;
+
+			for( byte j = 0; j < 8; ++j ) {
+				if( ( crc & 1 ) != 0 )
+					crc = ( crc >> 1 ) ^ polynom;
+				else
+					crc >>= 1;
+			}
+
+			return crc;
+		}
+
+		public static uint LowCachePressure_ShiftRight( uint polynom, uint crc, byte* data, uint dataLength ) {
+			var current = data;
+			var dataEnd = data + dataLength;
+			var alignedDataEnd = dataEnd - 3;
+
+			if( ( ( uintptr ) data & 3 ) != 0 ) {
+				var alignedDataStart = ( byte* )( ( uintptr )( data + 4 ) & ~3 );
+
+				if( alignedDataStart < dataEnd ) {
+					while( current < alignedDataStart ) {
+						crc ^= *( byte* ) current;
+
+						for( byte index = 0; index < 8; ++index ) {
+							if( ( crc & 1 ) != 0 )
+								crc = ( crc >> 1 ) ^ polynom;
+							else
+								crc >>= 1;
+						}
+
+						++current;
+					}
+				}
+			}
+
+			while( current < alignedDataEnd ) {
+				crc ^= *( uint* ) current;
+
+				for( byte index = 0; index < 32; ++index ) {
+					if( ( crc & 1 ) != 0 )
+						crc = ( crc >> 1 ) ^ polynom;
+					else
+						crc >>= 1;
+				}
+
+				current += 4;
+			}
+
+			while( current < dataEnd ) {
+				crc ^= *( byte* ) current;
+
+				for( byte index = 0; index < 8; ++index ) {
+					if( ( crc & 1 ) != 0 )
+						crc = ( crc >> 1 ) ^ polynom;
+					else
+						crc >>= 1;
+				}
+
+				++current;
+			}
+
+			return crc;
+		}
+
+		public static uint HardwareReflected_0x1EDC6F41( uint crc, byte* data, uint length ) asm {
+			X86_32 {
+				// [esp + 4]: crc
+				// [esp + 8]: data
+				// [esp + 12]: length
+				feature( SSE4_2 ) {
+					push ebx
+
+					mov eax, [esp + 8]  // CRC
+					mov edx, [esp + 12] // data
+					mov ebx, [esp + 16] // length
+
+					test ebx, ebx
+					je exit
+
+					mov ecx, edx
+					and ecx, 3
+					cmovz ecx, ebx
+					jz prepareMainIteration16b
+
+					neg ecx
+					add ecx, 4
+					sub ebx, ecx
+					jz firstBytesOnly
+					jl firstBytesOnly2
+
+					test ecx, 2
+					jz align_skip2
+					crc32 eax, word ptr [edx]
+					add edx, 2
+
+				align_skip2:
+					test ecx, 1
+					jz align_skip1
+					crc32 eax, byte ptr [edx]
+					inc edx
+
+				align_skip1:
+					mov ecx, ebx
+
+				prepareMainIteration16b:
+					cmp ecx, 16
+					jb prepareMainIteration
+
+					shr ecx, 4
+
+				mainIteration16b:
+					crc32 eax, dword ptr [edx]
+					crc32 eax, dword ptr [edx + 4]
+					crc32 eax, dword ptr [edx + 8]
+					crc32 eax, dword ptr [edx + 12]
+					add edx, 16
+					loop mainIteration16b
+
+					mov ecx, ebx
+					and ecx, 15
+					jz exit
+
+				prepareMainIteration:
+					cmp ecx, 4
+					jb tail
+
+					shr ecx, 2
+
+				mainIteration:
+					crc32 eax, dword ptr [edx]
+					add edx, 4
+					loop mainIteration
+
+					mov ecx, ebx
+					and ecx, 3
+
+				tail:
+					test ecx, 2
+					jz tail_skip2
+					crc32 eax, word ptr [edx]
+					add edx, 2
+
+				tail_skip2:
+					test ecx, 1
+					jz exit
+					crc32 eax, byte ptr [edx]
+
+				exit:
+					pop ebx
+					ret
+
+				firstBytesOnly2:
+					add ecx, ebx
+
+				firstBytesOnly:
+					crc32 eax, byte ptr [edx]
+					inc edx
+					loop firstBytesOnly
+
+					pop ebx
+					ret
+				}
+			}
+			X86_64 {
+				feature( SSE4_2 ) {
+					// Microsoft x64 calling convention
+					// RCX: crc
+					// RDX: data
+					// R8: length
+					if( System.Runtime.CompilerServices.CompilerInfo.CurrentPlatform == System.Runtime.CompilerServices.PlatformID.Windows ) {
+						mov rax, rcx
+						test r8, r8
+						je exit
+
+						mov rcx, rdx
+						and rcx, 7
+						cmovz rcx, r8
+						jz prepareMainIteration32b
+
+						neg rcx
+						add rcx, 8
+						sub r8, rcx
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+						test rcx, 4
+						jz align_skip4
+						crc32 eax, dword ptr [rdx]
+						add rdx, 4
+
+					align_skip4:
+						test rcx, 2
+						jz align_skip2
+						crc32 eax, word ptr [rdx]
+						add rdx, 2
+
+					align_skip2:
+						test rcx, 1
+						jz skip1
+						crc32 eax, byte ptr [rdx]
+						inc rdx
+
+					skip1:
+						mov rcx, r8
+
+					prepareMainIteration32b:
+						cmp rcx, 32
+						jb prepareMainIteration
+
+						shr rcx, 5
+
+					mainIteration32b:
+						crc32 rax, qword ptr [rdx]
+						crc32 rax, qword ptr [rdx + 8]
+						crc32 rax, qword ptr [rdx + 16]
+						crc32 rax, qword ptr [rdx + 24]
+						add rdx, 32
+						loop mainIteration32b
+
+						mov rcx, r8
+						and rcx, 31
+						jz exit
+
+					prepareMainIteration:
+						cmp rcx, 8
+						jb tail
+
+						shr rcx, 3
+
+					mainIteration:
+						crc32 rax, qword ptr [rdx]
+						add rdx, 8
+						loop mainIteration
+
+						mov rcx, r8
+						and rcx, 7
+
+					tail:
+						test rcx, 4
+						jz tail_skip4
+						crc32 eax, dword ptr [rdx]
+						add rdx, 4
+
+					tail_skip4:
+						test rcx, 2
+						jz tail_skip2
+						crc32 eax, word ptr [rdx]
+						add rdx, 2
+
+					tail_skip2:
+						test rcx, 1
+						jz exit
+						crc32 eax, byte ptr [rdx]
+
+					exit:
+						ret
+
+					firstBytesOnly2:
+						add rcx, r8
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rdx]
+						inc rdx
+						loop firstBytesOnly
+
+						ret
+					}
+					// System V AMD64 ABI
+					// RDI: crc
+					// RSI: data
+					// RDX: length
+					else {
+						mov rax, rdi
+						mov r8, rdx
+						mov rdx, rsi
+
+						test rdx, rdx
+						je exit
+
+						mov rcx, rdx
+						and rcx, 7
+						cmovz rcx, r8
+						jz prepareMainIteration32b
+
+						neg rcx
+						add rcx, 8
+						sub r8, rcx
+						jz firstBytesOnly
+						jl firstBytesOnly2
+
+						test rcx, 4
+						jz align_skip4
+						crc32 eax, dword ptr [rdx]
+						add rdx, 4
+
+					align_skip4:
+						test rcx, 2
+						jz align_skip2
+						crc32 eax, word ptr [rdx]
+						add rdx, 2
+
+					align_skip2:
+						test rcx, 1
+						jz align_skip1
+						crc32 eax, byte ptr [rdx]
+						inc rdx
+
+					align_skip1:
+						mov rcx, r8
+
+					prepareMainIteration32b:
+						cmp rcx, 32
+						jb prepareMainIteration
+
+						shr rcx, 5
+
+					mainIteration32b:
+						crc32 rax, qword ptr [rdx]
+						crc32 rax, qword ptr [rdx + 8]
+						crc32 rax, qword ptr [rdx + 16]
+						crc32 rax, qword ptr [rdx + 24]
+						add rdx, 32
+						loop mainIteration32b
+
+						mov rcx, r8
+						and rcx, 31
+						jz exit
+
+					prepareMainIteration:
+						cmp rcx, 8
+						jb tail
+
+						shr rcx, 3
+
+					mainIteration:
+						crc32 rax, qword ptr [rdx]
+						add rdx, 8
+						loop mainIteration
+
+						mov rcx, r8
+						and rcx, 7
+
+					tail:
+						test rcx, 4
+						jz tail_skip4
+						crc32 eax, dword ptr [rdx]
+						add rdx, 4
+
+					tail_skip4:
+						test rcx, 2
+						jz tail_skip2
+						crc32 eax, word ptr [rdx]
+						add rdx, 2
+
+					tail_skip2:
+						test rcx, 1
+						jz exit
+						crc32 eax, byte ptr [rdx]
+
+					exit:
+						ret
+
+					firstBytesOnly2:
+						add rcx, r8
+
+					firstBytesOnly:
+						crc32 eax, byte ptr [rdx]
+						inc rdx
+						loop firstBytesOnly
+
+						ret
+					}
+				}
+			}
+			default {
+				return try_resolve_invocation_target( LookupReflected_0x1EDC6F41, LowCachePressure_CRC_32c )( crc, data, length );
+			}
+		}
+	}
+}

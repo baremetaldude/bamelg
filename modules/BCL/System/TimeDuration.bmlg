@@ -1,0 +1,218 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+
+namespace System {
+	public sealed partial struct TimeDuration {
+		public ulong Ticks;
+
+		public TimeDuration( ulong ticks ) { Ticks = ticks; }
+
+		public TimeDuration( byte hours, byte minutes, byte seconds ) { Assert.IsTrue( TryTimeToTicks( Ticks, hours, minutes, seconds ) ); }
+		public TimeDuration( uint days, byte hours, byte minutes, byte seconds ) { Assert.IsTrue( TryTimeToTicks( Ticks, days, hours, minutes, seconds ) ); }
+		public TimeDuration( uint days, byte hours, byte minutes, byte seconds, ushort millisecond ) { Assert.IsTrue( TryTimeToTicks( Ticks, days, hours, minutes, seconds, millisecond ) ); }
+
+		internal static bool TryTimeToTicks( ulong& result, byte hour, byte minute, byte second ) {
+			if( hour >= 24 || minute >= 60 || second >= 60 ) { result = ulong.MaxValue; return false; }
+
+			ulong resultSeconds = hour * ( 60UL * 60 ) + minute * 60L + second;
+			result = resultSeconds * TicksPerSecond;
+			return true;
+		}
+
+		internal static bool TryTimeToTicks( ulong& result, uint days, byte hour, byte minute, byte second ) {
+			if( days >= MaxDays || hour >= 24 || minute >= 60 || second >= 60 ) { result = ulong.MaxValue; return false; }
+
+			ulong resultSeconds = days * ( 24UL * 60 * 60 ) + hour * ( 60UL * 60 ) + minute * 60UL + second;
+
+			ulong resultTicks;
+			if( checkwrap( resultTicks = resultSeconds * TicksPerSecond ) ) { result = ulong.MaxValue; return false; }
+			result = resultTicks;
+			return true;
+		}
+
+		internal static bool TryTimeToTicks( ulong& result, uint days, byte hour, byte minute, byte second, ushort millisecond ) {
+			if( days >= MaxDays || hour >= 24 || minute >= 60 || second >= 60 || millisecond >= 999 ) { result = ulong.MaxValue; return false; }
+
+			ulong resultSeconds = days * ( 24UL * 60 * 60 * 1000 ) + hour * ( 60UL * 60 * 1000 ) + minute * 60UL * 1000 + second * 1000UL + millisecond;
+
+			ulong resultTicks;
+			if( checkwrap( resultTicks = resultSeconds * TicksPerMillisecond ) ) { result = ulong.MaxValue; return false; }
+			result = resultTicks;
+			return true;
+		}
+
+		public static thistype operator %( thistype t1, thistype t2 ) { return new TimeDuration( t1.Ticks % t2.Ticks ); }
+
+		public static thistype operator *( thistype t1, uint t2 ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = t1.Ticks * t2 ) ) return MaxValue;
+			return new thistype { Ticks = resultTicks };
+		}
+
+		public static thistype operator /( thistype t1, uint t2 ) { return new TimeDuration( t1.Ticks / t2 ); }
+
+		public static thistype operator *( thistype t1, double t2 ) { return new TimeDuration( Math.RoundToUInt64( t1.Ticks * t2 ) ); }
+		public static thistype operator /( thistype t1, double t2 ) { return new TimeDuration( Math.RoundToUInt64( t1.Ticks / t2 ) ); }
+
+		public static thistype operator +( thistype t1, thistype t2 ) { thistype result; if( TryAddTicks( result.Ticks, t1.Ticks, t2.Ticks ) ) return result; return MaxValue; }
+		public static thistype operator -( thistype t1, thistype t2 ) { thistype result; if( TrySubtractTicks( result.Ticks, t1.Ticks, t2.Ticks ) ) return result; return MinValue; }
+
+		public static bool operator ==( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks == t2.Ticks; }
+		public static bool operator !=( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks != t2.Ticks; }
+
+		public static bool operator >( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks > t2.Ticks; }
+		public static bool operator <( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks < t2.Ticks; }
+
+		public static bool operator >=( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks >= t2.Ticks; }
+		public static bool operator <=( [In] thistype& t1, [In] thistype& t2 ) { return t1.Ticks <= t2.Ticks; }
+
+		public uint Days { get { return ( uint )( Ticks / 864000000000UL ); } }
+		public byte Hours { get { return ( byte )( ( Ticks / 36000000000UL ) % 24 ); } }
+		public byte Minutes { get { return ( byte )( ( Ticks / 600000000UL ) % 60 ); } }
+		public byte Seconds { get { return ( byte )( ( Ticks / 10000000UL ) % 60 ); } }
+		public ushort Milliseconds { get { return ( ushort )( Ticks / 10000 % 1000 ); } }
+		public ushort Microseconds { get { return ( ushort )( Ticks / 10 % 1000 ); } }
+
+		public ulong TotalMilliseconds { get { return Ticks / ( 1000UL * 10 ); } }
+		public ulong TotalSeconds { get { return Ticks / ( 1000UL * 1000 * 10 ); } }
+		public ulong TotalMinutes { get { return Ticks / ( 60UL * 1000 * 1000 * 10 ); } }
+		public ulong TotalHours { get { return Ticks / ( 60UL * 60 * 1000 * 1000 * 10 ); } }
+		public ulong TotalDays { get { return Ticks / ( 24UL * 60 * 60 * 1000 * 1000 * 10 ); } }
+
+		public static bool TryAddTicks( ulong& result, ulong ticks, long value ) {
+			if( value >= 0 )
+				return !checkwrap( result = ticks + ( ulong ) value );
+			else
+				return !checkwrap( result = ticks - ( ulong ) -value );
+		}
+
+		public static bool TrySubtractTicks( ulong& result, ulong ticks, long value ) {
+			if( value >= 0 )
+				return !checkwrap( result = ticks - ( ulong ) value );
+			else
+				return !checkwrap( result = ticks + ( ulong ) -value );
+		}
+
+		public static bool TryAddTicks( ulong& result, ulong ticks, ulong value ) {
+			return !checkwrap( result = ticks + value );
+		}
+
+		public static bool TrySubtractTicks( ulong& result, ulong ticks, ulong value ) {
+			return !checkwrap( result = ticks - value );
+		}
+
+		public thistype AddTicks( long value ) { thistype result; Assert.IsTrue( TryAddTicks( result.Ticks, Ticks, value ) ); return result; }
+		public thistype AddTicks( ulong value ) { thistype result; Assert.IsTrue( TryAddTicks( result.Ticks, Ticks, value ) ); return result; }
+		public thistype SubtractTicks( long value ) { thistype result; Assert.IsTrue( TrySubtractTicks( result.Ticks, Ticks, value ) ); return result; }
+		public thistype SubtractTicks( ulong value ) { thistype result; Assert.IsTrue( TrySubtractTicks( result.Ticks, Ticks, value ) ); return result; }
+
+		public static TimeDuration FromMicroseconds( uint value ) {
+			return new TimeDuration { Ticks = value * TicksPerMicrosecond };
+		}
+
+		public static TimeDuration FromMicroseconds( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerMicrosecond ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromMilliseconds( uint value ) {
+			return new TimeDuration { Ticks = value * TicksPerMillisecond };
+		}
+
+		public static TimeDuration FromMilliseconds( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerMillisecond ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromSeconds( uint value ) {
+			return new TimeDuration { Ticks = value * TicksPerSecond };
+		}
+
+		public static TimeDuration FromSeconds( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerSecond ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromMinutes( uint value ) {
+			return new TimeDuration { Ticks = value * TicksPerMinute };
+		}
+
+		public static TimeDuration FromMinutes( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerMinute ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromHours( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerHour ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromDays( ulong value ) {
+			ulong resultTicks;
+			if( checkwrap( resultTicks = value * TicksPerDay ) ) return TimeDuration.MaxValue;
+			return new TimeDuration { Ticks = resultTicks };
+		}
+
+		public static TimeDuration FromTicks( ulong value ) {
+			return new TimeDuration { Ticks = value };
+		}
+
+		public const ulong TicksPerDay = 10UL * 1000 * 1000 * 60 * 60 * 24;
+		public const ulong TicksPerHour = 10UL * 1000 * 1000 * 60 * 60;
+		public const ulong TicksPerMinute = 10UL * 1000 * 1000 * 60;
+		public const ulong TicksPerSecond = 10UL * 1000 * 1000;
+		public const ulong TicksPerMillisecond = 10UL * 1000;
+		public const ulong TicksPerMicrosecond = 10UL;
+
+		public const ulong Ticks_1601_1_1 = 504911232000000000;
+		public const ulong Ticks_1970_1_1 = 621355968000000000;
+
+		public static readonly TimeDuration MaxValue = new TimeDuration { Ticks = ulong.MaxValue };
+		public static readonly TimeDuration MinValue = new TimeDuration { Ticks = ulong.MinValue };
+		public static readonly TimeDuration Zero = new TimeDuration { Ticks = ulong.MinValue };
+
+		public uint GetHashCode() { return Ticks.GetHashCode(); }
+
+		public const uint MaxDays = ( uint )( ulong.MaxValue / ( ulong ) TicksPerDay );
+
+		public static thistype Parse( CString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static thistype Parse( CStringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static thistype Parse( SbcsString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static Convert.ConversionResult TryParse( CString input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<uint>( input.GetChars(), input.Length, value ); }
+
+		public static Convert.ConversionResult TryParse( CStringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<uint>( input.GetChars(), input.Length, value ); }
+
+		public static Convert.ConversionResult TryParse( SbcsString input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( Utf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeDuration<uint>( input.GetChars(), input.Length, value ); }
+	}
+}

@@ -3,8 +3,6 @@
 //
 // See license at http://bamelg.com/license.txt
 //
-// NOTE: pipes are simple byte streams, they do not preserve message boundaries
-//
 
 using System;
 
@@ -15,6 +13,9 @@ namespace Platform.Libc {
 
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public void WriteByte( byte value ) { Write( &value, sizeof( value ) ); }
+		public SystemError WriteByte( byte value ) {
+			uint totalTransmitted;
+			return Write( totalTransmitted, &value, sizeof( value ) );
+		}
 	}
 }

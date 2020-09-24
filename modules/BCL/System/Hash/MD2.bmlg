@@ -37,7 +37,7 @@ namespace System.Hash {
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], ( uint ) Hash.Length, true );
+			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], Hash.Length, true );
 		}
 
 		public struct Evaluator {
@@ -135,13 +135,6 @@ namespace System.Hash {
 				0xF2, 0xEF, 0xB7, 0x0E, 0x66, 0x58, 0xD0, 0xE4, 0xA6, 0x77, 0x72, 0xF8, 0xEB, 0x75, 0x4B, 0x0A,
 				0x31, 0x44, 0x50, 0xB4, 0x8F, 0xED, 0x1F, 0x1A, 0xDB, 0x99, 0x8D, 0x33, 0x9F, 0x11, 0x83, 0x14
 			};
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.AreEqual( "8350E5A3E24C153DF2275C9F80692773", new thistype( new MemorySegment( null, 0 ) ).ToString() );
-			Assert.AreEqual( "03D85A0D629D2C442E987525319FC471", new thistype( ( SbcsString ) "The quick brown fox jumps over the lazy dog" ).ToString() );
-			Assert.AreEqual( "E346E3FB405278B243C092573EE2DF5F", new thistype( "The quick brown fox jumps over the lazy dog" ).ToString() );
 		}
 	}
 }

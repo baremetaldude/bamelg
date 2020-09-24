@@ -2,4 +2,4 @@
 :: Created by Eugeny Grishul
 ::
 
-"%ProgramFiles(x86)%\MSBuild\Bamelg\bamelg.exe" /reformat8 "%~dp0\"
+"%ProgramFiles(x86)%\Bamelg\bamelg.exe" /reformat8 "%~dp0\"

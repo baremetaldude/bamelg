@@ -5,9 +5,9 @@
 //
 
 namespace System.Diagnostics {
-	public partial struct Stopwatch {
-		private DateTime _started;
-		private TimeSpan _accumulated;
+	public partial struct Stopwatch : IFormattable {
+		private TimeStamp.BootTime_ExcludeSuspend _started;
+		private TimeDuration _accumulated;
 
 		public Stopwatch( bool start ) {
 			Reset();
@@ -20,28 +20,38 @@ namespace System.Diagnostics {
 		}
 
 		public void Reset() {
-			_started = new DateTime( 0 );
-			_accumulated = new TimeSpan( 0 );
+			_started = TimeStamp.BootTime_ExcludeSuspend.Zero;
+			_accumulated = TimeDuration.Zero;
+		}
+
+		public void Restart() {
+			Reset();
+			Start();
 		}
 
 		public void Start() {
-			_started = _implNow();
+			_started = TimeStamp.BootTime_ExcludeSuspend.Now;
 		}
 
-		public void End() {
+		public void Stop() {
 			if( _started.Ticks == 0 ) return;
 
-			_accumulated += _implNow() - _started;
+			_accumulated += ( TimeStamp.BootTime_ExcludeSuspend.Now - _started ).Duration();
 
-			_started = DateTime.MinValue;
+			_started = TimeStamp.BootTime_ExcludeSuspend.Zero;
 		}
 
-		public TimeSpan Elapsed {
+		public TimeDuration Elapsed {
 			get {
 				if( _started.Ticks == 0 ) return _accumulated;
 
-				return _implNow() - _started + _accumulated;
+				return ( TimeStamp.BootTime_ExcludeSuspend.Now - _started ).Duration() + _accumulated;
 			}
+		}
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( "Elapsed: " );
+			builder.Append( Elapsed );
 		}
 	}
 }

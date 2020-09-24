@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -7,36 +7,55 @@
 // Default behavior is to terminate app with stack trace and some error message
 //
 
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
+
 namespace System {
 	public static struct BclErrorHandler {
 		/// @{ Per-fiber handlers
 		/// @}
-		
+
 		/// @{ Per-thread handlers (save FLS space)
 		/// @}
-		
+
 		/// @{ Per-process handlers (save TLS space)
-		public static Functors.Action<TextParsingStatus> ParserException = DefaultParserException;
+		public static Functors.Action<string, CallerContext&> Exception = DefaultException;
 		public static Functors.Action<uint> OutOfMemoryException = DefaultOutOfMemoryException;
 		/// @}
-		
-		public static void DefaultParserException( TextParsingStatus code ) {
+
+		public static void DefaultException( string text, [In] CallerContext& callercontext = nullref ) {
+			Assert.Fail( text, callercontext );
+		}
+
+		public static void ConvertException( Convert.ConversionResult code, [In] CallerContext& callercontext = nullref ) {
 			switch( code ) {
-				case TextParsingStatus.OK: break;
-				case TextParsingStatus.Format: Assert.Fail( "Input string was not in a correct format" ); Environment.Abort( 1 ); break;
-				case TextParsingStatus.FormatArgumentIndex: Assert.Fail( "Index must be greater than or equal to zero and less than the size of the argument list" ); Environment.Abort( 1 ); break;
-				case TextParsingStatus.Overflow: Assert.Fail( "Value was either too large or too small" ); Environment.Abort( 1 ); break;
+				case Convert.ConversionResult.OK:
+				case Convert.ConversionResult.Clamped:
+				case Convert.ConversionResult.Inexact:
+					break;
+
+				case Convert.ConversionResult.IncompatibleValue: DefaultException( "Input value was not in a correct format", callercontext ); break;
+				case Convert.ConversionResult.IncompatibleType: DefaultException( "Input value has incompatible type", callercontext ); break;
+				case Convert.ConversionResult.EmptyValue: DefaultException( "Input value is empty", callercontext ); break;
+				case Convert.ConversionResult.FormatArgumentIndex: DefaultException( "Index must be greater than or equal to zero and less than the size of the argument list", callercontext ); break;
+
+				case Convert.ConversionResult.OutOfRange:
+				case Convert.ConversionResult.OutOfRange_LowerBound:
+				case Convert.ConversionResult.OutOfRange_UpperBound:
+					DefaultException( "Value was either too large or too small", callercontext );
+					break;
+
 				default: Assert.Unreachable(); break;
 			}
 		}
-		
+
 		public static void DefaultOutOfMemoryException( uint size ) {
 			Console.Write( "Unable to allocate " );
 			Console.Write( size );
 			Console.Write( " bytes" );
-			
+
 			Assert.Fail( "OutOfMemory" );
-			
+
 			Environment.Abort( 1 );
 		}
 	}

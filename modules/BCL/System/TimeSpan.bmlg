@@ -10,44 +10,56 @@ namespace System {
 	public sealed partial struct TimeSpan {
 		public long Ticks;
 
-		public TimeSpan( long ticks ) {
-			Ticks = ticks;
+		public TimeSpan( long ticks ) { Ticks = ticks; }
+
+		public TimeSpan( int hours, int minutes, int seconds ) { Assert.IsTrue( TryTimeToTicks( Ticks, hours, minutes, seconds ) ); }
+		public TimeSpan( int days, int hours, int minutes, int seconds ) { Assert.IsTrue( TryTimeToTicks( Ticks, days, hours, minutes, seconds ) ); }
+		public TimeSpan( int days, int hours, int minutes, int seconds, int milliseconds ) { Assert.IsTrue( TryTimeToTicks( Ticks, days, hours, minutes, seconds, milliseconds ) ); }
+
+		internal static bool TryTimeToTicks( long& result, int hour, int minute, int second ) {
+			if( checkwrap( result = hour * ( 60L * 60 ) * TicksPerSecond + minute * 60L * TicksPerSecond + second * TicksPerSecond ) ) { result = long.MaxValue; return false; }
+			return true;
 		}
 
-		public TimeSpan( int hours, int minutes, int seconds ) {
-			Ticks = DateTime.TimeToTicks( hours, minutes, seconds );
+		internal static bool TryTimeToTicks( long& result, int days, int hour, int minute, int second ) {
+			if( checkwrap( result = days * ( 24L * 60 * 60 ) * TicksPerSecond + hour * ( 60L * 60 ) * TicksPerSecond + minute * 60L * TicksPerSecond + second * TicksPerSecond ) ) { result = long.MaxValue; return false; }
+			return true;
 		}
 
-		public TimeSpan( int days, int hours, int minutes, int seconds )
-			: this( days, hours, minutes, seconds, 0 ) { }
+		internal static bool TryTimeToTicks( long& result, int days, int hour, int minute, int second, int millisecond ) {
+			if( checkwrap( result = days * ( 24L * 60 * 60 * 1000 ) * TicksPerMillisecond + hour * ( 60L * 60 * 1000 ) * TicksPerMillisecond + minute * 60L * 1000 * TicksPerMillisecond + second * 1000L * TicksPerMillisecond + millisecond * TicksPerMillisecond ) ) { result = long.MaxValue; return false; }
+			return true;
+		}
 
-		public TimeSpan( int days, int hours, int minutes, int seconds, int milliseconds ) {
-			var totalMilliseconds = ( long )( ( 60L * 60 * 24 * days + 60L * 60 * hours + 60L * minutes + seconds ) * 1000 + milliseconds );
+		public static bool TryAddTicks( long& result, long ticks, long value ) {
+			return !checkwrap( result = ticks + value );
+		}
 
-			if( !Assert.IsFalse( totalMilliseconds > 922337203685477 || totalMilliseconds < -922337203685477L ) )
-				days = 0;
-
-			Ticks = 10L * 1000 * totalMilliseconds;
+		public static bool TrySubtractTicks( long& result, long ticks, long value ) {
+			return !checkwrap( result = ticks - value );
 		}
 
 		public TimeSpan Add( TimeSpan ts ) {
 			long ticks;
-			if( !Assert.IsFalse( checkwrap( ticks = Ticks + ts.Ticks ) ) )
-				return new TimeSpan( 0 );
+			if( Assert.IsTrue( TryAddTicks( ticks, Ticks, ts.Ticks ) ) ) return new TimeSpan( ticks );
 
-			return new TimeSpan( ticks );
+			return ts.Ticks >= 0 ? MaxValue : MinValue;
 		}
 
 		public TimeSpan Subtract( TimeSpan ts ) {
 			long ticks;
-			if( !Assert.IsFalse( checkwrap( ticks = Ticks - ts.Ticks ) ) )
-				return new TimeSpan( 0 );
+			if( Assert.IsTrue( TrySubtractTicks( ticks, Ticks, ts.Ticks ) ) ) return new TimeSpan( ticks );
 
-			return new TimeSpan( ticks );
+			return ts.Ticks >= 0 ? MaxValue : MinValue;
+		}
+
+		public bool TryNegate() {
+			if( Ticks == long.MinValue ) { Ticks = ~Ticks; return false; }
+			Ticks = -Ticks;
+			return true;
 		}
 
 		public static TimeSpan operator %( TimeSpan t1, TimeSpan t2 ) { return new TimeSpan( t1.Ticks % t2.Ticks ); }
-		public static TimeSpan operator %( DateTime t1, TimeSpan t2 ) { return new TimeSpan( t1.Ticks % t2.Ticks ); }
 
 		public static TimeSpan operator *( TimeSpan t1, int t2 ) { return new TimeSpan( t1.Ticks * t2 ); }
 		public static TimeSpan operator /( TimeSpan t1, int t2 ) { return new TimeSpan( t1.Ticks / t2 ); }
@@ -55,8 +67,8 @@ namespace System {
 		public static TimeSpan operator *( TimeSpan t1, double t2 ) { return new TimeSpan( Math.RoundToInt64( t1.Ticks * t2 ) ); }
 		public static TimeSpan operator /( TimeSpan t1, double t2 ) { return new TimeSpan( Math.RoundToInt64( t1.Ticks / t2 ) ); }
 
-		public static TimeSpan operator +( TimeSpan t1, TimeSpan t2 ) { return t1.Add( t2 ); }
-		public static TimeSpan operator -( TimeSpan t1, TimeSpan t2 ) { return t1.Subtract( t2 ); }
+		public static thistype operator +( thistype t1, thistype t2 ) { thistype result; if( TryAddTicks( result.Ticks, t1.Ticks, t2.Ticks ) ) return result; return t1.Ticks >= 0 ? MaxValue : MinValue; }
+		public static thistype operator -( thistype t1, thistype t2 ) { thistype result; if( TrySubtractTicks( result.Ticks, t1.Ticks, t2.Ticks ) ) return result; return t1.Ticks >= 0 ? MaxValue : MinValue; }
 
 		public static bool operator ==( [In] TimeSpan& t1, [In] TimeSpan& t2 ) { return t1.Ticks == t2.Ticks; }
 		public static bool operator !=( [In] TimeSpan& t1, [In] TimeSpan& t2 ) { return t1.Ticks != t2.Ticks; }
@@ -67,8 +79,34 @@ namespace System {
 		public static bool operator >=( [In] TimeSpan& t1, [In] TimeSpan& t2 ) { return t1.Ticks >= t2.Ticks; }
 		public static bool operator <=( [In] TimeSpan& t1, [In] TimeSpan& t2 ) { return t1.Ticks <= t2.Ticks; }
 
+		public static bool operator ==( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks == t2.Ticks; }
+		public static bool operator ==( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks == t2.Ticks; }
+		public static bool operator !=( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks != t2.Ticks; }
+		public static bool operator !=( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks != t2.Ticks; }
+
+		public static bool operator >( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks > t2.Ticks; }
+		public static bool operator >( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks > t2.Ticks; }
+		public static bool operator <( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks < t2.Ticks; }
+		public static bool operator <( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks < t2.Ticks; }
+
+		public static bool operator >=( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks >= t2.Ticks; }
+		public static bool operator >=( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks >= t2.Ticks; }
+		public static bool operator <=( TimeSpan t1, TimeDuration t2 ) { return t1.Ticks <= t2.Ticks; }
+		public static bool operator <=( TimeDuration t1, TimeSpan t2 ) { return t1.Ticks <= t2.Ticks; }
+
 		public TimeSpan operator +() { return this; }
-		public TimeSpan operator -() { return new TimeSpan( -Ticks ); }
+
+		public TimeSpan operator -() {
+			if( Ticks == long.MinValue ) return MaxValue;
+			return new TimeSpan( -Ticks );
+		}
+
+		public TimeDuration Duration() {
+			if( Ticks == long.MinValue ) return TimeDuration.MaxValue;
+
+			if( Ticks < 0 ) return new TimeDuration( ( ulong ) -Ticks );
+			return new TimeDuration( ( ulong ) Ticks );
+		}
 
 		public int Days { get { return ( int )( Ticks / 864000000000 ); } }
 		public int Hours { get { return ( int )( ( Ticks / 36000000000 ) % 24 ); } }
@@ -76,7 +114,7 @@ namespace System {
 		public int Seconds { get { return ( int )( ( Ticks / 10000000 ) % 60 ); } }
 		public int Milliseconds { get { return ( int )( Ticks / 10000 % 1000 ); } }
 		public int Microseconds { get { return ( int )( Ticks / 10 % 1000 ); } }
-		public int MicrosecondsWithMilliseconds { get { return ( int )( ( Ticks / 10 ) % 1000000UL ); } }
+		// public int MicrosecondsWithMilliseconds { get { return ( int )( ( Ticks / 10 ) % 1000000UL ); } }
 
 		public long TotalMilliseconds { get { return Ticks / ( 1000L * 10 ); } }
 		public long TotalSeconds { get { return Ticks / ( 1000L * 1000 * 10 ); } }
@@ -120,6 +158,10 @@ namespace System {
 			return new TimeSpan( 10L * value );
 		}
 
+		public static TimeSpan FromTicks( long value ) {
+			return new TimeSpan { Ticks = value };
+		}
+
 		public static TimeSpan FromDays( double value ) { return Interval( value, 0x5265C00 ); }
 		public static TimeSpan FromHours( double value ) { return Interval( value, 3600000 ); }
 		public static TimeSpan FromMinutes( double value ) { return Interval( value, 60000 ); }
@@ -139,103 +181,45 @@ namespace System {
 		public const long TicksPerMillisecond = 10L * 1000;
 		public const long TicksPerMicrosecond = 10L;
 
-		public static readonly TimeSpan Zero = new TimeSpan( 0 );
-		public static readonly TimeSpan MaxValue = new TimeSpan( long.MaxValue );
-		public static readonly TimeSpan MinValue = new TimeSpan( long.MinValue );
+		public const long Ticks_1601_1_1 = 504911232000000000;
+		public const long Ticks_1970_1_1 = 621355968000000000;
+
+		public static readonly TimeSpan Zero = new TimeSpan { Ticks = 0 };
+		public static readonly TimeSpan MaxValue = new TimeSpan { Ticks = long.MaxValue };
+		public static readonly TimeSpan MinValue = new TimeSpan { Ticks = long.MinValue };
 
 		public uint GetHashCode() { return Ticks.GetHashCode(); }
 
-		private static TextParsingStatus TryParse<TElement>( TElement* parsePosition, uint remaining, thistype& parsedResult ) {
-			var result = true;
-			var negative = false;
-			parsedResult = default( thistype );
+		public const int MaxDays = ( int )( long.MaxValue / ( long ) TicksPerDay );
 
-			int days = 0, hours;
-			uint minutes, seconds, frac;
-			long ticks = 0;
+		public static thistype Parse( CString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
 
-			if( !int.TryFetch( parsePosition, remaining, hours ) || remaining == 0 ) return TextParsingStatus.Format;
-			if( --remaining == 0 ) return TextParsingStatus.Format;
+		public static thistype Parse( CStringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
 
-			if( hours < 0 ) {
-				negative = true;
-				hours = -hours;
-			}
+		public static thistype Parse( SbcsString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
 
-			switch( *parsePosition++ ) {
-				case '.':
-					days = hours;
-					if( !int.TryFetch( parsePosition, remaining, hours ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( hours < 0 ) return TextParsingStatus.Overflow;
-					if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
-					goto case ':';
+		public static Convert.ConversionResult TryParse( CString input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<uint>( input.GetChars(), input.Length, value ); }
 
-				case ':':
-					if( hours >= 24 ) return TextParsingStatus.Overflow;
+		public static Convert.ConversionResult TryParse( CStringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<uint>( input.GetChars(), input.Length, value ); }
 
-					if( !uint.TryFetch( parsePosition, remaining, minutes ) || remaining == 0 ) return TextParsingStatus.Format;
-					if( minutes >= 60 ) return TextParsingStatus.Overflow;
-					if( *parsePosition++ != ':' || --remaining == 0 ) return TextParsingStatus.Format;
-
-					if( !uint.TryFetch( parsePosition, remaining, seconds ) ) return TextParsingStatus.Format;
-					if( seconds >= 60 ) return TextParsingStatus.Overflow;
-					if( remaining == 0 ) goto parsed;
-					if( *parsePosition++ != '.' || --remaining == 0 ) return TextParsingStatus.Format;
-
-					if( !uint.TryFetch( parsePosition, remaining, frac ) ) return TextParsingStatus.Format;
-					if( remaining != 0 ) return TextParsingStatus.Format;
-
-					var scaleOrder = PrimitiveTypesFormatter.GetScaleOrder( frac );
-					if( scaleOrder > 7 ) frac /= ( uint ) PrimitiveTypesFormatter.TenPowersTable[scaleOrder - 7];
-
-					ticks = frac;
-					ticks *= PrimitiveTypesFormatter.TenPowersTable[7 - scaleOrder];
-					break;
-			}
-
-		parsed:
-			parsedResult = new TimeSpan( ( int ) days, ( int ) hours, ( int ) minutes, ( int ) seconds );
-			parsedResult.Ticks += ticks;
-			if( negative ) parsedResult.Ticks = -parsedResult.Ticks;
-			return TextParsingStatus.OK;
-		}
-
-		public static thistype Parse( CString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-
-		public static thistype Parse( CStringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf8StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf16StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( CUtf32StringSpan input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-
-		public static thistype Parse( SbcsString input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf8String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf16String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-		public static thistype Parse( Utf32String input ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ParserException( status ); return result; }
-
-		public static TextParsingStatus TryParse( CString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( CUtf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
-
-		public static TextParsingStatus TryParse( CStringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf8StringSpan input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( CUtf16StringSpan input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( CUtf32StringSpan input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
-
-		public static TextParsingStatus TryParse( SbcsString input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( Utf8String input, thistype& value ) { return TryParse<byte>( input.GetChars(), input.ByteLength, value ); }
-		public static TextParsingStatus TryParse( Utf16String input, thistype& value ) { return TryParse<char>( input.GetChars(), input.Length, value ); }
-		public static TextParsingStatus TryParse( Utf32String input, thistype& value ) { return TryParse<uint>( input.GetChars(), input.Length, value ); }
-
-		[UnitTest]
-		private static void ParseTest() {
-			Assert.IsTrue( new TimeSpan( 1, 2, 3 ) == TimeSpan.Parse( "1:2:3" ) );
-			Assert.IsTrue( new TimeSpan( 1, 2, 3, 4 ) == TimeSpan.Parse( "1.2:3:4" ) );
-			Assert.IsTrue( new TimeSpan( 1, 2, 3, 4, 567 ) == TimeSpan.Parse( "1.2:3:4.567" ) );
-			Assert.IsTrue( -new TimeSpan( 1, 2, 3, 4, 567 ) == TimeSpan.Parse( "-1.2:3:4.567" ) );
-		}
+		public static Convert.ConversionResult TryParse( SbcsString input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( Utf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseTimeSpan<uint>( input.GetChars(), input.Length, value ); }
 	}
 }

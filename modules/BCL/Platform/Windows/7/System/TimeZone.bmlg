@@ -1,0 +1,40 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Set "TimeZone.CurrentTimeZone" and do not use fallback to timezoneapi stuff.
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Serialization;
+using System.Threading;
+
+using Platform;
+
+namespace System {
+	public static partial class TimeZone {
+		private static long GetPlatformDefaultLocalFromUtcOffset( ulong time ) {
+			var utcTime = new DateTimeUTC( time - time % 10000U );
+
+			SYSTEMTIME localTime;
+			Kernel32Api.SystemTimeToTzSpecificLocalTime( null, ( SYSTEMTIME ) utcTime, localTime );
+
+			return ( ( DateTimeUTC ) localTime - utcTime ).Ticks;
+		}
+
+		private static long GetPlatformDefaultUtcFromLocalOffset( ulong time ) {
+			var localTime = new DateTimeUTC( time - time % 10000U );
+
+			SYSTEMTIME systemTime;
+			Kernel32Api.TzSpecificLocalTimeToSystemTime( null, ( SYSTEMTIME ) localTime, systemTime );
+
+			return ( localTime - ( DateTimeUTC ) systemTime ).Ticks;
+		}
+	}
+}

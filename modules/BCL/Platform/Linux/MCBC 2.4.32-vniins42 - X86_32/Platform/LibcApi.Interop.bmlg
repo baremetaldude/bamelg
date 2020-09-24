@@ -149,25 +149,25 @@ namespace Platform.Libc {
 		public extern static int umount( CUtf8String specialFile );
 		public extern static int umount2( CUtf8String specialFile, UnmountFlags flags );
 
-		public extern static int readv( IOHandle fd, iovec* iovec, int count );
-		public extern static int writev( IOHandle fd, iovec* iovec, int count );
+		public extern static int readv( IOHandle fd, iovec* iovec, uint count );
+		public extern static int writev( IOHandle fd, iovec* iovec, uint count );
 
 		public extern static cmsghdr* __cmsg_nxthdr( msghdr* mhdr, cmsghdr* cmsg );
 
 		public extern static SocketHandle accept( IOHandle fd, sockaddr* addr, int& addrLen );
 		public extern static int bind( IOHandle fd, sockaddr* addr, int len );
 		public extern static int connect( IOHandle fd, sockaddr* addr, int len );
-		public extern static int getpeername( IOHandle fd, sockaddr* addr, int& len );
-		public extern static int getsockname( IOHandle fd, sockaddr* addr, int& len );
+		public extern static int getpeername( IOHandle fd, void* addr, int& len );
+		public extern static int getsockname( IOHandle fd, void* addr, int& len );
 		public extern static int getsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int& optlen );
 		public extern static int isfdtype( IOHandle fd, int fdtype );
-		public extern static int listen( IOHandle fd, int n );
-		public extern static int recv( IOHandle fd, void* buf, int n, MessageFlags flags );
-		public extern static int recvfrom( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int& addrLen );
+		public extern static int listen( IOHandle fd, uint n );
+		public extern static int recv( IOHandle fd, void* buf, uint n, MessageFlags flags );
+		public extern static int recvfrom( IOHandle fd, void* buf, uint n, MessageFlags flags, sockaddr* addr, int& addrLen );
 		public extern static int recvmsg( IOHandle fd, msghdr* message, MessageFlags flags );
-		public extern static int send( IOHandle fd, void* buf, int n, MessageFlags flags );
+		public extern static int send( IOHandle fd, void* buf, uint n, MessageFlags flags );
 		public extern static int sendmsg( IOHandle fd, msghdr* message, MessageFlags flags );
-		public extern static int sendto( IOHandle fd, void* buf, int n, MessageFlags flags, sockaddr* addr, int addrLen );
+		public extern static int sendto( IOHandle fd, void* buf, uint n, MessageFlags flags, sockaddr* addr, int addrLen );
 		public extern static int setsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int optlen );
 		public extern static int shutdown( IOHandle fd, SocketShutdownOptions how );
 		public extern static int sockatmark( IOHandle fd );
@@ -569,12 +569,11 @@ namespace Platform.Libc {
 		public extern static tm* getdate( sbyte* @string );
 		public extern static int getdate_r( sbyte* @string, tm& resbufp );
 		public extern static tm* gmtime( intptr* timer );
-		public extern static tm* gmtime_r( intptr* timer, tm& tp );
+		public extern static tm* gmtime_r( intptr* timer, tm* tp );
 		public extern static tm* localtime( intptr* timer );
 		public extern static tm* localtime_r( intptr* timer, tm* tp );
-		public extern static intptr mktime( tm& tp );
+		public extern static intptr mktime( tm* tp );
 		public extern static int nanosleep( timespec* requestedTime, timespec* remaining );
-		public extern static int stime( intptr* when );
 		public extern static uint strftime( sbyte* s, uint maxsize, sbyte* format, tm& tp );
 		public extern static uint strftime_l( sbyte* s, uint maxsize, sbyte* format, tm& tp, __locale_struct& loc );
 		public extern static sbyte* strptime( sbyte* s, sbyte* fmt, tm& tp );
@@ -811,7 +810,7 @@ namespace Platform.Libc {
 		public extern static int profil( ushort* sampleBuffer, uint size, uint offset, uint scale );
 		public extern static int pwrite( IOHandle fd, void* buf, uint n, intptr offset );
 		public extern static int pwrite64( IOHandle fd, void* buf, uint n, long offset );
-		public extern static int read( IOHandle fd, void* buf, int nbytes );
+		public extern static int read( IOHandle fd, void* buf, uint nbytes );
 		public extern static int readlink( CUtf8String path, sbyte* buf, uint len );
 		public extern static int revoke( CUtf8String file );
 		public extern static int rmdir( CUtf8String path );
@@ -850,7 +849,7 @@ namespace Platform.Libc {
 		public extern static int usleep( uint useconds );
 		public extern static int vfork();
 		public extern static int vhangup();
-		public extern static int write( IOHandle fd, void* buf, int n );
+		public extern static int write( IOHandle fd, void* buf, uint n );
 
 		public extern static int getopt( int argc, sbyte** argv, sbyte* shortopts );
 
@@ -912,11 +911,11 @@ namespace Platform.Libc {
 		public extern static int clock_gettime( ClockType clockId, timespec& tp );
 		public extern static int clock_nanosleep( ClockType clockId, int flags, timespec& req, timespec& rem );
 		public extern static int clock_settime( ClockType clockId, timespec& tp );
-		public extern static int timer_create( ClockType clockId, sigevent* evp, int* timerid );
-		public extern static int timer_delete( int timerid );
-		public extern static int timer_getoverrun( int timerid );
-		public extern static int timer_gettime( int timerid, itimerspec& value );
-		public extern static int timer_settime( int timerid, int flags, itimerspec& value, itimerspec& ovalue );
+		public extern static int timer_create( ClockType clockId, sigevent* evp, PosixTimerHandle* timerid );
+		public extern static int timer_delete( PosixTimerHandle timerid );
+		public extern static int timer_getoverrun( PosixTimerHandle timerid );
+		public extern static int timer_gettime( PosixTimerHandle timerid, itimerspec& value );
+		public extern static int timer_settime( PosixTimerHandle timerid, int flags, itimerspec& value, itimerspec& ovalue );
 	}
 	[ExternLibrary( Image = "/usr/lib/libc_nonshared.a" )]
 	public static partial struct NonSharedApi {
@@ -1767,7 +1766,7 @@ namespace Platform.Libc {
 		STT_SPARC_REGISTER =   13,
 		STT_HIPROC =           15,
 	}
-	public enum FctlCommand : uint {
+	public enum FileDescriptorCommand : uint {
 		F_DUPFD =     0,
 		F_GETFD =     1,
 		F_SETFD =     2,
@@ -1785,9 +1784,13 @@ namespace Platform.Libc {
 		F_SETLKW64 = 14,
 	}
 	[Flags]
-	public enum FctlFlags : int {
+	public enum FileDescriptorFlags : int {
+		None =       0,
+		FD_CLOEXEC = 1,
+	}
+	[Flags]
+	public enum FileOpenFlags : int {
 		O_RDONLY =        0,
-		FD_CLOEXEC =      1,
 		O_WRONLY =        1,
 		O_RDWR =          2,
 		O_CREAT =        64,
@@ -1797,18 +1800,28 @@ namespace Platform.Libc {
 		O_APPEND =     1024,
 		O_NDELAY =     2048,
 		O_NONBLOCK =   2048,
+		O_DSYNC =      4096,
 		O_SYNC =       4096,
-		FASYNC =       8192,
+		O_ASYNC =      8192,
 		O_DIRECT =    16384,
 		O_LARGEFILE = 32768,
 		O_DIRECTORY = 65536,
 		O_NOFOLLOW = 131072,
-		O_ACCMODE =       3,
+		O_NOATIME =  262144,
 	}
 	public enum FileSeekOrigin : int {
 		SEEK_SET = 0,
 		SEEK_CUR = 1,
 		SEEK_END = 2,
+	}
+	[Flags]
+	public enum FileStatusFlags : int {
+		None =           0,
+		O_APPEND =    1024,
+		O_NONBLOCK =  2048,
+		O_ASYNC =     8192,
+		O_DIRECT =   16384,
+		O_NOATIME = 262144,
 	}
 	public enum FPResult : uint {
 		FP_NAN =       0,
@@ -2552,6 +2565,21 @@ namespace Platform.Libc {
 		TCP_LISTEN =     10,
 		TCP_CLOSING =    11,
 	}
+	[Flags]
+	public enum TerminalControlSignal : uint {
+		None =        0,
+		TIOCM_LE =    1,
+		TIOCM_DTR =   2,
+		TIOCM_RTS =   4,
+		TIOCM_ST =    8,
+		TIOCM_SR =   16,
+		TIOCM_CTS =  32,
+		TIOCM_CAR =  64,
+		TIOCM_CD =   64,
+		TIOCM_RI =  128,
+		TIOCM_RNG = 128,
+		TIOCM_DSR = 256,
+	}
 	public enum ThreadCancellationType : uint {
 		PTHREAD_CANCEL_DEFERRED =     0,
 		PTHREAD_CANCEL_ASYNCHRONOUS = 1,
@@ -2795,6 +2823,62 @@ namespace Platform.Libc {
 		public CUtf8String ai_canonname;
 		[ExplicitOffset( Offset = 28 )]
 		public addrinfo* ai_next;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct arpd_request {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort req;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ip;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr dev;
+		[ExplicitOffset( Offset = 12 )]
+		public uintptr stamp;
+		[ExplicitOffset( Offset = 16 )]
+		public uintptr updated;
+		[ExplicitOffset( Offset = 20 )]
+		public byte[7] ha;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 2 )]
+	public partial struct arphdr {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort ar_hrd;
+		[ExplicitOffset( Offset = 2 )]
+		public ushort ar_pro;
+		[ExplicitOffset( Offset = 4 )]
+		public byte ar_hln;
+		[ExplicitOffset( Offset = 5 )]
+		public byte ar_pln;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort ar_op;
+	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct arpreq {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr arp_pa;
+		[ExplicitOffset( Offset = 16 )]
+		public sockaddr arp_ha;
+		[ExplicitOffset( Offset = 32 )]
+		public int arp_flags;
+		[ExplicitOffset( Offset = 36 )]
+		public sockaddr arp_netmask;
+		[ExplicitOffset( Offset = 52 )]
+		public sbyte[16] arp_dev;
+	}
+	[ExplicitSize( Size = 52 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct arpreq_old {
+		[ExplicitOffset( Offset = 0 )]
+		public sockaddr arp_pa;
+		[ExplicitOffset( Offset = 16 )]
+		public sockaddr arp_ha;
+		[ExplicitOffset( Offset = 32 )]
+		public int arp_flags;
+		[ExplicitOffset( Offset = 36 )]
+		public sockaddr arp_netmask;
 	}
 	[ExplicitSize( Size = 7 )]
 	public partial struct ax25_address {

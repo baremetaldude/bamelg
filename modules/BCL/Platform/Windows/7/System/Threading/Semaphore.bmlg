@@ -12,7 +12,7 @@ namespace System.Threading {
 			if( initialValue != 0 ) _delegate.Release( initialValue );
 		}
 
-		private void _implDestroy() { }
+		private void _implDestroy() { _delegate.Close(); }
 
 		private void _implPost() { _delegate.Release( 1 ); }
 		private void _implWait() { _delegate.Wait(); }

@@ -1,0 +1,86 @@
+﻿//
+// Created by $USER
+//
+// in RxD CTS DSR DCD RI
+// out TxD RTS DTR
+//
+
+using System;
+using System.IO;
+
+using Platform.IO;
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		static Utf8String DefaultFile = "/dev/ttyUSB0";
+
+		[EntryPoint]
+		private static void Main() {
+			var parameters = Environment.CommandLine;
+			if( parameters.Length >= 2 ) {
+				DefaultFile = parameters[1];
+			}
+
+			System.Threading.ThreadPool.Initialize();
+
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchExitSignals(); // convert signals to events
+
+			eventLoop.EnqueueInvoke( StartWorker );
+
+			eventLoop.Dispatch();
+
+			Console.WriteLine( "Finished" );
+		}
+
+		static void StartWorker() {
+			Fiber.Start( 8, Worker );
+		}
+
+		static void Worker() {
+			System.Console.WriteLine( "{0}: Opening", DefaultFile );
+			var serial = new SerialPortStream();
+			serial.ErrorHandler = Platform.PlatformErrorHandlerConsole.Instance;
+
+			if( !serial.OpenReadWrite( DefaultFile ) ) {
+				Console.WriteLine( "{0}: Unable to open", DefaultFile );
+				Environment.ExitCode = 1;
+				Fiber.TerminateEventLoop();
+				return;
+			}
+
+			Console.WriteLine( "Flags at open={0}", serial.GetFlags() );
+			System.Console.WriteLine( "Counters: {0}", serial.GetCounters() );
+
+			serial.DTR = true;
+			serial.RTS = false;
+			var flags = serial.GetFlags();
+			Console.WriteLine( "DTR={0} ({1} / {2})", serial.DTR, flags, ( uint ) flags );
+			Console.WriteLine( "RTS={0} ({1} / {2})", serial.RTS, flags, ( uint ) flags );
+
+			for( var i = 0; i < 10; ++i ) {
+				Console.WriteLine( "Wait for events!" );
+
+				using( Fiber.CancellationRegion() ) {
+					serial.WaitFlags( TimeDuration.FromSeconds( 2 ), TerminalControlSignal.TIOCM_CD );
+					// serial.WaitFlags( TerminalControlSignal.TIOCM_CD ); // TODO make proper SIGTERM handling
+					if( Fiber.IsCancelled ) return;
+				}
+
+				// Console.WriteLine( "Flags={0}", serial.GetFlags() );
+				System.Console.WriteLine( "Counters: {0}", serial.GetCounters() );
+			}
+
+			Console.WriteLine( "Flags at close={0}", serial.GetFlags() );
+
+			Fiber.TerminateEventLoop();
+			return;
+
+		error:
+			Environment.ExitCode = 1;
+			Fiber.TerminateEventLoop();
+			return;
+		}
+	}
+}

@@ -1,0 +1,941 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Globalization;
+using System.Runtime;
+
+namespace System {
+	public static partial struct PrimitiveTypesFormatter {
+		public static struct Adaptive {
+			public struct KiloFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000U ) {
+						builder.Append( Value );
+						builder.Append( ' ' );
+					}
+					else {
+						new Fixed.KiloFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct KiloFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000U ) {
+						builder.Append( Value );
+						builder.Append( ' ' );
+					}
+					else {
+						new Fixed.KiloFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct MegaFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000U ) {
+						new KiloFormatter32 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.MegaFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct MegaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000U ) {
+						new KiloFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.MegaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct GigaFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000000U ) {
+						new MegaFormatter32 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.GigaFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct GigaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000000U ) {
+						new MegaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.GigaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct TeraFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000000000UL ) {
+						new GigaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.TeraFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct PetaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000000000000UL ) {
+						new TeraFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.PetaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct ExaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1000000000000000000UL ) {
+						new PetaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.ExaFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct KibiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U ) {
+						builder.Append( Value );
+						builder.Append( ' ' );
+					}
+					else {
+						new Fixed.KibiFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct KibiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U ) {
+						builder.Append( Value );
+						builder.Append( ' ' );
+					}
+					else {
+						new Fixed.KibiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct MebiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U * 1024U ) {
+						new KibiFormatter32 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.MebiFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct MebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U * 1024U ) {
+						new KibiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.MebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct GibiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U * 1024U * 1024U ) {
+						new MebiFormatter32 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.GibiFormatter32 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct GibiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024U * 1024U * 1024U ) {
+						new MebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.GibiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct TebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024UL * 1024U * 1024U * 1024U ) {
+						new GibiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.TebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct PebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024UL * 1024U * 1024U * 1024U * 1024U ) {
+						new TebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.PebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+
+			public struct ExbiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value < 1024UL * 1024U * 1024U * 1024U * 1024U * 1024U ) {
+						new PebiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+					else {
+						new Fixed.ExbiFormatter64 { Value = Value }.ToString( builder, format );
+					}
+				}
+			}
+		}
+
+		public static struct Fixed {
+			public struct KiloFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value % 1000U == 0 ) {
+						builder.Append( Value / 1000U );
+						AddPrefix_K( builder );
+					}
+					else if( Value % 100U == 0U ) {
+						builder.Append( Value / 100U, "Q1" );
+						AddPrefix_K( builder );
+					}
+					else if( Value % 10 == 0 ) {
+						builder.Append( Value / 10U, "Q2" );
+						AddPrefix_K( builder );
+					}
+					else {
+						builder.Append( Value, "Q3" );
+						AddPrefix_K( builder );
+					}
+				}
+			}
+
+			public struct KiloFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					if( Value % 1000U == 0U ) {
+						builder.Append( Value / 1000U );
+						AddPrefix_K( builder );
+					}
+					else if( Value % 100U == 0 ) {
+						builder.Append( Value / 100U, "Q1" );
+						AddPrefix_K( builder );
+					}
+					else if( Value % 10U == 0U ) {
+						builder.Append( Value / 10U, "Q2" );
+						AddPrefix_K( builder );
+					}
+					else {
+						builder.Append( Value, "Q3" );
+						AddPrefix_K( builder );
+					}
+				}
+			}
+
+			public struct MegaFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000U );
+
+					uint fraction = Value / 1000U % 1000U;
+
+					if( fraction == 0U ) {
+						AddPrefix_M( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_M( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_M( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_M( builder );
+					}
+				}
+			}
+
+			public struct MegaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000U );
+
+					uint fraction = ( uint )( Value / 1000U % 1000U );
+
+					if( fraction == 0U ) {
+						AddPrefix_M( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100, "D1" );
+						AddPrefix_M( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10, "D2" );
+						AddPrefix_M( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_M( builder );
+					}
+				}
+			}
+
+			public struct GigaFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000000U );
+
+					uint fraction = Value / 1000000U % 1000U;
+
+					if( fraction == 0U ) {
+						AddPrefix_G( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_G( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_G( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_G( builder );
+					}
+				}
+			}
+
+			public struct GigaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000000U );
+
+					uint fraction = ( uint )( Value / 1000000U % 1000U );
+
+					if( fraction == 0U ) {
+						AddPrefix_G( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100, "D1" );
+						AddPrefix_G( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10, "D2" );
+						AddPrefix_G( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_G( builder );
+					}
+				}
+			}
+
+			public struct TeraFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000000000U );
+
+					uint fraction = ( uint )( Value / 1000000000UL % 1000U );
+
+					if( fraction == 0U ) {
+						AddPrefix_T( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100, "D1" );
+						AddPrefix_T( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10, "D2" );
+						AddPrefix_T( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_T( builder );
+					}
+				}
+			}
+
+			public struct PetaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000000000000U );
+
+					uint fraction = ( uint )( Value / 1000000000000UL % 1000U );
+
+					if( fraction == 0U ) {
+						AddPrefix_P( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100, "D1" );
+						AddPrefix_P( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10, "D2" );
+						AddPrefix_P( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_P( builder );
+					}
+				}
+			}
+
+			public struct ExaFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1000000000000000000U );
+
+					uint fraction = ( uint )( Value / 1000000000000000UL % 1000U );
+
+					if( fraction == 0U ) {
+						AddPrefix_E( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100, "D1" );
+						AddPrefix_E( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10, "D2" );
+						AddPrefix_E( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_E( builder );
+					}
+				}
+			}
+
+			public struct KibiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1024U );
+
+					uint fraction = Value % 1024U * 1000U / 1024U;
+
+					if( fraction == 0 ) {
+						AddPrefix_Ki( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Ki( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Ki( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Ki( builder );
+					}
+				}
+			}
+
+			public struct KibiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / 1024U );
+
+					uint fraction = cast<uint>( Value % 1024U ) * 1000U / 1024U;
+
+					if( fraction == 0 ) {
+						AddPrefix_Ki( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Ki( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Ki( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Ki( builder );
+					}
+				}
+			}
+
+			public struct MebiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+
+					builder.Append( Value / ( 1024U * 1024U ) );
+
+					uint fraction = Value % ( 1024U * 1024U ) * 1000U / ( 1024U * 1024U );
+
+					if( fraction == 0 ) {
+						AddPrefix_Mi( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Mi( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Mi( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Mi( builder );
+					}
+				}
+			}
+
+			public struct MebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024U * 1024U ) );
+
+					uint fraction = cast<uint>( Value % ( 1024U * 1024U ) ) * 1000U / ( 1024U * 1024U );
+
+					if( fraction == 0 ) {
+						AddPrefix_Mi( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Mi( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Mi( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Mi( builder );
+					}
+				}
+			}
+
+			public struct GibiFormatter32 : IFormattable {
+				public uint Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024U * 1024U * 1024 ) );
+
+					uint fraction = ( uint )( Value % ( 1024L * 1024U * 1024 ) * 1000UL / ( 1024U * 1024U * 1024 ) );
+
+					if( fraction == 0 ) {
+						AddPrefix_Gi( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Gi( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Gi( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Gi( builder );
+					}
+				}
+			}
+
+			public struct GibiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024U * 1024U * 1024U ) );
+
+					uint fraction = cast<uint>( Value % ( 1024U * 1024U * 1024U ) * 1000U / ( 1024U * 1024U * 1024U ) );
+
+					if( fraction == 0 ) {
+						AddPrefix_Gi( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Gi( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Gi( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Gi( builder );
+					}
+				}
+			}
+
+			public struct TebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024UL * 1024U * 1024U * 1024U ) );
+
+					uint fraction = cast<uint>( Value % ( 1024UL * 1024U * 1024U * 1024U ) * 1000UL / ( 1024UL * 1024U * 1024U * 1024U ) );
+
+					if( fraction == 0 ) {
+						AddPrefix_Ti( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Ti( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Ti( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Ti( builder );
+					}
+				}
+			}
+
+			public struct PebiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024UL * 1024U * 1024U * 1024U * 1024U ) );
+
+					uint fraction = cast<uint>( Value % ( 1024UL * 1024U * 1024U * 1024U * 1024U ) * 1000UL / ( 1024UL * 1024U * 1024U * 1024U * 1024U ) );
+
+					if( fraction == 0 ) {
+						AddPrefix_Pi( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Pi( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Pi( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Pi( builder );
+					}
+				}
+			}
+
+			public struct ExbiFormatter64 : IFormattable {
+				public ulong Value;
+
+				public void ToString( StringBuilder builder, string format ) {
+					builder.Append( Value / ( 1024UL * 1024U * 1024U * 1024U * 1024U * 1024U ) );
+
+					uint fraction = cast<uint>( Value % ( 1024UL * 1024U * 1024U * 1024U * 1024U * 1024U ) / 1024U * 1000UL / ( 1024UL * 1024U * 1024U * 1024U * 1024U ) );
+
+					if( fraction == 0 ) {
+						AddPrefix_Ei( builder );
+					}
+					else if( fraction % 100U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 100U, "D1" );
+						AddPrefix_Ei( builder );
+					}
+					else if( fraction % 10U == 0U ) {
+						builder.Append( '.' );
+						builder.Append( fraction / 10U, "D2" );
+						AddPrefix_Ei( builder );
+					}
+					else {
+						builder.Append( '.' );
+						builder.Append( fraction, "D3" );
+						AddPrefix_Ei( builder );
+					}
+				}
+			}
+		}
+
+		public static struct Suffix {
+			public struct Byte : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( 'Б' ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( 'B' ); break;
+					}
+				}
+			}
+
+			public struct Second : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( 'с' ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( 's' ); break;
+					}
+				}
+			}
+
+			public struct Meter : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( 'м' ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( 'm' ); break;
+					}
+				}
+			}
+
+			public struct Voltage : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( 'В' ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( 'V' ); break;
+					}
+				}
+			}
+
+			public struct Farad : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( 'Ф' ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( 'F' ); break;
+					}
+				}
+			}
+
+			public struct Ohm : IFormattable {
+				public void ToString( StringBuilder builder, string format ) {
+					switch( CultureInfo.Current.Kind ) {
+						case CultureInfo.CultureKind.RU: builder.Append( "Ом" ); break;
+
+						case CultureInfo.CultureKind.EN:
+						default: builder.Append( "Ohm" ); break;
+					}
+				}
+			}
+		}
+
+		private static void AddPrefix_K( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " К" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " K" ); break;
+			}
+		}
+
+		private static void AddPrefix_M( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " М" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " M" ); break;
+			}
+		}
+
+		private static void AddPrefix_G( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Г" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " G" ); break;
+			}
+		}
+
+		private static void AddPrefix_T( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Т" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " T" ); break;
+			}
+		}
+
+		private static void AddPrefix_P( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " П" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " P" ); break;
+			}
+		}
+
+		private static void AddPrefix_E( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Э" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " E" ); break;
+			}
+		}
+
+		private static void AddPrefix_Ki( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Ки" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Ki" ); break;
+			}
+		}
+
+		private static void AddPrefix_Mi( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Ми" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Mi" ); break;
+			}
+		}
+
+		private static void AddPrefix_Gi( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Ги" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Gi" ); break;
+			}
+		}
+
+		private static void AddPrefix_Ti( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Ти" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Ti" ); break;
+			}
+		}
+
+		private static void AddPrefix_Pi( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Пи" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Pi" ); break;
+			}
+		}
+
+		private static void AddPrefix_Ei( StringBuilder builder ) {
+			switch( CultureInfo.Current.Kind ) {
+				case CultureInfo.CultureKind.RU: builder.Append( " Эи" ); break;
+
+				case CultureInfo.CultureKind.EN:
+				default: builder.Append( " Ei" ); break;
+			}
+		}
+	}
+}

@@ -14,15 +14,15 @@ namespace System.Collections {
 		private uint _version;
 
 		private PageInfo* _firstPage;
-		private int _pageCount;
+		private uint _pageCount;
 
-		private const int _elementsPerPage1 = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( byte ) ) );
-		private const int _elementsPerPage2 = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( ushort ) ) );
+		private const uint _elementsPerPage1 = ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( byte ) );
+		private const uint _elementsPerPage2 = ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / ( typeof( T ).ContentStride + sizeof( ushort ) );
 		private const bool _useIndices1 = _elementsPerPage1 < 256;
-		public const int BlockSize = _useIndices1 ? _elementsPerPage1 : _elementsPerPage2;
+		public const uint BlockSize = _useIndices1 ? _elementsPerPage1 : _elementsPerPage2;
 
-		public int Count { get; private set; }
-		public int Capacity { get { return _pageCount * BlockSize; } }
+		public uint Count { get; private set; }
+		public uint Capacity { get { return _pageCount * BlockSize; } }
 
 		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
 
@@ -56,13 +56,13 @@ namespace System.Collections {
 			if( _useIndices1 ) {
 				var pageIndices = page->Indices1;
 				page->FreeIndexPtr = pageIndices;
-				for( var i = 0; i < BlockSize; ++i )
+				for( var i = 0U; i < BlockSize; ++i )
 					pageIndices[i] = ( byte ) i;
 			}
 			else {
 				var pageIndices = page->Indices2;
 				page->FreeIndexPtr = pageIndices;
-				for( var i = 0; i < BlockSize; ++i )
+				for( var i = 0U; i < BlockSize; ++i )
 					pageIndices[i] = ( ushort ) i;
 			}
 
@@ -74,7 +74,7 @@ namespace System.Collections {
 			CommonCollectionOperations.UpdateVersion( &_version );
 
 			for( var page = _firstPage; page != null; page = page->Next ) {
-				if( page->FreeCount <= 0 ) continue;
+				if( page->FreeCount == 0 ) continue;
 				return Allocate( page );
 			}
 
@@ -124,7 +124,7 @@ namespace System.Collections {
 					freeMap[_useIndices1 ? indices1[j] : indices2[j]] = true;
 				}
 
-				for( var j = 0; j < BlockSize; ++j ) {
+				for( var j = 0U; j < BlockSize; ++j ) {
 					if( freeMap[j] ) continue;
 
 					CommonCollectionOperations.VersionCheck( version == _version );
@@ -135,11 +135,11 @@ namespace System.Collections {
 		}
 
 		/// For debug-only purposes
-		public int IndexOf( T* value ) {
+		public uint IndexOf( T* value ) {
 			var page = GetPageInfo( value );
 			if( page != null ) {
 				var valueIndex = IndexOf( page, value );
-				if( valueIndex == -1 ) return -1;
+				if( valueIndex == uint.MaxValue ) return uint.MaxValue;
 
 				var pageIndex = _pageCount - 1;
 				for( var existingPage = _firstPage; existingPage != null; existingPage = existingPage->Next, --pageIndex ) {
@@ -147,10 +147,10 @@ namespace System.Collections {
 						return valueIndex + pageIndex * BlockSize;
 				}
 
-				return -1;
+				return uint.MaxValue;
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
 		/// @{ page operations
@@ -162,20 +162,20 @@ namespace System.Collections {
 			public byte* Indices1 { get { return bitcast<byte*>( &this ) - BlockSize; } }
 			public ushort* Indices2 { get { return bitcast<ushort*>( &this ) - BlockSize; } }
 
-			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( Memory.DefaultPageReserveSize - 1 ) ); } }
+			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( uintptr )( Memory.DefaultPageReserveSize - 1 ) ); } }
 
-			public int Count { get { return _useIndices1 ? ( int )( ( byte* ) FreeIndexPtr - Indices1 ) : ( int )( ( ushort* ) FreeIndexPtr - Indices2 ); } }
-			public int FreeCount { get { return ( int )( BlockSize - Count ); } }
+			public uint Count { get { return _useIndices1 ? ( uint )( ( byte* ) FreeIndexPtr - Indices1 ) : ( uint )( ( ushort* ) FreeIndexPtr - Indices2 ); } }
+			public uint FreeCount { get { return BlockSize - Count; } }
 		}
 
 		private static PageInfo* GetPageInfo( T* element ) { return ( bitcast<PageInfo*>( bitcast<byte*>( bitcast<uintptr>( element ) | ( Memory.DefaultPageReserveSize - 1 ) ) - typeof( PageInfo ).ContentStride + 1 ) ); }
 
-		private int IndexOf( PageInfo* page, T* value ) {
-			if( page->Parent != this ) return -1;
+		private uint IndexOf( PageInfo* page, T* value ) {
+			if( page->Parent != this ) return uint.MaxValue;
 
 			var elements = page->Elements;
 
-			return ( value >= elements && value < elements + BlockSize ) ? ( int )( value - elements ) : -1;
+			return ( value >= elements && value < elements + BlockSize ) ? ( uint )( value - elements ) : uint.MaxValue;
 		}
 
 		private T* Allocate( PageInfo* page ) {
@@ -211,7 +211,7 @@ namespace System.Collections {
 			[DisableWarningUnreachable]
 			if( _useIndices1 ) {
 				var freePtr = ( byte* ) page->FreeIndexPtr;
-				for( var i = 0; i < freeCount; ++i ) {
+				for( var i = 0U; i < freeCount; ++i ) {
 					if( freePtr[i] == value ) {
 						Assert.Fail( "Object already freed!" );
 						return;
@@ -220,7 +220,7 @@ namespace System.Collections {
 			}
 			else {
 				var freePtr = ( ushort* ) page->FreeIndexPtr;
-				for( var i = 0; i < freeCount; ++i ) {
+				for( var i = 0U; i < freeCount; ++i ) {
 					if( freePtr[i] == value ) {
 						Assert.Fail( "Object already freed!" );
 						return;

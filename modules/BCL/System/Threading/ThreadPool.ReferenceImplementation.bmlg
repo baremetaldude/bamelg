@@ -13,7 +13,7 @@ using System.Threading;
 namespace System.Threading {
 	public static partial struct ThreadPool {
 		public struct ReferenceImpl {
-			private int _maxThreads = 0;
+			private uint _maxThreads = 0;
 
 			private Semaphore _newTaskNotifier = new Semaphore();
 			private Semaphore _workerCompleted = new Semaphore();
@@ -47,31 +47,31 @@ namespace System.Threading {
 				}
 			}
 
-			public int MaxThreads {
+			public uint MaxThreads {
 				get { return _maxThreads; }
 				set {
 					using( _instanceLock.LockRegion() ) {
 						if( _maxThreads == value ) return;
 
-						var delta = value - _maxThreads;
+						if( value > _maxThreads ) {
+							var startingThreadCount = value - _maxThreads;
 
-						if( delta > 0 ) {
-							for( var i = 0; i < delta; ++i )
+							for( var i = 0U; i < startingThreadCount; ++i )
 								new WorkerInfo( &this ).Start();
 						}
 						else {
 							// make unique stopping tasks
-							var stoppingThreadCount = -delta;
+							var stoppingThreadCount = _maxThreads - value;
 
 							var tasks = stackalloc DPC[stoppingThreadCount];
-							for( var i = 0; i < stoppingThreadCount; ++i ) {
+							for( var i = 0U; i < stoppingThreadCount; ++i ) {
 								var task = tasks + i;
 								task->OnActionDispose = _workerTerminateAction;
 
 								Enqueue( task );
 							}
 
-							for( var i = 0; i < stoppingThreadCount; ++i ) _workerCompleted.Wait();
+							for( var i = 0U; i < stoppingThreadCount; ++i ) _workerCompleted.Wait();
 
 							using( _completedLock.LockRegion() ) {
 								foreach( var thread in _completedList ) {

@@ -37,30 +37,30 @@ namespace System.Runtime {
 			return PageProtectionFlags.PAGE_NOACCESS;
 		}
 
-		private static void* _implAllocatePages( int count, PageProperties properties ) {
+		private static void* _implAllocatePages( uint count, PageProperties properties ) {
 			var allocationLength = DefaultPageSize * count;
 
-			var result = ( void* ) Kernel32Api.VirtualAlloc( null, ( uint )( PlatformDefaultPageSize * count ), VirtualAllocFlags.MEM_COMMIT | VirtualAllocFlags.MEM_RESERVE, MapProtectionProperties( properties ) );
+			var result = Kernel32Api.VirtualAlloc( null, PlatformDefaultPageSize * count, VirtualAllocFlags.MEM_COMMIT | VirtualAllocFlags.MEM_RESERVE, MapProtectionProperties( properties ) );
 			return result;
 		}
 
-		private static void _implModifyPages( void* ptr, int count, PageProperties properties ) {
+		private static void _implModifyPages( void* ptr, uint count, PageProperties properties ) {
 			var allocationLength = DefaultPageSize * count;
 
 			PageProtectionFlags oldProperties;
-			var result = Kernel32Api.VirtualProtect( ptr, ( uint ) allocationLength, MapProtectionProperties( properties ), oldProperties );
+			var result = Kernel32Api.VirtualProtect( ptr, allocationLength, MapProtectionProperties( properties ), oldProperties );
 			Assert.IsTrue( result );
 		}
 
-		private static void _implFreePages( void* ptr, int count ) {
+		private static void _implFreePages( void* ptr, uint count ) {
 			var result = Kernel32Api.VirtualFree( ptr, 0, VirtualFreeType.MEM_RELEASE );
 			Assert.IsTrue( result );
 		}
 
-		private static void _implDecommitPages( void* ptr, int count ) {
+		private static void _implDecommitPages( void* ptr, uint count ) {
 			var allocationLength = DefaultPageSize * count;
 
-			var result = Kernel32Api.VirtualFree( ptr, ( uint ) allocationLength, VirtualFreeType.MEM_DECOMMIT );
+			var result = Kernel32Api.VirtualFree( ptr, allocationLength, VirtualFreeType.MEM_DECOMMIT );
 			Assert.IsTrue( result );
 		}
 

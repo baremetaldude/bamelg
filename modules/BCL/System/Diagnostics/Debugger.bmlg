@@ -6,6 +6,10 @@
 
 namespace System.Diagnostics {
 	public static partial struct Debugger {
+		public static void TryBreak() {
+			if( IsAttached ) Break();
+		}
+
 		public static void Break() asm {
 			X86_32 {
 				nop

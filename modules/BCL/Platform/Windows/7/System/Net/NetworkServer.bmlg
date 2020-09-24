@@ -90,7 +90,7 @@ namespace System.Net {
 			public override void OnEvent( WSANETWORKEVENTS& events ) {
 				if( ( events.NetworkEvents & SocketEvent.FD_ACCEPT ) != 0 && events.ErrorCode[3] == 0 ) {
 					sockaddr_in clientAddress;
-					int clientAddressLength = sizeof( clientAddress );
+					uint clientAddressLength = sizeof( clientAddress );
 
 					var clientSocket = ( SocketHandleTCP ) WinsockApi.WSAAccept( _socket, ( sockaddr* ) &clientAddress, clientAddressLength, null, 0 );
 					if( !clientSocket.IsValid ) return;
@@ -223,7 +223,7 @@ namespace System.Net {
 			}
 		}
 
-		/// @{ Tracing
+		#region Tracing
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private static void TraceAcceptStarted( SocketHandle acceptSocket ) {
@@ -267,6 +267,6 @@ namespace System.Net {
 				Trace.Write( "NS: Client accepted to pipe '{0}'", pipe );
 		}
 
-		/// @}
+		#endregion
 	}
 }

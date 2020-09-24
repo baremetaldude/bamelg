@@ -27,20 +27,20 @@ namespace Platform.Libc {
 
 		public SystemError Connect( IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
 		public SystemError Connect( IPv6Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, IPv4Endpoint& endpoint ) {
+		public SystemError Connect( TimeDuration& timeout, IPv4Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
 
-		public SystemError Connect( TimeSpan& timeout, IPv6Endpoint& endpoint ) {
+		public SystemError Connect( TimeDuration& timeout, IPv6Endpoint& endpoint ) {
 			var nativeEndpoint = ( sockaddr_in6 ) endpoint;
 			return ConnectNonBlocking( timeout, ( sockaddr* ) &nativeEndpoint, sizeof( nativeEndpoint ) );
 		}
@@ -101,43 +101,43 @@ namespace Platform.Libc {
 			}
 		}
 
-		// public int KeepAliveProbesMax {
-		// 	get {
-		// 		int result;
-		// 		LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPCNT, &result, sizeof( result ) ) );
-		// 		return result;
-		// 	}
-		// 	set {
-		// 		LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPCNT, &value, sizeof( value ) ) );
-		// 	}
-		// }
+		public uint KeepAliveProbesMax {
+			get {
+				uint result;
+				LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPCNT, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPCNT, &value, sizeof( value ) ) );
+			}
+		}
 
-		// public int KeepAliveIdleSeconds {
-		// 	get {
-		// 		int result;
-		// 		LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPIDLE, &result, sizeof( result ) ) );
-		// 		return result;
-		// 	}
-		// 	set {
-		// 		LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPIDLE, &value, sizeof( value ) ) );
-		// 	}
-		// }
+		public uint KeepAliveIdleSeconds {
+			get {
+				uint result;
+				LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPIDLE, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPIDLE, &value, sizeof( value ) ) );
+			}
+		}
 
-		// public int KeepAliveProbingIntervalSeconds {
-		// 	get {
-		// 		int result;
-		// 		LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPINTVL, &result, sizeof( result ) ) );
-		// 		return result;
-		// 	}
-		// 	set {
-		// 		LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPINTVL, &value, sizeof( value ) ) );
-		// 	}
-		// }
+		public uint KeepAliveProbingIntervalSeconds {
+			get {
+				uint result;
+				LibcApi.Assert( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPINTVL, &result, sizeof( result ) ) );
+				return result;
+			}
+			set {
+				LibcApi.Assert( LibcApi.setsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_KEEPINTVL, &value, sizeof( value ) ) );
+			}
+		}
 
 		// http://en.wikipedia.org/wiki/Maximum_segment_size
-		public int MaximumSegmentSize {
+		public uint MaximumSegmentSize {
 			get {
-				int result = 0;
+				uint result = 0;
 				LibcApi.AssertErrno( LibcApi.getsockopt( this, ( SocketPropertyGroup ) IPProtocol.IPPROTO_TCP, SocketPropertyTcp.TCP_MAXSEG, &result, sizeof( result ) ) );
 				return result;
 			}
@@ -160,6 +160,22 @@ namespace Platform.Libc {
 			builder.Append( "{" );
 			DumpRelevantData( builder );
 			builder.Append( " }" );
+		}
+
+		public bool IsClosed() {
+			int temp;
+
+			if( Fiber.IsFiberExecuting ) {
+				var readen = LibcApi.read( this, &temp, sizeof( temp ) );
+				return readen == 0;
+			}
+			else {
+				var isNonBlocking = IsNonBlocking;
+				if( !isNonBlocking ) IsNonBlocking = true;
+				var readen = LibcApi.read( this, &temp, sizeof( temp ) );
+				if( !isNonBlocking ) IsNonBlocking = false;
+				return readen == 0;
+			}
 		}
 	}
 }

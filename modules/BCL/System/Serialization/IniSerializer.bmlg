@@ -22,7 +22,7 @@ namespace System.Serialization {
 		protected ITextWriter _writer;
 		protected ITextReader _reader;
 
-		protected void EscapeValue( StringBuilder result, StringBuilder source, int startIndex, int endIndex ) {
+		protected void EscapeValue( StringBuilder result, StringBuilder source, uint startIndex, uint endIndex ) {
 			for( var i = startIndex; i < endIndex; ++i ) {
 				var @char = source[i];
 				switch( @char ) {
@@ -46,7 +46,7 @@ namespace System.Serialization {
 			}
 		}
 
-		protected void UnescapeValue( StringBuilder result, StringBuilder source, int startIndex, int endIndex ) {
+		protected void UnescapeValue( StringBuilder result, StringBuilder source, uint startIndex, uint endIndex ) {
 			var escape = false;
 
 			for( var i = startIndex; i < endIndex; ++i ) {
@@ -64,7 +64,6 @@ namespace System.Serialization {
 			_mapper = mapper;
 			_context = &context;
 
-			bool isNull;
 			using( var builder1 = StringBuilder.CachedBuilders.PopScoped() )
 			using( var builder2 = StringBuilder.CachedBuilders.PopScoped() ) {
 				var valueFormatter = builder1.Value;
@@ -81,10 +80,10 @@ namespace System.Serialization {
 
 					valueFormatterEscaped.Append( '=' );
 
-					context.Binder.GetValue( context, idMapping.Value, valueFormatter, isNull );
+					var gvResult = mapper.Binder.GetValue( context.Object, idMapping.Value, valueFormatter );
 					EscapeValue( valueFormatterEscaped, valueFormatter, 0, valueFormatter.Length );
 
-					if( !isNull )
+					if( gvResult )
 						_writer.WriteLine( valueFormatterEscaped );
 				}
 			}
@@ -106,11 +105,11 @@ namespace System.Serialization {
 					if( valueFormatterEscaped.StartsWith( '#' ) ) continue;
 					if( valueFormatterEscaped.StartsWith( ';' ) ) continue;
 
-					var startIndex = 0;
+					var startIndex = 0U;
 
 				findNext:
 					var equalsIndex = valueFormatterEscaped.IndexOf( '=', startIndex );
-					if( equalsIndex == -1 ) continue;
+					if( equalsIndex == uint.MaxValue ) continue;
 					if( equalsIndex > 0 && valueFormatterEscaped[equalsIndex - 1] == '\\' ) {
 						startIndex = equalsIndex + 1;
 						goto findNext;
@@ -121,12 +120,12 @@ namespace System.Serialization {
 					var key = valueFormatter.ToString();
 
 					var mapping = mapper[key];
-					if( mapping == -1 ) continue;
+					if( mapping == uint.MaxValue ) continue;
 
 					valueFormatter.Clear();
 					UnescapeValue( valueFormatter, valueFormatterEscaped, equalsIndex + 1, valueFormatterEscaped.Length );
 
-					context.Binder.SetValue( context, mapping, valueFormatter );
+					mapper.Binder.SetValue( context.Object, mapping, valueFormatter );
 				}
 			}
 		}

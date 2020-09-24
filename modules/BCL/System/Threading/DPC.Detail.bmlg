@@ -1,0 +1,444 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+namespace System.Threading {
+	public partial struct DPC {
+		public static DPC* Create( Functors.Action action ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action> {
+				P0 = action,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action>*>( data );
+					passedTask->P0();
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action>*>( data );
+					passedTask->P0();
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0>( Functors.Action<T0> action, T0 p0 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0>, T0> {
+				P0 = action,
+				P1 = p0,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0>, T0>*>( data );
+					passedTask->P0( passedTask->P1 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0>, T0>*>( data );
+					passedTask->P0( passedTask->P1 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0>, T0>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1>( Functors.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1>, T0, T1> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1>, T0, T1>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1>, T0, T1>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1>, T0, T1>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2>( Functors.Action<T0, T1, T2> action, T0 p0, T1 p1, T2 p2 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2>, T0, T1, T2> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3>( Functors.Action<T0, T1, T2, T3> action, T0 p0, T1 p1, T2 p2, T3 p3 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4>( Functors.Action<T0, T1, T2, T3, T4> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4, T5>( Functors.Action<T0, T1, T2, T3, T4, T5> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				P6 = p5,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4, T5, T6>( Functors.Action<T0, T1, T2, T3, T4, T5, T6> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				P6 = p5,
+				P7 = p6,
+				OnAction = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6, passedTask->P7 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6, passedTask->P7 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Functors.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+				}
+			};
+		}
+		public static DPC* Create( Delegates.Action action ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action> {
+				P0 = action,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action>*>( data );
+					passedTask->P0();
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action>*>( data );
+					passedTask->P0();
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0>( Delegates.Action<T0> action, T0 p0 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0>, T0> {
+				P0 = action,
+				P1 = p0,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0>, T0>*>( data );
+					passedTask->P0( passedTask->P1 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0>, T0>*>( data );
+					passedTask->P0( passedTask->P1 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0>, T0>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1>( Delegates.Action<T0, T1> action, T0 p0, T1 p1 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1>, T0, T1> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1>, T0, T1>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1>, T0, T1>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1>, T0, T1>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2>( Delegates.Action<T0, T1, T2> action, T0 p0, T1 p1, T2 p2 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3>( Delegates.Action<T0, T1, T2, T3> action, T0 p0, T1 p1, T2 p2, T3 p3 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2, T3>, T0, T1, T2, T3> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1, T2, T3>, T0, T1, T2, T3>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4>( Delegates.Action<T0, T1, T2, T3, T4> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1, T2, T3, T4>, T0, T1, T2, T3, T4>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4, T5>( Delegates.Action<T0, T1, T2, T3, T4, T5> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				P6 = p5,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5>, T0, T1, T2, T3, T4, T5>*>( data );
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2, T3, T4, T5, T6>( Delegates.Action<T0, T1, T2, T3, T4, T5, T6> action, T0 p0, T1 p1, T2 p2, T3 p3, T4 p4, T5 p5, T6 p6 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				P5 = p4,
+				P6 = p5,
+				P7 = p6,
+				OnAction = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6, passedTask->P7 );
+				},
+				OnActionDispose = data => {
+					var passedTask = cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4, passedTask->P5, passedTask->P6, passedTask->P7 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree cast<DPC<Delegates.Action<T0, T1, T2, T3, T4, T5, T6>, T0, T1, T2, T3, T4, T5, T6>*>( data );
+				}
+			};
+		}
+	}
+
+	public struct DPC<T0> : DPC {
+		public T0 P0;
+	}
+
+	public struct DPC<T0, T1> : DPC {
+		public T0 P0;
+		public T1 P1;
+	}
+
+	public struct DPC<T0, T1, T2> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+	}
+
+	public struct DPC<T0, T1, T2, T3> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+		public T3 P3;
+	}
+
+	public struct DPC<T0, T1, T2, T3, T4> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+		public T3 P3;
+		public T4 P4;
+	}
+
+	public struct DPC<T0, T1, T2, T3, T4, T5> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+		public T3 P3;
+		public T4 P4;
+		public T5 P5;
+	}
+
+	public struct DPC<T0, T1, T2, T3, T4, T5, T6> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+		public T3 P3;
+		public T4 P4;
+		public T5 P5;
+		public T6 P6;
+	}
+
+	public struct DPC<T0, T1, T2, T3, T4, T5, T6, T7> : DPC {
+		public T0 P0;
+		public T1 P1;
+		public T2 P2;
+		public T3 P3;
+		public T4 P4;
+		public T5 P5;
+		public T6 P6;
+		public T7 P7;
+	}
+}

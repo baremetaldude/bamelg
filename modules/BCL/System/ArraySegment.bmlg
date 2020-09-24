@@ -20,7 +20,7 @@ namespace System {
 	// Unsafe counterpart
 	public struct MemorySegment<T> : IFormattable {
 		public MemorySegment( T[] array )
-			: this( &array[0], ( uint ) array.Length ) {
+			: this( &array[0], array.Length ) {
 		}
 
 		public MemorySegment( T* start, uintptr count ) {
@@ -45,7 +45,7 @@ namespace System {
 				var byteCount = ByteCount;
 				if( byteCount <= 64 )
 					PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, Start, ( uint ) ByteCount, true );
-				else 
+				else
 					PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, Start, 64, true );
 			}
 			else {
@@ -62,7 +62,7 @@ namespace System {
 
 		public MemorySegment( byte[] array ) {
 			Start = &array[0];
-			Count = ( uintptr ) array.Length;
+			Count = array.Length;
 		}
 
 		public void* Start;
@@ -85,6 +85,8 @@ namespace System {
 
 		public static bool operator ==( MemorySegment& first, MemorySegment& second ) { return first.Start == second.Start && first.Count == second.Count; }
 		public static bool operator !=( MemorySegment& first, MemorySegment& second ) { return !( first == second ); }
+
+		public static explicit operator MemorySegment( ArraySegment<byte>& segment ) { return new MemorySegment { Start = &segment.Array[segment.Offset], Count = segment.Count }; }
 
 		public void ToString( StringBuilder builder, string format ) {
 			builder.Concat( "Start='", Start, "' Count='", Count, '\'' );

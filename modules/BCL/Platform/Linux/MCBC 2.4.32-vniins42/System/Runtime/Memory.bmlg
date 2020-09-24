@@ -25,7 +25,7 @@ namespace System.Runtime {
 			return result;
 		}
 
-		private static void* _implAllocatePages( int count, PageProperties properties ) {
+		private static void* _implAllocatePages( uint count, PageProperties properties ) {
 			var allocationLength = DefaultPageSize * count;
 
 			var result = ( byte* ) LibcApi.mmap( null, ( uint ) allocationLength, MapProtectionProperties( properties ), MapAllocationProperties( properties ), IOHandle.Invalid, 0 );
@@ -34,19 +34,19 @@ namespace System.Runtime {
 			return result;
 		}
 
-		private static void _implModifyPages( void* ptr, int count, PageProperties properties ) {
+		private static void _implModifyPages( void* ptr, uint count, PageProperties properties ) {
 			var allocationLength = DefaultPageSize * count;
 
-			LibcApi.AssertErrno( LibcApi.mprotect( ptr, ( uint ) allocationLength, MapProtectionProperties( properties ) ) );
+			LibcApi.AssertErrno( LibcApi.mprotect( ptr, allocationLength, MapProtectionProperties( properties ) ) );
 		}
 
-		private static void _implFreePages( void* ptr, int count ) {
+		private static void _implFreePages( void* ptr, uint count ) {
 			var allocationLength = DefaultPageSize * count;
 
-			LibcApi.AssertErrno( LibcApi.munmap( ptr, ( uint ) allocationLength ) );
+			LibcApi.AssertErrno( LibcApi.munmap( ptr, allocationLength ) );
 		}
 
-		private static void _implDecommitPages( void* ptr, int count ) {
+		private static void _implDecommitPages( void* ptr, uint count ) {
 			_implModifyPages( ptr, count, Memory.PageProperties.None );
 		}
 

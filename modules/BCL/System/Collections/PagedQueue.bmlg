@@ -20,13 +20,13 @@ namespace System.Collections {
 		// at most 1 free page is cached
 		private PageInfo* _freePage;
 
-		private int _pageCount;
+		private uint _pageCount;
 
-		public const int BlockSize = ( int )( ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / typeof( T ).ContentStride );
+		public const uint BlockSize = ( Memory.DefaultPageReserveSize - typeof( PageInfo ).ContentStride ) / typeof( T ).ContentStride;
 
-		public int Count { get; private set; }
-		public int Capacity { get { return _pageCount * BlockSize; } }
-		public int PageCount { get { return _pageCount * ( Memory.DefaultPageReserveSize / Memory.PlatformDefaultPageSize ); } }
+		public uint Count { get; private set; }
+		public uint Capacity { get { return _pageCount * BlockSize; } }
+		public uint PageCount { get { return _pageCount * ( Memory.DefaultPageReserveSize / Memory.PlatformDefaultPageSize ); } }
 		public uint Version { get { return _version; } }
 
 		public Functors.Action<T*> OnInitialize, OnFinalize = bitcast<Functors.Action<T*>>( typeof( T ).Destructor );
@@ -62,7 +62,7 @@ namespace System.Collections {
 		public T* Last() {
 			if( !Assert.IsTrue( _lastPage->Count > 0 ) ) return null;
 
-			return _lastPage->Elements + ( _lastPage->Tail > 0 ? _lastPage->Tail - 1 : BlockSize - 1 );
+			return _lastPage->Elements + ( _lastPage->Tail != 0 ? _lastPage->Tail - 1 : BlockSize - 1 );
 		}
 
 		private PageInfo* AllocatePage() {
@@ -146,10 +146,9 @@ namespace System.Collections {
 
 			var startingPage = GetPageInfo( startingValue );
 			Debug.Assert( startingPage->Parent == this );
-			Debug.Assert( startingPage->Count > 0 );
+			Debug.Assert( startingPage->Count != 0 );
 
-			var startingIndex = startingValue - startingPage->Elements;
-			Debug.Assert( startingIndex >= 0 );
+			var startingIndex = ( uint )( startingValue - startingPage->Elements );
 			Debug.Assert( startingIndex < BlockSize );
 
 			// iterate startingPage
@@ -172,7 +171,7 @@ namespace System.Collections {
 						yield return elements + j;
 					}
 
-					for( var j = 0; j < startingPage->Tail; ++j ) {
+					for( var j = 0U; j < startingPage->Tail; ++j ) {
 						CommonCollectionOperations.VersionCheck( version == _version );
 
 						yield return elements + j;
@@ -182,7 +181,7 @@ namespace System.Collections {
 
 			// iterate following pages
 			for( var page = startingPage->Next; page != null; page = page->Next ) {
-				Debug.Assert( page->Count > 0 );
+				Debug.Assert( page->Count != 0 );
 
 				var elements = page->Elements;
 
@@ -200,7 +199,7 @@ namespace System.Collections {
 						yield return elements + j;
 					}
 
-					for( var j = 0; j < page->Tail; ++j ) {
+					for( var j = 0U; j < page->Tail; ++j ) {
 						CommonCollectionOperations.VersionCheck( version == _version );
 
 						yield return elements + j;
@@ -214,7 +213,7 @@ namespace System.Collections {
 
 			for( var page = _firstPage; page != null; page = page->Next ) {
 				var count = page->Count;
-				if( count <= 0 ) continue;
+				if( count == 0 ) continue;
 
 				var elements = page->Elements;
 
@@ -232,7 +231,7 @@ namespace System.Collections {
 						yield return elements + j;
 					}
 
-					for( var j = 0; j < page->Tail; ++j ) {
+					for( var j = 0U; j < page->Tail; ++j ) {
 						CommonCollectionOperations.VersionCheck( version == _version );
 
 						yield return elements + j;
@@ -247,10 +246,10 @@ namespace System.Collections {
 			public declaringtype Parent;
 			public PageInfo* Next;
 
-			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~( Memory.DefaultPageReserveSize - 1 ) ); } }
+			public T* Elements { get { return bitcast<T*>( bitcast<uintptr>( &this ) & ~cast<uintptr>( Memory.DefaultPageReserveSize - 1 ) ); } }
 
-			public int Tail, Head, Count;
-			public int FreeCount { get { return ( int )( BlockSize - Count ); } }
+			public uint Tail, Head, Count;
+			public uint FreeCount { get { return BlockSize - Count; } }
 		}
 
 		private T* Enqueue( PageInfo* page ) {

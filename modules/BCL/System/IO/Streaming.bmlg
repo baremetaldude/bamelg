@@ -9,12 +9,12 @@ using System.Runtime;
 
 namespace System.IO {
 	public interface IStream : IDisposable {
-		int Read( [Out] void* buffer, int count ); // available if capability 'Read' is set
-		void Write( [In] void* buffer, int count ); // available if capability 'Write' is set
+		uint Read( [Out] void* buffer, uint count ); // available if capability 'Read' is set
+		uint Write( [In] void* buffer, uint count ); // available if capability 'Write' is set
 
 		/// @{ Scatter-Gather
-		int Read( vararg MemorySegment segments ); // available if capability 'Read | VectoredIO' is set
-		void Write( vararg MemorySegment segments ); // available if capability 'Write | VectoredIO' is set
+		uint Read( vararg MemorySegment segments ); // available if capability 'Read | VectoredIO' is set
+		uint Write( vararg MemorySegment segments ); // available if capability 'Write | VectoredIO' is set
 		/// @}
 
 		void Flush( FlushKind flushKind ); // write all buffered data or fill buffers with readen data
@@ -22,20 +22,20 @@ namespace System.IO {
 		StreamingBufferInfo* BufferInfo { get; }
 		StreamCapabilities Capabilities { get; }
 
-		TimeSpan ReadTimeout { get; set; } // available if capability 'Timeout' is set
-		TimeSpan WriteTimeout { get; set; } // available if capability 'Timeout' is set
+		TimeDuration ReadTimeout { get; set; } // available if capability 'Timeout' is set
+		TimeDuration WriteTimeout { get; set; } // available if capability 'Timeout' is set
 
 		long Position { get; }
 		long Seek( long offset, SeekOrigin origin );
 
-		MemoryMappedView CreateReadView( intptr offset, intptr length );
-		MemoryMappedView CreateWriteView( intptr offset, intptr length );
+		MemoryMappedView CreateReadView( uintptr offset, uintptr length );
+		MemoryMappedView CreateWriteView( uintptr offset, uintptr length );
 	}
 
 	public class MemoryMappedView : IDisposable {
 		public void* Start;
-		public intptr DataLength;
-		public intptr MappingLength { get { return ( DataLength + System.Runtime.Memory.DefaultPageSize - 1 ) & ~( System.Runtime.Memory.DefaultPageSize - 1 ); } }
+		public uintptr DataLength;
+		public uintptr MappingLength { get { return ( DataLength + System.Runtime.Memory.DefaultPageSize - 1 ) & ~( System.Runtime.Memory.DefaultPageSize - 1 ); } }
 
 		public MemoryMappedView() { }
 	}
@@ -63,14 +63,14 @@ namespace System.IO {
 	// For write streams: buffer region [Start; Start+Capacity), buffered bytes [Start; Start+Position), 'Available' not used
 	// For read streams: buffer region [Start; Start+Capacity), buffered bytes [Start+Position; Start+Position+Available),
 	public struct StreamingBufferInfo : IFormattable {
-		public byte* Start;         // pointer to start of buffer
-		public int Capacity;        // total length of buffer
+		public byte* Start;          // pointer to start of buffer
+		public uint Capacity;        // total length of buffer
 
-		public int Position;        // where writing or reading must begin
-		public int AvailableToRead; // how many bytes available to read
+		public uint Position;        // where writing or reading must begin
+		public uint AvailableToRead; // how many bytes available to read
 
 		// how many bytes available to write
-		public int AvailableToWrite { get { return Capacity - Position; } }
+		public uint AvailableToWrite { get { return Capacity - Position; } }
 
 		public byte* ReadBufferStart { get { return Start + Position; } }
 		public byte* ReadBufferEnd { get { return Start + Position + AvailableToRead; } }
@@ -78,17 +78,23 @@ namespace System.IO {
 		public byte* WriteBufferStart { get { return Start + Position; } }
 		public byte* WriteBufferEnd { get { return Start + Capacity; } }
 
-		public void OnReadPerformed( int count ) {
-			if( !Assert.IsTrue( count >= 0 ) ) return;
+		public void OnReadPerformed( uint count ) {
+			Debug.Assert( AvailableToRead >= count );
 
 			AvailableToRead -= count;
 			Position += count;
 		}
 
-		public void OnWritePerformed( int count ) {
-			if( !Assert.IsTrue( count >= 0 ) ) return;
+		public void OnWritePerformed( uint count ) {
+			if( count >= AvailableToRead ) {
+				Debug.Assert( count <= AvailableToWrite );
 
-			AvailableToRead = Math.Max( 0, AvailableToRead - count );
+				AvailableToRead = 0;
+			}
+			else {
+				AvailableToRead -= count;
+			}
+
 			Position += count;
 		}
 
@@ -104,46 +110,47 @@ namespace System.IO {
 	}
 
 	public static class IStreamExtensions {
-		public static IStream GetBufferedReadStream( this IStream @this, int bufferSize = 16384 ) {
+		public static IStream GetBufferedReadStream( this IStream @this, uint bufferSize = 16384 ) {
 			StreamingBufferInfo* bufferInfo;
 			return GetBufferedReadStream( @this, bufferInfo, bufferSize );
 		}
 
-		public static IStream GetBufferedWriteStream( this IStream @this, int bufferSize = 16384 ) {
+		public static IStream GetBufferedWriteStream( this IStream @this, uint bufferSize = 16384 ) {
 			StreamingBufferInfo* bufferInfo;
 			return GetBufferedWriteStream( @this, bufferInfo, bufferSize );
 		}
 
-		public static IStream GetBufferedReadStream( this IStream @this, StreamingBufferInfo*& bufferInfo, int bufferSize = 16384 ) {
+		public static IStream GetBufferedReadStream( this IStream @this, StreamingBufferInfo*& bufferInfo, uint bufferSize = 16384 ) {
 			if( ( bufferInfo = @this.BufferInfo ) != null )
 				return @this;
 
-			var result = new BufferedStream.ReadStream( @this, bufferSize );
+			var result = new BufferedReadStream( @this, bufferSize );
 			bufferInfo = result.BufferInfo;
 			return result;
 		}
 
-		public static IStream GetBufferedWriteStream( this IStream @this, StreamingBufferInfo*& bufferInfo, int bufferSize = 16384 ) {
+		public static IStream GetBufferedWriteStream( this IStream @this, StreamingBufferInfo*& bufferInfo, uint bufferSize = 16384 ) {
 			if( ( bufferInfo = @this.BufferInfo ) != null )
 				return @this;
 
-			var result = new BufferedStream.WriteStream( @this, bufferSize );
+			var result = new BufferedWriteStream( @this, bufferSize );
 			bufferInfo = result.BufferInfo;
 			return result;
 		}
 
-		public static int Read( this IStream @this, MemorySegment segment ) { return @this.Read( segment.Start, ( int ) segment.Count ); }
-		public static void Write( this IStream @this, MemorySegment segment ) { @this.Write( segment.Start, ( int ) segment.Count ); }
+		public static uint Read( this IStream @this, MemorySegment segment ) { return @this.Read( segment.Start, ( uint ) segment.Count ); }
+		public static void Write( this IStream @this, MemorySegment segment ) { @this.Write( segment.Start, ( uint ) segment.Count ); }
 
 		/// For use with buffered streams (MemoryStream, BufferedStream) only
-		public static bool EnsureReadable( this IStream @this, int count ) {
+		public static bool EnsureReadable( this IStream @this, uint count ) {
 			return EnsureReadable( @this, @this.BufferInfo, count );
 		}
 
 		/// For use with buffered streams (MemoryStream, BufferedStream) only
-		public static bool EnsureReadable( this IStream @this, StreamingBufferInfo* bufferInfo, int count ) {
+		public static bool EnsureReadable( this IStream @this, StreamingBufferInfo* bufferInfo, uint count ) {
 			Debug.Assert( bufferInfo != null );
 			Debug.Assert( bufferInfo == @this.BufferInfo );
+			Debug.Assert( count <= bufferInfo->Capacity );
 
 			if( bufferInfo->AvailableToRead >= count ) return true;
 
@@ -157,12 +164,12 @@ namespace System.IO {
 		}
 
 		/// For use with buffered streams (MemoryStream, BufferedStream) only
-		public static bool EnsureWritable( this IStream @this, int count ) {
+		public static bool EnsureWritable( this IStream @this, uint count ) {
 			return EnsureWritable( @this, @this.BufferInfo, count );
 		}
 
 		/// For use with buffered streams (MemoryStream, BufferedStream) only
-		public static bool EnsureWritable( this IStream @this, StreamingBufferInfo* bufferInfo, int count ) {
+		public static bool EnsureWritable( this IStream @this, StreamingBufferInfo* bufferInfo, uint count ) {
 			Debug.Assert( bufferInfo != null );
 			Debug.Assert( bufferInfo == @this.BufferInfo );
 
@@ -175,8 +182,8 @@ namespace System.IO {
 			return true;
 		}
 
-		public static int ReadExact( this IStream @this, void* buffer, int count ) {
-			var result = 0;
+		public static uint ReadExact( this IStream @this, void* buffer, uint count ) {
+			var result = 0U;
 
 		restart:
 			var readen = @this.Read( buffer, count );
@@ -186,33 +193,33 @@ namespace System.IO {
 			count -= readen;
 			buffer = ( byte* ) buffer + readen;
 
-			if( count > 0 ) goto restart;
+			if( count != 0 ) goto restart;
 			return result;
 		}
 
-		public static int Read( this IStream @this, byte[] buffer, int offset, int count ) {
+		public static uint Read( this IStream @this, byte[] buffer, uint offset, uint count ) {
 			Debug.Assert( offset + count <= buffer.Length );
 			return @this.Read( &buffer[offset], count );
 		}
 
-		public static int ReadExact( this IStream @this, byte[] buffer, int offset, int count ) {
+		public static uint ReadExact( this IStream @this, byte[] buffer, uint offset, uint count ) {
 			Debug.Assert( offset + count <= buffer.Length );
 			return @this.ReadExact( &buffer[offset], count );
 		}
 
-		public static int Read( this IStream @this, byte[] buffer ) {
+		public static uint Read( this IStream @this, byte[] buffer ) {
 			return @this.Read( &buffer[0], buffer.Length );
 		}
 
-		public static int ReadExact( this IStream @this, byte[] buffer ) {
+		public static uint ReadExact( this IStream @this, byte[] buffer ) {
 			return @this.ReadExact( &buffer[0], buffer.Length );
 		}
 
-		public static void Write( this IStream @this, byte[] buffer, int offset, int count ) {
+		public static void Write( this IStream @this, byte[] buffer, uint offset, uint count ) {
 			@this.Write( &buffer[offset], count );
 		}
 
-		public static void Write( this IStream @this, byte[] buffer, int count ) {
+		public static void Write( this IStream @this, byte[] buffer, uint count ) {
 			@this.Write( &buffer[0], count );
 		}
 
@@ -220,7 +227,7 @@ namespace System.IO {
 			@this.Write( &buffer[0], buffer.Length );
 		}
 
-		public static void Write( this IStream destination, IStream source, int bufferSize = BufferedStream.DefaultBufferSize ) {
+		public static void Write( this IStream destination, IStream source, uint bufferSize = BufferedWriteStream.DefaultBufferSize ) {
 			if( !Assert.IsTrue( source != null ) ) return;
 			if( !Assert.IsTrue( destination != null ) ) return;
 
@@ -236,7 +243,7 @@ namespace System.IO {
 			}
 		}
 
-		public static void Write( this IStream destination, IStream source, int length, int bufferSize = BufferedStream.DefaultBufferSize ) {
+		public static void Write( this IStream destination, IStream source, uint length, uint bufferSize = BufferedWriteStream.DefaultBufferSize ) {
 			if( !Assert.IsTrue( source != null ) ) return;
 			if( !Assert.IsTrue( destination != null ) ) return;
 
@@ -244,7 +251,7 @@ namespace System.IO {
 			if( bufferInfo == null ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( int ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
 					for( ; ; ) {
 						var toRead = Math.Min( bufferLength, length );
@@ -258,7 +265,7 @@ namespace System.IO {
 				}
 			}
 			else {
-				for( ; bufferInfo->AvailableToRead > 0; ) {
+				for( ; bufferInfo->AvailableToRead != 0; ) {
 					var toRead = Math.Min( bufferInfo->AvailableToRead, length );
 
 					destination.Write( bufferInfo->ReadBufferStart, toRead );
@@ -279,7 +286,7 @@ namespace System.IO {
 			if( bufferInfo == null ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( int ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
 					for( ; ; ) {
 						var readen = stream.Read( buffer, bufferLength );
@@ -288,24 +295,24 @@ namespace System.IO {
 				}
 			}
 			else {
-				for( ; bufferInfo->AvailableToRead > 0; ) {
+				for( ; bufferInfo->AvailableToRead != 0; ) {
 					bufferInfo->OnReadPerformed( bufferInfo->AvailableToRead );
 					stream.Flush( FlushKind.Read );
 				}
 			}
 		}
 
-		public static bool Drain( this IStream stream, int count ) {
+		public static bool Drain( this IStream stream, uint count ) {
 			if( stream == null ) return false;
-			if( count <= 0 ) return true;
+			if( count == 0 ) return true;
 
 			var bufferInfo = stream.BufferInfo;
 			if( bufferInfo == null ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( int ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
-					for( ; count > 0; ) {
+					for( ; count != 0; ) {
 						var readen = stream.Read( buffer, bufferLength );
 						if( readen == 0 ) break;
 						count -= readen;
@@ -321,7 +328,7 @@ namespace System.IO {
 					return true;
 				}
 
-				while( count > 0 ) {
+				while( count != 0 ) {
 					if( bufferInfo->AvailableToRead != 0 ) {
 						var bytesToCopy = Math.Min( count, bufferInfo->AvailableToRead );
 						count -= bytesToCopy;

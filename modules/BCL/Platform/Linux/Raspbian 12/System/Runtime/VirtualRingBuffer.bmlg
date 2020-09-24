@@ -1,0 +1,50 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Collections;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using Platform;
+using Platform.Libc;
+
+namespace System.Runtime {
+	public abstract partial class VirtualRingBufferBase {
+		public bool _implCreate( uintptr capacity ) {
+			uintptr totalCapacity;
+			if( checkwrap( totalCapacity = capacity * 2 ) ) return false;
+
+			using( var file = LibcApi.memfd_create( "", 1 ) ) {
+				if( !file.IsValid ) return false;
+
+				var status = LibcApi.ftruncate64( file, ( long ) capacity );
+
+				var half0 = LibcApi.mmap( null, totalCapacity, MemoryMapProtection.PROT_NONE, MemoryMapFlags.MAP_ANONYMOUS | MemoryMapFlags.MAP_PRIVATE, Platform.Kernel.IOHandle.Invalid, 0 );
+				if( half0 == ( void* ) ( intptr ) -1 ) return false;
+
+				var address1 = LibcApi.mmap( half0, capacity, MemoryMapProtection.PROT_READ | MemoryMapProtection.PROT_WRITE, MemoryMapFlags.MAP_FIXED | MemoryMapFlags.MAP_SHARED, file, 0 );
+				var address2 = LibcApi.mmap( ( byte* ) half0 + capacity, capacity, MemoryMapProtection.PROT_READ | MemoryMapProtection.PROT_WRITE, MemoryMapFlags.MAP_FIXED | MemoryMapFlags.MAP_SHARED, file, 0 );
+
+				if( address1 != half0 || ( byte* ) address2 != ( byte* ) half0 + capacity ) {
+					LibcApi.munmap( half0, capacity * 2 );
+					return false;
+				}
+
+				Half0 = half0;
+				Capacity = capacity;
+				return true;
+			}
+
+			return false;
+		}
+
+		public override void Dispose() {
+			LibcApi.munmap( Half0, Capacity * 2 );
+
+			base.Dispose();
+		}
+	}
+}

@@ -10,6 +10,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System {
+	[RelaxedRelease]
 	public sealed partial class Utf16String {
 		public const string Empty = "";
 
@@ -40,7 +41,7 @@ namespace System {
 				var chars = GetChars();
 				Length = length;
 
-				Memory.Fill16( chars, ( ushort ) source, length );
+				Memory.Fill16( ( ushort* ) chars, ( ushort ) source, length );
 
 				chars[Length] = '\0';
 				UpdateHash();
@@ -92,8 +93,8 @@ namespace System {
 
 		internal char* GetChars() { return this != null ? ( char* )( bitcast<byte*>( this ) + sizeof( thistype ) ) : null; }
 
-		public char this[int index] { get { System.Diagnostics.Debug.Assert( ( uint ) index < Length ); return GetChars()[index]; } }
-		public char this[uint index] { get { System.Diagnostics.Debug.Assert( index < Length ); return GetChars()[index]; } }
+		public char this[int index] { get { System.Diagnostics.Debug.Assert( System.Runtime.Memory.BoundsCheck( Length, index ) ); return GetChars()[index]; } }
+		public char this[uint index] { get { System.Diagnostics.Debug.Assert( System.Runtime.Memory.BoundsCheck( Length, index ) ); return GetChars()[index]; } }
 
 		public static bool operator ==( Utf16String left, Utf16String right ) {
 			if( cast<RuntimeObjectBase>( left ) == cast<RuntimeObjectBase>( right ) ) return true;
@@ -102,7 +103,7 @@ namespace System {
 			if( left.Hash != right.Hash ) return false;
 			if( left.Length != right.Length ) return false;
 
-			return Memory.Compare( left.GetChars(), right.GetChars(), ( int ) left.ByteLength );
+			return Memory.Compare( left.GetChars(), right.GetChars(), left.ByteLength );
 		}
 
 		public static bool operator !=( Utf16String left, Utf16String right ) {
@@ -116,20 +117,20 @@ namespace System {
 			}
 		}
 
-		public static Utf16String Join( Utf16String separator, Utf16String* values, int count ) {
+		public static Utf16String Join( Utf16String separator, Utf16String* values, uint count ) {
 			if( count == 0 ) return "";
 			if( count == 1 ) return values[0];
 
 			uint totalLength = ( count - 1 ) * separator.Length;
-			for( int i = 0; i < count; ++i )
-				totalLength += ( int ) values[i].Length;
+			for( var i = 0U; i < count; ++i )
+				totalLength += values[i].Length;
 
 			var result = new Utf16String( totalLength );
 			var chars = result.GetChars();
 
 			Memory.Copy<char>( chars, values[0].GetChars(), values[0].Length ); chars += values[0].Length;
 
-			for( int i = 1; i < count; ++i ) {
+			for( var i = 1U; i < count; ++i ) {
 				Memory.Copy( chars, separator.GetChars(), separator.ByteLength ); chars += separator.Length;
 				Memory.Copy( chars, values[i].GetChars(), values[i].ByteLength ); chars += values[i].Length;
 			}
@@ -146,7 +147,7 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( char value ) {
@@ -159,7 +160,7 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( char value ) {
@@ -188,24 +189,6 @@ namespace System {
 			return false;
 		}
 
-		public Utf16String Trim() {
-			if( Length == 0 ) return this;
-			uint startIndex = 0, endIndex = Length - 1;
-
-			for( uint i = 0; i < Length; ++i, ++startIndex ) {
-				if( this[i].IsWhiteSpace ) continue;
-				break;
-			}
-
-			for( uint i = Length - 1; i >= startIndex; --i, --endIndex ) {
-				if( this[i].IsWhiteSpace ) continue;
-				break;
-			}
-
-			if( startIndex > endIndex ) return "";
-			return ( Utf16String ) new CUtf16StringSpan( GetChars() + startIndex, ( uint )( endIndex - startIndex + 1 ) );
-		}
-
 		public SbcsString ToSbcsString() { return SbcsString.FromUtf16( this ); }
 		public SbcsString ToSbcsString( System.Text.CodePageID codePage ) { return SbcsString.FromUtf16( codePage, this ); }
 		public Utf8String ToUtf8String() { return Utf8String.FromUtf16( this ); }
@@ -213,14 +196,14 @@ namespace System {
 		public Utf32String ToUtf32String() { return Utf32String.FromUtf16( this ); }
 
 		public List<Utf16String> Split( Utf16String separator ) {
-			return Split( separator, int.MaxValue, StringSplitOptions.None );
+			return Split( separator, uint.MaxValue, StringSplitOptions.None );
 		}
 
-		public List<Utf16String> Split( Utf16String separator, int maxCount ) {
+		public List<Utf16String> Split( Utf16String separator, uint maxCount ) {
 			return Split( separator, maxCount, StringSplitOptions.None );
 		}
 
-		public List<Utf16String> Split( Utf16String separator, int maxCount, StringSplitOptions options ) {
+		public List<Utf16String> Split( Utf16String separator, uint maxCount, StringSplitOptions options ) {
 			if( separator == null || separator.Length == 0 ) {
 				return null;
 			}
@@ -233,7 +216,7 @@ namespace System {
 
 			var i = 0U;
 			for( ; i + separator.Length < Length + 1; ++i ) {
-				if( !Memory.Compare( chars + i, separatorChars, ( int )( sizeof( chars[0] ) * separator.Length ) ) ) goto next_char;
+				if( !Memory.Compare( chars + i, separatorChars, sizeof( chars[0] ) * separator.Length ) ) goto next_char;
 
 				if( i - lastIndex == 0 ) {
 					if( options != StringSplitOptions.RemoveEmptyEntries )
@@ -264,49 +247,48 @@ namespace System {
 			return result;
 		}
 
-		public int LastIndexOf( char value ) {
-			return LastIndexOf( value, ( int ) Length - 1, ( int ) Length );
+		public uint LastIndexOf( char value ) {
+			if( Length == 0 ) return uint.MaxValue;
+			return LastIndexOf( value, Length - 1, Length );
 		}
 
-		public int LastIndexOf( char value, int startIndex ) {
+		public uint LastIndexOf( char value, uint startIndex ) {
 			return LastIndexOf( value, startIndex, startIndex + 1 );
 		}
 
-		public int LastIndexOf( char value, int startIndex, int count ) {
-			if( startIndex == -1 && count == 0 ) return -1;
-			if( !Assert.IsFalse( startIndex < 0 | ( uint ) startIndex >= Length ) ) return -1;
+		public uint LastIndexOf( char value, uint startIndex, uint count ) {
+			if( count == 0 ) return uint.MaxValue;
 
-			if( count == 0 ) return -1;
-			if( !Assert.IsFalse( ( uint ) count > Length | startIndex - count < -1 ) ) return -1;
+			if( startIndex >= Length ) return uint.MaxValue;
+			if( count > Length ) return uint.MaxValue;
+			if( startIndex + 1 < count ) return uint.MaxValue;
 
 			var chars = GetChars();
 			var endIndex = startIndex - count;
 
-			for( var i = startIndex; i > endIndex; --i )
+			for( var i = startIndex; i != endIndex; --i )
 				if( chars[i] == value )
 					return i;
 
-			return -1;
+			return uint.MaxValue;
 		}
 
 		public bool Contains( char value ) {
 			return IndexOf( value ) != 0;
 		}
 
-		public int IndexOf( char value ) {
-			return IndexOf( value, 0, ( int ) Length );
+		public uint IndexOf( char value ) {
+			return IndexOf( value, 0, Length );
 		}
 
-		public int IndexOf( char value, int startIndex ) {
-			return IndexOf( value, startIndex, ( int ) Length - startIndex );
+		public uint IndexOf( char value, uint startIndex ) {
+			return IndexOf( value, startIndex, Length - startIndex );
 		}
 
-		public int IndexOf( char value, int startIndex, int count ) {
-			if( startIndex == 0 && count == 0 ) return -1;
-			if( !Assert.IsFalse( startIndex < 0 | ( uint ) startIndex >= Length ) ) return -1;
-
-			if( count <= 0 ) return -1;
-			if( !Assert.IsFalse( ( uint ) count > Length | ( uint ) startIndex + ( uint ) count > Length ) ) return -1;
+		public uint IndexOf( char value, uint startIndex, uint count ) {
+			if( count == 0 ) return uint.MaxValue;
+			if( startIndex >= Length ) return uint.MaxValue;
+			if( count > Length || startIndex + count > Length ) return uint.MaxValue;
 
 			var chars = GetChars();
 			var endIndex = startIndex + count;
@@ -315,7 +297,66 @@ namespace System {
 				if( chars[i] == value ) return i;
 			}
 
-			return -1;
+			return uint.MaxValue;
+		}
+
+		public Utf16String Trim() {
+			if( Length == 0 ) return this;
+			var text = GetChars();
+
+			var startIndex = Length;
+			for( var i = 0U; i < Length; ++i ) {
+				if( text[i].IsWhiteSpace ) continue;
+				startIndex = i;
+				break;
+			}
+
+			if( startIndex == Length ) {
+				return Empty;
+			}
+
+			var endIndex = startIndex;
+			for( var i = Length - 1; i > startIndex; --i ) {
+				if( text[i].IsWhiteSpace ) continue;
+				endIndex = i;
+				break;
+			}
+
+			return FromUtf16( GetChars() + startIndex, endIndex - startIndex + 1 );
+		}
+
+		public Utf16String TrimStart() {
+			if( Length == 0 ) return this;
+
+			var text = GetChars();
+			uint startIndex = Length;
+
+			for( var i = 0U; i < Length; ++i ) {
+				if( text[i].IsWhiteSpace ) continue;
+				startIndex = i;
+				break;
+			}
+
+			if( startIndex == Length ) return Empty;
+
+			return FromUtf16( GetChars() + startIndex, Length - startIndex );
+		}
+
+		public Utf16String TrimEnd() {
+			if( Length == 0 ) return this;
+
+			var text = GetChars();
+			var endIndex = uint.MaxValue;
+
+			for( var i = Length - 1; i != uint.MaxValue; --i ) {
+				if( text[i].IsWhiteSpace ) continue;
+				endIndex = i;
+				break;
+			}
+
+			if( endIndex == uint.MaxValue ) return Empty;
+
+			return FromUtf16( GetChars(), endIndex + 1 );
 		}
 
 		public string TrimStart( char value ) {
@@ -323,7 +364,7 @@ namespace System {
 
 			if( chars[0] != value ) return this;
 
-			for( var i = 1; i < ( int ) Length; ++i ) {
+			for( var i = 1U; i < Length; ++i ) {
 				if( chars[i] != value )
 					return Substring( i );
 			}
@@ -337,7 +378,7 @@ namespace System {
 			var chars = GetChars();
 			if( chars[Length - 1] != value ) return this;
 
-			for( var i = ( int ) Length - 2; i >= 0; --i ) {
+			for( var i = Length - 2; i != uint.MaxValue; --i ) {
 				if( chars[i] != value )
 					return Substring( 0, i + 1 );
 			}
@@ -345,32 +386,32 @@ namespace System {
 			return Empty;
 		}
 
-		public string Substring( int startIndex ) {
-			return Substring( startIndex, ( int ) Length - startIndex );
+		public string Substring( uint startIndex ) {
+			return Substring( startIndex, Length - startIndex );
 		}
 
-		public string Substring( int startIndex, int length ) {
-			if( !Assert.IsFalse( startIndex < 0 | ( uint ) startIndex > Length ) )
+		public string Substring( uint startIndex, uint length ) {
+			if( !Assert.IsFalse( startIndex > Length ) )
 				return Empty;
 
-			if( !Assert.IsFalse( length < 0 | ( uint ) startIndex + ( uint ) length > Length ) )
+			if( !Assert.IsFalse( startIndex + length > Length ) )
 				return Empty;
 
-			if( startIndex == 0 & ( uint ) length == Length )
+			if( startIndex == 0 & length == Length )
 				return this;
 
 			if( length == 0 )
 				return Empty;
 
-			return FromUtf16( GetChars() + startIndex, ( uint ) length );
+			return FromUtf16( GetChars() + startIndex, length );
 		}
 
 		public string Replace( char find, char replace ) {
 			if( IsNullOrEmpty ) return this;
 
 			var chars = GetChars();
-			var startIndex = 0;
-			var endIndex = ( int ) Length;
+			var startIndex = 0U;
+			var endIndex = Length;
 
 			for( var i = startIndex; i < endIndex; ++i ) {
 				if( chars[i] == find ) {
@@ -424,7 +465,7 @@ namespace System {
 
 			if( copyInterval.Count == 0 ) return this;
 
-			var resultLength = Length + ( ( int ) replace.Length - ( int ) find.Length ) * copyInterval.Count;
+			var resultLength = Length + ( replace.Length - find.Length ) * copyInterval.Count;
 			var resultString = new string( resultLength );
 			var result = resultString.GetChars();
 			var destinationPos = 0U;
@@ -636,18 +677,18 @@ namespace System {
 		public bool Contains( thistype value ) {
 			if( value.IsNullOrEmpty ) return false;
 
-			return IndexOf( value ) != -1;
+			return IndexOf( value ) != uint.MaxValue;
 		}
 
-		public int IndexOf( thistype value ) {
+		public uint IndexOf( thistype value ) {
 			return IndexOf( value, 0 );
 		}
 
-		public int IndexOf( thistype value, int startIndex ) {
-			if( value.IsNullOrEmpty ) return -1;
-			if( startIndex < 0 || startIndex + value.Length > Length ) return -1;
+		public uint IndexOf( thistype value, uint startIndex ) {
+			if( value.IsNullOrEmpty ) return uint.MaxValue;
+			if( startIndex + value.Length > Length ) return uint.MaxValue;
 
-			for( var i = ( uint ) startIndex; i + value.Length < Length + 1; ++i ) {
+			for( var i = startIndex; i + value.Length < Length + 1; ++i ) {
 				if( this[i] == value[0] ) {
 					uint j;
 
@@ -655,11 +696,11 @@ namespace System {
 						if( this[i + j] != value[j] )
 							break;
 
-					if( j == value.Length ) return ( int ) i;
+					if( j == value.Length ) return i;
 				}
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
 		private static int _implCompare( thistype left, thistype right, CompareOptions options ) {
@@ -755,20 +796,21 @@ namespace System {
 			return ( *left - *right ) == 0;
 		}
 
-		public static bool AreEqual( CUtf16String leftString, CUtf16String rightString, int length ) {
+		public static bool AreEqual( CUtf16String leftString, CUtf16String rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
 			if( ( left == null ) & ( right == null ) ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
+			if( length == 0 ) return true;
 
-			int n = length;
+			var count = length;
 
-			while( --n >= 0 && *left == *right++ )
+			while( --count != uint.MaxValue && *left == *right++ )
 				if( *left++ == '\0' )
 					return true;
 
-			return n < 0 ? true : *left - *--right == 0;
+			return count == uint.MaxValue ? true : *left - *--right == 0;
 		}
 
 		public bool StartsWith( CUtf16String prefix ) {
@@ -793,7 +835,7 @@ namespace System {
 				continue;
 		}
 
-		static void Copy( CUtf16String leftString, CUtf16String rightString, int maxLength ) {
+		static void Copy( CUtf16String leftString, CUtf16String rightString, uint maxLength ) {
 			if( maxLength == 0 ) return;
 
 			var left = leftString.GetChars();
@@ -852,7 +894,7 @@ namespace System {
 			var result = 0U;
 			var length = 0U;
 
-			for( int i = 0; chars[i] != '\0'; ++i, ++length )
+			for( int i = 0U; chars[i] != '\0'; ++i, ++length )
 				result = result * 41 + chars[i];
 
 			resultLength = length * sizeof( char );
@@ -881,7 +923,7 @@ namespace System {
 			if( left == right && leftString.Length == rightString.Length ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			return Memory.Compare( left, right, ( int ) leftString.ByteLength );
+			return Memory.Compare( left, right, leftString.ByteLength );
 		}
 
 		public static bool operator ==( CUtf16StringSpan& left, CUtf16StringSpan& right ) { return AreEqual( left, right ); }
@@ -901,28 +943,28 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( CUtf16StringSpan value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( Utf16String value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( Utf16String value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 	}
 }

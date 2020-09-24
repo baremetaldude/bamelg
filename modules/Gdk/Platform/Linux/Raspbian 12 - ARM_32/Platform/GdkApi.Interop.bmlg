@@ -1,0 +1,2694 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Cairo;
+using Platform.Glib;
+using Platform.Pango;
+
+namespace Platform.Gdk {
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libgdk-x11-2.0.so.0" )]
+	public static partial struct GdkApi {
+		public extern static int gdk_color_alloc( GdkColormap* colormap, GdkColor* color );
+		public extern static int gdk_color_black( GdkColormap* colormap, GdkColor* color );
+		public extern static int gdk_color_change( GdkColormap* colormap, GdkColor* color );
+		public extern static GdkColor* gdk_color_copy( GdkColor* color );
+		public extern static Boolean32 gdk_color_equal( GdkColor* colora, GdkColor* colorb );
+		public extern static void gdk_color_free( GdkColor* color );
+		[BackendHintReadNone]
+		public extern static GType gdk_color_get_type();
+		public extern static uint gdk_color_hash( GdkColor* colora );
+		public extern static Boolean32 gdk_color_parse( sbyte* spec, GdkColor* color );
+		public extern static sbyte* gdk_color_to_string( GdkColor* color );
+		public extern static int gdk_color_white( GdkColormap* colormap, GdkColor* color );
+		public extern static Boolean32 gdk_colormap_alloc_color( GdkColormap* colormap, GdkColor* color, Boolean32 writeable, Boolean32 bestMatch );
+		public extern static int gdk_colormap_alloc_colors( GdkColormap* colormap, GdkColor* colors, int nColors, Boolean32 writeable, Boolean32 bestMatch, Boolean32* success );
+		public extern static void gdk_colormap_change( GdkColormap* colormap, int ncolors );
+		public extern static void gdk_colormap_free_colors( GdkColormap* colormap, GdkColor* colors, int nColors );
+		public extern static GdkScreen* gdk_colormap_get_screen( GdkColormap* cmap );
+		public extern static GdkColormap* gdk_colormap_get_system();
+		public extern static int gdk_colormap_get_system_size();
+		[BackendHintReadNone]
+		public extern static GType gdk_colormap_get_type();
+		public extern static GdkVisual* gdk_colormap_get_visual( GdkColormap* colormap );
+		public extern static GdkColormap* gdk_colormap_new( GdkVisual* visual, Boolean32 allocate );
+		public extern static void gdk_colormap_query_color( GdkColormap* colormap, uintptr pixel, GdkColor* result );
+		public extern static GdkColormap* gdk_colormap_ref( GdkColormap* cmap );
+		public extern static void gdk_colormap_unref( GdkColormap* cmap );
+		public extern static int gdk_colors_alloc( GdkColormap* colormap, Boolean32 contiguous, uintptr* planes, int nplanes, uintptr* pixels, int npixels );
+		public extern static void gdk_colors_free( GdkColormap* colormap, uintptr* pixels, int npixels, uintptr planes );
+		public extern static void gdk_colors_store( GdkColormap* colormap, GdkColor* colors, int ncolors );
+
+		public extern static void gdk_drag_abort( GdkDragContext* context, uint time_ );
+		public extern static GdkDragContext* gdk_drag_begin( GdkDrawable* window, GList* targets );
+		public extern static GdkDragAction gdk_drag_context_get_actions( GdkDragContext* context );
+		public extern static GdkDrawable* gdk_drag_context_get_dest_window( GdkDragContext* context );
+		public extern static GdkDragProtocol gdk_drag_context_get_protocol( GdkDragContext* context );
+		public extern static GdkDragAction gdk_drag_context_get_selected_action( GdkDragContext* context );
+		public extern static GdkDrawable* gdk_drag_context_get_source_window( GdkDragContext* context );
+		public extern static GdkDragAction gdk_drag_context_get_suggested_action( GdkDragContext* context );
+		[BackendHintReadNone]
+		public extern static GType gdk_drag_context_get_type();
+		public extern static GList* gdk_drag_context_list_targets( GdkDragContext* context );
+		public extern static GdkDragContext* gdk_drag_context_new();
+		public extern static void gdk_drag_context_ref( GdkDragContext* context );
+		public extern static void gdk_drag_context_unref( GdkDragContext* context );
+		public extern static void gdk_drag_drop( GdkDragContext* context, uint time_ );
+		public extern static Boolean32 gdk_drag_drop_succeeded( GdkDragContext* context );
+		public extern static void gdk_drag_find_window( GdkDragContext* context, GdkDrawable* dragWindow, int xRoot, int yRoot, GdkDrawable** destWindow, GdkDragProtocol* protocol );
+		public extern static void gdk_drag_find_window_for_screen( GdkDragContext* context, GdkDrawable* dragWindow, GdkScreen* screen, int xRoot, int yRoot, GdkDrawable** destWindow, GdkDragProtocol* protocol );
+		public extern static uint gdk_drag_get_protocol( uint xid, GdkDragProtocol* protocol );
+		public extern static uint gdk_drag_get_protocol_for_display( GdkDisplay* display, uint xid, GdkDragProtocol* protocol );
+		public extern static GdkAtom* gdk_drag_get_selection( GdkDragContext* context );
+		public extern static Boolean32 gdk_drag_motion( GdkDragContext* context, GdkDrawable* destWindow, GdkDragProtocol protocol, int xRoot, int yRoot, GdkDragAction suggestedAction, GdkDragAction possibleActions, uint time_ );
+		public extern static void gdk_drag_status( GdkDragContext* context, GdkDragAction action, uint time_ );
+		public extern static void gdk_drop_finish( GdkDragContext* context, Boolean32 success, uint time_ );
+		public extern static void gdk_drop_reply( GdkDragContext* context, Boolean32 ok, uint time_ );
+
+		public extern static void gdk_device_free_history( GdkTimeCoord** events, int nEvents );
+		public extern static Boolean32 gdk_device_get_axis( GdkDevice* device, double* axes, GdkAxisUse use, double* value );
+		public extern static GdkAxisUse gdk_device_get_axis_use( GdkDevice* device, uint index );
+		public extern static GdkDevice* gdk_device_get_core_pointer();
+		public extern static Boolean32 gdk_device_get_has_cursor( GdkDevice* device );
+		public extern static Boolean32 gdk_device_get_history( GdkDevice* device, GdkDrawable* window, uint start, uint stop, GdkTimeCoord*** events, int* nEvents );
+		public extern static void gdk_device_get_key( GdkDevice* device, uint index, uint* keyval, GdkModifierType* modifiers );
+		public extern static GdkInputMode gdk_device_get_mode( GdkDevice* device );
+		public extern static int gdk_device_get_n_axes( GdkDevice* device );
+		public extern static int gdk_device_get_n_keys( GdkDevice* device );
+		public extern static sbyte* gdk_device_get_name( GdkDevice* device );
+		public extern static GdkInputSource gdk_device_get_source( GdkDevice* device );
+		public extern static void gdk_device_get_state( GdkDevice* device, GdkDrawable* window, double* axes, GdkModifierType* mask );
+		[BackendHintReadNone]
+		public extern static GType gdk_device_get_type();
+		public extern static void gdk_device_set_axis_use( GdkDevice* device, uint index_, GdkAxisUse use );
+		public extern static void gdk_device_set_key( GdkDevice* device, uint index_, uint keyval, GdkModifierType modifiers );
+		public extern static Boolean32 gdk_device_set_mode( GdkDevice* device, GdkInputMode mode );
+		public extern static void gdk_device_set_source( GdkDevice* device, GdkInputSource source );
+		public extern static GList* gdk_devices_list();
+		public extern static void gdk_input_set_extension_events( GdkDrawable* window, int mask, GdkExtensionMode mode );
+
+		public extern static void gdk_add_client_message_filter( GdkAtom* messageType, Functors.Func<void*, GdkEvent*, void*, GdkFilterReturn> func, void* data );
+		public extern static GdkEvent* gdk_event_copy( GdkEvent* @event );
+		public extern static void gdk_event_free( GdkEvent* @event );
+		public extern static GdkEvent* gdk_event_get();
+		public extern static Boolean32 gdk_event_get_axis( GdkEvent* @event, GdkAxisUse axisUse, double* value );
+		public extern static Boolean32 gdk_event_get_coords( GdkEvent* @event, double* xWin, double* yWin );
+		public extern static GdkEvent* gdk_event_get_graphics_expose( GdkDrawable* window );
+		public extern static Boolean32 gdk_event_get_root_coords( GdkEvent* @event, double* xRoot, double* yRoot );
+		public extern static GdkScreen* gdk_event_get_screen( GdkEvent* @event );
+		public extern static Boolean32 gdk_event_get_state( GdkEvent* @event, GdkModifierType* state );
+		public extern static uint gdk_event_get_time( GdkEvent* @event );
+		[BackendHintReadNone]
+		public extern static GType gdk_event_get_type();
+		public extern static void gdk_event_handler_set( Functors.Action<GdkEvent*, void*> func, void* data, Functors.Action<void*> notify );
+		public extern static GdkEvent* gdk_event_new( GdkEventType type );
+		public extern static GdkEvent* gdk_event_peek();
+		public extern static void gdk_event_put( GdkEvent* @event );
+		public extern static void gdk_event_request_motions( GdkEventMotion* @event );
+		public extern static void gdk_event_set_screen( GdkEvent* @event, GdkScreen* screen );
+		public extern static Boolean32 gdk_events_pending();
+		public extern static Boolean32 gdk_get_show_events();
+		public extern static void gdk_set_show_events( Boolean32 showEvents );
+		public extern static Boolean32 gdk_setting_get( CUtf8String name, GValue* value );
+
+		public extern static void gdk_display_add_client_message_filter( GdkDisplay* display, GdkAtom* messageType, Functors.Func<void*, GdkEvent*, void*, GdkFilterReturn> func, void* data );
+		public extern static void gdk_display_beep( GdkDisplay* display );
+		public extern static void gdk_display_close( GdkDisplay* display );
+		public extern static void gdk_display_flush( GdkDisplay* display );
+		public extern static GdkDevice* gdk_display_get_core_pointer( GdkDisplay* display );
+		public extern static GdkDisplay* gdk_display_get_default();
+		public extern static uint gdk_display_get_default_cursor_size( GdkDisplay* display );
+		public extern static GdkDrawable* gdk_display_get_default_group( GdkDisplay* display );
+		public extern static GdkScreen* gdk_display_get_default_screen( GdkDisplay* display );
+		public extern static GdkEvent* gdk_display_get_event( GdkDisplay* display );
+		public extern static void gdk_display_get_maximal_cursor_size( GdkDisplay* display, uint* width, uint* height );
+		public extern static int gdk_display_get_n_screens( GdkDisplay* display );
+		public extern static sbyte* gdk_display_get_name( GdkDisplay* display );
+		public extern static void gdk_display_get_pointer( GdkDisplay* display, GdkScreen** screen, int* x, int* y, GdkModifierType* mask );
+		public extern static GdkScreen* gdk_display_get_screen( GdkDisplay* display, int screenNum );
+		[BackendHintReadNone]
+		public extern static GType gdk_display_get_type();
+		public extern static GdkDrawable* gdk_display_get_window_at_pointer( GdkDisplay* display, int* winX, int* winY );
+		public extern static Boolean32 gdk_display_is_closed( GdkDisplay* display );
+		public extern static void gdk_display_keyboard_ungrab( GdkDisplay* display, uint time_ );
+		public extern static GList* gdk_display_list_devices( GdkDisplay* display );
+		public extern static GdkDisplay* gdk_display_open( CUtf8String displayName );
+		public extern static GdkDisplay* gdk_display_open_default_libgtk_only();
+		public extern static GdkEvent* gdk_display_peek_event( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_pointer_is_grabbed( GdkDisplay* display );
+		public extern static void gdk_display_pointer_ungrab( GdkDisplay* display, uint time_ );
+		public extern static void gdk_display_put_event( GdkDisplay* display, GdkEvent* @event );
+		public extern static Boolean32 gdk_display_request_selection_notification( GdkDisplay* display, GdkAtom* selection );
+		public extern static void gdk_display_set_double_click_distance( GdkDisplay* display, uint distance );
+		public extern static void gdk_display_set_double_click_time( GdkDisplay* display, uint msec );
+		public extern static GdkDisplayPointerHooks* gdk_display_set_pointer_hooks( GdkDisplay* display, GdkDisplayPointerHooks* newHooks );
+		public extern static void gdk_display_store_clipboard( GdkDisplay* display, GdkDrawable* clipboardWindow, uint time_, GdkAtom** targets, int nTargets );
+		public extern static Boolean32 gdk_display_supports_clipboard_persistence( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_composite( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_cursor_alpha( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_cursor_color( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_input_shapes( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_selection_notification( GdkDisplay* display );
+		public extern static Boolean32 gdk_display_supports_shapes( GdkDisplay* display );
+		public extern static void gdk_display_sync( GdkDisplay* display );
+		public extern static void gdk_display_warp_pointer( GdkDisplay* display, GdkScreen* screen, int x, int y );
+
+		public extern static void gdk_screen_broadcast_client_message( GdkScreen* screen, GdkEvent* @event );
+		public extern static GdkDrawable* gdk_screen_get_active_window( GdkScreen* screen );
+		public extern static GdkScreen* gdk_screen_get_default();
+		public extern static GdkColormap* gdk_screen_get_default_colormap( GdkScreen* screen );
+		public extern static GdkDisplay* gdk_screen_get_display( GdkScreen* screen );
+		public extern static cairo_font_options_t* gdk_screen_get_font_options( GdkScreen* screen );
+		public extern static int gdk_screen_get_height( GdkScreen* screen );
+		public extern static int gdk_screen_get_height_mm( GdkScreen* screen );
+		public extern static int gdk_screen_get_monitor_at_point( GdkScreen* screen, int x, int y );
+		public extern static int gdk_screen_get_monitor_at_window( GdkScreen* screen, GdkDrawable* window );
+		public extern static void gdk_screen_get_monitor_geometry( GdkScreen* screen, int monitorNum, GdkRectangle* dest );
+		public extern static int gdk_screen_get_monitor_height_mm( GdkScreen* screen, int monitorNum );
+		public extern static sbyte* gdk_screen_get_monitor_plug_name( GdkScreen* screen, int monitorNum );
+		public extern static int gdk_screen_get_monitor_width_mm( GdkScreen* screen, int monitorNum );
+		public extern static int gdk_screen_get_n_monitors( GdkScreen* screen );
+		public extern static int gdk_screen_get_number( GdkScreen* screen );
+		public extern static int gdk_screen_get_primary_monitor( GdkScreen* screen );
+		public extern static double gdk_screen_get_resolution( GdkScreen* screen );
+		public extern static GdkColormap* gdk_screen_get_rgb_colormap( GdkScreen* screen );
+		public extern static GdkVisual* gdk_screen_get_rgb_visual( GdkScreen* screen );
+		public extern static GdkColormap* gdk_screen_get_rgba_colormap( GdkScreen* screen );
+		public extern static GdkVisual* gdk_screen_get_rgba_visual( GdkScreen* screen );
+		public extern static GdkDrawable* gdk_screen_get_root_window( GdkScreen* screen );
+		public extern static Boolean32 gdk_screen_get_setting( GdkScreen* screen, CUtf8String name, GValue* value );
+		public extern static GdkColormap* gdk_screen_get_system_colormap( GdkScreen* screen );
+		public extern static GdkVisual* gdk_screen_get_system_visual( GdkScreen* screen );
+		public extern static GList* gdk_screen_get_toplevel_windows( GdkScreen* screen );
+		[BackendHintReadNone]
+		public extern static GType gdk_screen_get_type();
+		public extern static int gdk_screen_get_width( GdkScreen* screen );
+		public extern static int gdk_screen_get_width_mm( GdkScreen* screen );
+		public extern static GList* gdk_screen_get_window_stack( GdkScreen* screen );
+		public extern static Boolean32 gdk_screen_is_composited( GdkScreen* screen );
+		public extern static GList* gdk_screen_list_visuals( GdkScreen* screen );
+		public extern static sbyte* gdk_screen_make_display_name( GdkScreen* screen );
+		public extern static void gdk_screen_set_default_colormap( GdkScreen* screen, GdkColormap* colormap );
+		public extern static void gdk_screen_set_font_options( GdkScreen* screen, cairo_font_options_t* options );
+		public extern static void gdk_screen_set_resolution( GdkScreen* screen, double dpi );
+
+		public extern static GType gdk_app_launch_context_get_type();
+		public extern static GdkAppLaunchContext* gdk_app_launch_context_new();
+		public extern static void gdk_app_launch_context_set_desktop( GdkAppLaunchContext* context, int desktop );
+		public extern static void gdk_app_launch_context_set_display( GdkAppLaunchContext* context, GdkDisplay* display );
+		public extern static void gdk_app_launch_context_set_icon( GdkAppLaunchContext* context, GIcon* icon );
+		public extern static void gdk_app_launch_context_set_icon_name( GdkAppLaunchContext* context, CUtf8String iconName );
+		public extern static void gdk_app_launch_context_set_screen( GdkAppLaunchContext* context, GdkScreen* screen );
+		public extern static void gdk_app_launch_context_set_timestamp( GdkAppLaunchContext* context, uint timestamp );
+
+		public extern static void gdk_draw_gray_image( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* buf, int rowstride );
+		public extern static void gdk_draw_indexed_image( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* buf, int rowstride, GdkRgbCmap* cmap );
+		public extern static void gdk_draw_rgb_32_image( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* buf, int rowstride );
+		public extern static void gdk_draw_rgb_32_image_dithalign( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* buf, int rowstride, int xdith, int ydith );
+		public extern static void gdk_draw_rgb_image( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* rgbBuf, int rowstride );
+		public extern static void gdk_draw_rgb_image_dithalign( GdkDrawable* drawable, GdkGC* gc, int x, int y, int width, int height, GdkRgbDither dith, byte* rgbBuf, int rowstride, int xdith, int ydith );
+		public extern static void gdk_rgb_cmap_free( GdkRgbCmap* cmap );
+		public extern static GdkRgbCmap* gdk_rgb_cmap_new( uint* colors, int nColors );
+		public extern static Boolean32 gdk_rgb_colormap_ditherable( GdkColormap* cmap );
+		public extern static Boolean32 gdk_rgb_ditherable();
+		public extern static void gdk_rgb_find_color( GdkColormap* colormap, GdkColor* color );
+		public extern static void gdk_rgb_gc_set_background( GdkGC* gc, uint rgb );
+		public extern static void gdk_rgb_gc_set_foreground( GdkGC* gc, uint rgb );
+		public extern static GdkColormap* gdk_rgb_get_colormap();
+		public extern static GdkVisual* gdk_rgb_get_visual();
+		public extern static void gdk_rgb_init();
+		public extern static void gdk_rgb_set_install( Boolean32 install );
+		public extern static void gdk_rgb_set_min_colors( int minColors );
+		public extern static void gdk_rgb_set_verbose( Boolean32 verbose );
+		[BackendHintReadNone]
+		public extern static uintptr gdk_rgb_xpixel_from_rgb( uint rgb );
+
+		public extern static GdkPixbuf* gdk_pixbuf_get_from_drawable( GdkPixbuf* dest, GdkDrawable* src, GdkColormap* cmap, int srcX, int srcY, int destX, int destY, int width, int height );
+		public extern static GdkPixbuf* gdk_pixbuf_get_from_image( GdkPixbuf* dest, GdkImage* src, GdkColormap* cmap, int srcX, int srcY, int destX, int destY, int width, int height );
+		public extern static void gdk_pixbuf_render_pixmap_and_mask( GdkPixbuf* pixbuf, GdkDrawable** pixmapReturn, GdkDrawable** maskReturn, int alphaThreshold );
+		public extern static void gdk_pixbuf_render_pixmap_and_mask_for_colormap( GdkPixbuf* pixbuf, GdkColormap* colormap, GdkDrawable** pixmapReturn, GdkDrawable** maskReturn, int alphaThreshold );
+		public extern static void gdk_pixbuf_render_threshold_alpha( GdkPixbuf* pixbuf, GdkDrawable* bitmap, int srcX, int srcY, int destX, int destY, int width, int height, int alphaThreshold );
+		public extern static void gdk_pixbuf_render_to_drawable( GdkPixbuf* pixbuf, GdkDrawable* drawable, GdkGC* gc, int srcX, int srcY, int destX, int destY, int width, int height, GdkRgbDither dither, int xDither, int yDither );
+		public extern static void gdk_pixbuf_render_to_drawable_alpha( GdkPixbuf* pixbuf, GdkDrawable* drawable, int srcX, int srcY, int destX, int destY, int width, int height, GdkPixbufAlphaMode alphaMode, int alphaThreshold, GdkRgbDither dither, int xDither, int yDither );
+
+		public extern static cairo_t* gdk_cairo_create( GdkDrawable* drawable );
+		public extern static void gdk_cairo_rectangle( cairo_t* cr, GdkRectangle* rectangle );
+		public extern static void gdk_cairo_region( cairo_t* cr, GdkRegion* region );
+		public extern static void gdk_cairo_reset_clip( cairo_t* cr, GdkDrawable* drawable );
+		public extern static void gdk_cairo_set_source_color( cairo_t* cr, GdkColor* color );
+		public extern static void gdk_cairo_set_source_pixbuf( cairo_t* cr, GdkPixbuf* pixbuf, double pixbufX, double pixbufY );
+		public extern static void gdk_cairo_set_source_pixmap( cairo_t* cr, GdkDrawable* pixmap, double pixmapX, double pixmapY );
+		public extern static void gdk_cairo_set_source_window( cairo_t* cr, GdkDrawable* window, double x, double y );
+
+		public extern static GdkCursorType gdk_cursor_get_cursor_type( GdkCursor* cursor );
+		public extern static GdkDisplay* gdk_cursor_get_display( GdkCursor* cursor );
+		public extern static GdkPixbuf* gdk_cursor_get_image( GdkCursor* cursor );
+		[BackendHintReadNone]
+		public extern static GType gdk_cursor_get_type();
+		public extern static GdkCursor* gdk_cursor_new( GdkCursorType cursorType );
+		public extern static GdkCursor* gdk_cursor_new_for_display( GdkDisplay* display, GdkCursorType cursorType );
+		public extern static GdkCursor* gdk_cursor_new_from_name( GdkDisplay* display, CUtf8String name );
+		public extern static GdkCursor* gdk_cursor_new_from_pixbuf( GdkDisplay* display, GdkPixbuf* pixbuf, int x, int y );
+		public extern static GdkCursor* gdk_cursor_new_from_pixmap( GdkDrawable* source, GdkDrawable* mask, GdkColor* fg, GdkColor* bg, int x, int y );
+		public extern static GdkCursor* gdk_cursor_ref( GdkCursor* cursor );
+		public extern static void gdk_cursor_unref( GdkCursor* cursor );
+
+		public extern static GdkDisplayManager* gdk_display_manager_get();
+		public extern static GdkDisplay* gdk_display_manager_get_default_display( GdkDisplayManager* displayManager );
+		[BackendHintReadNone]
+		public extern static GType gdk_display_manager_get_type();
+		public extern static GSList* gdk_display_manager_list_displays( GdkDisplayManager* displayManager );
+		public extern static void gdk_display_manager_set_default_display( GdkDisplayManager* displayManager, GdkDisplay* display );
+
+		public extern static void gdk_gc_copy( GdkGC* dstGc, GdkGC* srcGc );
+		public extern static GdkColormap* gdk_gc_get_colormap( GdkGC* gc );
+		public extern static GdkScreen* gdk_gc_get_screen( GdkGC* gc );
+		[BackendHintReadNone]
+		public extern static GType gdk_gc_get_type();
+		public extern static void gdk_gc_get_values( GdkGC* gc, GdkGCValues* values );
+		public extern static GdkGC* gdk_gc_new( GdkDrawable* drawable );
+		public extern static GdkGC* gdk_gc_new_with_values( GdkDrawable* drawable, GdkGCValues* values, GdkGCValuesMask valuesMask );
+		public extern static void gdk_gc_offset( GdkGC* gc, int xOffset, int yOffset );
+		public extern static GdkGC* gdk_gc_ref( GdkGC* gc );
+		public extern static void gdk_gc_set_background( GdkGC* gc, GdkColor* color );
+		public extern static void gdk_gc_set_clip_mask( GdkGC* gc, GdkDrawable* mask );
+		public extern static void gdk_gc_set_clip_origin( GdkGC* gc, int x, int y );
+		public extern static void gdk_gc_set_clip_rectangle( GdkGC* gc, GdkRectangle* rectangle );
+		public extern static void gdk_gc_set_clip_region( GdkGC* gc, GdkRegion* region );
+		public extern static void gdk_gc_set_colormap( GdkGC* gc, GdkColormap* colormap );
+		public extern static void gdk_gc_set_dashes( GdkGC* gc, int dashOffset, sbyte* dashList, int n );
+		public extern static void gdk_gc_set_exposures( GdkGC* gc, Boolean32 exposures );
+		public extern static void gdk_gc_set_fill( GdkGC* gc, GdkFill fill );
+		public extern static void gdk_gc_set_font( GdkGC* gc, GdkFont* font );
+		public extern static void gdk_gc_set_foreground( GdkGC* gc, GdkColor* color );
+		public extern static void gdk_gc_set_function( GdkGC* gc, GdkFunction function );
+		public extern static void gdk_gc_set_line_attributes( GdkGC* gc, int lineWidth, GdkLineStyle lineStyle, GdkCapStyle capStyle, GdkJoinStyle joinStyle );
+		public extern static void gdk_gc_set_rgb_bg_color( GdkGC* gc, GdkColor* color );
+		public extern static void gdk_gc_set_rgb_fg_color( GdkGC* gc, GdkColor* color );
+		public extern static void gdk_gc_set_stipple( GdkGC* gc, GdkDrawable* stipple );
+		public extern static void gdk_gc_set_subwindow( GdkGC* gc, GdkSubwindowMode mode );
+		public extern static void gdk_gc_set_tile( GdkGC* gc, GdkDrawable* tile );
+		public extern static void gdk_gc_set_ts_origin( GdkGC* gc, int x, int y );
+		public extern static void gdk_gc_set_values( GdkGC* gc, GdkGCValues* values, GdkGCValuesMask valuesMask );
+		public extern static void gdk_gc_unref( GdkGC* gc );
+
+		public extern static void gdk_draw_arc( GdkDrawable* drawable, GdkGC* gc, Boolean32 filled, int x, int y, int width, int height, int angle1, int angle2 );
+		public extern static void gdk_draw_drawable( GdkDrawable* drawable, GdkGC* gc, GdkDrawable* src, int xsrc, int ysrc, int xdest, int ydest, int width, int height );
+		public extern static void gdk_draw_glyphs( GdkDrawable* drawable, GdkGC* gc, PangoFont* font, int x, int y, PangoGlyphString* glyphs );
+		public extern static void gdk_draw_glyphs_transformed( GdkDrawable* drawable, GdkGC* gc, PangoMatrix* matrix, PangoFont* font, int x, int y, PangoGlyphString* glyphs );
+		public extern static void gdk_draw_image( GdkDrawable* drawable, GdkGC* gc, GdkImage* image, int xsrc, int ysrc, int xdest, int ydest, int width, int height );
+		public extern static void gdk_draw_layout( GdkDrawable* drawable, GdkGC* gc, int x, int y, PangoLayout* layout );
+		public extern static void gdk_draw_layout_line( GdkDrawable* drawable, GdkGC* gc, int x, int y, PangoLayoutLine* line );
+		public extern static void gdk_draw_layout_line_with_colors( GdkDrawable* drawable, GdkGC* gc, int x, int y, PangoLayoutLine* line, GdkColor* foreground, GdkColor* background );
+		public extern static void gdk_draw_layout_with_colors( GdkDrawable* drawable, GdkGC* gc, int x, int y, PangoLayout* layout, GdkColor* foreground, GdkColor* background );
+		public extern static void gdk_draw_line( GdkDrawable* drawable, GdkGC* gc, int x1_, int y1_, int x2_, int y2_ );
+		public extern static void gdk_draw_lines( GdkDrawable* drawable, GdkGC* gc, GdkPoint* points, int nPoints );
+		public extern static void gdk_draw_pixbuf( GdkDrawable* drawable, GdkGC* gc, GdkPixbuf* pixbuf, int srcX, int srcY, int destX, int destY, int width, int height, GdkRgbDither dither, int xDither, int yDither );
+		public extern static void gdk_draw_point( GdkDrawable* drawable, GdkGC* gc, int x, int y );
+		public extern static void gdk_draw_points( GdkDrawable* drawable, GdkGC* gc, GdkPoint* points, int nPoints );
+		public extern static void gdk_draw_polygon( GdkDrawable* drawable, GdkGC* gc, Boolean32 filled, GdkPoint* points, int nPoints );
+		public extern static void gdk_draw_rectangle( GdkDrawable* drawable, GdkGC* gc, Boolean32 filled, int x, int y, int width, int height );
+		public extern static void gdk_draw_segments( GdkDrawable* drawable, GdkGC* gc, GdkSegment* segs, int nSegs );
+		public extern static void gdk_draw_string( GdkDrawable* drawable, GdkFont* font, GdkGC* gc, int x, int y, sbyte* @string );
+		public extern static void gdk_draw_text( GdkDrawable* drawable, GdkFont* font, GdkGC* gc, int x, int y, CUtf8String text, int textLength );
+		public extern static void gdk_draw_text_wc( GdkDrawable* drawable, GdkFont* font, GdkGC* gc, int x, int y, uint* text, int textLength );
+		public extern static void gdk_draw_trapezoids( GdkDrawable* drawable, GdkGC* gc, GdkTrapezoid* trapezoids, int nTrapezoids );
+		public extern static GdkImage* gdk_drawable_copy_to_image( GdkDrawable* drawable, GdkImage* image, int srcX, int srcY, int destX, int destY, int width, int height );
+		public extern static GdkRegion* gdk_drawable_get_clip_region( GdkDrawable* drawable );
+		public extern static GdkColormap* gdk_drawable_get_colormap( GdkDrawable* drawable );
+		public extern static void* gdk_drawable_get_data( GdkDrawable* drawable, sbyte* key );
+		public extern static int gdk_drawable_get_depth( GdkDrawable* drawable );
+		public extern static GdkDisplay* gdk_drawable_get_display( GdkDrawable* drawable );
+		public extern static GdkImage* gdk_drawable_get_image( GdkDrawable* drawable, int x, int y, int width, int height );
+		public extern static GdkScreen* gdk_drawable_get_screen( GdkDrawable* drawable );
+		public extern static void gdk_drawable_get_size( GdkDrawable* drawable, int* width, int* height );
+		[BackendHintReadNone]
+		public extern static GType gdk_drawable_get_type();
+		public extern static GdkRegion* gdk_drawable_get_visible_region( GdkDrawable* drawable );
+		public extern static GdkVisual* gdk_drawable_get_visual( GdkDrawable* drawable );
+		public extern static GdkDrawable* gdk_drawable_ref( GdkDrawable* drawable );
+		public extern static void gdk_drawable_set_colormap( GdkDrawable* drawable, GdkColormap* colormap );
+		public extern static void gdk_drawable_set_data( GdkDrawable* drawable, sbyte* key, void* data, Functors.Action<void*> destroyFunc );
+		public extern static void gdk_drawable_unref( GdkDrawable* drawable );
+
+		[BackendHintReadNone]
+		public extern static GType gdk_axis_use_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_byte_order_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_cap_style_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_crossing_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_cursor_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_drag_action_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_drag_protocol_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_event_mask_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_event_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_extension_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_fill_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_fill_rule_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_filter_return_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_font_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_function_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_gc_values_mask_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_grab_status_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_gravity_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_image_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_input_condition_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_input_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_input_source_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_join_style_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_line_style_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_modifier_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_notify_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_overlap_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_owner_change_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_prop_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_property_state_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_rgb_dither_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_scroll_direction_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_setting_action_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_status_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_subwindow_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_visibility_state_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_visual_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_attributes_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_class_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_edge_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_hints_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_state_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_window_type_hint_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_wm_decoration_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_wm_function_get_type();
+
+		public extern static int gdk_char_height( GdkFont* font, sbyte character );
+		public extern static int gdk_char_measure( GdkFont* font, sbyte character );
+		public extern static int gdk_char_width( GdkFont* font, sbyte character );
+		public extern static int gdk_char_width_wc( GdkFont* font, uint character );
+		public extern static Boolean32 gdk_font_equal( GdkFont* fonta, GdkFont* fontb );
+		public extern static GdkFont* gdk_font_from_description( PangoFontDescription* fontDesc );
+		public extern static GdkFont* gdk_font_from_description_for_display( GdkDisplay* display, PangoFontDescription* fontDesc );
+		public extern static GdkDisplay* gdk_font_get_display( GdkFont* font );
+		[BackendHintReadNone]
+		public extern static GType gdk_font_get_type();
+		public extern static int gdk_font_id( GdkFont* font );
+		public extern static GdkFont* gdk_font_load( CUtf8String fontName );
+		public extern static GdkFont* gdk_font_load_for_display( GdkDisplay* display, CUtf8String fontName );
+		public extern static GdkFont* gdk_font_ref( GdkFont* font );
+		public extern static void gdk_font_unref( GdkFont* font );
+		public extern static GdkFont* gdk_fontset_load( CUtf8String fontsetName );
+		public extern static GdkFont* gdk_fontset_load_for_display( GdkDisplay* display, CUtf8String fontsetName );
+		public extern static void gdk_string_extents( GdkFont* font, sbyte* @string, int* lbearing, int* rbearing, int* width, int* ascent, int* descent );
+		public extern static int gdk_string_height( GdkFont* font, sbyte* @string );
+		public extern static int gdk_string_measure( GdkFont* font, sbyte* @string );
+		public extern static int gdk_string_width( GdkFont* font, sbyte* @string );
+		public extern static void gdk_text_extents( GdkFont* font, CUtf8String text, int textLength, int* lbearing, int* rbearing, int* width, int* ascent, int* descent );
+		public extern static void gdk_text_extents_wc( GdkFont* font, uint* text, int textLength, int* lbearing, int* rbearing, int* width, int* ascent, int* descent );
+		public extern static int gdk_text_height( GdkFont* font, CUtf8String text, int textLength );
+		public extern static int gdk_text_measure( GdkFont* font, CUtf8String text, int textLength );
+		public extern static int gdk_text_width( GdkFont* font, CUtf8String text, int textLength );
+		public extern static int gdk_text_width_wc( GdkFont* font, uint* text, int textLength );
+
+		public extern static GdkImage* gdk_image_get( GdkDrawable* drawable, int x, int y, int width, int height );
+		public extern static ushort gdk_image_get_bits_per_pixel( GdkImage* image );
+		public extern static GdkByteOrder gdk_image_get_byte_order( GdkImage* image );
+		public extern static ushort gdk_image_get_bytes_per_line( GdkImage* image );
+		public extern static ushort gdk_image_get_bytes_per_pixel( GdkImage* image );
+		public extern static GdkColormap* gdk_image_get_colormap( GdkImage* image );
+		public extern static ushort gdk_image_get_depth( GdkImage* image );
+		public extern static int gdk_image_get_height( GdkImage* image );
+		public extern static GdkImageType gdk_image_get_image_type( GdkImage* image );
+		public extern static uint gdk_image_get_pixel( GdkImage* image, int x, int y );
+		public extern static void* gdk_image_get_pixels( GdkImage* image );
+		[BackendHintReadNone]
+		public extern static GType gdk_image_get_type();
+		public extern static GdkVisual* gdk_image_get_visual( GdkImage* image );
+		public extern static int gdk_image_get_width( GdkImage* image );
+		public extern static GdkImage* gdk_image_new( GdkImageType type, GdkVisual* visual, int width, int height );
+		public extern static void gdk_image_put_pixel( GdkImage* image, int x, int y, uint pixel );
+		public extern static GdkImage* gdk_image_ref( GdkImage* image );
+		public extern static void gdk_image_set_colormap( GdkImage* image, GdkColormap* colormap );
+		public extern static void gdk_image_unref( GdkImage* image );
+
+		public extern static void gdk_keymap_add_virtual_modifiers( GdkKeymap* keymap, GdkModifierType* state );
+		public extern static Boolean32 gdk_keymap_get_caps_lock_state( GdkKeymap* keymap );
+		public extern static GdkKeymap* gdk_keymap_get_default();
+		public extern static PangoDirection gdk_keymap_get_direction( GdkKeymap* keymap );
+		public extern static Boolean32 gdk_keymap_get_entries_for_keycode( GdkKeymap* keymap, uint hardwareKeycode, GdkKeymapKey** keys, uint** keyvals, int* nEntries );
+		public extern static Boolean32 gdk_keymap_get_entries_for_keyval( GdkKeymap* keymap, uint keyval, GdkKeymapKey** keys, int* nKeys );
+		public extern static GdkKeymap* gdk_keymap_get_for_display( GdkDisplay* display );
+		[BackendHintReadNone]
+		public extern static GType gdk_keymap_get_type();
+		public extern static Boolean32 gdk_keymap_have_bidi_layouts( GdkKeymap* keymap );
+		public extern static uint gdk_keymap_lookup_key( GdkKeymap* keymap, GdkKeymapKey* key );
+		public extern static Boolean32 gdk_keymap_map_virtual_modifiers( GdkKeymap* keymap, GdkModifierType* state );
+		public extern static Boolean32 gdk_keymap_translate_keyboard_state( GdkKeymap* keymap, uint hardwareKeycode, GdkModifierType state, int group, uint* keyval, int* effectiveGroup, int* level, GdkModifierType* consumedModifiers );
+		public extern static void gdk_keyval_convert_case( uint symbol, uint* lower, uint* upper );
+		public extern static uint gdk_keyval_from_name( CUtf8String keyvalName );
+		[BackendHintReadNone]
+		public extern static Boolean32 gdk_keyval_is_lower( uint keyval );
+		[BackendHintReadNone]
+		public extern static Boolean32 gdk_keyval_is_upper( uint keyval );
+		[BackendHintReadNone]
+		public extern static sbyte* gdk_keyval_name( uint keyval );
+		[BackendHintReadNone]
+		public extern static uint gdk_keyval_to_lower( uint keyval );
+		[BackendHintReadNone]
+		public extern static uint gdk_keyval_to_unicode( uint keyval );
+		[BackendHintReadNone]
+		public extern static uint gdk_keyval_to_upper( uint keyval );
+		[BackendHintReadNone]
+		public extern static uint gdk_unicode_to_keyval( uint wc );
+
+		public extern static PangoAttribute* gdk_pango_attr_emboss_color_new( GdkColor* color );
+		public extern static PangoAttribute* gdk_pango_attr_embossed_new( Boolean32 embossed );
+		public extern static PangoAttribute* gdk_pango_attr_stipple_new( GdkDrawable* stipple );
+		public extern static PangoContext* gdk_pango_context_get();
+		public extern static PangoContext* gdk_pango_context_get_for_screen( GdkScreen* screen );
+		public extern static void gdk_pango_context_set_colormap( PangoContext* context, GdkColormap* colormap );
+		public extern static GdkRegion* gdk_pango_layout_get_clip_region( PangoLayout* layout, int xOrigin, int yOrigin, int* indexRanges, int nRanges );
+		public extern static GdkRegion* gdk_pango_layout_line_get_clip_region( PangoLayoutLine* line, int xOrigin, int yOrigin, int* indexRanges, int nRanges );
+		public extern static PangoRenderer* gdk_pango_renderer_get_default( GdkScreen* screen );
+		[BackendHintReadNone]
+		public extern static GType gdk_pango_renderer_get_type();
+		public extern static PangoRenderer* gdk_pango_renderer_new( GdkScreen* screen );
+		public extern static void gdk_pango_renderer_set_drawable( GdkPangoRenderer* gdkRenderer, GdkDrawable* drawable );
+		public extern static void gdk_pango_renderer_set_gc( GdkPangoRenderer* gdkRenderer, GdkGC* gc );
+		public extern static void gdk_pango_renderer_set_override_color( GdkPangoRenderer* gdkRenderer, PangoRenderPart part, GdkColor* color );
+		public extern static void gdk_pango_renderer_set_stipple( GdkPangoRenderer* gdkRenderer, PangoRenderPart part, GdkDrawable* stipple );
+
+		public extern static GdkDrawable* gdk_bitmap_create_from_data( GdkDrawable* drawable, sbyte* data, int width, int height );
+		public extern static GdkDrawable* gdk_pixmap_colormap_create_from_xpm( GdkDrawable* drawable, GdkColormap* colormap, GdkDrawable** mask, GdkColor* transparentColor, CUtf8String filename );
+		public extern static GdkDrawable* gdk_pixmap_colormap_create_from_xpm_d( GdkDrawable* drawable, GdkColormap* colormap, GdkDrawable** mask, GdkColor* transparentColor, sbyte** data );
+		public extern static GdkDrawable* gdk_pixmap_create_from_data( GdkDrawable* drawable, sbyte* data, int width, int height, int depth, GdkColor* fg, GdkColor* bg );
+		public extern static GdkDrawable* gdk_pixmap_create_from_xpm( GdkDrawable* drawable, GdkDrawable** mask, GdkColor* transparentColor, CUtf8String filename );
+		public extern static GdkDrawable* gdk_pixmap_create_from_xpm_d( GdkDrawable* drawable, GdkDrawable** mask, GdkColor* transparentColor, sbyte** data );
+		public extern static GdkDrawable* gdk_pixmap_foreign_new( uint anid );
+		public extern static GdkDrawable* gdk_pixmap_foreign_new_for_display( GdkDisplay* display, uint anid );
+		public extern static GdkDrawable* gdk_pixmap_foreign_new_for_screen( GdkScreen* screen, uint anid, int width, int height, int depth );
+		public extern static void gdk_pixmap_get_size( GdkDrawable* pixmap, int* width, int* height );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixmap_get_type();
+		public extern static GdkDrawable* gdk_pixmap_lookup( uint anid );
+		public extern static GdkDrawable* gdk_pixmap_lookup_for_display( GdkDisplay* display, uint anid );
+		public extern static GdkDrawable* gdk_pixmap_new( GdkDrawable* drawable, int width, int height, int depth );
+
+		public extern static GdkAtom* gdk_atom_intern( CUtf8String atomName, Boolean32 onlyIfExists );
+		public extern static GdkAtom* gdk_atom_intern_static_string( CUtf8String atomName );
+		public extern static sbyte* gdk_atom_name( GdkAtom* atom );
+		public extern static void gdk_free_compound_text( CUtf8String ctext );
+		public extern static void gdk_free_text_list( sbyte** list );
+		public extern static void gdk_property_change( GdkDrawable* window, GdkAtom* property, GdkAtom* type, int format, GdkPropMode mode, byte* data, int nelements );
+		public extern static void gdk_property_delete( GdkDrawable* window, GdkAtom* property );
+		public extern static Boolean32 gdk_property_get( GdkDrawable* window, GdkAtom* property, GdkAtom* type, uintptr offset, uintptr length, int pdelete, GdkAtom** actualPropertyType, int* actualFormat, int* actualLength, byte** data );
+		public extern static int gdk_string_to_compound_text( sbyte* str, GdkAtom** encoding, int* format, byte** ctext, int* length );
+		public extern static int gdk_string_to_compound_text_for_display( GdkDisplay* display, sbyte* str, GdkAtom** encoding, int* format, byte** ctext, int* length );
+		public extern static int gdk_text_property_to_text_list( GdkAtom* encoding, int format, byte* text, int length, sbyte*** list );
+		public extern static int gdk_text_property_to_text_list_for_display( GdkDisplay* display, GdkAtom* encoding, int format, byte* text, int length, sbyte*** list );
+		public extern static int gdk_text_property_to_utf8_list( GdkAtom* encoding, int format, byte* text, int length, sbyte*** list );
+		public extern static int gdk_text_property_to_utf8_list_for_display( GdkDisplay* display, GdkAtom* encoding, int format, byte* text, int length, sbyte*** list );
+		public extern static Boolean32 gdk_utf8_to_compound_text( sbyte* str, GdkAtom** encoding, int* format, byte** ctext, int* length );
+		public extern static Boolean32 gdk_utf8_to_compound_text_for_display( GdkDisplay* display, sbyte* str, GdkAtom** encoding, int* format, byte** ctext, int* length );
+		public extern static sbyte* gdk_utf8_to_string_target( sbyte* str );
+
+		public extern static GdkRegion* gdk_region_copy( GdkRegion* region );
+		public extern static void gdk_region_destroy( GdkRegion* region );
+		public extern static Boolean32 gdk_region_empty( GdkRegion* region );
+		public extern static Boolean32 gdk_region_equal( GdkRegion* region1, GdkRegion* region2 );
+		public extern static void gdk_region_get_clipbox( GdkRegion* region, GdkRectangle* rectangle );
+		public extern static void gdk_region_get_rectangles( GdkRegion* region, GdkRectangle** rectangles, int* nRectangles );
+		public extern static void gdk_region_intersect( GdkRegion* source1, GdkRegion* source2 );
+		public extern static GdkRegion* gdk_region_new();
+		public extern static void gdk_region_offset( GdkRegion* region, int dx, int dy );
+		public extern static Boolean32 gdk_region_point_in( GdkRegion* region, int x, int y );
+		public extern static GdkRegion* gdk_region_polygon( GdkPoint* points, int nPoints, GdkFillRule fillRule );
+		public extern static Boolean32 gdk_region_rect_equal( GdkRegion* region, GdkRectangle* rectangle );
+		public extern static GdkOverlapType gdk_region_rect_in( GdkRegion* region, GdkRectangle* rectangle );
+		public extern static GdkRegion* gdk_region_rectangle( GdkRectangle* rectangle );
+		public extern static void gdk_region_shrink( GdkRegion* region, int dx, int dy );
+		public extern static void gdk_region_spans_intersect_foreach( GdkRegion* region, GdkSpan* spans, int nSpans, Boolean32 sorted, Functors.Action<GdkSpan*, void*> function, void* data );
+		public extern static void gdk_region_subtract( GdkRegion* source1, GdkRegion* source2 );
+		public extern static void gdk_region_union( GdkRegion* source1, GdkRegion* source2 );
+		public extern static void gdk_region_union_with_rect( GdkRegion* region, GdkRectangle* rect );
+		public extern static void gdk_region_xor( GdkRegion* source1, GdkRegion* source2 );
+
+		public extern static void gdk_selection_convert( GdkDrawable* requestor, GdkAtom* selection, GdkAtom* target, uint time_ );
+		public extern static GdkDrawable* gdk_selection_owner_get( GdkAtom* selection );
+		public extern static GdkDrawable* gdk_selection_owner_get_for_display( GdkDisplay* display, GdkAtom* selection );
+		public extern static Boolean32 gdk_selection_owner_set( GdkDrawable* owner, GdkAtom* selection, uint time_, Boolean32 sendEvent );
+		public extern static Boolean32 gdk_selection_owner_set_for_display( GdkDisplay* display, GdkDrawable* owner, GdkAtom* selection, uint time_, Boolean32 sendEvent );
+		public extern static int gdk_selection_property_get( GdkDrawable* requestor, byte** data, GdkAtom** propType, int* propFormat );
+		public extern static void gdk_selection_send_notify( uint requestor, GdkAtom* selection, GdkAtom* target, GdkAtom* property, uint time_ );
+		public extern static void gdk_selection_send_notify_for_display( GdkDisplay* display, uint requestor, GdkAtom* selection, GdkAtom* target, GdkAtom* property, uint time_ );
+
+		public extern static Boolean32 gdk_spawn_command_line_on_screen( GdkScreen* screen, sbyte* commandLine, GError** error );
+		public extern static Boolean32 gdk_spawn_on_screen( GdkScreen* screen, sbyte* workingDirectory, sbyte** argv, sbyte** envp, GSpawnFlags flags, Functors.Action<void*> childSetup, void* userData, int* childPid, GError** error );
+		public extern static Boolean32 gdk_spawn_on_screen_with_pipes( GdkScreen* screen, sbyte* workingDirectory, sbyte** argv, sbyte** envp, GSpawnFlags flags, Functors.Action<void*> childSetup, void* userData, int* childPid, int* standardInput, int* standardOutput, int* standardError, GError** error );
+
+		public extern static GdkDrawable* gdk_get_default_root_window();
+		public extern static GdkDrawable* gdk_offscreen_window_get_embedder( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_offscreen_window_get_pixmap( GdkDrawable* window );
+		public extern static void gdk_offscreen_window_set_embedder( GdkDrawable* window, GdkDrawable* embedder );
+		public extern static GdkPointerHooks* gdk_set_pointer_hooks( GdkPointerHooks* newHooks );
+		public extern static void gdk_set_sm_client_id( sbyte* smClientId );
+		public extern static void gdk_window_add_filter( GdkDrawable* window, Functors.Func<void*, GdkEvent*, void*, GdkFilterReturn> function, void* data );
+		public extern static GdkDrawable* gdk_window_at_pointer( int* winX, int* winY );
+		public extern static void gdk_window_beep( GdkDrawable* window );
+		public extern static void gdk_window_begin_move_drag( GdkDrawable* window, int button, int rootX, int rootY, uint timestamp );
+		public extern static void gdk_window_begin_paint_rect( GdkDrawable* window, GdkRectangle* rectangle );
+		public extern static void gdk_window_begin_paint_region( GdkDrawable* window, GdkRegion* region );
+		public extern static void gdk_window_begin_resize_drag( GdkDrawable* window, GdkWindowEdge edge, int button, int rootX, int rootY, uint timestamp );
+		public extern static void gdk_window_clear( GdkDrawable* window );
+		public extern static void gdk_window_clear_area( GdkDrawable* window, int x, int y, int width, int height );
+		public extern static void gdk_window_clear_area_e( GdkDrawable* window, int x, int y, int width, int height );
+		public extern static void gdk_window_configure_finished( GdkDrawable* window );
+		public extern static void gdk_window_constrain_size( GdkGeometry* geometry, uint flags, int width, int height, int* newWidth, int* newHeight );
+		public extern static void gdk_window_coords_from_parent( GdkDrawable* window, double parentX, double parentY, double* x, double* y );
+		public extern static void gdk_window_coords_to_parent( GdkDrawable* window, double x, double y, double* parentX, double* parentY );
+		public extern static cairo_surface_t* gdk_window_create_similar_surface( GdkDrawable* window, cairo_content_t content, int width, int height );
+		public extern static void gdk_window_deiconify( GdkDrawable* window );
+		public extern static void gdk_window_destroy( GdkDrawable* window );
+		public extern static void gdk_window_enable_synchronized_configure( GdkDrawable* window );
+		public extern static void gdk_window_end_paint( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_ensure_native( GdkDrawable* window );
+		public extern static void gdk_window_flush( GdkDrawable* window );
+		public extern static void gdk_window_focus( GdkDrawable* window, uint timestamp );
+		public extern static GdkDrawable* gdk_window_foreign_new( uint anid );
+		public extern static GdkDrawable* gdk_window_foreign_new_for_display( GdkDisplay* display, uint anid );
+		public extern static void gdk_window_freeze_toplevel_updates_libgtk_only( GdkDrawable* window );
+		public extern static void gdk_window_freeze_updates( GdkDrawable* window );
+		public extern static void gdk_window_fullscreen( GdkDrawable* window );
+		public extern static void gdk_window_geometry_changed( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_get_accept_focus( GdkDrawable* window );
+		public extern static cairo_pattern_t* gdk_window_get_background_pattern( GdkDrawable* window );
+		public extern static GList* gdk_window_get_children( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_get_composited( GdkDrawable* window );
+		public extern static GdkCursor* gdk_window_get_cursor( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_get_decorations( GdkDrawable* window, GdkWMDecoration* decorations );
+		public extern static Boolean32 gdk_window_get_deskrelative_origin( GdkDrawable* window, int* x, int* y );
+		public extern static GdkDisplay* gdk_window_get_display( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_window_get_effective_parent( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_window_get_effective_toplevel( GdkDrawable* window );
+		public extern static GdkEventMask gdk_window_get_events( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_get_focus_on_map( GdkDrawable* window );
+		public extern static void gdk_window_get_frame_extents( GdkDrawable* window, GdkRectangle* rect );
+		public extern static void gdk_window_get_geometry( GdkDrawable* window, int* x, int* y, int* width, int* height, int* depth );
+		public extern static GdkDrawable* gdk_window_get_group( GdkDrawable* window );
+		public extern static int gdk_window_get_height( GdkDrawable* window );
+		public extern static void gdk_window_get_internal_paint_info( GdkDrawable* window, GdkDrawable** realDrawable, int* xOffset, int* yOffset );
+		public extern static Boolean32 gdk_window_get_modal_hint( GdkDrawable* window );
+		public extern static int gdk_window_get_origin( GdkDrawable* window, int* x, int* y );
+		public extern static GdkDrawable* gdk_window_get_parent( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_window_get_pointer( GdkDrawable* window, int* x, int* y, GdkModifierType* mask );
+		public extern static void gdk_window_get_position( GdkDrawable* window, int* x, int* y );
+		public extern static void gdk_window_get_root_coords( GdkDrawable* window, int x, int y, int* rootX, int* rootY );
+		public extern static void gdk_window_get_root_origin( GdkDrawable* window, int* x, int* y );
+		public extern static GdkScreen* gdk_window_get_screen( GdkDrawable* window );
+		public extern static GdkWindowState gdk_window_get_state( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_window_get_toplevel( GdkDrawable* window );
+		public extern static GList* gdk_window_get_toplevels();
+		public extern static GdkWindowTypeHint gdk_window_get_type_hint( GdkDrawable* window );
+		public extern static GdkRegion* gdk_window_get_update_area( GdkDrawable* window );
+		public extern static void gdk_window_get_user_data( GdkDrawable* window, void** data );
+		public extern static GdkVisual* gdk_window_get_visual( GdkDrawable* window );
+		public extern static int gdk_window_get_width( GdkDrawable* window );
+		public extern static GdkWindowType gdk_window_get_window_type( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_has_native( GdkDrawable* window );
+		public extern static void gdk_window_hide( GdkDrawable* window );
+		public extern static void gdk_window_iconify( GdkDrawable* window );
+		public extern static void gdk_window_input_shape_combine_mask( GdkDrawable* window, GdkDrawable* mask, int x, int y );
+		public extern static void gdk_window_input_shape_combine_region( GdkDrawable* window, GdkRegion* shapeRegion, int offsetX, int offsetY );
+		public extern static void gdk_window_invalidate_maybe_recurse( GdkDrawable* window, GdkRegion* region, Functors.Func<GdkDrawable*, void*, Boolean32> childFunc, void* userData );
+		public extern static void gdk_window_invalidate_rect( GdkDrawable* window, GdkRectangle* rect, Boolean32 invalidateChildren );
+		public extern static void gdk_window_invalidate_region( GdkDrawable* window, GdkRegion* region, Boolean32 invalidateChildren );
+		public extern static Boolean32 gdk_window_is_destroyed( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_is_input_only( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_is_shaped( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_is_viewable( GdkDrawable* window );
+		public extern static Boolean32 gdk_window_is_visible( GdkDrawable* window );
+		public extern static GdkDrawable* gdk_window_lookup( uint anid );
+		public extern static GdkDrawable* gdk_window_lookup_for_display( GdkDisplay* display, uint anid );
+		public extern static void gdk_window_lower( GdkDrawable* window );
+		public extern static void gdk_window_maximize( GdkDrawable* window );
+		public extern static void gdk_window_merge_child_input_shapes( GdkDrawable* window );
+		public extern static void gdk_window_merge_child_shapes( GdkDrawable* window );
+		public extern static void gdk_window_move( GdkDrawable* window, int x, int y );
+		public extern static void gdk_window_move_region( GdkDrawable* window, GdkRegion* region, int dx, int dy );
+		public extern static void gdk_window_move_resize( GdkDrawable* window, int x, int y, int width, int height );
+		public extern static GdkDrawable* gdk_window_new( GdkDrawable* parent, GdkWindowAttr* attributes, int attributesMask );
+		[BackendHintReadNone]
+		public extern static GType gdk_window_object_get_type();
+		public extern static GList* gdk_window_peek_children( GdkDrawable* window );
+		public extern static void gdk_window_process_all_updates();
+		public extern static void gdk_window_process_updates( GdkDrawable* window, Boolean32 updateChildren );
+		public extern static void gdk_window_raise( GdkDrawable* window );
+		public extern static void gdk_window_redirect_to_drawable( GdkDrawable* window, GdkDrawable* drawable, int srcX, int srcY, int destX, int destY, int width, int height );
+		public extern static void gdk_window_register_dnd( GdkDrawable* window );
+		public extern static void gdk_window_remove_filter( GdkDrawable* window, Functors.Func<void*, GdkEvent*, void*, GdkFilterReturn> function, void* data );
+		public extern static void gdk_window_remove_redirection( GdkDrawable* window );
+		public extern static void gdk_window_reparent( GdkDrawable* window, GdkDrawable* newParent, int x, int y );
+		public extern static void gdk_window_resize( GdkDrawable* window, int width, int height );
+		public extern static void gdk_window_restack( GdkDrawable* window, GdkDrawable* sibling, Boolean32 above );
+		public extern static void gdk_window_scroll( GdkDrawable* window, int dx, int dy );
+		public extern static void gdk_window_set_accept_focus( GdkDrawable* window, Boolean32 acceptFocus );
+		public extern static void gdk_window_set_back_pixmap( GdkDrawable* window, GdkDrawable* pixmap, Boolean32 parentRelative );
+		public extern static void gdk_window_set_background( GdkDrawable* window, GdkColor* color );
+		public extern static void gdk_window_set_child_input_shapes( GdkDrawable* window );
+		public extern static void gdk_window_set_child_shapes( GdkDrawable* window );
+		public extern static void gdk_window_set_composited( GdkDrawable* window, Boolean32 composited );
+		public extern static void gdk_window_set_cursor( GdkDrawable* window, GdkCursor* cursor );
+		public extern static void gdk_window_set_debug_updates( Boolean32 setting );
+		public extern static void gdk_window_set_decorations( GdkDrawable* window, GdkWMDecoration decorations );
+		public extern static void gdk_window_set_events( GdkDrawable* window, GdkEventMask eventMask );
+		public extern static void gdk_window_set_focus_on_map( GdkDrawable* window, Boolean32 focusOnMap );
+		public extern static void gdk_window_set_functions( GdkDrawable* window, GdkWMFunction functions );
+		public extern static void gdk_window_set_geometry_hints( GdkDrawable* window, GdkGeometry* geometry, GdkWindowHints geomMask );
+		public extern static void gdk_window_set_group( GdkDrawable* window, GdkDrawable* leader );
+		public extern static void gdk_window_set_hints( GdkDrawable* window, int x, int y, int minWidth, int minHeight, int maxWidth, int maxHeight, int flags );
+		public extern static void gdk_window_set_icon( GdkDrawable* window, GdkDrawable* iconWindow, GdkDrawable* pixmap, GdkDrawable* mask );
+		public extern static void gdk_window_set_icon_list( GdkDrawable* window, GList* pixbufs );
+		public extern static void gdk_window_set_icon_name( GdkDrawable* window, CUtf8String name );
+		public extern static void gdk_window_set_keep_above( GdkDrawable* window, Boolean32 setting );
+		public extern static void gdk_window_set_keep_below( GdkDrawable* window, Boolean32 setting );
+		public extern static void gdk_window_set_modal_hint( GdkDrawable* window, Boolean32 modal );
+		public extern static void gdk_window_set_opacity( GdkDrawable* window, double opacity );
+		public extern static void gdk_window_set_override_redirect( GdkDrawable* window, Boolean32 overrideRedirect );
+		public extern static void gdk_window_set_role( GdkDrawable* window, sbyte* role );
+		public extern static void gdk_window_set_skip_pager_hint( GdkDrawable* window, Boolean32 skipsPager );
+		public extern static void gdk_window_set_skip_taskbar_hint( GdkDrawable* window, Boolean32 skipsTaskbar );
+		public extern static void gdk_window_set_startup_id( GdkDrawable* window, sbyte* startupId );
+		public extern static Boolean32 gdk_window_set_static_gravities( GdkDrawable* window, Boolean32 useStatic );
+		public extern static void gdk_window_set_title( GdkDrawable* window, sbyte* title );
+		public extern static void gdk_window_set_transient_for( GdkDrawable* window, GdkDrawable* parent );
+		public extern static void gdk_window_set_type_hint( GdkDrawable* window, GdkWindowTypeHint hint );
+		public extern static void gdk_window_set_urgency_hint( GdkDrawable* window, Boolean32 urgent );
+		public extern static void gdk_window_set_user_data( GdkDrawable* window, void* userData );
+		public extern static void gdk_window_shape_combine_mask( GdkDrawable* window, GdkDrawable* mask, int x, int y );
+		public extern static void gdk_window_shape_combine_region( GdkDrawable* window, GdkRegion* shapeRegion, int offsetX, int offsetY );
+		public extern static void gdk_window_show( GdkDrawable* window );
+		public extern static void gdk_window_show_unraised( GdkDrawable* window );
+		public extern static void gdk_window_stick( GdkDrawable* window );
+		public extern static void gdk_window_thaw_toplevel_updates_libgtk_only( GdkDrawable* window );
+		public extern static void gdk_window_thaw_updates( GdkDrawable* window );
+		public extern static void gdk_window_unfullscreen( GdkDrawable* window );
+		public extern static void gdk_window_unmaximize( GdkDrawable* window );
+		public extern static void gdk_window_unstick( GdkDrawable* window );
+		public extern static void gdk_window_withdraw( GdkDrawable* window );
+
+		public extern static void gdk_test_render_sync( GdkDrawable* window );
+		public extern static Boolean32 gdk_test_simulate_button( GdkDrawable* window, int x, int y, uint button, GdkModifierType modifiers, GdkEventType buttonPressrelease );
+		public extern static Boolean32 gdk_test_simulate_key( GdkDrawable* window, int x, int y, uint keyval, GdkModifierType modifiers, GdkEventType keyPressrelease );
+
+		public extern static GList* gdk_list_visuals();
+		public extern static void gdk_query_depths( int** depths, int* count );
+		public extern static void gdk_query_visual_types( GdkVisualType** visualTypes, int* count );
+		public extern static GdkVisual* gdk_visual_get_best();
+		public extern static int gdk_visual_get_best_depth();
+		public extern static GdkVisualType gdk_visual_get_best_type();
+		public extern static GdkVisual* gdk_visual_get_best_with_both( int depth, GdkVisualType visualType );
+		public extern static GdkVisual* gdk_visual_get_best_with_depth( int depth );
+		public extern static GdkVisual* gdk_visual_get_best_with_type( GdkVisualType visualType );
+		public extern static int gdk_visual_get_bits_per_rgb( GdkVisual* visual );
+		public extern static void gdk_visual_get_blue_pixel_details( GdkVisual* visual, uint* mask, int* shift, int* precision );
+		public extern static GdkByteOrder gdk_visual_get_byte_order( GdkVisual* visual );
+		public extern static int gdk_visual_get_colormap_size( GdkVisual* visual );
+		public extern static int gdk_visual_get_depth( GdkVisual* visual );
+		public extern static void gdk_visual_get_green_pixel_details( GdkVisual* visual, uint* mask, int* shift, int* precision );
+		public extern static void gdk_visual_get_red_pixel_details( GdkVisual* visual, uint* mask, int* shift, int* precision );
+		public extern static GdkScreen* gdk_visual_get_screen( GdkVisual* visual );
+		public extern static GdkVisual* gdk_visual_get_system();
+		[BackendHintReadNone]
+		public extern static GType gdk_visual_get_type();
+		public extern static GdkVisualType gdk_visual_get_visual_type( GdkVisual* visual );
+
+		public extern static void gdk_add_option_entries_libgtk_only( GOptionGroup* group );
+		public extern static void gdk_beep();
+		public extern static int gdk_error_trap_pop();
+		public extern static void gdk_error_trap_push();
+		public extern static Boolean32 gdk_event_send_client_message( GdkEvent* @event, uint winid );
+		public extern static Boolean32 gdk_event_send_client_message_for_display( GdkDisplay* display, GdkEvent* @event, uint winid );
+		public extern static void gdk_event_send_clientmessage_toall( GdkEvent* @event );
+		public extern static void gdk_exit( int errorCode );
+		public extern static void gdk_flush();
+		public extern static sbyte* gdk_get_display();
+		public extern static sbyte* gdk_get_display_arg_name();
+		public extern static sbyte* gdk_get_program_class();
+		public extern static Boolean32 gdk_get_use_xshm();
+		public extern static void gdk_init( int* argc, sbyte*** argv );
+		public extern static Boolean32 gdk_init_check( int* argc, sbyte*** argv );
+		public extern static int gdk_input_add( int source, GdkInputCondition condition, Functors.Action<void*, int, GdkInputCondition> function, void* data );
+		public extern static int gdk_input_add_full( int source, GdkInputCondition condition, Functors.Action<void*, int, GdkInputCondition> function, void* data, Functors.Action<void*> destroy );
+		public extern static void gdk_input_remove( int tag );
+		public extern static GdkGrabStatus gdk_keyboard_grab( GdkDrawable* window, Boolean32 ownerEvents, uint time_ );
+		public extern static Boolean32 gdk_keyboard_grab_info_libgtk_only( GdkDisplay* display, GdkDrawable** grabWindow, Boolean32* ownerEvents );
+		public extern static void gdk_keyboard_ungrab( uint time_ );
+		public extern static int gdk_mbstowcs( uint* dest, sbyte* src, int destMax );
+		public extern static void gdk_notify_startup_complete();
+		public extern static void gdk_notify_startup_complete_with_id( sbyte* startupId );
+		public extern static void gdk_parse_args( int* argc, sbyte*** argv );
+		public extern static GdkGrabStatus gdk_pointer_grab( GdkDrawable* window, Boolean32 ownerEvents, GdkEventMask eventMask, GdkDrawable* confineTo, GdkCursor* cursor, uint time_ );
+		public extern static Boolean32 gdk_pointer_grab_info_libgtk_only( GdkDisplay* display, GdkDrawable** grabWindow, Boolean32* ownerEvents );
+		public extern static Boolean32 gdk_pointer_is_grabbed();
+		public extern static void gdk_pointer_ungrab( uint time_ );
+		public extern static void gdk_pre_parse_libgtk_only();
+		[BackendHintReadNone]
+		public extern static GType gdk_rectangle_get_type();
+		public extern static Boolean32 gdk_rectangle_intersect( GdkRectangle* src1, GdkRectangle* src2, GdkRectangle* dest );
+		public extern static void gdk_rectangle_union( GdkRectangle* src1, GdkRectangle* src2, GdkRectangle* dest );
+		[BackendHintReadNone]
+		public extern static int gdk_screen_height();
+		[BackendHintReadNone]
+		public extern static int gdk_screen_height_mm();
+		[BackendHintReadNone]
+		public extern static int gdk_screen_width();
+		[BackendHintReadNone]
+		public extern static int gdk_screen_width_mm();
+		public extern static void gdk_set_double_click_time( uint msec );
+		public extern static sbyte* gdk_set_locale();
+		public extern static void gdk_set_program_class( sbyte* programClass );
+		public extern static void gdk_set_use_xshm( Boolean32 useXshm );
+		public extern static uint gdk_threads_add_idle( Functors.Func<void*, Boolean32> function, void* data );
+		public extern static uint gdk_threads_add_idle_full( int priority, Functors.Func<void*, Boolean32> function, void* data, Functors.Action<void*> notify );
+		public extern static uint gdk_threads_add_timeout( uint interval, Functors.Func<void*, Boolean32> function, void* data );
+		public extern static uint gdk_threads_add_timeout_full( int priority, uint interval, Functors.Func<void*, Boolean32> function, void* data, Functors.Action<void*> notify );
+		public extern static uint gdk_threads_add_timeout_seconds( uint interval, Functors.Func<void*, Boolean32> function, void* data );
+		public extern static uint gdk_threads_add_timeout_seconds_full( int priority, uint interval, Functors.Func<void*, Boolean32> function, void* data, Functors.Action<void*> notify );
+		public extern static void gdk_threads_enter();
+		public extern static void gdk_threads_init();
+		public extern static void gdk_threads_leave();
+		public extern static void gdk_threads_set_lock_functions( Functors.Action enterFn, Functors.Action leaveFn );
+		public extern static sbyte* gdk_wcstombs( uint* src );
+	}
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libgdk_pixbuf-2.0.so.0" )]
+	public static partial struct GdkPixbufApi {
+		public extern static GdkPixbuf* gdk_pixbuf_add_alpha( GdkPixbuf* pixbuf, Boolean32 substituteColor, byte r, byte g, byte b );
+		public extern static GdkPixbuf* gdk_pixbuf_apply_embedded_orientation( GdkPixbuf* src );
+		public extern static int gdk_pixbuf_calculate_rowstride( GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height );
+		public extern static GdkPixbuf* gdk_pixbuf_copy( GdkPixbuf* pixbuf );
+		public extern static void gdk_pixbuf_copy_area( GdkPixbuf* srcPixbuf, int srcX, int srcY, int width, int height, GdkPixbuf* destPixbuf, int destX, int destY );
+		public extern static Boolean32 gdk_pixbuf_copy_options( GdkPixbuf* srcPixbuf, GdkPixbuf* destPixbuf );
+		public extern static uint gdk_pixbuf_error_quark();
+		public extern static void gdk_pixbuf_fill( GdkPixbuf* pixbuf, uint pixel );
+		public extern static int gdk_pixbuf_get_bits_per_sample( GdkPixbuf* pixbuf );
+		public extern static uint gdk_pixbuf_get_byte_length( GdkPixbuf* pixbuf );
+		public extern static GdkColorspace gdk_pixbuf_get_colorspace( GdkPixbuf* pixbuf );
+		public extern static Boolean32 gdk_pixbuf_get_has_alpha( GdkPixbuf* pixbuf );
+		public extern static int gdk_pixbuf_get_height( GdkPixbuf* pixbuf );
+		public extern static int gdk_pixbuf_get_n_channels( GdkPixbuf* pixbuf );
+		public extern static sbyte* gdk_pixbuf_get_option( GdkPixbuf* pixbuf, sbyte* key );
+		public extern static GHashTable* gdk_pixbuf_get_options( GdkPixbuf* pixbuf );
+		public extern static byte* gdk_pixbuf_get_pixels( GdkPixbuf* pixbuf );
+		public extern static byte* gdk_pixbuf_get_pixels_with_length( GdkPixbuf* pixbuf, uint* length );
+		public extern static int gdk_pixbuf_get_rowstride( GdkPixbuf* pixbuf );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_get_type();
+		public extern static int gdk_pixbuf_get_width( GdkPixbuf* pixbuf );
+		public extern static GdkPixbuf* gdk_pixbuf_new( GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_bytes( GBytes* data, GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height, int rowstride );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_data( byte* data, GdkColorspace colorspace, Boolean32 hasAlpha, int bitsPerSample, int width, int height, int rowstride, Functors.Action<byte*, void*> destroyFn, void* destroyFnData );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_file( CUtf8String filename, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_file_at_scale( CUtf8String filename, int width, int height, Boolean32 preserveAspectRatio, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_file_at_size( CUtf8String filename, int width, int height, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_inline( int dataLength, byte* data, Boolean32 copyPixels, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_resource( sbyte* resourcePath, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_resource_at_scale( sbyte* resourcePath, int width, int height, Boolean32 preserveAspectRatio, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_stream( GInputStream* stream, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_new_from_stream_async( GInputStream* stream, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_stream_at_scale( GInputStream* stream, int width, int height, Boolean32 preserveAspectRatio, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_new_from_stream_at_scale_async( GInputStream* stream, int width, int height, Boolean32 preserveAspectRatio, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_stream_finish( GAsyncResult* asyncResult, GError** error );
+		public extern static GdkPixbuf* gdk_pixbuf_new_from_xpm_data( sbyte** data );
+		public extern static GdkPixbuf* gdk_pixbuf_new_subpixbuf( GdkPixbuf* srcPixbuf, int srcX, int srcY, int width, int height );
+		public extern static GBytes* gdk_pixbuf_read_pixel_bytes( GdkPixbuf* pixbuf );
+		public extern static byte* gdk_pixbuf_read_pixels( GdkPixbuf* pixbuf );
+		public extern static GdkPixbuf* gdk_pixbuf_ref( GdkPixbuf* pixbuf );
+		public extern static Boolean32 gdk_pixbuf_remove_option( GdkPixbuf* pixbuf, sbyte* key );
+		public extern static void gdk_pixbuf_saturate_and_pixelate( GdkPixbuf* src, GdkPixbuf* dest, float saturation, Boolean32 pixelate );
+		public extern static Boolean32 gdk_pixbuf_save_to_bufferv( GdkPixbuf* pixbuf, sbyte** buffer, uint* bufferSize, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
+		public extern static Boolean32 gdk_pixbuf_save_to_callbackv( GdkPixbuf* pixbuf, Functors.Func<sbyte*, uint, GError**, void*, Boolean32> saveFunc, void* userData, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
+		public extern static Boolean32 gdk_pixbuf_save_to_stream_finish( GAsyncResult* asyncResult, GError** error );
+		public extern static Boolean32 gdk_pixbuf_save_to_streamv( GdkPixbuf* pixbuf, GOutputStream* stream, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_save_to_streamv_async( GdkPixbuf* pixbuf, GOutputStream* stream, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static Boolean32 gdk_pixbuf_savev( GdkPixbuf* pixbuf, CUtf8String filename, sbyte* type, sbyte** optionKeys, sbyte** optionValues, GError** error );
+		public extern static Boolean32 gdk_pixbuf_set_option( GdkPixbuf* pixbuf, sbyte* key, sbyte* value );
+		public extern static void gdk_pixbuf_unref( GdkPixbuf* pixbuf );
+
+		public extern static void gdk_pixbuf_composite( GdkPixbuf* src, GdkPixbuf* dest, int destX, int destY, int destWidth, int destHeight, double offsetX, double offsetY, double scaleX, double scaleY, GdkInterpType interpType, int overallAlpha );
+		public extern static void gdk_pixbuf_composite_color( GdkPixbuf* src, GdkPixbuf* dest, int destX, int destY, int destWidth, int destHeight, double offsetX, double offsetY, double scaleX, double scaleY, GdkInterpType interpType, int overallAlpha, int checkX, int checkY, int checkSize, uint color1, uint color2 );
+		public extern static GdkPixbuf* gdk_pixbuf_composite_color_simple( GdkPixbuf* src, int destWidth, int destHeight, GdkInterpType interpType, int overallAlpha, int checkSize, uint color1, uint color2 );
+		public extern static GdkPixbuf* gdk_pixbuf_flip( GdkPixbuf* src, Boolean32 horizontal );
+		public extern static GdkPixbuf* gdk_pixbuf_rotate_simple( GdkPixbuf* src, GdkPixbufRotation angle );
+		public extern static void gdk_pixbuf_scale( GdkPixbuf* src, GdkPixbuf* dest, int destX, int destY, int destWidth, int destHeight, double offsetX, double offsetY, double scaleX, double scaleY, GdkInterpType interpType );
+		public extern static GdkPixbuf* gdk_pixbuf_scale_simple( GdkPixbuf* src, int destWidth, int destHeight, GdkInterpType interpType );
+
+		public extern static int gdk_pixbuf_animation_get_height( GdkPixbufAnimation* animation );
+		public extern static GdkPixbufAnimationIter* gdk_pixbuf_animation_get_iter( GdkPixbufAnimation* animation, GTimeVal* startTime );
+		public extern static GdkPixbuf* gdk_pixbuf_animation_get_static_image( GdkPixbufAnimation* animation );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_animation_get_type();
+		public extern static int gdk_pixbuf_animation_get_width( GdkPixbufAnimation* animation );
+		public extern static Boolean32 gdk_pixbuf_animation_is_static_image( GdkPixbufAnimation* animation );
+		public extern static Boolean32 gdk_pixbuf_animation_iter_advance( GdkPixbufAnimationIter* iter, GTimeVal* currentTime );
+		public extern static int gdk_pixbuf_animation_iter_get_delay_time( GdkPixbufAnimationIter* iter );
+		public extern static GdkPixbuf* gdk_pixbuf_animation_iter_get_pixbuf( GdkPixbufAnimationIter* iter );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_animation_iter_get_type();
+		public extern static Boolean32 gdk_pixbuf_animation_iter_on_currently_loading_frame( GdkPixbufAnimationIter* iter );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_file( CUtf8String filename, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_resource( sbyte* resourcePath, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_stream( GInputStream* stream, GCancellable* cancellable, GError** error );
+		public extern static void gdk_pixbuf_animation_new_from_stream_async( GInputStream* stream, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_new_from_stream_finish( GAsyncResult* asyncResult, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_animation_ref( GdkPixbufAnimation* animation );
+		public extern static void gdk_pixbuf_animation_unref( GdkPixbufAnimation* animation );
+
+		public extern static void gdk_pixbuf_simple_anim_add_frame( GdkPixbufSimpleAnim* animation, GdkPixbuf* pixbuf );
+		public extern static Boolean32 gdk_pixbuf_simple_anim_get_loop( GdkPixbufSimpleAnim* animation );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_simple_anim_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_simple_anim_iter_get_type();
+		public extern static GdkPixbufSimpleAnim* gdk_pixbuf_simple_anim_new( int width, int height, float rate );
+		public extern static void gdk_pixbuf_simple_anim_set_loop( GdkPixbufSimpleAnim* animation, Boolean32 loop );
+
+		public extern static GdkPixbufFormat* gdk_pixbuf_format_copy( GdkPixbufFormat* format );
+		public extern static void gdk_pixbuf_format_free( GdkPixbufFormat* format );
+		public extern static sbyte* gdk_pixbuf_format_get_description( GdkPixbufFormat* format );
+		public extern static sbyte** gdk_pixbuf_format_get_extensions( GdkPixbufFormat* format );
+		public extern static sbyte* gdk_pixbuf_format_get_license( GdkPixbufFormat* format );
+		public extern static sbyte** gdk_pixbuf_format_get_mime_types( GdkPixbufFormat* format );
+		public extern static sbyte* gdk_pixbuf_format_get_name( GdkPixbufFormat* format );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_format_get_type();
+		public extern static Boolean32 gdk_pixbuf_format_is_disabled( GdkPixbufFormat* format );
+		public extern static Boolean32 gdk_pixbuf_format_is_save_option_supported( GdkPixbufFormat* format, sbyte* optionKey );
+		public extern static Boolean32 gdk_pixbuf_format_is_scalable( GdkPixbufFormat* format );
+		public extern static Boolean32 gdk_pixbuf_format_is_writable( GdkPixbufFormat* format );
+		public extern static void gdk_pixbuf_format_set_disabled( GdkPixbufFormat* format, Boolean32 disabled );
+		public extern static GdkPixbufFormat* gdk_pixbuf_get_file_info( CUtf8String filename, int* width, int* height );
+		public extern static void gdk_pixbuf_get_file_info_async( CUtf8String filename, GCancellable* cancellable, Functors.Action<GObject*, GAsyncResult*, void*> callback, void* userData );
+		public extern static GdkPixbufFormat* gdk_pixbuf_get_file_info_finish( GAsyncResult* asyncResult, int* width, int* height, GError** error );
+		public extern static GSList* gdk_pixbuf_get_formats();
+		public extern static Boolean32 gdk_pixbuf_init_modules( sbyte* path, GError** error );
+
+		public extern static Boolean32 gdk_pixbuf_loader_close( GdkPixbufLoader* loader, GError** error );
+		public extern static GdkPixbufAnimation* gdk_pixbuf_loader_get_animation( GdkPixbufLoader* loader );
+		public extern static GdkPixbufFormat* gdk_pixbuf_loader_get_format( GdkPixbufLoader* loader );
+		public extern static GdkPixbuf* gdk_pixbuf_loader_get_pixbuf( GdkPixbufLoader* loader );
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_loader_get_type();
+		public extern static GdkPixbufLoader* gdk_pixbuf_loader_new();
+		public extern static GdkPixbufLoader* gdk_pixbuf_loader_new_with_mime_type( sbyte* mimeType, GError** error );
+		public extern static GdkPixbufLoader* gdk_pixbuf_loader_new_with_type( sbyte* imageType, GError** error );
+		public extern static void gdk_pixbuf_loader_set_size( GdkPixbufLoader* loader, int width, int height );
+		public extern static Boolean32 gdk_pixbuf_loader_write( GdkPixbufLoader* loader, byte* buf, uint count, GError** error );
+		public extern static Boolean32 gdk_pixbuf_loader_write_bytes( GdkPixbufLoader* loader, GBytes* buffer, GError** error );
+
+		[BackendHintReadNone]
+		public extern static GType gdk_colorspace_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_interp_type_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_alpha_mode_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_error_get_type();
+		[BackendHintReadNone]
+		public extern static GType gdk_pixbuf_rotation_get_type();
+	}
+	public enum GdkAxisUse : uint {
+		GDK_AXIS_IGNORE =   0,
+		GDK_AXIS_X =        1,
+		GDK_AXIS_Y =        2,
+		GDK_AXIS_PRESSURE = 3,
+		GDK_AXIS_XTILT =    4,
+		GDK_AXIS_YTILT =    5,
+		GDK_AXIS_WHEEL =    6,
+		GDK_AXIS_LAST =     7,
+	}
+	public enum GdkByteOrder : uint {
+		GDK_LSB_FIRST = 0,
+		GDK_MSB_FIRST = 1,
+	}
+	public enum GdkCapStyle : uint {
+		GDK_CAP_NOT_LAST =   0,
+		GDK_CAP_BUTT =       1,
+		GDK_CAP_ROUND =      2,
+		GDK_CAP_PROJECTING = 3,
+	}
+	public enum GdkColorspace : uint {
+		GDK_COLORSPACE_RGB = 0,
+	}
+	public enum GdkCrossingMode : uint {
+		GDK_CROSSING_NORMAL =        0,
+		GDK_CROSSING_GRAB =          1,
+		GDK_CROSSING_UNGRAB =        2,
+		GDK_CROSSING_GTK_GRAB =      3,
+		GDK_CROSSING_GTK_UNGRAB =    4,
+		GDK_CROSSING_STATE_CHANGED = 5,
+	}
+	public enum GdkCursorType : int {
+		GDK_X_CURSOR =             0,
+		GDK_ARROW =                2,
+		GDK_BASED_ARROW_DOWN =     4,
+		GDK_BASED_ARROW_UP =       6,
+		GDK_BOAT =                 8,
+		GDK_BOGOSITY =            10,
+		GDK_BOTTOM_LEFT_CORNER =  12,
+		GDK_BOTTOM_RIGHT_CORNER = 14,
+		GDK_BOTTOM_SIDE =         16,
+		GDK_BOTTOM_TEE =          18,
+		GDK_BOX_SPIRAL =          20,
+		GDK_CENTER_PTR =          22,
+		GDK_CIRCLE =              24,
+		GDK_CLOCK =               26,
+		GDK_COFFEE_MUG =          28,
+		GDK_CROSS =               30,
+		GDK_CROSS_REVERSE =       32,
+		GDK_CROSSHAIR =           34,
+		GDK_DIAMOND_CROSS =       36,
+		GDK_DOT =                 38,
+		GDK_DOTBOX =              40,
+		GDK_DOUBLE_ARROW =        42,
+		GDK_DRAFT_LARGE =         44,
+		GDK_DRAFT_SMALL =         46,
+		GDK_DRAPED_BOX =          48,
+		GDK_EXCHANGE =            50,
+		GDK_FLEUR =               52,
+		GDK_GOBBLER =             54,
+		GDK_GUMBY =               56,
+		GDK_HAND1 =               58,
+		GDK_HAND2 =               60,
+		GDK_HEART =               62,
+		GDK_ICON =                64,
+		GDK_IRON_CROSS =          66,
+		GDK_LEFT_PTR =            68,
+		GDK_LEFT_SIDE =           70,
+		GDK_LEFT_TEE =            72,
+		GDK_LEFTBUTTON =          74,
+		GDK_LL_ANGLE =            76,
+		GDK_LR_ANGLE =            78,
+		GDK_MAN =                 80,
+		GDK_MIDDLEBUTTON =        82,
+		GDK_MOUSE =               84,
+		GDK_PENCIL =              86,
+		GDK_PIRATE =              88,
+		GDK_PLUS =                90,
+		GDK_QUESTION_ARROW =      92,
+		GDK_RIGHT_PTR =           94,
+		GDK_RIGHT_SIDE =          96,
+		GDK_RIGHT_TEE =           98,
+		GDK_RIGHTBUTTON =        100,
+		GDK_RTL_LOGO =           102,
+		GDK_SAILBOAT =           104,
+		GDK_SB_DOWN_ARROW =      106,
+		GDK_SB_H_DOUBLE_ARROW =  108,
+		GDK_SB_LEFT_ARROW =      110,
+		GDK_SB_RIGHT_ARROW =     112,
+		GDK_SB_UP_ARROW =        114,
+		GDK_SB_V_DOUBLE_ARROW =  116,
+		GDK_SHUTTLE =            118,
+		GDK_SIZING =             120,
+		GDK_SPIDER =             122,
+		GDK_SPRAYCAN =           124,
+		GDK_STAR =               126,
+		GDK_TARGET =             128,
+		GDK_TCROSS =             130,
+		GDK_TOP_LEFT_ARROW =     132,
+		GDK_TOP_LEFT_CORNER =    134,
+		GDK_TOP_RIGHT_CORNER =   136,
+		GDK_TOP_SIDE =           138,
+		GDK_TOP_TEE =            140,
+		GDK_TREK =               142,
+		GDK_UL_ANGLE =           144,
+		GDK_UMBRELLA =           146,
+		GDK_UR_ANGLE =           148,
+		GDK_WATCH =              150,
+		GDK_XTERM =              152,
+		GDK_LAST_CURSOR =        153,
+		GDK_BLANK_CURSOR =        -2,
+		GDK_CURSOR_IS_PIXMAP =    -1,
+	}
+	[Flags]
+	public enum GdkDragAction : uint {
+		None =                0,
+		GDK_ACTION_DEFAULT =  1,
+		GDK_ACTION_COPY =     2,
+		GDK_ACTION_MOVE =     4,
+		GDK_ACTION_LINK =     8,
+		GDK_ACTION_PRIVATE = 16,
+		GDK_ACTION_ASK =     32,
+	}
+	public enum GdkDragProtocol : uint {
+		GDK_DRAG_PROTO_MOTIF =           0,
+		GDK_DRAG_PROTO_XDND =            1,
+		GDK_DRAG_PROTO_ROOTWIN =         2,
+		GDK_DRAG_PROTO_NONE =            3,
+		GDK_DRAG_PROTO_WIN32_DROPFILES = 4,
+		GDK_DRAG_PROTO_OLE2 =            5,
+		GDK_DRAG_PROTO_LOCAL =           6,
+	}
+	[Flags]
+	public enum GdkEventMask : uint {
+		None =                            0,
+		GDK_EXPOSURE_MASK =               2,
+		GDK_POINTER_MOTION_MASK =         4,
+		GDK_POINTER_MOTION_HINT_MASK =    8,
+		GDK_BUTTON_MOTION_MASK =         16,
+		GDK_BUTTON1_MOTION_MASK =        32,
+		GDK_BUTTON2_MOTION_MASK =        64,
+		GDK_BUTTON3_MOTION_MASK =       128,
+		GDK_BUTTON_PRESS_MASK =         256,
+		GDK_BUTTON_RELEASE_MASK =       512,
+		GDK_KEY_PRESS_MASK =           1024,
+		GDK_KEY_RELEASE_MASK =         2048,
+		GDK_ENTER_NOTIFY_MASK =        4096,
+		GDK_LEAVE_NOTIFY_MASK =        8192,
+		GDK_FOCUS_CHANGE_MASK =       16384,
+		GDK_STRUCTURE_MASK =          32768,
+		GDK_PROPERTY_CHANGE_MASK =    65536,
+		GDK_VISIBILITY_NOTIFY_MASK = 131072,
+		GDK_PROXIMITY_IN_MASK =      262144,
+		GDK_PROXIMITY_OUT_MASK =     524288,
+		GDK_SUBSTRUCTURE_MASK =     1048576,
+		GDK_SCROLL_MASK =           2097152,
+		GDK_ALL_EVENTS_MASK =       4194302,
+	}
+	public enum GdkEventType : int {
+		GDK_NOTHING =           -1,
+		GDK_DELETE =             0,
+		GDK_DESTROY =            1,
+		GDK_EXPOSE =             2,
+		GDK_MOTION_NOTIFY =      3,
+		GDK_BUTTON_PRESS =       4,
+		GDK_2BUTTON_PRESS =      5,
+		GDK_3BUTTON_PRESS =      6,
+		GDK_BUTTON_RELEASE =     7,
+		GDK_KEY_PRESS =          8,
+		GDK_KEY_RELEASE =        9,
+		GDK_ENTER_NOTIFY =      10,
+		GDK_LEAVE_NOTIFY =      11,
+		GDK_FOCUS_CHANGE =      12,
+		GDK_CONFIGURE =         13,
+		GDK_MAP =               14,
+		GDK_UNMAP =             15,
+		GDK_PROPERTY_NOTIFY =   16,
+		GDK_SELECTION_CLEAR =   17,
+		GDK_SELECTION_REQUEST = 18,
+		GDK_SELECTION_NOTIFY =  19,
+		GDK_PROXIMITY_IN =      20,
+		GDK_PROXIMITY_OUT =     21,
+		GDK_DRAG_ENTER =        22,
+		GDK_DRAG_LEAVE =        23,
+		GDK_DRAG_MOTION =       24,
+		GDK_DRAG_STATUS =       25,
+		GDK_DROP_START =        26,
+		GDK_DROP_FINISHED =     27,
+		GDK_CLIENT_EVENT =      28,
+		GDK_VISIBILITY_NOTIFY = 29,
+		GDK_NO_EXPOSE =         30,
+		GDK_SCROLL =            31,
+		GDK_WINDOW_STATE =      32,
+		GDK_SETTING =           33,
+		GDK_OWNER_CHANGE =      34,
+		GDK_GRAB_BROKEN =       35,
+		GDK_DAMAGE =            36,
+		GDK_EVENT_LAST =        37,
+	}
+	public enum GdkExtensionMode : uint {
+		GDK_EXTENSION_EVENTS_NONE =   0,
+		GDK_EXTENSION_EVENTS_ALL =    1,
+		GDK_EXTENSION_EVENTS_CURSOR = 2,
+	}
+	public enum GdkFill : uint {
+		GDK_SOLID =           0,
+		GDK_TILED =           1,
+		GDK_STIPPLED =        2,
+		GDK_OPAQUE_STIPPLED = 3,
+	}
+	public enum GdkFillRule : uint {
+		GDK_EVEN_ODD_RULE = 0,
+		GDK_WINDING_RULE =  1,
+	}
+	public enum GdkFilterReturn : uint {
+		GDK_FILTER_CONTINUE =  0,
+		GDK_FILTER_TRANSLATE = 1,
+		GDK_FILTER_REMOVE =    2,
+	}
+	public enum GdkFontType : uint {
+		GDK_FONT_FONT =    0,
+		GDK_FONT_FONTSET = 1,
+	}
+	public enum GdkFunction : uint {
+		GDK_COPY =         0,
+		GDK_INVERT =       1,
+		GDK_XOR =          2,
+		GDK_CLEAR =        3,
+		GDK_AND =          4,
+		GDK_AND_REVERSE =  5,
+		GDK_AND_INVERT =   6,
+		GDK_NOOP =         7,
+		GDK_OR =           8,
+		GDK_EQUIV =        9,
+		GDK_OR_REVERSE =  10,
+		GDK_COPY_INVERT = 11,
+		GDK_OR_INVERT =   12,
+		GDK_NAND =        13,
+		GDK_NOR =         14,
+		GDK_SET =         15,
+	}
+	[Flags]
+	public enum GdkGCValuesMask : uint {
+		None =                    0,
+		GDK_GC_FOREGROUND =       1,
+		GDK_GC_BACKGROUND =       2,
+		GDK_GC_FONT =             4,
+		GDK_GC_FUNCTION =         8,
+		GDK_GC_FILL =            16,
+		GDK_GC_TILE =            32,
+		GDK_GC_STIPPLE =         64,
+		GDK_GC_CLIP_MASK =      128,
+		GDK_GC_SUBWINDOW =      256,
+		GDK_GC_TS_X_ORIGIN =    512,
+		GDK_GC_TS_Y_ORIGIN =   1024,
+		GDK_GC_CLIP_X_ORIGIN = 2048,
+		GDK_GC_CLIP_Y_ORIGIN = 4096,
+		GDK_GC_EXPOSURES =     8192,
+		GDK_GC_LINE_WIDTH =   16384,
+		GDK_GC_LINE_STYLE =   32768,
+		GDK_GC_CAP_STYLE =    65536,
+		GDK_GC_JOIN_STYLE =  131072,
+	}
+	public enum GdkGrabStatus : uint {
+		GDK_GRAB_SUCCESS =         0,
+		GDK_GRAB_ALREADY_GRABBED = 1,
+		GDK_GRAB_INVALID_TIME =    2,
+		GDK_GRAB_NOT_VIEWABLE =    3,
+		GDK_GRAB_FROZEN =          4,
+	}
+	public enum GdkGravity : uint {
+		GDK_GRAVITY_NORTH_WEST = 1,
+		GDK_GRAVITY_NORTH =      2,
+		GDK_GRAVITY_NORTH_EAST = 3,
+		GDK_GRAVITY_WEST =       4,
+		GDK_GRAVITY_CENTER =     5,
+		GDK_GRAVITY_EAST =       6,
+		GDK_GRAVITY_SOUTH_WEST = 7,
+		GDK_GRAVITY_SOUTH =      8,
+		GDK_GRAVITY_SOUTH_EAST = 9,
+		GDK_GRAVITY_STATIC =    10,
+	}
+	public enum GdkImageType : uint {
+		GDK_IMAGE_NORMAL =  0,
+		GDK_IMAGE_SHARED =  1,
+		GDK_IMAGE_FASTEST = 2,
+	}
+	public enum GdkInputCondition : uint {
+		GDK_INPUT_READ =      1,
+		GDK_INPUT_WRITE =     2,
+		GDK_INPUT_EXCEPTION = 4,
+	}
+	public enum GdkInputMode : uint {
+		GDK_MODE_DISABLED = 0,
+		GDK_MODE_SCREEN =   1,
+		GDK_MODE_WINDOW =   2,
+	}
+	public enum GdkInputSource : uint {
+		GDK_SOURCE_MOUSE =  0,
+		GDK_SOURCE_PEN =    1,
+		GDK_SOURCE_ERASER = 2,
+		GDK_SOURCE_CURSOR = 3,
+	}
+	public enum GdkInterpType : uint {
+		GDK_INTERP_NEAREST =  0,
+		GDK_INTERP_TILES =    1,
+		GDK_INTERP_BILINEAR = 2,
+		GDK_INTERP_HYPER =    3,
+	}
+	public enum GdkJoinStyle : uint {
+		GDK_JOIN_MITER = 0,
+		GDK_JOIN_ROUND = 1,
+		GDK_JOIN_BEVEL = 2,
+	}
+	public enum GdkLineStyle : uint {
+		GDK_LINE_SOLID =       0,
+		GDK_LINE_ON_OFF_DASH = 1,
+		GDK_LINE_DOUBLE_DASH = 2,
+	}
+	[Flags]
+	public enum GdkModifierType : uint {
+		None =                       0,
+		GDK_SHIFT_MASK =             1,
+		GDK_LOCK_MASK =              2,
+		GDK_CONTROL_MASK =           4,
+		GDK_MOD1_MASK =              8,
+		GDK_MOD2_MASK =             16,
+		GDK_MOD3_MASK =             32,
+		GDK_MOD4_MASK =             64,
+		GDK_MOD5_MASK =            128,
+		GDK_BUTTON1_MASK =         256,
+		GDK_BUTTON2_MASK =         512,
+		GDK_BUTTON3_MASK =        1024,
+		GDK_BUTTON4_MASK =        2048,
+		GDK_BUTTON5_MASK =        4096,
+		GDK_SUPER_MASK =      67108864,
+		GDK_HYPER_MASK =     134217728,
+		GDK_META_MASK =      268435456,
+		GDK_RELEASE_MASK =  1073741824,
+		GDK_MODIFIER_MASK = 1543512063,
+	}
+	public enum GdkNotifyType : uint {
+		GDK_NOTIFY_ANCESTOR =          0,
+		GDK_NOTIFY_VIRTUAL =           1,
+		GDK_NOTIFY_INFERIOR =          2,
+		GDK_NOTIFY_NONLINEAR =         3,
+		GDK_NOTIFY_NONLINEAR_VIRTUAL = 4,
+		GDK_NOTIFY_UNKNOWN =           5,
+	}
+	public enum GdkOverlapType : uint {
+		GDK_OVERLAP_RECTANGLE_IN =   0,
+		GDK_OVERLAP_RECTANGLE_OUT =  1,
+		GDK_OVERLAP_RECTANGLE_PART = 2,
+	}
+	public enum GdkOwnerChange : uint {
+		GDK_OWNER_CHANGE_NEW_OWNER = 0,
+		GDK_OWNER_CHANGE_DESTROY =   1,
+		GDK_OWNER_CHANGE_CLOSE =     2,
+	}
+	public enum GdkPixbufAlphaMode : uint {
+		GDK_PIXBUF_ALPHA_BILEVEL = 0,
+		GDK_PIXBUF_ALPHA_FULL =    1,
+	}
+	public enum GdkPixbufError : uint {
+		GDK_PIXBUF_ERROR_CORRUPT_IMAGE =         0,
+		GDK_PIXBUF_ERROR_INSUFFICIENT_MEMORY =   1,
+		GDK_PIXBUF_ERROR_BAD_OPTION =            2,
+		GDK_PIXBUF_ERROR_UNKNOWN_TYPE =          3,
+		GDK_PIXBUF_ERROR_UNSUPPORTED_OPERATION = 4,
+		GDK_PIXBUF_ERROR_FAILED =                5,
+		GDK_PIXBUF_ERROR_INCOMPLETE_ANIMATION =  6,
+	}
+	public enum GdkPixbufRotation : uint {
+		GDK_PIXBUF_ROTATE_NONE =              0,
+		GDK_PIXBUF_ROTATE_COUNTERCLOCKWISE = 90,
+		GDK_PIXBUF_ROTATE_UPSIDEDOWN =      180,
+		GDK_PIXBUF_ROTATE_CLOCKWISE =       270,
+	}
+	public enum GdkPropertyState : uint {
+		GDK_PROPERTY_NEW_VALUE = 0,
+		GDK_PROPERTY_DELETE =    1,
+	}
+	public enum GdkPropMode : uint {
+		GDK_PROP_MODE_REPLACE = 0,
+		GDK_PROP_MODE_PREPEND = 1,
+		GDK_PROP_MODE_APPEND =  2,
+	}
+	public enum GdkRgbDither : uint {
+		GDK_RGB_DITHER_NONE =   0,
+		GDK_RGB_DITHER_NORMAL = 1,
+		GDK_RGB_DITHER_MAX =    2,
+	}
+	public enum GdkScrollDirection : uint {
+		GDK_SCROLL_UP =    0,
+		GDK_SCROLL_DOWN =  1,
+		GDK_SCROLL_LEFT =  2,
+		GDK_SCROLL_RIGHT = 3,
+	}
+	public enum GdkSettingAction : uint {
+		GDK_SETTING_ACTION_NEW =     0,
+		GDK_SETTING_ACTION_CHANGED = 1,
+		GDK_SETTING_ACTION_DELETED = 2,
+	}
+	public enum GdkStatus : int {
+		GDK_OK =           0,
+		GDK_ERROR =       -1,
+		GDK_ERROR_PARAM = -2,
+		GDK_ERROR_FILE =  -3,
+		GDK_ERROR_MEM =   -4,
+	}
+	public enum GdkSubwindowMode : uint {
+		GDK_CLIP_BY_CHILDREN =  0,
+		GDK_INCLUDE_INFERIORS = 1,
+	}
+	public enum GdkVisibilityState : uint {
+		GDK_VISIBILITY_UNOBSCURED =     0,
+		GDK_VISIBILITY_PARTIAL =        1,
+		GDK_VISIBILITY_FULLY_OBSCURED = 2,
+	}
+	public enum GdkVisualType : uint {
+		GDK_VISUAL_STATIC_GRAY =  0,
+		GDK_VISUAL_GRAYSCALE =    1,
+		GDK_VISUAL_STATIC_COLOR = 2,
+		GDK_VISUAL_PSEUDO_COLOR = 3,
+		GDK_VISUAL_TRUE_COLOR =   4,
+		GDK_VISUAL_DIRECT_COLOR = 5,
+	}
+	[Flags]
+	public enum GdkWindowAttributesType : uint {
+		None =               0,
+		GDK_WA_TITLE =       2,
+		GDK_WA_X =           4,
+		GDK_WA_Y =           8,
+		GDK_WA_CURSOR =     16,
+		GDK_WA_COLORMAP =   32,
+		GDK_WA_VISUAL =     64,
+		GDK_WA_WMCLASS =   128,
+		GDK_WA_NOREDIR =   256,
+		GDK_WA_TYPE_HINT = 512,
+	}
+	public enum GdkWindowClass : uint {
+		GDK_INPUT_OUTPUT = 0,
+		GDK_INPUT_ONLY =   1,
+	}
+	public enum GdkWindowEdge : uint {
+		GDK_WINDOW_EDGE_NORTH_WEST = 0,
+		GDK_WINDOW_EDGE_NORTH =      1,
+		GDK_WINDOW_EDGE_NORTH_EAST = 2,
+		GDK_WINDOW_EDGE_WEST =       3,
+		GDK_WINDOW_EDGE_EAST =       4,
+		GDK_WINDOW_EDGE_SOUTH_WEST = 5,
+		GDK_WINDOW_EDGE_SOUTH =      6,
+		GDK_WINDOW_EDGE_SOUTH_EAST = 7,
+	}
+	[Flags]
+	public enum GdkWindowHints : uint {
+		None =                  0,
+		GDK_HINT_POS =          1,
+		GDK_HINT_MIN_SIZE =     2,
+		GDK_HINT_MAX_SIZE =     4,
+		GDK_HINT_BASE_SIZE =    8,
+		GDK_HINT_ASPECT =      16,
+		GDK_HINT_RESIZE_INC =  32,
+		GDK_HINT_WIN_GRAVITY = 64,
+		GDK_HINT_USER_POS =   128,
+		GDK_HINT_USER_SIZE =  256,
+	}
+	[Flags]
+	public enum GdkWindowState : uint {
+		None =                         0,
+		GDK_WINDOW_STATE_WITHDRAWN =   1,
+		GDK_WINDOW_STATE_ICONIFIED =   2,
+		GDK_WINDOW_STATE_MAXIMIZED =   4,
+		GDK_WINDOW_STATE_STICKY =      8,
+		GDK_WINDOW_STATE_FULLSCREEN = 16,
+		GDK_WINDOW_STATE_ABOVE =      32,
+		GDK_WINDOW_STATE_BELOW =      64,
+	}
+	public enum GdkWindowType : uint {
+		GDK_WINDOW_ROOT =      0,
+		GDK_WINDOW_TOPLEVEL =  1,
+		GDK_WINDOW_CHILD =     2,
+		GDK_WINDOW_DIALOG =    3,
+		GDK_WINDOW_TEMP =      4,
+		GDK_WINDOW_FOREIGN =   5,
+		GDK_WINDOW_OFFSCREEN = 6,
+	}
+	public enum GdkWindowTypeHint : uint {
+		GDK_WINDOW_TYPE_HINT_NORMAL =        0,
+		GDK_WINDOW_TYPE_HINT_DIALOG =        1,
+		GDK_WINDOW_TYPE_HINT_MENU =          2,
+		GDK_WINDOW_TYPE_HINT_TOOLBAR =       3,
+		GDK_WINDOW_TYPE_HINT_SPLASHSCREEN =  4,
+		GDK_WINDOW_TYPE_HINT_UTILITY =       5,
+		GDK_WINDOW_TYPE_HINT_DOCK =          6,
+		GDK_WINDOW_TYPE_HINT_DESKTOP =       7,
+		GDK_WINDOW_TYPE_HINT_DROPDOWN_MENU = 8,
+		GDK_WINDOW_TYPE_HINT_POPUP_MENU =    9,
+		GDK_WINDOW_TYPE_HINT_TOOLTIP =      10,
+		GDK_WINDOW_TYPE_HINT_NOTIFICATION = 11,
+		GDK_WINDOW_TYPE_HINT_COMBO =        12,
+		GDK_WINDOW_TYPE_HINT_DND =          13,
+	}
+	[Flags]
+	public enum GdkWMDecoration : uint {
+		None =                0,
+		GDK_DECOR_ALL =       1,
+		GDK_DECOR_BORDER =    2,
+		GDK_DECOR_RESIZEH =   4,
+		GDK_DECOR_TITLE =     8,
+		GDK_DECOR_MENU =     16,
+		GDK_DECOR_MINIMIZE = 32,
+		GDK_DECOR_MAXIMIZE = 64,
+	}
+	[Flags]
+	public enum GdkWMFunction : uint {
+		None =               0,
+		GDK_FUNC_ALL =       1,
+		GDK_FUNC_RESIZE =    2,
+		GDK_FUNC_MOVE =      4,
+		GDK_FUNC_MINIMIZE =  8,
+		GDK_FUNC_MAXIMIZE = 16,
+		GDK_FUNC_CLOSE =    32,
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkAppLaunchContext : GAppLaunchContext {
+		[ExplicitSize( Size = 100 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 16 )]
+		public new GdkAppLaunchContextPrivate* _priv;
+	}
+	public partial struct GdkAppLaunchContextPrivate {
+	}
+	public partial struct GdkAtom {
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkColor {
+		[ExplicitOffset( Offset = 0 )]
+		public uint pixel;
+		[ExplicitOffset( Offset = 4 )]
+		public ushort red;
+		[ExplicitOffset( Offset = 6 )]
+		public ushort green;
+		[ExplicitOffset( Offset = 8 )]
+		public ushort blue;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkColormap : GObject {
+		[ExplicitSize( Size = 68 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public int _size;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkColor* _colors;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkVisual* _visual;
+		[ExplicitOffset( Offset = 24 )]
+		public void* _windowing_data;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkCursor {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkCursorType type;
+		[ExplicitOffset( Offset = 4 )]
+		public uint ref_count;
+	}
+	[ExplicitSize( Size = 44 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkDevice : GObject {
+		[ExplicitOffset( Offset = 12 )]
+		public CUtf8String _name;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkInputSource _source;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkInputMode _mode;
+		[ExplicitOffset( Offset = 24 )]
+		public Boolean32 _has_cursor;
+		[ExplicitOffset( Offset = 28 )]
+		public int _num_axes;
+		[ExplicitOffset( Offset = 32 )]
+		public GdkDeviceAxis* _axes;
+		[ExplicitOffset( Offset = 36 )]
+		public int _num_keys;
+		[ExplicitOffset( Offset = 40 )]
+		public GdkDeviceKey* _keys;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkDeviceAxis {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkAxisUse use;
+		[ExplicitOffset( Offset = 8 )]
+		public double min;
+		[ExplicitOffset( Offset = 16 )]
+		public double max;
+	}
+	public partial struct GdkDeviceClass {
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkDeviceKey {
+		[ExplicitOffset( Offset = 0 )]
+		public uint keyval;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkModifierType modifiers;
+	}
+	[ExplicitSize( Size = 152 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkDisplay : GObject {
+		[ExplicitSize( Size = 88 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<GdkDisplay*, sbyte*> _get_display_name;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Func<GdkDisplay*, int> _get_n_screens;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Func<GdkDisplay*, int, GdkScreen*> _get_screen;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Func<GdkDisplay*, GdkScreen*> _get_default_screen;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action<GdkDisplay*, Boolean32> _closed;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GList* _queued_events;
+		[ExplicitOffset( Offset = 16 )]
+		public GList* _queued_tail;
+		[ExplicitOffset( Offset = 20 )]
+		public uint[2] _button_click_time;
+		[ExplicitOffset( Offset = 28 )]
+		public GdkDrawable*[2] _button_window;
+		[ExplicitOffset( Offset = 36 )]
+		public int[2] _button_number;
+		[ExplicitOffset( Offset = 44 )]
+		public uint _double_click_time;
+		[ExplicitOffset( Offset = 48 )]
+		public GdkDevice* _core_pointer;
+		[ExplicitOffset( Offset = 52 )]
+		public GdkDisplayPointerHooks* _pointer_hooks;
+		public bool _closed { get { return ( cast<byte*>( &this )[56] & 1 ) != 0; } set { cast<byte*>( &this )[56] &= 254; cast<byte*>( &this )[56] |= cast<byte>( value ) << 0; } }
+		public bool _ignore_core_events { get { return ( cast<byte*>( &this )[56] & 2 ) != 0; } set { cast<byte*>( &this )[56] &= 253; cast<byte*>( &this )[56] |= cast<byte>( value ) << 1; } }
+		[ExplicitOffset( Offset = 60 )]
+		public uint _double_click_distance;
+		[ExplicitOffset( Offset = 64 )]
+		public int[2] _button_x;
+		[ExplicitOffset( Offset = 72 )]
+		public int[2] _button_y;
+		[ExplicitOffset( Offset = 80 )]
+		public GList* _pointer_grabs;
+		[ExplicitOffset( Offset = 84 )]
+		public GdkKeyboardGrabInfo _keyboard_grab;
+		[ExplicitOffset( Offset = 104 )]
+		public GdkPointerWindowInfo _pointer_info;
+		[ExplicitOffset( Offset = 144 )]
+		public uint _last_event_time;
+	}
+	public partial struct GdkDisplayManager : GObject {
+		[ExplicitSize( Size = 72 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<GdkDisplayManager*, GdkDisplay*> _display_opened;
+		}
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkDisplayPointerHooks {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<GdkDisplay*, GdkScreen**, int*, int*, GdkModifierType*> get_pointer;
+		[ExplicitOffset( Offset = 4 )]
+		public Functors.Func<GdkDisplay*, GdkDrawable*, int*, int*, GdkModifierType*, GdkDrawable*> window_get_pointer;
+		[ExplicitOffset( Offset = 8 )]
+		public Functors.Func<GdkDisplay*, int*, int*, GdkDrawable*> window_at_pointer;
+	}
+	[ExplicitSize( Size = 52 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkDragContext : GObject {
+		[ExplicitSize( Size = 68 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDragProtocol _protocol;
+		[ExplicitOffset( Offset = 16 )]
+		public Boolean32 _is_source;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkDrawable* _source_window;
+		[ExplicitOffset( Offset = 24 )]
+		public GdkDrawable* _dest_window;
+		[ExplicitOffset( Offset = 28 )]
+		public GList* _targets;
+		[ExplicitOffset( Offset = 32 )]
+		public GdkDragAction _actions;
+		[ExplicitOffset( Offset = 36 )]
+		public GdkDragAction _suggested_action;
+		[ExplicitOffset( Offset = 40 )]
+		public GdkDragAction _action;
+		[ExplicitOffset( Offset = 44 )]
+		public uint _start_time;
+		[ExplicitOffset( Offset = 48 )]
+		public void* _windowing_data;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkDrawable : GObject {
+		[ExplicitSize( Size = 224 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Func<GdkDrawable*, GdkGCValues*, GdkGCValuesMask, GdkGC*> _create_gc;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, Boolean32, int, int, int, int> _draw_rectangle;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, Boolean32, int, int, int, int, int, int> _draw_arc;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, Boolean32, GdkPoint*, int> _draw_polygon;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action<GdkDrawable*, GdkFont*, GdkGC*, int, int, sbyte*, int> _draw_text;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action<GdkDrawable*, GdkFont*, GdkGC*, int, int, uint*, int> _draw_text_wc;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkDrawable*, int, int, int, int, int, int> _draw_drawable;
+			[ExplicitOffset( Offset = 96 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkPoint*, int> _draw_points;
+			[ExplicitOffset( Offset = 100 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkSegment*, int> _draw_segments;
+			[ExplicitOffset( Offset = 104 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkPoint*, int> _draw_lines;
+			[ExplicitOffset( Offset = 108 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, PangoFont*, int, int, PangoGlyphString*> _draw_glyphs;
+			[ExplicitOffset( Offset = 112 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkImage*, int, int, int, int, int, int> _draw_image;
+			[ExplicitOffset( Offset = 116 )]
+			public Functors.Func<GdkDrawable*, int> _get_depth;
+			[ExplicitOffset( Offset = 120 )]
+			public Functors.Action<GdkDrawable*, int*, int*> _get_size;
+			[ExplicitOffset( Offset = 124 )]
+			public Functors.Action<GdkDrawable*, GdkColormap*> _set_colormap;
+			[ExplicitOffset( Offset = 128 )]
+			public Functors.Func<GdkDrawable*, GdkColormap*> _get_colormap;
+			[ExplicitOffset( Offset = 132 )]
+			public Functors.Func<GdkDrawable*, GdkVisual*> _get_visual;
+			[ExplicitOffset( Offset = 136 )]
+			public Functors.Func<GdkDrawable*, GdkScreen*> _get_screen;
+			[ExplicitOffset( Offset = 140 )]
+			public Functors.Func<GdkDrawable*, int, int, int, int, GdkImage*> _get_image;
+			[ExplicitOffset( Offset = 144 )]
+			public Functors.Func<GdkDrawable*, GdkRegion*> _get_clip_region;
+			[ExplicitOffset( Offset = 148 )]
+			public Functors.Func<GdkDrawable*, GdkRegion*> _get_visible_region;
+			[ExplicitOffset( Offset = 152 )]
+			public Functors.Func<GdkDrawable*, int, int, int, int, int*, int*, GdkDrawable*> _get_composite_drawable;
+			[ExplicitOffset( Offset = 156 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkPixbuf*, int, int, int, int, int, int, GdkRgbDither, int, int> _draw_pixbuf;
+			[ExplicitOffset( Offset = 160 )]
+			public Functors.Func<GdkDrawable*, GdkImage*, int, int, int, int, int, int, GdkImage*> _copy_to_image;
+			[ExplicitOffset( Offset = 164 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, PangoMatrix*, PangoFont*, int, int, PangoGlyphString*> _draw_glyphs_transformed;
+			[ExplicitOffset( Offset = 168 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkTrapezoid*, int> _draw_trapezoids;
+			[ExplicitOffset( Offset = 172 )]
+			public Functors.Func<GdkDrawable*, cairo_surface_t*> _ref_cairo_surface;
+			[ExplicitOffset( Offset = 176 )]
+			public Functors.Func<GdkDrawable*, GdkDrawable*> _get_source_drawable;
+			[ExplicitOffset( Offset = 180 )]
+			public Functors.Action<GdkDrawable*, cairo_t*> _set_cairo_clip;
+			[ExplicitOffset( Offset = 184 )]
+			public Functors.Func<GdkDrawable*, int, int, cairo_surface_t*> _create_cairo_surface;
+			[ExplicitOffset( Offset = 188 )]
+			public Functors.Action<GdkDrawable*, GdkGC*, GdkDrawable*, int, int, int, int, int, int, GdkDrawable*> _draw_drawable_with_src;
+			[ExplicitOffset( Offset = 192 )]
+			public Functors.Action _gdk_reserved7;
+			[ExplicitOffset( Offset = 196 )]
+			public Functors.Action _gdk_reserved9;
+			[ExplicitOffset( Offset = 200 )]
+			public Functors.Action _gdk_reserved10;
+			[ExplicitOffset( Offset = 204 )]
+			public Functors.Action _gdk_reserved11;
+			[ExplicitOffset( Offset = 208 )]
+			public Functors.Action _gdk_reserved12;
+			[ExplicitOffset( Offset = 212 )]
+			public Functors.Action _gdk_reserved13;
+			[ExplicitOffset( Offset = 216 )]
+			public Functors.Action _gdk_reserved14;
+			[ExplicitOffset( Offset = 220 )]
+			public Functors.Action _gdk_reserved15;
+		}
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkEvent {
+		[Overlapped( Offset = 0 )]
+		public GdkEventType type;
+		[Overlapped( Offset = 0 )]
+		public GdkEventAny any;
+		[Overlapped( Offset = 0 )]
+		public GdkEventExpose expose;
+		[Overlapped( Offset = 0 )]
+		public GdkEventNoExpose no_expose;
+		[Overlapped( Offset = 0 )]
+		public GdkEventVisibility visibility;
+		[Overlapped( Offset = 0 )]
+		public GdkEventMotion motion;
+		[Overlapped( Offset = 0 )]
+		public GdkEventButton button;
+		[Overlapped( Offset = 0 )]
+		public GdkEventScroll scroll;
+		[Overlapped( Offset = 0 )]
+		public GdkEventKey key;
+		[Overlapped( Offset = 0 )]
+		public GdkEventCrossing crossing;
+		[Overlapped( Offset = 0 )]
+		public GdkEventFocus focus_change;
+		[Overlapped( Offset = 0 )]
+		public GdkEventConfigure configure;
+		[Overlapped( Offset = 0 )]
+		public GdkEventProperty property;
+		[Overlapped( Offset = 0 )]
+		public GdkEventSelection selection;
+		[Overlapped( Offset = 0 )]
+		public GdkEventOwnerChange owner_change;
+		[Overlapped( Offset = 0 )]
+		public GdkEventProximity proximity;
+		[Overlapped( Offset = 0 )]
+		public GdkEventClient client;
+		[Overlapped( Offset = 0 )]
+		public GdkEventDND dnd;
+		[Overlapped( Offset = 0 )]
+		public GdkEventWindowState window_state;
+		[Overlapped( Offset = 0 )]
+		public GdkEventSetting setting;
+		[Overlapped( Offset = 0 )]
+		public GdkEventGrabBroken grab_broken;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventAny {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkEventButton {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint time;
+		[ExplicitOffset( Offset = 16 )]
+		public double x;
+		[ExplicitOffset( Offset = 24 )]
+		public double y;
+		[ExplicitOffset( Offset = 32 )]
+		public double* axes;
+		[ExplicitOffset( Offset = 36 )]
+		public uint state;
+		[ExplicitOffset( Offset = 40 )]
+		public uint button;
+		[ExplicitOffset( Offset = 44 )]
+		public GdkDevice* device;
+		[ExplicitOffset( Offset = 48 )]
+		public double x_root;
+		[ExplicitOffset( Offset = 56 )]
+		public double y_root;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventClient {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkAtom* message_type;
+		[ExplicitOffset( Offset = 16 )]
+		public ushort data_format;
+		[ExplicitOffset( Offset = 20 )]
+		public UnnamedUnion_E5B52012 data;
+	}
+	[ExplicitSize( Size = 28 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventConfigure {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public int x;
+		[ExplicitOffset( Offset = 16 )]
+		public int y;
+		[ExplicitOffset( Offset = 20 )]
+		public int width;
+		[ExplicitOffset( Offset = 24 )]
+		public int height;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkEventCrossing {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDrawable* subwindow;
+		[ExplicitOffset( Offset = 16 )]
+		public uint time;
+		[ExplicitOffset( Offset = 24 )]
+		public double x;
+		[ExplicitOffset( Offset = 32 )]
+		public double y;
+		[ExplicitOffset( Offset = 40 )]
+		public double x_root;
+		[ExplicitOffset( Offset = 48 )]
+		public double y_root;
+		[ExplicitOffset( Offset = 56 )]
+		public GdkCrossingMode mode;
+		[ExplicitOffset( Offset = 60 )]
+		public GdkNotifyType detail;
+		[ExplicitOffset( Offset = 64 )]
+		public Boolean32 focus;
+		[ExplicitOffset( Offset = 68 )]
+		public uint state;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventDND {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDragContext* context;
+		[ExplicitOffset( Offset = 16 )]
+		public uint time;
+		[ExplicitOffset( Offset = 20 )]
+		public short x_root;
+		[ExplicitOffset( Offset = 22 )]
+		public short y_root;
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventExpose {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkRectangle area;
+		[ExplicitOffset( Offset = 28 )]
+		public GdkRegion* region;
+		[ExplicitOffset( Offset = 32 )]
+		public int count;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventFocus {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 10 )]
+		public short in;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventGrabBroken {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public Boolean32 keyboard;
+		[ExplicitOffset( Offset = 16 )]
+		public Boolean32 @implicit;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkDrawable* grab_window;
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventKey {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint time;
+		[ExplicitOffset( Offset = 16 )]
+		public uint state;
+		[ExplicitOffset( Offset = 20 )]
+		public uint keyval;
+		[ExplicitOffset( Offset = 24 )]
+		public int length;
+		[ExplicitOffset( Offset = 28 )]
+		public sbyte* @string;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort hardware_keycode;
+		[ExplicitOffset( Offset = 34 )]
+		public byte group;
+		public bool is_modifier { get { return ( cast<byte*>( &this )[35] & 1 ) != 0; } set { cast<byte*>( &this )[35] &= 254; cast<byte*>( &this )[35] |= cast<byte>( value ) << 0; } }
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkEventMotion {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint time;
+		[ExplicitOffset( Offset = 16 )]
+		public double x;
+		[ExplicitOffset( Offset = 24 )]
+		public double y;
+		[ExplicitOffset( Offset = 32 )]
+		public double* axes;
+		[ExplicitOffset( Offset = 36 )]
+		public uint state;
+		[ExplicitOffset( Offset = 40 )]
+		public short is_hint;
+		[ExplicitOffset( Offset = 44 )]
+		public GdkDevice* device;
+		[ExplicitOffset( Offset = 48 )]
+		public double x_root;
+		[ExplicitOffset( Offset = 56 )]
+		public double y_root;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventNoExpose {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventOwnerChange {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint owner;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkOwnerChange reason;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkAtom* selection;
+		[ExplicitOffset( Offset = 24 )]
+		public uint time;
+		[ExplicitOffset( Offset = 28 )]
+		public uint selection_time;
+	}
+	[ExplicitSize( Size = 24 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventProperty {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkAtom* atom;
+		[ExplicitOffset( Offset = 16 )]
+		public uint time;
+		[ExplicitOffset( Offset = 20 )]
+		public uint state;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventProximity {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint time;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkDevice* device;
+	}
+	[ExplicitSize( Size = 64 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkEventScroll {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public uint time;
+		[ExplicitOffset( Offset = 16 )]
+		public double x;
+		[ExplicitOffset( Offset = 24 )]
+		public double y;
+		[ExplicitOffset( Offset = 32 )]
+		public uint state;
+		[ExplicitOffset( Offset = 36 )]
+		public GdkScrollDirection direction;
+		[ExplicitOffset( Offset = 40 )]
+		public GdkDevice* device;
+		[ExplicitOffset( Offset = 48 )]
+		public double x_root;
+		[ExplicitOffset( Offset = 56 )]
+		public double y_root;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventSelection {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkAtom* selection;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkAtom* target;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkAtom* property;
+		[ExplicitOffset( Offset = 24 )]
+		public uint time;
+		[ExplicitOffset( Offset = 28 )]
+		public uint requestor;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventSetting {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkSettingAction action;
+		[ExplicitOffset( Offset = 16 )]
+		public CUtf8String name;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventVisibility {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkVisibilityState state;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkEventWindowState {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkEventType type;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 8 )]
+		public sbyte send_event;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkWindowState changed_mask;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkWindowState new_window_state;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkFont {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkFontType type;
+		[ExplicitOffset( Offset = 4 )]
+		public int ascent;
+		[ExplicitOffset( Offset = 8 )]
+		public int descent;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkGC : GObject {
+		[ExplicitSize( Size = 96 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<GdkGC*, GdkGCValues*> _get_values;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<GdkGC*, GdkGCValues*, GdkGCValuesMask> _set_values;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<GdkGC*, int, sbyte*, int> _set_dashes;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action _gdk_reserved1;
+			[ExplicitOffset( Offset = 84 )]
+			public Functors.Action _gdk_reserved2;
+			[ExplicitOffset( Offset = 88 )]
+			public Functors.Action _gdk_reserved3;
+			[ExplicitOffset( Offset = 92 )]
+			public Functors.Action _gdk_reserved4;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public int _clip_x_origin;
+		[ExplicitOffset( Offset = 16 )]
+		public int _clip_y_origin;
+		[ExplicitOffset( Offset = 20 )]
+		public int _ts_x_origin;
+		[ExplicitOffset( Offset = 24 )]
+		public int _ts_y_origin;
+		[ExplicitOffset( Offset = 28 )]
+		public GdkColormap* _colormap;
+	}
+	[ExplicitSize( Size = 88 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkGCValues {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkColor foreground;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkColor background;
+		[ExplicitOffset( Offset = 24 )]
+		public GdkFont* font;
+		[ExplicitOffset( Offset = 28 )]
+		public GdkFunction function;
+		[ExplicitOffset( Offset = 32 )]
+		public GdkFill fill;
+		[ExplicitOffset( Offset = 36 )]
+		public GdkDrawable* tile;
+		[ExplicitOffset( Offset = 40 )]
+		public GdkDrawable* stipple;
+		[ExplicitOffset( Offset = 44 )]
+		public GdkDrawable* clip_mask;
+		[ExplicitOffset( Offset = 48 )]
+		public GdkSubwindowMode subwindow_mode;
+		[ExplicitOffset( Offset = 52 )]
+		public int ts_x_origin;
+		[ExplicitOffset( Offset = 56 )]
+		public int ts_y_origin;
+		[ExplicitOffset( Offset = 60 )]
+		public int clip_x_origin;
+		[ExplicitOffset( Offset = 64 )]
+		public int clip_y_origin;
+		[ExplicitOffset( Offset = 68 )]
+		public int graphics_exposures;
+		[ExplicitOffset( Offset = 72 )]
+		public int line_width;
+		[ExplicitOffset( Offset = 76 )]
+		public GdkLineStyle line_style;
+		[ExplicitOffset( Offset = 80 )]
+		public GdkCapStyle cap_style;
+		[ExplicitOffset( Offset = 84 )]
+		public GdkJoinStyle join_style;
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkGeometry {
+		[ExplicitOffset( Offset = 0 )]
+		public int min_width;
+		[ExplicitOffset( Offset = 4 )]
+		public int min_height;
+		[ExplicitOffset( Offset = 8 )]
+		public int max_width;
+		[ExplicitOffset( Offset = 12 )]
+		public int max_height;
+		[ExplicitOffset( Offset = 16 )]
+		public int base_width;
+		[ExplicitOffset( Offset = 20 )]
+		public int base_height;
+		[ExplicitOffset( Offset = 24 )]
+		public int width_inc;
+		[ExplicitOffset( Offset = 28 )]
+		public int height_inc;
+		[ExplicitOffset( Offset = 32 )]
+		public double min_aspect;
+		[ExplicitOffset( Offset = 40 )]
+		public double max_aspect;
+		[ExplicitOffset( Offset = 48 )]
+		public GdkGravity win_gravity;
+	}
+	[ExplicitSize( Size = 52 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkImage : GObject {
+		[ExplicitSize( Size = 68 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GdkImageType _type;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkVisual* _visual;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkByteOrder _byte_order;
+		[ExplicitOffset( Offset = 24 )]
+		public int _width;
+		[ExplicitOffset( Offset = 28 )]
+		public int _height;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort _depth;
+		[ExplicitOffset( Offset = 34 )]
+		public ushort _bpp;
+		[ExplicitOffset( Offset = 36 )]
+		public ushort _bpl;
+		[ExplicitOffset( Offset = 38 )]
+		public ushort _bits_per_pixel;
+		[ExplicitOffset( Offset = 40 )]
+		public void* _mem;
+		[ExplicitOffset( Offset = 44 )]
+		public GdkColormap* _colormap;
+		[ExplicitOffset( Offset = 48 )]
+		public void* _windowing_data;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkKeyboardGrabInfo {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkDrawable* window;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* native_window;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr serial;
+		[ExplicitOffset( Offset = 12 )]
+		public Boolean32 owner_events;
+		[ExplicitOffset( Offset = 16 )]
+		public uint time;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkKeymap : GObject {
+		[ExplicitSize( Size = 80 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<GdkKeymap*> _direction_changed;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<GdkKeymap*> _keys_changed;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<GdkKeymap*> _state_changed;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDisplay* _display;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkKeymapKey {
+		[ExplicitOffset( Offset = 0 )]
+		public uint keycode;
+		[ExplicitOffset( Offset = 4 )]
+		public int group;
+		[ExplicitOffset( Offset = 8 )]
+		public int level;
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPangoAttrEmbossColor {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public PangoColor color;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPangoAttrEmbossed {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public Boolean32 embossed;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPangoAttrStipple {
+		[ExplicitOffset( Offset = 0 )]
+		public PangoAttribute attr;
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDrawable* stipple;
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPangoRenderer : PangoRenderer {
+		[ExplicitSize( Size = 124 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 32 )]
+		public new GdkPangoRendererPrivate* _priv;
+	}
+	public partial struct GdkPangoRendererPrivate {
+	}
+	public partial struct GdkPixbuf {
+	}
+	public partial struct GdkPixbufAnimation {
+	}
+	public partial struct GdkPixbufAnimationIter {
+	}
+	public partial struct GdkPixbufFormat {
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPixbufLoader : GObject {
+		[ExplicitSize( Size = 84 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<GdkPixbufLoader*, int, int> _size_prepared;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<GdkPixbufLoader*> _area_prepared;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<GdkPixbufLoader*, int, int, int, int> _area_updated;
+			[ExplicitOffset( Offset = 80 )]
+			public Functors.Action<GdkPixbufLoader*> _closed;
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public void* _priv;
+	}
+	public partial struct GdkPixbufSimpleAnim {
+	}
+	public partial struct GdkPixbufSimpleAnimClass {
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPixmapObject : GdkDrawable {
+		[ExplicitSize( Size = 224 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDrawable* _impl;
+		[ExplicitOffset( Offset = 16 )]
+		public int _depth;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPoint {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+	}
+	[ExplicitSize( Size = 8 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkPointerHooks {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Func<GdkDrawable*, int*, int*, GdkModifierType*, GdkDrawable*> get_pointer;
+		[ExplicitOffset( Offset = 4 )]
+		public Functors.Func<GdkScreen*, int*, int*, GdkDrawable*> window_at_pointer;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkPointerWindowInfo {
+		[ExplicitOffset( Offset = 0 )]
+		public GdkDrawable* toplevel_under_pointer;
+		[ExplicitOffset( Offset = 4 )]
+		public GdkDrawable* window_under_pointer;
+		[ExplicitOffset( Offset = 8 )]
+		public double toplevel_x;
+		[ExplicitOffset( Offset = 16 )]
+		public double toplevel_y;
+		[ExplicitOffset( Offset = 24 )]
+		public uint state;
+		[ExplicitOffset( Offset = 28 )]
+		public uint button;
+		[ExplicitOffset( Offset = 32 )]
+		public uintptr motion_hint_serial;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkRectangle {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+		[ExplicitOffset( Offset = 12 )]
+		public int height;
+	}
+	public partial struct GdkRegion {
+	}
+	[ExplicitSize( Size = 1032 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkRgbCmap {
+		[ExplicitOffset( Offset = 0 )]
+		public uint[256] colors;
+		[ExplicitOffset( Offset = 1024 )]
+		public int n_colors;
+		[ExplicitOffset( Offset = 1028 )]
+		public GSList* info_list;
+	}
+	[ExplicitSize( Size = 416 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkScreen : GObject {
+		[ExplicitSize( Size = 80 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+			[ExplicitOffset( Offset = 68 )]
+			public Functors.Action<GdkScreen*> _size_changed;
+			[ExplicitOffset( Offset = 72 )]
+			public Functors.Action<GdkScreen*> _composited_changed;
+			[ExplicitOffset( Offset = 76 )]
+			public Functors.Action<GdkScreen*> _monitors_changed;
+		}
+		public bool _closed { get { return ( cast<byte*>( &this )[12] & 1 ) != 0; } set { cast<byte*>( &this )[12] &= 254; cast<byte*>( &this )[12] |= cast<byte>( value ) << 0; } }
+		[ExplicitOffset( Offset = 16 )]
+		public GdkGC*[32] _normal_gcs;
+		[ExplicitOffset( Offset = 144 )]
+		public GdkGC*[32] _exposure_gcs;
+		[ExplicitOffset( Offset = 272 )]
+		public GdkGC*[32] _subwindow_gcs;
+		[ExplicitOffset( Offset = 400 )]
+		public cairo_font_options_t* _font_options;
+		[ExplicitOffset( Offset = 408 )]
+		public double _resolution;
+	}
+	[ExplicitSize( Size = 16 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkSegment {
+		[ExplicitOffset( Offset = 0 )]
+		public int x1;
+		[ExplicitOffset( Offset = 4 )]
+		public int y1;
+		[ExplicitOffset( Offset = 8 )]
+		public int x2;
+		[ExplicitOffset( Offset = 12 )]
+		public int y2;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkSpan {
+		[ExplicitOffset( Offset = 0 )]
+		public int x;
+		[ExplicitOffset( Offset = 4 )]
+		public int y;
+		[ExplicitOffset( Offset = 8 )]
+		public int width;
+	}
+	[ExplicitSize( Size = 1032 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkTimeCoord {
+		[ExplicitOffset( Offset = 0 )]
+		public uint time;
+		[ExplicitOffset( Offset = 8 )]
+		public double[128] axes;
+	}
+	[ExplicitSize( Size = 48 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct GdkTrapezoid {
+		[ExplicitOffset( Offset = 0 )]
+		public double y1;
+		[ExplicitOffset( Offset = 8 )]
+		public double x11;
+		[ExplicitOffset( Offset = 16 )]
+		public double x21;
+		[ExplicitOffset( Offset = 24 )]
+		public double y2;
+		[ExplicitOffset( Offset = 32 )]
+		public double x12;
+		[ExplicitOffset( Offset = 40 )]
+		public double x22;
+	}
+	[ExplicitSize( Size = 68 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkVisual : GObject {
+		[ExplicitOffset( Offset = 12 )]
+		public GdkVisualType _type;
+		[ExplicitOffset( Offset = 16 )]
+		public int _depth;
+		[ExplicitOffset( Offset = 20 )]
+		public GdkByteOrder _byte_order;
+		[ExplicitOffset( Offset = 24 )]
+		public int _colormap_size;
+		[ExplicitOffset( Offset = 28 )]
+		public int _bits_per_rgb;
+		[ExplicitOffset( Offset = 32 )]
+		public uint _red_mask;
+		[ExplicitOffset( Offset = 36 )]
+		public int _red_shift;
+		[ExplicitOffset( Offset = 40 )]
+		public int _red_prec;
+		[ExplicitOffset( Offset = 44 )]
+		public uint _green_mask;
+		[ExplicitOffset( Offset = 48 )]
+		public int _green_shift;
+		[ExplicitOffset( Offset = 52 )]
+		public int _green_prec;
+		[ExplicitOffset( Offset = 56 )]
+		public uint _blue_mask;
+		[ExplicitOffset( Offset = 60 )]
+		public int _blue_shift;
+		[ExplicitOffset( Offset = 64 )]
+		public int _blue_prec;
+	}
+	public partial struct GdkVisualClass {
+	}
+	[ExplicitSize( Size = 60 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkWindowAttr {
+		[ExplicitOffset( Offset = 0 )]
+		public sbyte* title;
+		[ExplicitOffset( Offset = 4 )]
+		public int event_mask;
+		[ExplicitOffset( Offset = 8 )]
+		public int x;
+		[ExplicitOffset( Offset = 12 )]
+		public int y;
+		[ExplicitOffset( Offset = 16 )]
+		public int width;
+		[ExplicitOffset( Offset = 20 )]
+		public int height;
+		[ExplicitOffset( Offset = 24 )]
+		public GdkWindowClass wclass;
+		[ExplicitOffset( Offset = 28 )]
+		public GdkVisual* visual;
+		[ExplicitOffset( Offset = 32 )]
+		public GdkColormap* colormap;
+		[ExplicitOffset( Offset = 36 )]
+		public GdkWindowType window_type;
+		[ExplicitOffset( Offset = 40 )]
+		public GdkCursor* cursor;
+		[ExplicitOffset( Offset = 44 )]
+		public CUtf8String wmclass_name;
+		[ExplicitOffset( Offset = 48 )]
+		public sbyte* wmclass_class;
+		[ExplicitOffset( Offset = 52 )]
+		public Boolean32 override_redirect;
+		[ExplicitOffset( Offset = 56 )]
+		public GdkWindowTypeHint type_hint;
+	}
+	[ExplicitSize( Size = 96 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct GdkWindowObject : GdkDrawable {
+		[ExplicitSize( Size = 224 )]
+		[Alignment( Boundary = 4 )]
+		public new partial struct Class : basetype.Class {
+		}
+		[ExplicitOffset( Offset = 12 )]
+		public GdkDrawable* _impl;
+		[ExplicitOffset( Offset = 16 )]
+		public GdkWindowObject* _parent;
+		[ExplicitOffset( Offset = 20 )]
+		public void* _user_data;
+		[ExplicitOffset( Offset = 24 )]
+		public int _x;
+		[ExplicitOffset( Offset = 28 )]
+		public int _y;
+		[ExplicitOffset( Offset = 32 )]
+		public int _extension_events;
+		[ExplicitOffset( Offset = 36 )]
+		public GList* _filters;
+		[ExplicitOffset( Offset = 40 )]
+		public GList* _children;
+		[ExplicitOffset( Offset = 44 )]
+		public GdkColor _bg_color;
+		[ExplicitOffset( Offset = 56 )]
+		public GdkDrawable* _bg_pixmap;
+		[ExplicitOffset( Offset = 60 )]
+		public GSList* _paint_stack;
+		[ExplicitOffset( Offset = 64 )]
+		public GdkRegion* _update_area;
+		[ExplicitOffset( Offset = 68 )]
+		public uint _update_freeze_count;
+		[ExplicitOffset( Offset = 72 )]
+		public byte _window_type;
+		[ExplicitOffset( Offset = 73 )]
+		public byte _depth;
+		[ExplicitOffset( Offset = 74 )]
+		public byte _resize_count;
+		[ExplicitOffset( Offset = 76 )]
+		public GdkWindowState _state;
+		public bool _guffaw_gravity { get { return ( cast<byte*>( &this )[80] & 1 ) != 0; } set { cast<byte*>( &this )[80] &= 254; cast<byte*>( &this )[80] |= cast<byte>( value ) << 0; } }
+		public bool _input_only { get { return ( cast<byte*>( &this )[80] & 2 ) != 0; } set { cast<byte*>( &this )[80] &= 253; cast<byte*>( &this )[80] |= cast<byte>( value ) << 1; } }
+		public bool _modal_hint { get { return ( cast<byte*>( &this )[80] & 4 ) != 0; } set { cast<byte*>( &this )[80] &= 251; cast<byte*>( &this )[80] |= cast<byte>( value ) << 2; } }
+		public bool _composited { get { return ( cast<byte*>( &this )[80] & 8 ) != 0; } set { cast<byte*>( &this )[80] &= 247; cast<byte*>( &this )[80] |= cast<byte>( value ) << 3; } }
+		public uint _destroyed { get { return cast<byte*>( &this )[80] >> 4 & 3; } set { cast<byte*>( &this )[80] &= 207; cast<byte*>( &this )[80] |= ( cast<byte>( value ) & 48 ) << 4; } }
+		public bool _accept_focus { get { return ( cast<byte*>( &this )[80] & 64 ) != 0; } set { cast<byte*>( &this )[80] &= 191; cast<byte*>( &this )[80] |= cast<byte>( value ) << 6; } }
+		public bool _focus_on_map { get { return ( cast<byte*>( &this )[80] & 128 ) != 0; } set { cast<byte*>( &this )[80] &= 127; cast<byte*>( &this )[80] |= cast<byte>( value ) << 7; } }
+		public bool _shaped { get { return ( cast<byte*>( &this )[81] & 1 ) != 0; } set { cast<byte*>( &this )[81] &= 254; cast<byte*>( &this )[81] |= cast<byte>( value ) << 0; } }
+		[ExplicitOffset( Offset = 84 )]
+		public GdkEventMask _event_mask;
+		[ExplicitOffset( Offset = 88 )]
+		public uint _update_and_descendants_freeze_count;
+		[ExplicitOffset( Offset = 92 )]
+		public GdkWindowRedirect* _redirect;
+	}
+	public partial struct GdkWindowRedirect {
+	}
+	[ExplicitSize( Size = 20 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_E5B52012 {
+		[Overlapped( Offset = 0 )]
+		public sbyte[20] b;
+		[Overlapped( Offset = 0 )]
+		public short[10] s;
+		[Overlapped( Offset = 0 )]
+		public intptr[5] l;
+	}
+}

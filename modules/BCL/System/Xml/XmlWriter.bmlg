@@ -38,12 +38,12 @@ namespace System.Xml {
 		}
 
 		private State _state = State.Start;
-		private int _escapeStart = 0;
+		private uint _escapeStart = 0;
 
 		public bool Formatting { get; set; } = false;
 		public bool UseSpaceIndent { get; set; } = true;
 		public bool UseDoubleQuotes { get; set; } = true;
-		public int SpaceIndentCount = 2;
+		public uint SpaceIndentCount = 2;
 
 		private bool _closeTagOnNewLine { get; set; } = false;
 
@@ -57,7 +57,6 @@ namespace System.Xml {
 		private void Cleanup() {
 			if( _writer != null ) {
 				FlushBuffered();
-				_writer.Flush( FlushKind.Write );
 				_writer = null;
 			}
 		}
@@ -85,7 +84,7 @@ namespace System.Xml {
 			}
 		}
 
-		protected int _depth;
+		protected uint _depth;
 
 		private void AppendQuote() { _formatter.Append( UseDoubleQuotes ? '"' : '\'' ); }
 
@@ -274,8 +273,10 @@ namespace System.Xml {
 
 		public void WriteUnescaped( string escapedValue ) {
 			switch( _state ) {
-				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Start:
 				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
@@ -283,7 +284,26 @@ namespace System.Xml {
 			}
 		}
 
-		public void Write( TypedReference value, string format = "" ) {
+		public void WriteUnescaped( StringBuilder escapedValue ) {
+			switch( _state ) {
+				case State.Start:
+				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.AttributeDoubleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInDoubleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+			}
+		}
+
+		public void Write( TypedReference value ) {
+			StartWrite();
+
+			_formatter.Append( value );
+		}
+
+		public void WriteFormatted( TypedReference value, string format = "" ) {
 			StartWrite();
 
 			_formatter.Append( value, format );
@@ -295,28 +315,28 @@ namespace System.Xml {
 			_formatter.AppendFormat( format, vararg( parameters, parameters.Length ) );
 		}
 
-		private void WriteEscaped( int start, Functors.Func<char*, int, int, int> searcher ) {
+		private void WriteEscaped( uint start, Functors.Func<char*, uint, uint, uint> searcher ) {
 			if( !TryWriteEscaped( start, searcher ) ) {
 				_writer.Write( _formatter );
 				_formatter.Clear();
 			}
 		}
 
-		private bool TryWriteEscaped( int start, Functors.Func<char*, int, int, int> searcher ) {
+		private bool TryWriteEscaped( uint start, Functors.Func<char*, uint, uint, uint> searcher ) {
 			var buffer = _formatter.GetChars();
 			var length = _formatter.Length;
 
-			var nonEscapedSegmentStart = 0;
+			var nonEscapedSegmentStart = 0U;
 			var firstIndex = searcher( buffer, length, start );
-			if( firstIndex == -1 ) return false;
+			if( firstIndex == uint.MaxValue ) return false;
 
-			int segmentLength = 0;
-			while( firstIndex != -1 ) {
+			uint segmentLength = 0U;
+			while( firstIndex != uint.MaxValue ) {
 				segmentLength = firstIndex - nonEscapedSegmentStart;
 				switch( segmentLength ) {
 					case 0: break;
 					case 1: _writer.Write( buffer[nonEscapedSegmentStart] ); break;
-					default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, ( uint ) segmentLength ) ); break;
+					default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, segmentLength ) ); break;
 				}
 
 				WriteEscaped( buffer[firstIndex] );
@@ -329,7 +349,7 @@ namespace System.Xml {
 			switch( segmentLength ) {
 				case 0: break;
 				case 1: _writer.Write( buffer[nonEscapedSegmentStart] ); break;
-				default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, ( uint ) segmentLength ) ); break;
+				default: _writer.Write( new CUtf16StringSpan( buffer + nonEscapedSegmentStart, segmentLength ) ); break;
 			}
 
 			_formatter.Clear();
@@ -348,7 +368,7 @@ namespace System.Xml {
 			}
 		}
 
-		private static int IndexOfEscapeCharacterInValue( char* buffer, int length, int start ) {
+		private static uint IndexOfEscapeCharacterInValue( char* buffer, uint length, uint start ) {
 			for( var i = start; i < length; ++i ) {
 				switch( buffer[i] ) {
 					case '&':
@@ -360,10 +380,10 @@ namespace System.Xml {
 				}
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
-		private static int IndexOfEscapeCharacterInSingleQuotedAttribute( char* buffer, int length, int start ) {
+		private static uint IndexOfEscapeCharacterInSingleQuotedAttribute( char* buffer, uint length, uint start ) {
 			for( var i = start; i < length; ++i ) {
 				switch( buffer[i] ) {
 					case '&':
@@ -376,10 +396,10 @@ namespace System.Xml {
 				}
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
-		private static int IndexOfEscapeCharacterInDoubleQuotedAttribute( char* buffer, int length, int start ) {
+		private static uint IndexOfEscapeCharacterInDoubleQuotedAttribute( char* buffer, uint length, uint start ) {
 			for( var i = start; i < length; ++i ) {
 				switch( buffer[i] ) {
 					case '&':
@@ -392,7 +412,7 @@ namespace System.Xml {
 				}
 			}
 
-			return -1;
+			return uint.MaxValue;
 		}
 
 		public CommentRegion Comment() { return new CommentRegion( this ); }

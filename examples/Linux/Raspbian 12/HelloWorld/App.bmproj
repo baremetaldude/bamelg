@@ -1,0 +1,115 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <NativeTargetPlatform>Linux</NativeTargetPlatform>
+    <NativeTargetPlatformVersion>Raspbian 12</NativeTargetPlatformVersion>
+    <RootNamespace>Example</RootNamespace>
+    <SbcsStringCodepage>20866</SbcsStringCodepage>
+  </PropertyGroup>
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{429A998E-55D7-49CA-9729-AED5C887C6AF}</ProjectGuid>
+    <OutputType>Exe</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <AssemblyName>HelloWorld</AssemblyName>
+    <TargetCpu Condition="'$(TargetCpu)' == ''">ARM_32</TargetCpu>
+    <BuildType>Debug</BuildType>
+  </PropertyGroup>
+  <Import Condition=" Exists('$(MSBuildProjectName).$(USERNAME).user') " Project="$(MSBuildProjectName).$(USERNAME).user" />
+  <PropertyGroup>
+    <SshUser Condition=" '$(SshUser)' == '' ">root</SshUser>
+    <SshKeyFile Condition=" '$(SshKeyFile)' == '' ">..\..\..\example.private.rsa</SshKeyFile>
+    <RemoteDebugMachine Condition="'$(TargetCpu)' == 'ARM_32' AND '$(RemoteDebugMachine)' == '' ">raspbian32</RemoteDebugMachine>
+    <RemoteDebugMachine Condition="'$(TargetCpu)' == 'ARM_64' AND '$(RemoteDebugMachine)' == '' ">raspbian64</RemoteDebugMachine>
+    <RemoteExecutablePath Condition="'$(RemoteExecutablePath)' == ''">/usr/local/bin/$(AssemblyName)</RemoteExecutablePath>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Validate|AnyCPU' ">
+    <GenerateCode>false</GenerateCode>
+    <DebugSymbols>false</DebugSymbols>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">false</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <StartProgram></StartProgram>
+    <RemoteDebugMachine></RemoteDebugMachine>
+    <CmdArgs></CmdArgs>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - memcheck|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --leak-check=full --num-callers=50 --tool=memcheck "$(RemoteExecutablePath)"</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - gdb|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <StartProgram>gdb -ex=run --args "$(RemoteExecutablePath)"</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - helgrind|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=helgrind "$(RemoteExecutablePath)"</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug - drd|AnyCPU' ">
+    <BuildType>Debug</BuildType>
+    <RunUnitTests>true</RunUnitTests>
+    <OptimizationLevel>0</OptimizationLevel>
+    <ModularBuild Condition="'$(ModularBuild)' == ''">true</ModularBuild>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>true</DebugSymbols>
+    <StartProgram>valgrind --track-fds=yes --read-var-info=yes --time-stamp=yes --num-callers=50 --tool=drd "$(RemoteExecutablePath)"</StartProgram>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <BuildType>Release</BuildType>
+    <RunUnitTests>false</RunUnitTests>
+    <OptimizationLevel>1</OptimizationLevel>
+    <DefineConstants>TRACE</DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
+    <BuildType>Distribution</BuildType>
+    <OptimizationLevel>4</OptimizationLevel>
+    <StripCallerContextExpressions>true</StripCallerContextExpressions>
+    <RunUnitTests>false</RunUnitTests>
+    <DefineConstants></DefineConstants>
+    <WarningLevel>4</WarningLevel>
+    <DebugSymbols>false</DebugSymbols>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="App.Config\App.Config.bmlg" />
+    <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
+    <Compile Include="App\**\*.bmlg" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(ModulesFolder)\BCL\Optional\CodePage\Encoding.$(SbcsStringCodepage).bmlg" />
+  </ItemGroup>
+  <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
+  <!--Target Name="BeforeBuild"> ... </Target-->
+  <!--Target Name="AfterBuild"> ... </Target-->
+</Project>

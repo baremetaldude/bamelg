@@ -1,0 +1,64 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime;
+
+namespace System.Hash {
+	public static partial struct CRC8 {
+		// Poly=0x07 Reflected=0xE0 CRC = x⁸ + x² + x¹ + 1
+		// Usage: result = CRC_8_CCITT( 0x00, data, dataLength );
+		public static byte LowCachePressure_CRC_8_CCITT( byte crc, byte data ) { return LowCachePressure_ShiftLeft( 0x07, crc, data ); }
+		public static byte LowCachePressure_CRC_8_CCITT( byte crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftLeft( 0x07, crc, data, dataLength ); }
+		public static byte CRC_8_CCITT( byte crc, byte data ) { return try_resolve_invocation_target( LookupNormal_0x07, LowCachePressure_CRC_8_CCITT )( crc, data ); }
+		public static byte CRC_8_CCITT( byte crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupNormal_0x07, LowCachePressure_CRC_8_CCITT )( crc, data, dataLength ); }
+
+		// Poly=0x07 Reflected=0xE0 CRC = x⁸ + x² + x¹ + 1
+		// Usage: result = CRC_8_ROHC( 0xFF, data, dataLength );
+		public static byte LowCachePressure_CRC_8_ROHC( byte crc, byte data ) { return LowCachePressure_ShiftRight( 0xE0, crc, data ); }
+		public static byte LowCachePressure_CRC_8_ROHC( byte crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftRight( 0xE0, crc, data, dataLength ); }
+		public static byte CRC_8_ROHC( byte crc, byte data ) { return try_resolve_invocation_target( LookupReflected_0x07, LowCachePressure_CRC_8_ROHC )( crc, data ); }
+		public static byte CRC_8_ROHC( byte crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupReflected_0x07, LowCachePressure_CRC_8_ROHC )( crc, data, dataLength ); }
+	}
+
+	public static partial struct CRC16 {
+		// Poly=0x8005 Reflected=0xA001 CRC = x¹⁶ + x¹⁵ + x² + 1
+		// Usage: result = CRC_16_CMS( 0xFFFF, data, dataLength );
+		public static ushort LowCachePressure_CRC_16_CMS( ushort crc, byte data ) { return LowCachePressure_ShiftLeft( 0x8005, crc, data ); }
+		public static ushort LowCachePressure_CRC_16_CMS( ushort crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftLeft( 0x8005, crc, data, dataLength ); }
+		public static ushort CRC_16_CMS( ushort crc, byte data ) { return try_resolve_invocation_target( LookupNormal_0x8005, LowCachePressure_CRC_16_CMS )( crc, data ); }
+		public static ushort CRC_16_CMS( ushort crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupNormal_0x8005, LowCachePressure_CRC_16_CMS )( crc, data, dataLength ); }
+
+		// Poly=0x8005 Reflected=0xA001 CRC = x¹⁶ + x¹⁵ + x² + 1
+		// Usage: result = CRC_16_MODBUS( 0xFFFF, data, dataLength );
+		public static ushort LowCachePressure_CRC_16_MODBUS( ushort crc, byte data ) { return LowCachePressure_ShiftRight( 0xA001, crc, data ); }
+		public static ushort LowCachePressure_CRC_16_MODBUS( ushort crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftRight( 0xA001, crc, data, dataLength ); }
+		public static ushort CRC_16_MODBUS( ushort crc, byte data ) { return try_resolve_invocation_target( LookupReflected_0x8005, LowCachePressure_CRC_16_MODBUS )( crc, data ); }
+		public static ushort CRC_16_MODBUS( ushort crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupReflected_0x8005, LowCachePressure_CRC_16_MODBUS )( crc, data, dataLength ); }
+	}
+
+	public static partial struct CRC32 {
+		// Poly=0x04C11DB7 Reflected=0xEDB88320 CRC = x³² + x²⁶ + x²³ + x²² + x¹⁶ + x¹² + x¹¹ + x¹⁰ + x⁸ + x⁷ + x⁵ + x⁴ + x² + x¹ + 1
+		// Usage: result = ~CRC_32( 0xFFFFFFFF, data, dataLength );
+		public static uint LowCachePressure_CRC_32( uint crc, byte data ) { return LowCachePressure_ShiftRight( 0xEDB88320, crc, data ); }
+		public static uint LowCachePressure_CRC_32( uint crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftRight( 0xEDB88320, crc, data, dataLength ); }
+		public static uint CRC_32( uint crc, byte data ) { return try_resolve_invocation_target( LookupReflected_0x04C11DB7, LowCachePressure_CRC_32 )( crc, data ); }
+		public static uint CRC_32( uint crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupReflected_0x04C11DB7, LowCachePressure_CRC_32 )( crc, data, dataLength ); }
+
+		// Poly=0x04C11DB7 Reflected=0xEDB88320 CRC = x³² + x²⁶ + x²³ + x²² + x¹⁶ + x¹² + x¹¹ + x¹⁰ + x⁸ + x⁷ + x⁵ + x⁴ + x² + x¹ + 1
+		// Usage: result = ~CRC_32_BZIP2( 0xFFFFFFFF, data, dataLength );
+		public static uint LowCachePressure_CRC_32_BZIP2( uint crc, byte data ) { return LowCachePressure_ShiftLeft( 0x04C11DB7, crc, data ); }
+		public static uint LowCachePressure_CRC_32_BZIP2( uint crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftLeft( 0x04C11DB7, crc, data, dataLength ); }
+		public static uint CRC_32_BZIP2( uint crc, byte data ) { return try_resolve_invocation_target( LookupNormal_0x04C11DB7, LowCachePressure_CRC_32_BZIP2 )( crc, data ); }
+		public static uint CRC_32_BZIP2( uint crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( LookupNormal_0x04C11DB7, LowCachePressure_CRC_32_BZIP2 )( crc, data, dataLength ); }
+
+		// Poly=0x1EDC6F41 Reflected=0x82F63B78 CRC = x³² + x²⁸ + x²⁷ + x²⁶ + x²⁵ + x²³ + x²² + x²⁰ + x¹⁹ + x¹⁸ + x¹⁴ + x¹³ + x¹¹ + x¹⁰ + x⁹ + x⁸ + x⁶ + 1
+		// Usage: result = ~CRC_32c( 0xFFFFFFFF, data, dataLength );
+		public static uint LowCachePressure_CRC_32c( uint crc, byte data ) { return LowCachePressure_ShiftRight( 0x82F63B78, crc, data ); }
+		public static uint LowCachePressure_CRC_32c( uint crc, byte* data, uint dataLength ) { return LowCachePressure_ShiftRight( 0x82F63B78, crc, data, dataLength ); }
+		public static uint CRC_32c( uint crc, byte data ) { return try_resolve_invocation_target( LookupReflected_0x1EDC6F41, LowCachePressure_CRC_32c )( crc, data ); }
+		public static uint CRC_32c( uint crc, byte* data, uint dataLength ) { return try_resolve_invocation_target( HardwareReflected_0x1EDC6F41, LookupReflected_0x1EDC6F41, LowCachePressure_CRC_32c )( crc, data, dataLength ); }
+	}
+}

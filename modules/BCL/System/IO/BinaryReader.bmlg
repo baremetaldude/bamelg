@@ -14,10 +14,10 @@ namespace System.IO {
 	// Reads primitive data types from binary stream. Assumed all data are stored in little-endian form
 	public class BinaryReader {
 		public IStream BaseStream;
-		public uint MaxPrimitiveLength = uint.MaxValue;
 
-		public bool IsStreamBroken { get; set; }
 		protected StreamingBufferInfo* _bufferInfo;
+
+		public bool IsEndOfStream { get; set; }
 
 		public BinaryReader( IStream stream ) {
 			BaseStream = stream.GetBufferedReadStream( _bufferInfo );
@@ -35,14 +35,13 @@ namespace System.IO {
 			value.Deserialize( i.Object, this, context );
 		}
 
-		public bool EnsureReadable( int count ) {
+		public bool EnsureReadable( uint count ) {
 			return BaseStream.EnsureReadable( _bufferInfo, count );
 		}
 
 		private T ReadPrimitive<T>() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
-				EventHandler.EndOfStream( this );
-				IsStreamBroken = true;
+			if( !EnsureReadable( sizeof( T ) ) ) {
+				IsEndOfStream = true;
 				return default( T );
 			}
 
@@ -52,9 +51,8 @@ namespace System.IO {
 		}
 
 		private T PeekPrimitive<T>() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( T ) ) ) {
-				EventHandler.EndOfStream( this );
-				IsStreamBroken = true;
+			if( !EnsureReadable( sizeof( T ) ) ) {
+				IsEndOfStream = true;
 				return default( T );
 			}
 
@@ -159,9 +157,8 @@ namespace System.IO {
 
 		/// @{ common types
 		public Guid ReadGuid() {
-			if( !BaseStream.EnsureReadable( _bufferInfo, sizeof( Guid ) ) ) {
-				EventHandler.EndOfStream( this );
-				IsStreamBroken = true;
+			if( !EnsureReadable( sizeof( Guid ) ) ) {
+				IsEndOfStream = true;
 				return default( Guid );
 			}
 
@@ -171,283 +168,565 @@ namespace System.IO {
 		}
 
 		public DateTime ReadDateTime() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( DateTime* ) &nativeLayout; }
+		public DateTimeUTC ReadDateTimeUTC() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( DateTimeUTC* ) &nativeLayout; }
+		public DateTimeLocal ReadDateTimeLocal() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( DateTimeLocal* ) &nativeLayout; }
 		public TimeSpan ReadTimeSpan() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( TimeSpan* ) &nativeLayout; }
+		public TimeDuration ReadTimeDuration() { var serializedLayout = ReadUInt64(); ulong nativeLayout = serializedLayout; return *( TimeDuration* ) &nativeLayout; }
 
 		public void Read( [Out] Guid& value ) { value = ReadGuid(); }
 		public void Read( [Out] DateTime& value ) { value = ReadDateTime(); }
+		public void Read( [Out] DateTimeUTC& value ) { value = ReadDateTimeUTC(); }
+		public void Read( [Out] DateTimeLocal& value ) { value = ReadDateTimeLocal(); }
 		public void Read( [Out] TimeSpan& value ) { value = ReadTimeSpan(); }
+		public void Read( [Out] TimeDuration& value ) { value = ReadTimeDuration(); }
 
-		public int ReadValues( byte* buffer, int length ) { return BaseStream.Read( buffer, length ); }
-		public int ReadValues( sbyte* buffer, int length ) { return BaseStream.Read( ( byte* ) buffer, length ); }
+		public uint ReadValues( byte* buffer, uint length ) {
+			var readen = BaseStream.Read( buffer, length );
 
-		public int ReadValues( short* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+			if( readen != length ) {
+				IsEndOfStream = true;
+			}
+
+			return readen;
+		}
+
+		public uint ReadValues( sbyte* buffer, uint length ) {
+			return ReadValues( ( byte* ) buffer, length );
+		}
+
+		public uint ReadValues( short* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				IsEndOfStream = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( ushort* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
-		public int ReadValues( char* buffer, int length ) { return ReadValues( ( short* ) buffer, length ); }
+		public uint ReadValues( ushort* buffer, uint length ) { return ReadValues( ( short* ) buffer, length ); }
+		public uint ReadValues( char* buffer, uint length ) { return ReadValues( ( short* ) buffer, length ); }
 
-		public int ReadValues( int* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+		public uint ReadValues( int* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				IsEndOfStream = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( uint* buffer, int length ) { return ReadValues( ( int* ) buffer, length ); }
+		public uint ReadValues( uint* buffer, uint length ) { return ReadValues( ( int* ) buffer, length ); }
 
-		public int ReadValues( long* buffer, int length ) {
-			var readen = BaseStream.Read( buffer, sizeof( buffer[0] ) * length );
+		public uint ReadValues( long* buffer, uint length ) {
+			var required = sizeof( buffer[0] ) * length;
+			var readen = BaseStream.Read( buffer, required );
 			var readenCount = readen / sizeof( buffer[0] );
 
 			if( typeof( short ) != typeof( short_littleendian ) )
-				for( int i = 0; i < readenCount; ++i )
+				for( var i = 0U; i < readenCount; ++i )
 					buffer[i] = BitOperations.ByteSwap( buffer[i] );
+
+			if( readen != required ) {
+				IsEndOfStream = true;
+			}
 
 			return readenCount;
 		}
 
-		public int ReadValues( ulong* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( ulong* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
 
-		public int ReadValues( DateTime* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
-		public int ReadValues( TimeSpan* buffer, int length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( DateTime* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( DateTimeUTC* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( DateTimeLocal* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( TimeSpan* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
+		public uint ReadValues( TimeDuration* buffer, uint length ) { return ReadValues( ( long* ) buffer, length ); }
 
-		public byte[] ReadUInt8Array() {
+		public sbyte[] ReadInt8Array() { return ReadInt8Array( false, uint.MaxValue ); }
+		public byte[] ReadUInt8Array() { return ReadUInt8Array( false, uint.MaxValue ); }
+		public short[] ReadInt16Array() { return ReadInt16Array( false, uint.MaxValue ); }
+		public ushort[] ReadUInt16Array() { return ReadUInt16Array( false, uint.MaxValue ); }
+		public int[] ReadInt32Array() { return ReadInt32Array( false, uint.MaxValue ); }
+		public uint[] ReadUInt32Array() { return ReadUInt32Array( false, uint.MaxValue ); }
+		public long[] ReadInt64Array() { return ReadInt64Array( false, uint.MaxValue ); }
+		public ulong[] ReadUInt64Array() { return ReadUInt64Array( false, uint.MaxValue ); }
+		public DateTime[] ReadDateTimeArray() { return ReadDateTimeArray( false, uint.MaxValue ); }
+		public TimeSpan[] ReadTimeSpanArray() { return ReadTimeSpanArray( false, uint.MaxValue ); }
+
+		public byte[] ReadUInt8Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] byte;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] byte;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] byte;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public sbyte[] ReadInt8Array() {
+		public sbyte[] ReadInt8Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] sbyte;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] sbyte;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] sbyte;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public ushort[] ReadUInt16Array() {
+		public ushort[] ReadUInt16Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] ushort;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] ushort;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] ushort;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public short[] ReadInt16Array() {
+		public short[] ReadInt16Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] short;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] short;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] short;
+				ReadValues( &result[0], length );
+
+				if( IsEndOfStream ) return null;
+				return result;
+			}
 		}
 
-		public uint[] ReadUInt32Array() {
+		public uint[] ReadUInt32Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] uint;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] uint;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] uint;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public int[] ReadInt32Array() {
+		public int[] ReadInt32Array( bool& maxLengthExceeded, uint maxLength ) {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) { maxLengthExceeded = false; return null; }
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] int;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
+			}
+
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] int;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
+		}
+
+		public ulong[] ReadUInt64Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] ulong;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] int;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] ulong;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public ulong[] ReadUInt64Array() {
+		public long[] ReadInt64Array( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] long;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] ulong;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] long;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public long[] ReadInt64Array() {
+		public DateTime[] ReadDateTimeArray( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] DateTime;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] long;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] DateTime;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public DateTime[] ReadDateTimeArray() {
+		public DateTimeUTC[] ReadDateTimeUTCArray( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] DateTimeUTC;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] DateTime;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] DateTimeUTC;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public TimeSpan[] ReadTimeSpanArray() {
+		public DateTimeLocal[] ReadDateTimeLocalArray( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
 			if( length == uint.MaxValue ) return null;
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] DateTimeLocal;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
 			}
 
-			var result = new[length] TimeSpan;
-			ReadValues( &result[0], ( int ) length );
-			return result;
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] DateTimeLocal;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
 		}
 
-		public SbcsString ReadSbcsString() {
+		public TimeSpan[] ReadTimeSpanArray( bool& maxLengthExceeded, uint maxLength ) {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] TimeSpan;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
+			}
+
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] TimeSpan;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
+		}
+
+		public TimeDuration[] ReadTimeDurationArray( bool& maxLengthExceeded, uint maxLength ) {
+			uint_littleendian length;
+
+			Read( length );
+			if( length == uint.MaxValue ) return null;
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new[maxLength] TimeDuration;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( result[0] ) );
+				return result;
+			}
+
+			if( IsEndOfStream ) return null;
+
+			{
+				var result = new[length] TimeDuration;
+				ReadValues( &result[0], length );
+				if( IsEndOfStream ) return null;
+
+				return result;
+			}
+		}
+
+		public SbcsString ReadSbcsString() { return ReadSbcsString( false, uint.MaxValue ); }
+		public Utf8String ReadUtf8String() { return ReadUtf8String( false, uint.MaxValue ); }
+		public Utf16String ReadUtf16String() { return ReadUtf16String( false, uint.MaxValue ); }
+		public Utf32String ReadUtf32String() { return ReadUtf32String( false, uint.MaxValue ); }
+
+		public SbcsString ReadSbcsString( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 			uint_littleendian codePage;
 
 			Read( length );
-			if( length == uint.MaxValue ) return null;
-			Read( codePage );
+			if( length == uint.MaxValue || IsEndOfStream ) return null;
 
-			if( length > MaxPrimitiveLength ) {
-				EventHandler.PrimitiveSizeExceeded( this );
-				IsStreamBroken = true;
-				BaseStream.Drain( ( int ) length );
-				return null;
+			Read( codePage );
+			if( IsEndOfStream ) return null;
+
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new SbcsString.Builder( maxLength, ( System.Text.CodePageID ) codePage );
+				ReadValues( result.GetChars(), maxLength );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( byte ) );
+				return result.Detach();
 			}
 
-			var result = new SbcsString.Builder( length, ( System.Text.CodePageID ) codePage );
-			ReadValues( result.GetChars(), ( int ) length );
-			return result.Detach();
+			{
+				var result = new SbcsString.Builder( length, ( System.Text.CodePageID ) codePage );
+				ReadValues( result.GetChars(), length );
+
+				if( IsEndOfStream ) return null;
+				return result.Detach();
+			}
 		}
 
-		public Utf8String ReadUtf8String() {
+		public Utf8String ReadUtf8String( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length, byteLength;
 
 			Read( length );
-			if( length == uint.MaxValue ) return null;
+			if( length == uint.MaxValue || IsEndOfStream ) return null;
 
 			Read( byteLength );
+			if( IsEndOfStream ) return null;
 
-			var result = new Utf8String.Builder( byteLength );
-			result.Length = length;
-			ReadValues( result.GetChars(), ( int ) byteLength );
+			if( byteLength > maxLength ) {
+				maxLengthExceeded = true;
 
-			return result.Detach();
+				var result = new Utf8String.Builder( maxLength );
+				ReadValues( result.GetChars(), maxLength );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( byte ) );
+				return result.Detach();
+			}
+			else {
+				var result = new Utf8String.Builder( byteLength );
+				result.Length = length;
+				ReadValues( result.GetChars(), byteLength );
+
+				if( IsEndOfStream ) return null;
+				return result.Detach();
+			}
 		}
 
-		public Utf16String ReadUtf16String() {
+		public Utf16String ReadUtf16String( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
-			if( length == uint.MaxValue ) return null;
+			if( length == uint.MaxValue || IsEndOfStream ) return null;
 
-			var result = new Utf16String.Builder( length );
-			ReadValues( result.GetChars(), ( int ) length );
-			return result.Detach();
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new Utf16String.Builder( maxLength );
+				ReadValues( result.GetChars(), maxLength );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( char ) );
+				return result.Detach();
+			} else {
+				var result = new Utf16String.Builder( length );
+				ReadValues( result.GetChars(), length );
+
+				if( IsEndOfStream ) return null;
+				return result.Detach();
+			}
 		}
 
-		public Utf32String ReadUtf32String() {
+		public Utf32String ReadUtf32String( bool& maxLengthExceeded, uint maxLength ) {
 			uint_littleendian length;
 
 			Read( length );
-			if( length == uint.MaxValue ) return null;
+			if( length == uint.MaxValue || IsEndOfStream ) return null;
 
-			var result = new Utf32String.Builder( length );
-			ReadValues( result.GetChars(), ( int ) length );
-			return result.Detach();
+			if( length > maxLength ) {
+				maxLengthExceeded = true;
+
+				var result = new Utf32String.Builder( maxLength );
+				ReadValues( result.GetChars(), maxLength );
+				if( IsEndOfStream ) return null;
+
+				BaseStream.Drain( ( length - maxLength ) * sizeof( char ) );
+				return result.Detach();
+			} else {
+				var result = new Utf32String.Builder( length );
+				ReadValues( result.GetChars(), length );
+
+				if( IsEndOfStream ) return null;
+				return result.Detach();
+			}
 		}
 
 		public void Read( SbcsString& value ) { value = ReadSbcsString(); }
@@ -492,45 +771,5 @@ namespace System.IO {
 		public void ReadCompact( uint_littleendian& value ) { value = ReadCompactUInt32(); }
 		public void ReadCompact( int_bigendian& value ) { value = ReadCompactInt32(); }
 		public void ReadCompact( uint_bigendian& value ) { value = ReadCompactUInt32(); }
-
-		public IEventHandler EventHandler = EventHandlerConsole.Instance;
-
-		public interface IEventHandler {
-			void EndOfStream( BinaryReader context );
-			void PrimitiveSizeExceeded( BinaryReader context );
-		}
-
-		public struct EventHandlerNull : IEventHandler {
-			public static readonly thistype Instance;
-
-			#region IEventHandler Members
-
-			public void EndOfStream( BinaryReader context ) { }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { }
-
-			#endregion
-		}
-
-		public struct EventHandlerConsole : IEventHandler {
-			public static readonly thistype Instance;
-
-			#region IEventHandler Members
-
-			public void EndOfStream( BinaryReader context ) { Console.WriteLine( "'{0}': EndOfStream", context ); }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { Console.WriteLine( "'{0}': PrimitiveSizeExceeded", context ); }
-
-			#endregion
-		}
-
-		public struct EventHandlerAbort : IEventHandler {
-			public static readonly thistype Instance;
-
-			#region IEventHandler Members
-
-			public void EndOfStream( BinaryReader context ) { EventHandlerConsole.Instance.EndOfStream( context ); Environment.Abort( 1 ); }
-			public void PrimitiveSizeExceeded( BinaryReader context ) { EventHandlerConsole.Instance.PrimitiveSizeExceeded( context ); Environment.Abort( 1 ); }
-
-			#endregion
-		}
 	}
 }

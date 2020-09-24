@@ -83,7 +83,7 @@ namespace System.Web {
 			_uriStart = _uriEnd = _queryStart = _fragmentStart = null;
 		}
 
-		public void SetInput( void* start, int length ) {
+		public void SetInput( void* start, uint length ) {
 			_state = State.Start;
 
 			_current = ( byte* ) start;
@@ -95,11 +95,11 @@ namespace System.Web {
 		}
 
 		public void SetInput( SbcsString request ) {
-			SetInput( request.GetChars(), ( int ) request.Length );
+			SetInput( request.GetChars(), request.Length );
 		}
 
 		private bool CheckMethod( bool& needMoreData, HttpMethod method, SbcsString value ) {
-			if( needMoreData = _end - _current < value.Length ) return true;
+			if( needMoreData = ( uintptr )( _end - _current ) < value.Length ) return true;
 
 			if( new CStringSpan( _current, value.Length ) == ( CStringSpan ) value ) {
 				_method = method;
@@ -396,14 +396,6 @@ namespace System.Web {
 
 			return ParsingResult.Finished;
 		}
-
-		[UnitTest]
-		private static void ParserTest() {
-			var parser = new HttpRequestParser();
-			parser.SetInput( "GET / HTTP/1.1\r\n\r\n" );
-			Assert.IsTrue( parser.MoveNext( null ) == ParsingResult.RequestReady );
-			Assert.IsTrue( parser.MoveNext( null ) == ParsingResult.Finished );
-		}
 	}
 
 	public struct HttpResponseParser {
@@ -464,7 +456,7 @@ namespace System.Web {
 			VersionMajor = VersionMinor = 0;
 		}
 
-		public void SetInput( void* start, int length ) {
+		public void SetInput( void* start, uint length ) {
 			_state = State.Version;
 
 			_current = ( byte* ) start;
@@ -473,7 +465,7 @@ namespace System.Web {
 		}
 
 		public void SetInput( SbcsString request ) {
-			SetInput( request.GetChars(), ( int ) request.Length );
+			SetInput( request.GetChars(), request.Length );
 		}
 
 		private static bool charseq( byte* ptr, char p0 ) { return ptr[0] == p0; }
@@ -674,152 +666,31 @@ namespace System.Web {
 	}
 
 	public class HttpFormatter {
-		public static bool TryParseDateTime( byte* parsePosition, uint remaining, DateTime& result ) {
-			result = DateTime.MinValue;
+		public static bool TryParseAcceptEncoding( byte* parsePosition, uint remaining, DecompressionMethods& result ) {
+			if( remaining >= 13 && new CStringSpan( parsePosition, 13 ) == ( CStringSpan ) ( SbcsString ) "gzip, deflate" )
+				result = DecompressionMethods.GZip | DecompressionMethods.Deflate;
 
-			// parsing of RFC 1123 format
-			if( remaining < 26 ) return false;
-
-			switch( new CStringSpan( parsePosition, 5 ) ) {
-				case "Mon, ":
-				case "Tue, ":
-				case "Wed, ":
-				case "Thu, ":
-				case "Fri, ":
-				case "Sat, ":
-				case "Sun, ":
-					break;
-
-				default:
-					return false;
-			}
-			parsePosition += 5;
-			remaining -= 5;
-
-			// do not check DayOfWeek
-
-			int day;
-			if( !int.TryFetch( parsePosition, remaining, day ) || remaining == 0 ) return false;
-
-			int month;
-			switch( new CStringSpan( parsePosition, 3 ) ) {
-				case "Jan": month = 1; break;
-				case "Feb": month = 2; break;
-				case "Mar": month = 3; break;
-				case "Apr": month = 4; break;
-				case "May": month = 5; break;
-				case "Jun": month = 6; break;
-				case "Jul": month = 7; break;
-				case "Aug": month = 8; break;
-				case "Sep": month = 9; break;
-				case "Oct": month = 10; break;
-				case "Nov": month = 11; break;
-				case "Dec": month = 12; break;
-					break;
-
-				default:
-					return false;
-			}
-			parsePosition += 3;
-			remaining -= 3;
-
-			int year;
-			if( !int.TryFetch( parsePosition, remaining, year ) || remaining == 0 ) return false;
-
-			int hour;
-			if( !int.TryFetch( parsePosition, remaining, hour ) || remaining == 0 ) return false;
-			if( *parsePosition++ != ':' || --remaining == 0 ) return false;
-
-			int minute;
-			if( !int.TryFetch( parsePosition, remaining, minute ) || remaining == 0 ) return false;
-			if( *parsePosition++ != ':' || --remaining == 0 ) return false;
-
-			int second;
-			if( !int.TryFetch( parsePosition, remaining, second ) || remaining == 0 ) return false;
-
-			if( remaining < 3 ) return false;
-
-			switch( new CStringSpan( parsePosition, 3 ) ) {
-				case "GMT": break;
-				default: return false;
-			}
-
-			result = new DateTime( year, month, day, hour, minute, second, DateTimeKind.Utc );
-			return true;
-		}
-
-		// Format DateTime to something like that 'Wed, 21 Jan 2004 19:51:30 GMT'
-		public static void FormatDateTime( StringBuilder builder, DateTime value ) {
-			int year, dayOfYear, month, day;
-			DayOfWeek dayOfWeek;
-
-			value.GetDateValues( year, dayOfYear, month, day, dayOfWeek );
-
-			var hour = value.Hour;
-			var minute = value.Minute;
-			var second = value.Second;
-
-			string dayOfWeekName;
-			switch( dayOfWeek ) {
-				case DayOfWeek.Monday: dayOfWeekName = "Mon"; break;
-				case DayOfWeek.Tuesday: dayOfWeekName = "Tue"; break;
-				case DayOfWeek.Wednesday: dayOfWeekName = "Wed"; break;
-				case DayOfWeek.Thursday: dayOfWeekName = "Thu"; break;
-				case DayOfWeek.Friday: dayOfWeekName = "Fri"; break;
-				case DayOfWeek.Saturday: dayOfWeekName = "Sat"; break;
-				case DayOfWeek.Sunday: dayOfWeekName = "Sun"; break;
-			}
-
-			string monthName;
-			switch( month ) {
-				case 1: monthName = "Jan"; break;
-				case 2: monthName = "Feb"; break;
-				case 3: monthName = "Mar"; break;
-				case 4: monthName = "Apr"; break;
-				case 5: monthName = "May"; break;
-				case 6: monthName = "Jun"; break;
-				case 7: monthName = "Jul"; break;
-				case 8: monthName = "Aug"; break;
-				case 9: monthName = "Sep"; break;
-				case 10: monthName = "Oct"; break;
-				case 11: monthName = "Nov"; break;
-				case 12: monthName = "Dec"; break;
-			}
-
-			builder.Append( dayOfWeekName );
-			builder.Append( ", " );
-			builder.Append( day );
-			builder.Append( ' ' );
-			builder.Append( monthName );
-			builder.Append( ' ' );
-			builder.Append( year );
-			builder.Append( ' ' );
-			builder.Append( hour, "D2" );
-			builder.Append( ':' );
-			builder.Append( minute, "D2" );
-			builder.Append( ':' );
-			builder.Append( second, "D2" );
-			builder.Append( " GMT" );
+			return false;
 		}
 
 		/// See header description at http://en.wikipedia.org/wiki/List_of_HTTP_header_fields
 
-		public static void HeaderDate( StringBuilder result, DateTime time ) { HeaderDate( result, time, "Date" ); }
-		public static void HeaderExpires( StringBuilder result, DateTime time ) { HeaderDate( result, time, "Expires" ); }
-		public static void HeaderLastModified( StringBuilder result, DateTime time ) { HeaderDate( result, time, "Last-Modified" ); }
+		public static void HeaderDate( StringBuilder result, DateTimeUTC time ) { HeaderDate( result, time, "Date" ); }
+		public static void HeaderExpires( StringBuilder result, DateTimeUTC time ) { HeaderDate( result, time, "Expires" ); }
+		public static void HeaderLastModified( StringBuilder result, DateTimeUTC time ) { HeaderDate( result, time, "Last-Modified" ); }
 
 		public static void StatusCode( StringBuilder result, HttpStatusCode statusCode ) {
 			result.Append( "HTTP/1.1 " );
-			result.Append( ( int ) statusCode );
+			result.Append( statusCode.Value() );
 			result.Append( ' ' );
 			result.Append( statusCode );
 			result.AppendLine();
 		}
 
-		public static void HeaderDate( StringBuilder result, DateTime time, vararg string dateName ) {
+		public static void HeaderDate( StringBuilder result, DateTimeUTC time, vararg string dateName ) {
 			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
 				var dateBuilder = builder.Value;
-				FormatDateTime( dateBuilder, time );
+				PrimitiveTypesFormatter.FormatDateTime_RFC1123( dateBuilder, time );
 
 				foreach( var item in dateName ) {
 					result.Append( item );
@@ -833,6 +704,16 @@ namespace System.Web {
 		public static void HeaderKeepAlive( StringBuilder result, bool keepAlive ) {
 			if( keepAlive ) result.AppendLine( "Connection: Keep-Alive" );
 			else result.AppendLine( "Connection: Close" );
+		}
+
+		public static void HeaderContentEncoding( StringBuilder result, DecompressionMethods value ) {
+			result.Append( "Content-Encoding: " );
+			switch( value ) {
+				case DecompressionMethods.GZip: result.Append( "gzip" ); break;
+				case DecompressionMethods.Deflate: result.Append( "deflate" ); break;
+				case DecompressionMethods.Brotli: result.Append( "br" ); break;
+			}
+			result.AppendLine();
 		}
 
 		public static void HeaderContentLength( StringBuilder result, long length ) {
@@ -1042,7 +923,7 @@ namespace System.Web {
 		WwwAuthenticate,
 	}
 
-	public enum HttpStatusCode {
+	public enum HttpStatusCode : ushort {
 		Continue =                     100,
 		SwitchingProtocols =           101,
 		OK =                           200,
@@ -1108,6 +989,7 @@ namespace System.Web {
 		None,
 		GZip,
 		Deflate,
+		Brotli,
 	}
 
 	public enum HttpMethod {

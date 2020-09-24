@@ -339,7 +339,7 @@ namespace Example {
 						case 0:
 							if( field.Type == TypeKind.List ) {
 								var localList = reader.ReadListBegin();
-								Success = new List<Utf8String>( localList.Count );
+								Success = new List<Utf8String>( ( uint ) localList.Count );
 								for( var localCounter = 0; localCounter < localList.Count; ++localCounter ) {
 									var localElement = reader.ReadString();
 									_success.Add( localElement );
@@ -365,7 +365,7 @@ namespace Example {
 					if( Success != null ) {
 						writer.WriteFieldBegin( "Success", TypeKind.List, 0 );
 						{
-							writer.WriteListBegin( TypeKind.String, _success.Count );
+							writer.WriteListBegin( TypeKind.String, ( int ) _success.Count );
 							foreach( var item in _success ) {
 								writer.WriteString( item );
 							}
@@ -405,7 +405,7 @@ namespace Example {
 						case 1:
 							if( field.Type == TypeKind.Map ) {
 								var localMap = reader.ReadMapBegin();
-								Value = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+								Value = new Dictionary<Utf8String, Utf8String>( ( uint ) localMap.Count );
 								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
 									var localKey = reader.ReadString();
 									var localValue = reader.ReadString();
@@ -430,7 +430,7 @@ namespace Example {
 				if( Value != null && __isset.value ) {
 					writer.WriteFieldBegin( "value", TypeKind.Map, 1 );
 					{
-						writer.WriteMapBegin( TypeKind.String, TypeKind.String, _value.Count );
+						writer.WriteMapBegin( TypeKind.String, TypeKind.String, ( int ) _value.Count );
 						foreach( var item in _value ) {
 							writer.WriteString( item.Key );
 							writer.WriteString( item.Value );
@@ -470,7 +470,7 @@ namespace Example {
 						case 0:
 							if( field.Type == TypeKind.Map ) {
 								var localMap = reader.ReadMapBegin();
-								Success = new Dictionary<Utf8String, Utf8String>( localMap.Count );
+								Success = new Dictionary<Utf8String, Utf8String>( ( uint ) localMap.Count );
 								for( var localCounter = 0; localCounter < localMap.Count; ++localCounter ) {
 									var localKey = reader.ReadString();
 									var localValue = reader.ReadString();
@@ -497,7 +497,7 @@ namespace Example {
 					if( Success != null ) {
 						writer.WriteFieldBegin( "Success", TypeKind.Map, 0 );
 						{
-							writer.WriteMapBegin( TypeKind.String, TypeKind.String, _success.Count );
+							writer.WriteMapBegin( TypeKind.String, TypeKind.String, ( int ) _success.Count );
 							foreach( var item in _success ) {
 								writer.WriteString( item.Key );
 								writer.WriteString( item.Value );

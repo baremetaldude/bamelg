@@ -59,35 +59,17 @@ namespace Platform.IO {
 
 		private HashSet<EventSink> _eventSinks = new HashSet<EventSink>();
 
-		public int EventSinkCount { get { return _eventSinks.Count; } }
+		public uint EventSinkCount { get { return _eventSinks.Count; } }
 
-		/// @{ Dispatching
-		public Platform.Libc.pthread_t DispatchThread = pthread_t.CurrentThread;
+		#region Dispatching
+		public Platform.Libc.pthread_t DispatchThread = pthread_t.Invalid;
+		public Utf8String DispatchThreadName;
 
 		public void BeginDispatch( Utf8String threadName = null ) {
-			var started = new Semaphore();
+			Debug.Assert( !IsDispatchingStarted );
 
-			var dispatchInfo = new Tuple<EventLoop, Semaphore*, Utf8String> {
-				Item1 = this,
-				Item2 = &started,
-				Item3 = threadName
-			};
-
-			new pthread_t( sender => {
-				var info = ( Tuple<EventLoop, Semaphore*, Utf8String>* ) sender;
-
-				var @this = info->Item1;
-
-				if( info->Item3 != null ) pthread_t.Name = info->Item3;
-				@this.DispatchThread = pthread_t.CurrentThread;
-				info->Item2->Post(); // info dies now
-
-				@this.Dispatch();
-
-				return null;
-			}, &dispatchInfo );
-
-			started.Wait();
+			DispatchThreadName = threadName;
+			DispatchThread = new pthread_t( Dispatch );
 		}
 
 		public void EndDispatch() {
@@ -100,6 +82,12 @@ namespace Platform.IO {
 		public Functors.Action PollHandlerPrepare = null;
 		public Functors.Action PollHandlerFinish = null;
 		private List<pollfd> _polledDescriptors;
+
+		public void Attach( Platform.Libc.pthread_t value ) {
+			Debug.Assert( !IsDispatchingStarted );
+
+			DispatchThread = value;
+		}
 
 		public int Poll( pollfd* externalEvents, uint externalEventCount, int externalPollTimeout ) {
 			Debug.Assert( DispatchThread.IsCurrent );
@@ -114,13 +102,13 @@ namespace Platform.IO {
 			_polledDescriptors.Add( new pollfd { Handle = Epoll, ListenedEvents = PollEvents.POLLIN } );
 
 			var oldEventCount = _polledDescriptors.Count;
-			if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.AddRange( externalEvents, ( int ) externalEventCount );
+			if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.AddRange( externalEvents, externalEventCount );
 			finally {
-				if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.RemoveAt( oldEventCount, ( int ) externalEventCount );
+				if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.RemoveAt( oldEventCount, externalEventCount );
 			}
 
 			for( ; ; ) {
-				if( _quitRequest ) {
+				if( atomic( _quitRequest, Relaxed ) ) {
 					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
 						Fiber.FiberManager.CancelAllFibers();
 				}
@@ -128,7 +116,7 @@ namespace Platform.IO {
 				var pollTimeout = externalPollTimeout;
 
 				var alarmTimeout = GetWaitTime();
-				if( alarmTimeout != TimeSpan.MaxValue ) {
+				if( alarmTimeout != TimeDuration.MaxValue ) {
 					var newTimeout = alarmTimeout.TotalMilliseconds;
 					int newTimeout32;
 					if( newTimeout >= int.MaxValue ) newTimeout32 = int.MaxValue; // wait finite amount of time
@@ -147,8 +135,8 @@ namespace Platform.IO {
 				polledDescriptors = LibcApi.poll( eventBuffer, _polledDescriptors.Count.ToUnsigned(), pollTimeout );
 				// TraceEventsArrived( polledDescriptors );
 
-				UnbiasedNow = DateTime.UnbiasedNow;
-				UtcNow = DateTime.UtcNow;
+				UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+				UtcNow = DateTimeUTC.UtcNow;
 				var readyAlarms = FindReadyAlarms();
 
 				if( polledDescriptors <= 0 ) { // notify signals, timeout
@@ -182,8 +170,10 @@ namespace Platform.IO {
 		}
 
 		public void Dispatch() {
+			DispatchThread = Platform.Libc.pthread_t.CurrentThread;
+			if( !DispatchThreadName.IsNullOrEmpty ) pthread_t.Name = DispatchThreadName;
+
 			TraceDispatchStarted();
-			Debug.Assert( DispatchThread.IsCurrent );
 
 			if( EnableFibers && !Fiber.Enabled ) {
 				_fiberDispatch = true;
@@ -192,7 +182,7 @@ namespace Platform.IO {
 			}
 
 			for( ; ; ) {
-				if( _quitRequest ) {
+				if( atomic( _quitRequest, Relaxed ) ) {
 					if( Fiber.FiberManager != null && Fiber.FiberManager.FiberCount > 0 )
 						Fiber.FiberManager.CancelAllFibers();
 					else
@@ -202,7 +192,7 @@ namespace Platform.IO {
 				var pollTimeout = -1;
 
 				var alarmTimeout = GetWaitTime();
-				if( alarmTimeout != TimeSpan.MaxValue ) {
+				if( alarmTimeout != TimeDuration.MaxValue ) {
 					var newTimeout = alarmTimeout.TotalMilliseconds;
 					if( newTimeout >= int.MaxValue ) pollTimeout = int.MaxValue; // wait finite amount of time
 					else {
@@ -247,8 +237,8 @@ namespace Platform.IO {
 		}
 
 		private void NotifyEventSinks( int polledDescriptors ) {
-			UnbiasedNow = DateTime.UnbiasedNow;
-			UtcNow = DateTime.UtcNow;
+			UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+			UtcNow = DateTimeUTC.UtcNow;
 			OnAlarm();
 
 			TraceEventsArrived( polledDescriptors );
@@ -264,7 +254,7 @@ namespace Platform.IO {
 			}
 		}
 
-		/// @}
+		#endregion
 
 		// One 'EventSink' for one 'IOHandle'. Can be attached to one 'EventLoop'.
 		// Ensure '_listenedEvents' and 'EventHandle' are valid before call 'Register()'
@@ -274,14 +264,14 @@ namespace Platform.IO {
 			public EventLoop Parent;
 			public IOHandle EventHandle;
 
-			/// @{
+			#region
 			public void Register( bool subscribe = true ) { Register( EventHandle, subscribe ); }
 			public void NotifyEventModification() { NotifyEventModification( EventHandle ); }
 			public void Unregister() { Unregister( EventHandle ); }
 
 			public void Subscribe() { Subscribe( EventHandle ); }
 			public void Unsubscribe() { Unsubscribe( EventHandle ); }
-			/// @}
+			#endregion
 
 			/// Calls 'NotifyEventModification' on value change
 			public EPOLL_EVENTS ListenedEvents {
@@ -382,21 +372,27 @@ namespace Platform.IO {
 			public override void OnEvent( epoll_event& @event ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( int ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
 					while( _notificationPipe[PipeHandle.ReadEnd].AvailableBytes > 0 ) {
-						int readen;
-						_notificationPipe[PipeHandle.ReadEnd].Read( buffer, bufferLength, readen );
+						uint readen;
 
-						for( var i = 0; i < readen; ++i ) {
+						if( !_notificationPipe[PipeHandle.ReadEnd].Read( readen, buffer, bufferLength ) ) {
+							atomic( _exitRequestPending = false, Relaxed );
+							atomic( Parent._quitRequest = true, Relaxed );
+							break;
+						}
+
+
+						for( var i = 0U; i < readen; ++i ) {
 							switch( ( NotificationCommand ) buffer[i] ) {
 								case NotificationCommand.Exit:
-									atomic( _exitRequestPending = false );
-									Parent._quitRequest = true;
+									atomic( _exitRequestPending = false, Relaxed );
+									atomic( Parent._quitRequest = true, Relaxed );
 									break;
 
 								case NotificationCommand.NewDispatcherTasks:
-									atomic( _newDispatcherTasks = false );
+									atomic( _newDispatcherTasks = false, Relaxed );
 									Parent.ExecuteTasks();
 									break;
 							}
@@ -406,7 +402,8 @@ namespace Platform.IO {
 			}
 
 			private void SendCommand( NotificationCommand command ) {
-				_notificationPipe[PipeHandle.WriteEnd].Write( &command, sizeof( command ) );
+				uint totalWritten = 0;
+				_notificationPipe[PipeHandle.WriteEnd].Write( totalWritten, &command, sizeof( command ) );
 			}
 
 			public void RequestExit() { if( !atomic( _exitRequestPending = true, Relaxed ) ) SendCommand( NotificationCommand.Exit ); } // dont overwhelm pipe
@@ -438,7 +435,7 @@ namespace Platform.IO {
 
 			/// \param Path to pin exported to sysfs (e.g. "/sys/class/gpio/gpio144/value")
 			public SystemError Open( CUtf8String path, bool& initialState = nullref ) {
-				var code = IOHandle.Open( _file, path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+				var code = IOHandle.Open( _file, path, FileOpenFlags.O_RDONLY | FileOpenFlags.O_NONBLOCK, 0 );
 				if( !code ) return code;
 
 				byte gpioValue;
@@ -454,18 +451,18 @@ namespace Platform.IO {
 		}
 
 		public class SysfsGpioInputTraceEventSink : SysfsGpioInputEventSink {
-			public DateTime LastEvent = DateTime.MinValue;
+			public TimeStamp.BootTime_ExcludeSuspend LastEvent = TimeStamp.BootTime_ExcludeSuspend.Zero;
 
 			public SysfsGpioInputTraceEventSink( EventLoop parent )
 				: base( parent ) {
 			}
 
 			public override void OnEvent( bool value ) {
-				var diff = Parent.UtcNow - LastEvent;
+				var diff = Parent.UnbiasedNow - LastEvent;
 				Console.Write( "GPIO state changed: {0}", value );
-				if( LastEvent != DateTime.MinValue ) System.Console.Write( "( {0} ago )", diff );
+				if( LastEvent != TimeStamp.BootTime_ExcludeSuspend.Zero ) System.Console.Write( "( {0} ago )", diff );
 				Console.WriteLine();
-				LastEvent = Parent.UtcNow;
+				LastEvent = Parent.UnbiasedNow;
 			}
 		}
 
@@ -490,7 +487,7 @@ namespace Platform.IO {
 				_listenedEvents = EPOLL_EVENTS.EPOLLIN;
 			}
 
-			// vat gpioDevice = IOHandle.Open( "/dev/gpiochip4", path, FctlFlags.O_RDONLY | FctlFlags.O_NONBLOCK, 0 );
+			// vat gpioDevice = IOHandle.Open( "/dev/gpiochip4", path, FileOpenFlags.O_RDONLY | FileOpenFlags.O_NONBLOCK, 0 );
 			public SystemError Bind( IOHandle gpioDevice, uint lineOffset, CUtf8String comment ) {
 				var lineInfo = new gpioevent_request {
 					fd = 0,
@@ -499,9 +496,9 @@ namespace Platform.IO {
 					eventflags = GPIOEVENT_REQUEST.GPIOEVENT_REQUEST_BOTH_EDGES
 				};
 
-				CUtf8String.InitializeBuffer( new CUtf8String( &lineInfo.consumer_label[0] ), comment, sizeof( lineInfo.consumer_label ) );
+				Memory.FillTerminatedBuffer( ( byte* ) &lineInfo.consumer_label[0], ( uint ) sizeof( lineInfo.consumer_label ), comment );
 
-				if( LibcApi.ioctl( gpioDevice, IoctlCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
+				if( LibcApi.ioctl( gpioDevice, FileDriverCommand.GPIO_GET_LINEEVENT_IOCTL, &lineInfo ) < 0 ) return LibcApi.LastError;
 				_lineDevice = bitcast<IOHandleNonBlocking>( lineInfo.fd );
 
 				return SystemError.None;
@@ -509,7 +506,7 @@ namespace Platform.IO {
 
 			public bool GetValue() {
 				gpiohandle_data data;
-				if( LibcApi.ioctl( _lineDevice, IoctlCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
+				if( LibcApi.ioctl( _lineDevice, FileDriverCommand.GPIOHANDLE_GET_LINE_VALUES_IOCTL, &data ) < 0 ) return LibcApi.LastError;
 				return data.values[0] != 0;
 			}
 
@@ -520,15 +517,25 @@ namespace Platform.IO {
 
 		public class UapiGpioInputTraceEventSink : GpioInputEventSink {
 			public ulong LastEvent = 0;
+			public bool FirstEvent = true;
 
 			public UapiGpioInputTraceEventSink( EventLoop parent )
 				: base( parent ) {
 			}
 
 			public override void OnEvent( ulong timestamp, bool value ) {
-				var diff = new TimeSpan( cast<long>( timestamp - LastEvent ) / 100 );
-				Console.Write( "GPIO state changed: {0} at {1}", value, new DateTime( ( long ) timestamp / 100 + 621355968000000000, DateTimeKind.Utc ) );
-				if( LastEvent != 0 ) System.Console.Write( "( {0} ago )", diff );
+				var diff = timestamp - LastEvent;
+				ulong diffNanoSeconds = diff % 1000000000;
+				ulong diffSeconds = diff / 1000000000;
+
+				ulong nanoSeconds = timestamp % 1000000000;
+				ulong seconds = timestamp / 1000000000;
+
+				Console.Write( "GPIO state changed: {0} at {1}.{2:D9}", value, TimeDuration.FromSeconds( seconds ), nanoSeconds );
+
+				if( FirstEvent ) FirstEvent = false;
+				else System.Console.Write( "( {0}.{1:D9} ago )", TimeDuration.FromSeconds( diffSeconds ), diffNanoSeconds );
+
 				Console.WriteLine();
 				LastEvent = timestamp;
 			}
@@ -613,7 +620,9 @@ namespace Platform.IO {
 		}
 
 		public static void BlockExitSignals() {
-			LibcApi.SignalInstallIgnore( SignalCode.SIGPIPE );
+			LibcApi.SignalInstallIgnore( SignalCode.SIGPIPE ); // ensure process-wide handler ignored
+			LibcApi.SignalInstallHandler( code => { }, SignalCode.SIGALRM ); // for EINTR
+
 			LibcApi.AssertErrno( PthreadsApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &_exitSignalSet, null ) );
 		}
 
@@ -639,11 +648,11 @@ namespace Platform.IO {
 				_timer.Close();
 			}
 
-			public void SetInterval( TimeSpan time ) {
+			public void SetInterval( TimeDuration time ) {
 				_timer.SetInterval( time );
 			}
 
-			public void SetInterval( TimeSpan interval, TimeSpan initialExpiration ) {
+			public void SetInterval( TimeDuration interval, TimeDuration initialExpiration ) {
 				_timer.SetInterval( interval, initialExpiration );
 			}
 
@@ -845,16 +854,18 @@ namespace Platform.IO {
 		#region Dispatcher
 
 		public sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return DispatchThread != pthread_t.Invalid; } }
 
 		#endregion
 
-		/// @{ Tracing
+		#region Tracing
+
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchStarted() {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch started: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch started: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -862,7 +873,7 @@ namespace Platform.IO {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -904,6 +915,7 @@ namespace Platform.IO {
 			using( Console.AttributedRegion( TraceStyleNormal ) )
 				Console.WriteLine( "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
 		}
-		/// @}
+
+		#endregion
 	}
 }

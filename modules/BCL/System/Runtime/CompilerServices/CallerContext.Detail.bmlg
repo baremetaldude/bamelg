@@ -7,7 +7,21 @@
 namespace System.Runtime.CompilerServices {
 	public partial struct CallerContext : IFormattable {
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			builder.Concat( Path, ':', Row, '(', Caller, " -> ", Expression, ')' );
+			if( Path.IsNullOrEmpty ) {
+				if( Caller != nullref ) {
+					builder.Append( Caller.DeclaringType.FullQualifiedName );
+					builder.Append( '.' );
+					builder.Append( Caller.Name );
+				}
+			}
+			else
+				builder.Append( Path );
+
+			builder.Append( '(' );
+			builder.Append( Row );
+			builder.Append( "): " );
+			builder.Append( Expression );
+			builder.Append( ' ' );
 		}
 	}
 }

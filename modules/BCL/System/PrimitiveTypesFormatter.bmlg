@@ -50,26 +50,26 @@ namespace System {
 
 			private int _digitsLen;
 			private int _offset;
-			private int _decPointPos;
+			internal int _decPointPos;
 
-			internal byte[340] _buffer; // с запасом для double e+307 в FixedPoint форме
-			internal int _writeIndex;
-			internal CStringSpan GetTextBuffer() { return new CStringSpan( &_buffer[0], ( uint ) _writeIndex ); }
+			internal byte[340] _buffer; // reserved for double e+307 with FixedPoint formatting
+			internal uint _writeIndex;
+			internal CStringSpan GetTextBuffer() { return new CStringSpan( &_buffer[0], _writeIndex ); }
 
 			public Formatter() {
-				_writeIndex = 0;
+				_writeIndex = 0U;
 			}
 
 			public void Init() {
-				_writeIndex = 0;
+				_writeIndex = 0U;
 			}
 
-			public int IntegerDigits {
-				get { return _decPointPos > 0 ? _decPointPos : 1; }
+			public uint IntegerDigits {
+				get { return _decPointPos > 0 ? ( uint ) _decPointPos : 1U; }
 			}
 
-			private int DecimalDigits {
-				get { return _digitsLen > _decPointPos ? _digitsLen - _decPointPos : 0; }
+			private uint DecimalDigits {
+				get { return _digitsLen > _decPointPos ? ( uint )( _digitsLen - _decPointPos ) : 0U; }
 			}
 
 			private bool IsFloatingSource {
@@ -85,16 +85,16 @@ namespace System {
 			}
 
 			private void RoundPos( int pos ) {
-				RoundBits( _digitsLen - pos );
+				RoundBits( _digitsLen - pos, 5U );
 			}
 
 			private bool RoundDecimal( int decimals ) {
-				return RoundBits( _digitsLen - _decPointPos - decimals );
+				return RoundBits( _digitsLen - _decPointPos - decimals, 5U );
 			}
 
 			internal bool _verbatimOutput = false;
 
-			private bool RoundBits( int shift ) {
+			private bool RoundBits( int shift, uint overflow ) {
 				if( shift <= 0 )
 					return false;
 
@@ -122,7 +122,7 @@ namespace System {
 				uint rem16 = v & 0xF;
 				_value[0] = ( v ^ rem16 ) << shift;
 				bool res = false;
-				if( rem16 >= 0x5 ) {
+				if( rem16 >= overflow ) {
 					_value[0] |= ( int ) 0x99999999 >> ( 28 - shift );
 					AddOneToDecHex();
 					int newlen = DecHexLen();
@@ -165,7 +165,6 @@ namespace System {
 					_value[0] = AddOneToDecHex( _value[0] );
 			}
 
-			// Assume val != 0x99999999
 			private static uint AddOneToDecHex( uint val ) {
 				if( ( val & 0xFFFF ) == 0x9999 )
 					if( ( val & 0xFFFFFF ) == 0x999999 )
@@ -251,16 +250,12 @@ namespace System {
 					_value[0] = ToDecHex( ( int ) value );
 			}
 
-			// Translate a decimal integer to hexadecimal digits.
-			// The decimal integer is 96 digits and its value is hi * 2^64 + lo.
-			// is the lower 64 bits.
 			private void InitDecHexDigits( uint hi, ulong lo ) {
 				if( hi == 0 ) {
-					InitDecHexDigits( lo ); // Only the lower 64 bits matter.
+					InitDecHexDigits( lo );
 					return;
 				}
 
-				// Compute (hi, lo) = (hi , lo) / HundredMillion.
 				uint divhi = hi / _10pow8;
 				ulong remhi = hi - divhi * _10pow8;
 				ulong divlo = lo / _10pow8;
@@ -272,8 +267,6 @@ namespace System {
 				lo += divlo;
 				_value[0] = ToDecHex( ( int ) remlo );
 
-				// Divide hi * 2 ^ 64 + lo by HundredMillion using the fact that
-				// hi < HundredMillion.
 				divlo = lo / _10pow8;
 				remlo = lo - divlo * _10pow8;
 				lo = divlo;
@@ -286,7 +279,6 @@ namespace System {
 				}
 				_value[1] = ToDecHex( ( int ) remlo );
 
-				// Now we are left with 64 bits store in lo.
 				if( lo >= _10pow8 ) {
 					divlo = lo / _10pow8;
 					lo -= divlo * _10pow8;
@@ -295,19 +287,14 @@ namespace System {
 				_value[2] = ToDecHex( ( int ) lo );
 			}
 
-			// Helper to translate an int in the range 0 .. 9999 to its
-			// Hexadecimal digits representation.
 			private static uint FastToDecHex( int val ) {
 				if( val < 100 )
 					return ( uint ) PackedDecimalDigitsTable[val];
 
-				// Uses 2^19 (524288) to compute val / 100 for val < 10000.
 				int v = ( val * 5243 ) >> 19;
 				return ( ( uint ) PackedDecimalDigitsTable[v] << 8 ) | PackedDecimalDigitsTable[val - v * 100];
 			}
 
-			// Helper to translate an int in the range 0 .. 99999999 to its
-			// Hexadecimal digits representation.
 			private static uint ToDecHex( int val ) {
 				uint res = 0;
 				if( val >= 10000 ) {
@@ -319,7 +306,6 @@ namespace System {
 				return res | FastToDecHex( val );
 			}
 
-			// Helper to count number of hexadecimal digits in a number.
 			private static int FastDecHexLen( int val ) {
 				if( val < 0x100 )
 					if( val < 0x10 )
@@ -338,7 +324,6 @@ namespace System {
 				return 4 + FastDecHexLen( ( int )( val >> 16 ) );
 			}
 
-			// Count number of hexadecimal digits stored in _value
 			private int DecHexLen() {
 				if( _value[3] != 0 )
 					return DecHexLen( _value[3] ) + 24;
@@ -352,8 +337,6 @@ namespace System {
 					return 0;
 			}
 
-			// Compute the initial precision for rounding a floating number
-			// according to the used format.
 			private int InitialFloatingPrecision() {
 				if( _specifier == 'R' )
 					return _defPrecision + 2;
@@ -381,7 +364,7 @@ namespace System {
 				else
 					FastAppendDigits( value, false );
 
-				return ( string ) new CStringSpan( _buffer, ( uint ) _writeIndex );
+				return ( string ) new CStringSpan( _buffer, _writeIndex );
 			}
 
 			public SbcsString ToSbcsString() { return SbcsString.FromSBCS( Buffer ); }
@@ -391,7 +374,7 @@ namespace System {
 
 			public void AppendTo( StringBuilder builder ) { builder.AppendAscii( _buffer, _writeIndex ); }
 
-			public CStringSpan Buffer { get { return new CStringSpan( _buffer, ( uint ) _writeIndex ); } }
+			public CStringSpan Buffer { get { return new CStringSpan( _buffer, _writeIndex ); } }
 
 			private void Multiply10( int count ) {
 				if( count <= 0 || _digitsLen == 0 )
@@ -416,10 +399,10 @@ namespace System {
 				int total = 0;
 				int groupIndex = 0;
 
-				for( int i = 0; i < groups.Length; ++i ) {
+				for( var i = 0U; i < groups.Length; ++i ) {
 					total += groups[i];
 					if( total <= _decPointPos )
-						groupIndex = i;
+						groupIndex = ( int ) i;
 					else
 						break;
 				}
@@ -454,7 +437,7 @@ namespace System {
 						AppendDigits( _digitsLen - i - counter, _digitsLen - i );
 						i += counter;
 						Append( groupSeparator );
-						if( --groupIndex < groups.Length && groupIndex >= 0 )
+						if( --groupIndex < ( int ) groups.Length && groupIndex >= 0 )
 							groupSize = groups[groupIndex];
 						counter = groupSize;
 					}
@@ -468,8 +451,8 @@ namespace System {
 				_buffer[_writeIndex++] = ( byte ) c;
 			}
 
-			private void Append( char c, int count ) {
-				while( count-- > 0 )
+			private void Append( char c, uint count ) {
+				while( count-- != 0 )
 					_buffer[_writeIndex++] = ( byte ) c;
 			}
 
@@ -479,7 +462,7 @@ namespace System {
 					_buffer[_writeIndex++] = s[( int ) i];
 			}
 
-			private void AppendExponent( int exponent, int minDigits ) {
+			private void AppendExponent( int exponent, uint minDigits ) {
 				if( _specifierIsUpper || _specifier == 'R' )
 					Append( 'E' );
 				else
@@ -529,7 +512,7 @@ namespace System {
 			}
 
 			private void FastAppendDigits( int val, bool force ) {
-				int i = _writeIndex;
+				var i = _writeIndex;
 				int digits;
 				if( force || val >= 100 ) {
 					int v = ( val * 5243 ) >> 19;
@@ -552,7 +535,7 @@ namespace System {
 				if( start >= end )
 					return;
 
-				int i = _writeIndex + ( end - start );
+				var i = _writeIndex + ( end - start );
 				_writeIndex = i;
 
 				end += _offset;
@@ -605,13 +588,13 @@ namespace System {
 				}
 			}
 
-			private void AppendIntegerString( int minLength ) {
+			private void AppendIntegerString( uint minLength ) {
 				if( _decPointPos <= 0 ) {
 					Append( '0', minLength );
 					return;
 				}
 
-				if( _decPointPos < minLength )
+				if( ( uint ) _decPointPos < minLength )
 					Append( '0', minLength - _decPointPos );
 
 				AppendDigits( _digitsLen - _decPointPos, _digitsLen );
@@ -628,17 +611,17 @@ namespace System {
 				}
 
 				if( value == 0 ) {
-					Append( '0', _precision > 0 ? _precision : 1 );
+					Append( '0', _precision > 0 ? ( uint ) _precision : 1U );
 					return;
 				}
 
-				var upperBit = 31 - BitOperations.CountLeadingZeros( value );
+				var upperBit = ( uint )( 31 - BitOperations.CountLeadingZeros( value ) );
 				var mask = 1 << upperBit;
 
-				if( _precision != -1 && _precision > upperBit + 1 )
-					Append( '0', _precision - upperBit - 1 );
+				if( _precision > 0 && ( uint ) _precision > upperBit + 1 )
+					Append( '0', ( uint )( _precision - upperBit - 1 ) );
 
-				for( int i = 0; i <= upperBit; ++i, mask >>= 1 )
+				for( var i = 0U; i <= upperBit; ++i, mask >>= 1 )
 					Append( ( value & mask ) != 0 ? '1' : '0' );
 			}
 
@@ -650,17 +633,17 @@ namespace System {
 				}
 
 				if( value == 0 ) {
-					Append( '0', _precision > 0 ? _precision : 1 );
+					Append( '0', _precision > 0 ? ( uint ) _precision : 1U );
 					return;
 				}
 
-				var upperBit = ( int )( 63 - BitOperations.CountLeadingZeros( value ) );
+				var upperBit = ( uint )( 63 - BitOperations.CountLeadingZeros( value ) );
 				var mask = 1L << upperBit;
 
-				if( _precision != -1 && _precision > upperBit + 1 )
-					Append( '0', _precision - upperBit - 1 );
+				if( _precision > 0 && ( uint ) _precision > upperBit + 1 )
+					Append( '0', ( uint )( _precision - upperBit - 1 ) );
 
-				for( int i = 0; i <= upperBit; ++i, mask >>= 1 )
+				for( var i = 0U; i <= upperBit; ++i, mask >>= 1 )
 					Append( ( value & mask ) != 0 ? '1' : '0' );
 			}
 
@@ -838,7 +821,7 @@ namespace System {
 				}
 
 				int e = ( int )( bits >> DoubleBitsExponentShift );
-				long m = bits & DoubleBitsMantissaMask;
+				ulong m = ( ulong )( bits & DoubleBitsMantissaMask );
 
 				if( e == DoubleBitsExponentMask ) {
 					var isNan = m != 0;
@@ -852,9 +835,8 @@ namespace System {
 
 				int expAdjust = 0;
 				if( e == 0 ) {
-					// We need 'm' to be large enough so we won't lose precision.
 					e = 1;
-					int scale = GetScaleOrder( m );
+					int scale = GetFormattedLength( m );
 					if( scale < DoubleDefaultPrecision ) {
 						expAdjust = scale - DoubleDefaultPrecision;
 						m *= TenPowersTable[-expAdjust];
@@ -865,9 +847,8 @@ namespace System {
 					expAdjust = -1;
 				}
 
-				// multiply the mantissa by 10 ^ N
 				ulong lo = ( uint ) m;
-				ulong hi = ( ulong ) m >> 32;
+				ulong hi = m >> 32;
 				ulong lo2 = MantissaBitsTable[e];
 				ulong hi2 = lo2 >> 32;
 				lo2 = ( uint ) lo2;
@@ -886,7 +867,6 @@ namespace System {
 				int order = DoubleDefaultPrecision + 2;
 				_decPointPos = TensExponentTable[e] + expAdjust + order;
 
-				// Rescale 'res' to the initial precision (15-17 for doubles).
 				int initialPrecision = InitialFloatingPrecision();
 				if( order > initialPrecision ) {
 					long val = TenPowersTable[order - initialPrecision];
@@ -906,16 +886,65 @@ namespace System {
 				return true;
 			}
 
+			internal void FormatFixedPoint10( int precision ) {
+				if( !_positive )
+					Append( '-' );
+
+				if( precision >= 0 ) _decPointPos -= precision;
+				else {
+					precision = 4;
+					_decPointPos -= precision;
+					// _decPointPos -= precision;
+					//	_decPointPos -= Math.Min( -precision, CountTrailingZeros() );
+				}
+
+				AppendIntegerString( 1 );
+
+				if( precision == 0 ) { }
+				// else if( precision > 0 ) {
+				else {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				// }
+				// else if( _digitsLen > _decPointPos ) {
+				//	Append( '.' );
+				//	AppendDigits( 0, _digitsLen - _decPointPos );
+				// }
+			}
+
 			public void ApplyFormat( string format ) {
 				switch( _specifier ) {
-					// case 'C': return FormatCurrency( _precision );
+					case 'Q': FormatFixedPoint10( _precision ); break;
 					case 'D': FormatDecimal( _precision ); break;
 					case 'E': FormatExponential( _precision ); break;
 					case 'F': FormatFixedPoint( IntegerDigits, _precision ); break;
 					case 'G': FormatGeneral( _precision ); break;
 
 					case 'N': FormatNumber( _precision ); break;
-					// case 'P': return FormatPercent( _precision );
+					case 'X': FormatHexadecimal(); break;
+					case 'B': FormatBinary(); break;
+
+					default:
+					// if( _isCustomFormat )
+					//	return FormatCustom( format );
+
+						Assert.Fail( "The specified format '" + format + "' is invalid" );
+						break;
+				}
+			}
+
+			public void ApplyFloatingFormat( string format ) {
+				switch( _specifier ) {
+					// case 'C': return FormatCurrency( _precision );
+					case 'D': FormatFixedPoint( ( uint ) _precision, 0U ); break;
+					case 'E': FormatExponential( _precision ); break;
+					case 'F': FormatFixedPoint( IntegerDigits, _precision ); break;
+					case 'T': TruncateFixedPoint( IntegerDigits, _precision ); break;
+					case 'P': FormatFixedPointHalfTowardsPositiveInfinity( IntegerDigits, _precision ); break;
+					case 'G': FormatGeneral( _precision ); break;
+
+					case 'N': FormatNumber( _precision ); break;
 					case 'X': FormatHexadecimal(); break;
 					case 'B': FormatBinary(); break;
 
@@ -992,7 +1021,7 @@ namespace System {
 				int size = Math.Max( _precision, _decPointPos );
 				var digits = _specifierIsUpper ? HexDigitsUpper : HexDigitsLower;
 
-				_writeIndex = size;
+				_writeIndex = ( uint ) size;
 				ulong val = _value[0] | ( ( ulong ) _value[1] << 32 );
 
 				while( size > 0 ) {
@@ -1004,20 +1033,58 @@ namespace System {
 			public void FormatBinary() {
 			}
 
-			public void FormatFixedPoint( int minIntegerLength, int precision ) {
-				if( precision == -1 )
-					precision = 2;
+			public void TruncateFixedPoint( uint minIntegerLength, int precision ) {
+				if( !_positive )
+					Append( '-' );
 
-				RoundDecimal( precision );
+				AppendIntegerString( minIntegerLength );
+
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
+				}
+			}
+
+			public void FormatFixedPoint( uint minIntegerLength, int precision ) {
+				RoundDecimal( Math.Abs( precision ) );
 
 				if( !_positive )
 					Append( '-' );
 
 				AppendIntegerString( minIntegerLength );
 
-				if( precision > 0 ) {
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
 					Append( '.' );
 					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
+				}
+			}
+
+			public void FormatFixedPointHalfTowardsPositiveInfinity( uint minIntegerLength, int precision ) {
+				RoundBits( _digitsLen - _decPointPos - Math.Abs( precision ), _positive ? 5U : 6U );
+
+				if( !_positive )
+					Append( '-' );
+
+				AppendIntegerString( minIntegerLength );
+
+				if( precision == 0 ) { }
+				else if( precision > 0 ) {
+					Append( '.' );
+					AppendDecimalString( precision );
+				}
+				else if( _digitsLen > _decPointPos ) {
+					Append( '.' );
+					AppendDigits( 0, _digitsLen - _decPointPos );
 				}
 			}
 
@@ -1071,7 +1138,7 @@ namespace System {
 				FormatExponential( precision, 3 );
 			}
 
-			private void FormatExponential( int precision, int expDigits ) {
+			private void FormatExponential( int precision, uint expDigits ) {
 				int decDigits = _decPointPos;
 				int digits = _digitsLen;
 				int exponent = decDigits - 1;
@@ -1158,9 +1225,10 @@ namespace System {
 		public static Utf16String FormatBoolUtf16( bool value ) { return value ? ( Utf16String ) "true" : ( Utf16String ) "false"; }
 		public static Utf32String FormatBoolUtf32( bool value ) { return value ? ( Utf32String ) "true" : ( Utf32String ) "false"; }
 
-		public static string FormatChar( char value ) {
-			return new string( value, 1 );
-		}
+		public static SbcsString FormatCharSbcs( char value ) { return SbcsString.FromUtf16( Environment.DefaultCodePage, &value, 1 ); }
+		public static Utf8String FormatCharUtf8( char value ) { return Utf8String.FromUtf16( &value, 1 ); }
+		public static Utf16String FormatCharUtf16( char value ) { return new string( value, 1 ); }
+		public static Utf32String FormatCharUtf32( char value ) { return Utf32String.FromUtf16( &value, 1 ); }
 
 		public static SbcsString FormatInt8Sbcs( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatInt8Utf8( sbyte value ) { Instance.Init(); Instance.FormatInt8( value ); return Instance.ToUtf8String(); }
@@ -1242,15 +1310,15 @@ namespace System {
 		public static Utf16String FormatUInt64Utf16( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
 		public static Utf32String FormatUInt64Utf32( ulong value, string format ) { Instance.Init( format, value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatFloatingPointSbcs( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFloatingPointUtf8( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFloatingPointUtf16( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFloatingPointUtf32( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFloatingPointSbcs( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( float value, string format = "G" ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatFloatingPointSbcs( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFloatingPointUtf8( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFloatingPointUtf16( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFloatingPointUtf32( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFloatingPointSbcs( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFloatingPointUtf8( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFloatingPointUtf16( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFloatingPointUtf32( double value, string format = "G" ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); return Instance.ToUtf32String(); }
 
 		public static string FormatInt8Hex( sbyte value ) {
 			Instance.Init();
@@ -1287,7 +1355,7 @@ namespace System {
 		public static string FormatIntPtrHex( intptr value ) {
 			Instance.Init();
 			Instance.Init( "X", ( ulong ) value, UInt64DefaultPrecision );
-			Instance._precision = sizeof( intptr ) * 2;
+			Instance._precision = ( int ) sizeof( intptr ) * 2;
 			Instance.FormatHexadecimal();
 			return Instance.ToUtf16String();
 		}
@@ -1300,32 +1368,59 @@ namespace System {
 		public static void FormatInteger( StringBuilder builder, uint value, string format ) { Instance.Init( format, ( uint ) value, UInt32DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
 		public static void FormatInteger( StringBuilder builder, long value, string format ) { Instance.Init( format, ( long ) value, Int64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
 		public static void FormatInteger( StringBuilder builder, ulong value, string format ) { Instance.Init( format, ( ulong ) value, UInt64DefaultPrecision ); Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatFloatingPoint( StringBuilder builder, float value, string format ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
-		public static void FormatFloatingPoint( StringBuilder builder, double value, string format ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, float value, string format ) { if( Instance.InitDouble( format, value, SingleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); Instance.AppendTo( builder ); }
+		public static void FormatFloatingPoint( StringBuilder builder, double value, string format ) { if( Instance.InitDouble( format, value, DoubleDefaultPrecision ) ) Instance.ApplyFloatingFormat( format ); Instance.AppendTo( builder ); }
 
 		public static void FormatFixedPoint( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
-		public static void FormatFixedPoint( StringBuilder builder, float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPoint( StringBuilder builder, float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
 		public static void FormatFixedPoint( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
-		public static void FormatFixedPoint( StringBuilder builder, double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPoint( StringBuilder builder, double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
 
-		public static SbcsString FormatFixedPointSbcs( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFixedPointUtf8( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFixedPointUtf16( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFixedPointUtf32( float value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFixedPointSbcs( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointUtf8( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointUtf16( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointUtf32( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
 
-		public static SbcsString FormatFixedPointSbcs( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
-		public static Utf8String FormatFixedPointUtf8( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
-		public static Utf16String FormatFixedPointUtf16( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
-		public static Utf32String FormatFixedPointUtf32( double value, int minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+		public static SbcsString FormatFixedPointSbcs( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointUtf8( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointUtf16( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointUtf32( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static void TruncateFixedPoint( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void TruncateFixedPoint( StringBuilder builder, double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+
+		public static SbcsString TruncateFixedPointSbcs( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String TruncateFixedPointUtf8( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String TruncateFixedPointUtf16( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String TruncateFixedPointUtf32( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static SbcsString TruncateFixedPointSbcs( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String TruncateFixedPointUtf8( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String TruncateFixedPointUtf16( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String TruncateFixedPointUtf32( double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.TruncateFixedPoint( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, float value, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, double value, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( Instance.IntegerDigits, precision ); Instance.AppendTo( builder ); }
+		public static void FormatFixedPointRoundHalfTowardsPositiveInfinity( StringBuilder builder, double value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); Instance.AppendTo( builder ); }
+
+		public static SbcsString FormatFixedPointRoundHalfTowardsPositiveInfinitySbcs( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf8( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf16( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf32( float value, uint minIntegerLength, int precision ) { if( Instance.InitDouble( null, value, SingleDefaultPrecision ) ) Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); return Instance.ToUtf32String(); }
+
+		public static SbcsString FormatFixedPointRoundHalfTowardsPositiveInfinitySbcs( double value, uint minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToSbcsString(); }
+		public static Utf8String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf8( double value, uint minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf8String(); }
+		public static Utf16String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf16( double value, uint minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf16String(); }
+		public static Utf32String FormatFixedPointRoundHalfTowardsPositiveInfinityUtf32( double value, uint minIntegerLength, int precision, bool minusZero = false ) { if( Instance.InitDouble( null, value, DoubleDefaultPrecision ) ) { Instance._verbatimOutput = minusZero; Instance.FormatFixedPointHalfTowardsPositiveInfinity( minIntegerLength, precision ); } return Instance.ToUtf32String(); }
 
 		public static string FormatUInt8Hex( byte value ) { return FormatInt8Hex( bitcast<sbyte>( value ) ); }
 		public static string FormatUInt16Hex( ushort value ) { return FormatInt16Hex( bitcast<short>( value ) ); }
 		public static string FormatUInt32Hex( uint value ) { return FormatInt32Hex( bitcast<int>( value ) ); }
 		public static string FormatUInt64Hex( ulong value ) { return FormatInt64Hex( bitcast<long>( value ) ); }
 		public static string FormatUIntPtrHex( uintptr value ) { return FormatIntPtrHex( bitcast<intptr>( value ) ); }
-
-		private static double[9] Exponent10 = new double[9] { 1E+1, 1E+2, 1E+4, 1E+8, 1E+16, 1E+32, 1E+64, 1E+128, 1E+256 };
-		private static double[9] InverseExponent10 = new double[9] { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32, 1E-64, 1E-128, 1E-256 };
 
 		public static SbcsString FormatSingleIEEE754Sbcs( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToSbcsString(); }
 		public static Utf8String FormatSingleIEEE754Utf8( double value ) { Instance.Init(); Instance.FormatSingleIEEE754( value ); return Instance.ToUtf8String(); }
@@ -1339,17 +1434,25 @@ namespace System {
 
 		private static byte[24] _12hourMapping = { 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
-		public static void FormatDateTime( StringBuilder builder, DateTime value, string format ) {
-			int year, dayOfYear, month, day;
+		public static void FormatDateTime( StringBuilder builder, ulong ticks, DateTimeKind kind, string format ) {
+			DateTimeUTC value;
 
 			switch( format ) {
 				case "u":
 				case "U":
-					value = value.ToUniversalTime();
+					if( kind == DateTimeKind.Local ) value = new DateTimeLocal( ticks ).ToUniversalTime();
+					else value = new DateTimeUTC( ticks );
+					break;
+
+				case "x": builder.Append( ticks, "x16" ); return;
+				case "X": builder.Append( ticks, "X16" ); return;
+
+				default:
+					value = new DateTimeUTC( ticks );
 					break;
 			}
 
-			value.GetDateValues( year, dayOfYear, month, day );
+			var dateValues = value.GetDateValues();
 
 			var hour = value.Hour;
 			var minute = value.Minute;
@@ -1363,22 +1466,22 @@ namespace System {
 						[CheckAllEnumValues]
 						switch( CultureInfo.Current.Kind ) {
 							case CultureInfo.CultureKind.EN: // "1/5/2013"
-								builder.Append( month );
+								builder.Append( dateValues.Month );
 								builder.Append( '/' );
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( '/' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 
 							case CultureInfo.CultureKind.RU: // "05.01.2013"
 							case CultureInfo.CultureKind.DE: // "05.01.2013"
 							case CultureInfo.CultureKind.FR: // "05/01/2013"
 							case CultureInfo.CultureKind.UK: // "05.01.2013"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( month, "D2" );
+								builder.Append( dateValues.Month, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 						}
 						return;
@@ -1390,49 +1493,49 @@ namespace System {
 							case CultureInfo.CultureKind.EN: // "Saturday, January 05, 2013"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ", " );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 
 							case CultureInfo.CultureKind.RU: // "5 января 2013 г."
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " г." );
 								break;
 
 							case CultureInfo.CultureKind.UK: // "5 січня 2013 р."
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " р." );
 								break;
 
 							case CultureInfo.CultureKind.FR: // "samedi 5 janvier 2013"
 								builder.Append( CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 
 							case CultureInfo.CultureKind.DE: // "Samstag, 5. Januar 2013"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ". " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 						}
 						return;
@@ -1444,11 +1547,11 @@ namespace System {
 							case CultureInfo.CultureKind.EN: // "Saturday, January 05, 2013 2:33 PM"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ", " );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( _12hourMapping[hour] );
 								builder.Append( ':' );
@@ -1458,11 +1561,11 @@ namespace System {
 								break;
 
 							case CultureInfo.CultureKind.RU: // "5 января 2013 г. 14:33"
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " г. " );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1470,11 +1573,11 @@ namespace System {
 								break;
 
 							case CultureInfo.CultureKind.UK: // "5 січня 2013 р. 14:33"
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " р. " );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1484,11 +1587,11 @@ namespace System {
 							case CultureInfo.CultureKind.FR: // "samedi 5 janvier 2013 14:33"
 								builder.Append( CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1498,11 +1601,11 @@ namespace System {
 							case CultureInfo.CultureKind.DE: // "Samstag, 5. Januar 2013 14:33"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ". " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1518,11 +1621,11 @@ namespace System {
 							case CultureInfo.CultureKind.EN: // "Saturday, January 05, 2013 2:33:21 PM"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ", " );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( _12hourMapping[hour] );
 								builder.Append( ':' );
@@ -1534,11 +1637,11 @@ namespace System {
 								break;
 
 							case CultureInfo.CultureKind.RU: // "5 января 2013 г. 14:33:21"
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " г. " );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1548,11 +1651,11 @@ namespace System {
 								break;
 
 							case CultureInfo.CultureKind.UK: // "5 січня 2013 р. 14:33:21"
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " р. " );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1564,11 +1667,11 @@ namespace System {
 							case CultureInfo.CultureKind.FR: // "samedi 5 janvier 2013 14:33:21"
 								builder.Append( CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1580,11 +1683,11 @@ namespace System {
 							case CultureInfo.CultureKind.DE: // "Samstag, 5. Januar 2013 14:33:21"
 								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.DayNames[value.DayOfWeek] );
 								builder.Append( ", " );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ". " );
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1600,11 +1703,11 @@ namespace System {
 						[CheckAllEnumValues]
 						switch( CultureInfo.Current.Kind ) {
 							case CultureInfo.CultureKind.EN: // "1/5/2013 2:33 PM"
-								builder.Append( month );
+								builder.Append( dateValues.Month );
 								builder.Append( '/' );
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( '/' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( _12hourMapping[hour] );
 								builder.Append( ':' );
@@ -1615,11 +1718,11 @@ namespace System {
 
 							case CultureInfo.CultureKind.RU: // "05.01.2013 14:33"
 							case CultureInfo.CultureKind.UK: // "05.01.2013 14:33"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( '.' );
-								builder.Append( month, "D2" );
+								builder.Append( dateValues.Month, "D2" );
 								builder.Append( '.' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1628,11 +1731,11 @@ namespace System {
 
 							case CultureInfo.CultureKind.FR: // "05/01/2013 04:03"
 							case CultureInfo.CultureKind.DE: // "05.01.2013 04:03"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( month, "D2" );
+								builder.Append( dateValues.Month, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1646,11 +1749,11 @@ namespace System {
 						[CheckAllEnumValues]
 						switch( CultureInfo.Current.Kind ) {
 							case CultureInfo.CultureKind.EN: // "1/5/2013 2:33:21 PM"
-								builder.Append( month );
+								builder.Append( dateValues.Month );
 								builder.Append( '/' );
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( '/' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( _12hourMapping[hour] );
 								builder.Append( ':' );
@@ -1663,11 +1766,11 @@ namespace System {
 
 							case CultureInfo.CultureKind.RU: // "05.01.2013 14:33:21"
 							case CultureInfo.CultureKind.UK: // "05.01.2013 14:33:21"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( '.' );
-								builder.Append( month, "D2" );
+								builder.Append( dateValues.Month, "D2" );
 								builder.Append( '.' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour );
 								builder.Append( ':' );
@@ -1678,11 +1781,11 @@ namespace System {
 
 							case CultureInfo.CultureKind.FR: // "05/01/2013 04:03:21"
 							case CultureInfo.CultureKind.DE: // "05.01.2013 04:03:21"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( month, "D2" );
+								builder.Append( dateValues.Month, "D2" );
 								builder.Append( CultureInfo.Current.DateTimeFormat.DateSeparator );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( ' ' );
 								builder.Append( hour, "D2" );
 								builder.Append( ':' );
@@ -1703,34 +1806,104 @@ namespace System {
 						builder.Append( second, "D2" );
 						return;
 
+					case "ts1": // bamelg-specific, sortable long time, "14:33:21.1"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000000U % 10U );
+						return;
+
+					case "ts2": // bamelg-specific, sortable long time, "14:33:21.12"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100000U % 100U, "D2" );
+						return;
+
+					case "ts3": // bamelg-specific, sortable long time, "14:33:21.123"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10000U % 1000U, "D3" );
+						return;
+
+					case "ts4": // bamelg-specific, sortable long time, "14:33:21.1234"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000U % 10000U, "D4" );
+						return;
+
+					case "ts5": // bamelg-specific, sortable long time, "14:33:21.12345"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100U % 100000U, "D5" );
+						return;
+
+					case "ts6": // bamelg-specific, sortable long time, "14:33:21.123456"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10U % 1000000U, "D6" );
+						return;
+
+					case "ts7": // bamelg-specific, sortable long time, "14:33:21.1234567"
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks % 10000000U, "D7" );
+						return;
+
 					// month + day
 					case "M":
 					case "m":
 						[CheckAllEnumValues]
 						switch( CultureInfo.Current.Kind ) {
 							case CultureInfo.CultureKind.EN: // "January 05"
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								break;
 
 							case CultureInfo.CultureKind.RU: // "января 05"
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthGenitiveNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								break;
 
 							case CultureInfo.CultureKind.FR: // "5 janvier"
 							case CultureInfo.CultureKind.UK: // "5 січня"
-								builder.Append( day );
+								builder.Append( dateValues.Day );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								break;
 
 							case CultureInfo.CultureKind.DE: // "05 Januar"
-								builder.Append( day, "D2" );
+								builder.Append( dateValues.Day, "D2" );
 								builder.Append( ' ' );
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								break;
 						}
 						return;
@@ -1801,40 +1974,40 @@ namespace System {
 						[CheckAllEnumValues]
 						switch( CultureInfo.Current.Kind ) {
 							case CultureInfo.CultureKind.EN: // "January, 2013"
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ", " );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 
 							case CultureInfo.CultureKind.RU: // "Январь 2013"
 							case CultureInfo.CultureKind.DE: // "Januar 2013"
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 
 							case CultureInfo.CultureKind.UK: // "Січень 2013 р."
-								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								builder.Append( " р." );
 								break;
 
 							case CultureInfo.CultureKind.FR: // "janvier 2013"
-								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+								builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 								builder.Append( ' ' );
-								builder.Append( year );
+								builder.Append( dateValues.Year );
 								break;
 						}
 						return;
 
 					// universal sortable, "2013-01-05 14:33:21Z"
 					case "u":
-						builder.Append( year );
+						builder.Append( dateValues.Year );
 						builder.Append( '-' );
-						builder.Append( month, "D2" );
+						builder.Append( dateValues.Month, "D2" );
 						builder.Append( '-' );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( ' ' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
@@ -1849,11 +2022,11 @@ namespace System {
 
 					// round-trip, "2013-01-05T14:33:21.4560000+04:00"
 					case "O":
-						builder.Append( year );
+						builder.Append( dateValues.Year );
 						builder.Append( '-' );
-						builder.Append( month, "D2" );
+						builder.Append( dateValues.Month, "D2" );
 						builder.Append( '-' );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( ' ' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
@@ -1861,14 +2034,14 @@ namespace System {
 						builder.Append( ':' );
 						builder.Append( second, "D2" );
 
-						var microseconds = ( int )( value.Ticks % 10000000 );
+						var microseconds = ( uint )( value.Ticks % 10000000U );
 						if( microseconds != 0 ) {
 							builder.Append( '.' );
 							builder.Append( microseconds, "D7" );
 						}
 
-						if( value.Kind == DateTimeKind.Local ) {
-							var offset = DateTime.GetLocalFromUtcOffset( value );
+						if( kind == DateTimeKind.Local ) {
+							var offset = new TimeSpan( TimeZone.GetUtcFromLocalOffset( ticks ) );
 							if( offset.Ticks != 0 ) {
 								if( offset >= TimeSpan.Zero ) builder.Append( '+' );
 								builder.Append( offset.Hours, "D2" );
@@ -1876,16 +2049,19 @@ namespace System {
 								builder.Append( offset.Minutes, "D2" );
 							}
 						}
+						else if( kind == DateTimeKind.Utc ) {
+							builder.Append( 'Z' );
+						}
 
 						return;
 
 					// round-trip, "2013-01-05 14:33:21.4560000+04:00"
 					case "o":
-						builder.Append( year );
+						builder.Append( dateValues.Year );
 						builder.Append( '-' );
-						builder.Append( month, "D2" );
+						builder.Append( dateValues.Month, "D2" );
 						builder.Append( '-' );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( 'T' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
@@ -1893,20 +2069,23 @@ namespace System {
 						builder.Append( ':' );
 						builder.Append( second, "D2" );
 
-						var microseconds = ( int )( value.Ticks % 10000000 );
+						var microseconds = ( uint )( value.Ticks % 10000000U );
 						if( microseconds != 0 ) {
 							builder.Append( '.' );
 							builder.Append( microseconds, "D7" );
 						}
 
-						if( value.Kind == DateTimeKind.Local ) {
-							var offset = DateTime.GetLocalFromUtcOffset( value );
+						if( kind == DateTimeKind.Local ) {
+							var offset = new TimeSpan( TimeZone.GetUtcFromLocalOffset( ticks ) );
 							if( offset.Ticks != 0 ) {
 								if( offset >= TimeSpan.Zero ) builder.Append( '+' );
 								builder.Append( offset.Hours, "D2" );
 								builder.Append( ':' );
 								builder.Append( offset.Minutes, "D2" );
 							}
+						}
+						else if( kind == DateTimeKind.Utc ) {
+							builder.Append( 'Z' );
 						}
 
 						return;
@@ -1916,11 +2095,11 @@ namespace System {
 					case "r":
 						AppendCapital( builder, CultureInfo.EN.DateTimeFormat.AbbreviatedDayNames[value.DayOfWeek] );
 						builder.Append( ", " );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( ' ' );
-						AppendCapital( builder, CultureInfo.EN.DateTimeFormat.AbbreviatedMonthNames[month - 1] );
+						AppendCapital( builder, CultureInfo.EN.DateTimeFormat.AbbreviatedMonthNames[dateValues.Month - 1] );
 						builder.Append( ' ' );
-						builder.Append( year );
+						builder.Append( dateValues.Year );
 						builder.Append( ' ' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
@@ -1930,13 +2109,14 @@ namespace System {
 						builder.Append( " GMT" );
 						return;
 
-					case "":
 					case "S": // bamelg-specific sortable, "2013-01-05 14:33:21"
-						builder.Append( year );
+					case "":
+					case null:
+						builder.Append( dateValues.Year );
 						builder.Append( '-' );
-						builder.Append( month, "D2" );
+						builder.Append( dateValues.Month, "D2" );
 						builder.Append( '-' );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( ' ' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
@@ -1945,18 +2125,177 @@ namespace System {
 						builder.Append( second, "D2" );
 						return;
 
+					case "Q": { // bamelg-specific sortable, "2013-01-05 14:33:21[.1234567]"
+							builder.Append( dateValues.Year );
+							builder.Append( '-' );
+							builder.Append( dateValues.Month, "D2" );
+							builder.Append( '-' );
+							builder.Append( dateValues.Day, "D2" );
+							builder.Append( ' ' );
+							builder.Append( hour, "D2" );
+							builder.Append( ':' );
+							builder.Append( minute, "D2" );
+							builder.Append( ':' );
+							builder.Append( second, "D2" );
+
+							var fraction = ( uint )( value.Ticks % 10000000U );
+							if( fraction == 0 ) return;
+
+							if( ( fraction % 10000000U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D1" );
+							}
+							else if( ( fraction % 100000U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D2" );
+							}
+							else if( ( fraction % 10000U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D3" );
+							}
+							else if( ( fraction % 1000U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D4" );
+							}
+							else if( ( fraction % 100U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D5" );
+							}
+							else if( ( fraction % 10U ) == 0 ) {
+								builder.Append( '.' );
+								builder.Append( fraction, "D6" );
+							}
+							else {
+								builder.Append( '.' );
+								builder.Append( fraction, "D7" );
+							}
+						}
+						return;
+
 					case "s": // sortable, "2013-01-05T14:33:21"
-						builder.Append( year );
+						builder.Append( dateValues.Year );
 						builder.Append( '-' );
-						builder.Append( month, "D2" );
+						builder.Append( dateValues.Month, "D2" );
 						builder.Append( '-' );
-						builder.Append( day, "D2" );
+						builder.Append( dateValues.Day, "D2" );
 						builder.Append( 'T' );
 						builder.Append( hour, "D2" );
 						builder.Append( ':' );
 						builder.Append( minute, "D2" );
 						builder.Append( ':' );
 						builder.Append( second, "D2" );
+						return;
+
+					case "s1": // bamelg-specific sortable, "2013-01-05T14:33:21.7"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000000 % 10 );
+						return;
+
+					case "s2": // bamelg-specific sortable, "2013-01-05T14:33:21.78"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100000 % 100, "D2" );
+						return;
+
+					case "s3": // bamelg-specific sortable, "2013-01-05T14:33:21.789"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10000 % 1000, "D3" );
+						return;
+
+					case "s4": // bamelg-specific sortable, "2013-01-05T14:33:21.7890"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 1000 % 10000, "D4" );
+						return;
+
+					case "s5": // bamelg-specific sortable, "2013-01-05T14:33:21.78901"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 100 % 100000, "D5" );
+						return;
+
+					case "s6": // bamelg-specific sortable, "2013-01-05T14:33:21.789012"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks / 10 % 1000000, "D6" );
+						return;
+
+					case "s7": // bamelg-specific sortable, "2013-01-05T14:33:21.7890123"
+						builder.Append( dateValues.Year );
+						builder.Append( '-' );
+						builder.Append( dateValues.Month, "D2" );
+						builder.Append( '-' );
+						builder.Append( dateValues.Day, "D2" );
+						builder.Append( 'T' );
+						builder.Append( hour, "D2" );
+						builder.Append( ':' );
+						builder.Append( minute, "D2" );
+						builder.Append( ':' );
+						builder.Append( second, "D2" );
+						builder.Append( '.' );
+						builder.Append( value.Ticks % 10000000U, "D7" );
 						return;
 				}
 			else {
@@ -1972,9 +2311,9 @@ namespace System {
 					var skip = 7 - 1;
 
 					switch( format[i] ) {
-						case 'f': builder.Append( value.Ticks % 10000000, "D7" ); i += skip; continue;
-						case 'F': if( value.Ticks % 10000000 != 0 ) builder.Append( value.Ticks % 10000000, "D7" ); i += skip; continue;
-						case 'y': builder.Append( year, "D7" ); i += skip; continue;
+						case 'f': builder.Append( value.Ticks % 10000000U, "D7" ); i += skip; continue;
+						case 'F': if( value.Ticks % 10000000U != 0 ) builder.Append( value.Ticks % 10000000U, "D7" ); i += skip; continue;
+						case 'y': builder.Append( dateValues.Year, "D7" ); i += skip; continue;
 					}
 				}
 
@@ -1982,9 +2321,9 @@ namespace System {
 					var skip = 6 - 1;
 
 					switch( format[i] ) {
-						case 'f': builder.Append( value.Ticks / 10 % 1000000, "D6" ); i += skip; continue;
-						case 'F': if( value.Ticks / 10 % 1000000 != 0 ) builder.Append( value.Ticks / 10 % 1000000, "D6" ); i += skip; continue;
-						case 'y': builder.Append( year, "D6" ); i += skip; continue;
+						case 'f': builder.Append( value.Ticks / 10U % 1000000U, "D6" ); i += skip; continue;
+						case 'F': if( value.Ticks / 10U % 1000000U != 0 ) builder.Append( value.Ticks / 10U % 1000000U, "D6" ); i += skip; continue;
+						case 'y': builder.Append( dateValues.Year, "D6" ); i += skip; continue;
 					}
 				}
 
@@ -1992,9 +2331,9 @@ namespace System {
 					var skip = 5 - 1;
 
 					switch( format[i] ) {
-						case 'f': builder.Append( value.Ticks / 100 % 100000, "D5" ); i += skip; continue;
-						case 'F': if( value.Ticks / 100 % 100000 != 0 ) builder.Append( value.Ticks / 100 % 100000, "D5" ); i += skip; continue;
-						case 'y': builder.Append( year, "D5" ); i += skip; continue;
+						case 'f': builder.Append( value.Ticks / 100U % 100000U, "D5" ); i += skip; continue;
+						case 'F': if( value.Ticks / 100U % 100000U != 0 ) builder.Append( value.Ticks / 100U % 100000U, "D5" ); i += skip; continue;
+						case 'y': builder.Append( dateValues.Year, "D5" ); i += skip; continue;
 					}
 				}
 
@@ -2029,17 +2368,17 @@ namespace System {
 								case CultureInfo.CultureKind.RU: // "Январь"
 								case CultureInfo.CultureKind.UK: // "Січень"
 								case CultureInfo.CultureKind.DE: // "Samstag"
-									AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+									AppendCapital( builder, CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 									break;
 
 								case CultureInfo.CultureKind.FR: // "janvier"
-									builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[month - 1] );
+									builder.Append( CultureInfo.Current.DateTimeFormat.MonthNames[dateValues.Month - 1] );
 									break;
 							}
 
 							i += skip;
 							continue;
-						case 'y': builder.Append( year, "D4" ); i += skip; continue;
+						case 'y': builder.Append( dateValues.Year, "D4" ); i += skip; continue;
 					}
 				}
 
@@ -2073,26 +2412,27 @@ namespace System {
 								case CultureInfo.CultureKind.EN: // "Jan"
 								case CultureInfo.CultureKind.DE: // "Jan"
 								case CultureInfo.CultureKind.UK: // "Січ"
-									AppendCapital( builder, CultureInfo.Current.DateTimeFormat.AbbreviatedMonthNames[month - 1] );
+									AppendCapital( builder, CultureInfo.Current.DateTimeFormat.AbbreviatedMonthNames[dateValues.Month - 1] );
 									break;
 
 								case CultureInfo.CultureKind.RU: // "янв"
 								case CultureInfo.CultureKind.FR: // "janv."
-									builder.Append( CultureInfo.Current.DateTimeFormat.AbbreviatedMonthNames[month - 1] );
+									builder.Append( CultureInfo.Current.DateTimeFormat.AbbreviatedMonthNames[dateValues.Month - 1] );
 									break;
 							}
 							i += skip;
 							continue;
 
-						case 'y': builder.Append( year, "D3" ); i += skip; continue;
+						case 'y': builder.Append( dateValues.Year, "D3" ); i += skip; continue;
 						case 'z': { // {0:zzz}, offset from UTC, "+04:00"
-								if( value.Kind == DateTimeKind.Unbiased ) {
+								if( kind == DateTimeKind.Unspecified ) {
 									builder.Append( "+00:00" );
 									i += skip;
 									continue;
 								}
 								else {
-									var offset = DateTime.GetLocalFromUtcOffset( value );
+									var offset = new TimeSpan( kind == DateTimeKind.Utc ? TimeZone.GetLocalFromUtcOffset( ticks ) : TimeZone.GetUtcFromLocalOffset( ticks ) );
+
 									if( offset >= TimeSpan.Zero ) builder.Append( '+' );
 									builder.Append( offset.Hours, "D2" );
 									builder.Append( ':' );
@@ -2108,18 +2448,25 @@ namespace System {
 					var skip = 2 - 1;
 
 					switch( format[i] ) {
-						case 'd': builder.Append( day, "D2" ); i += skip; continue;
+						case 'd': builder.Append( dateValues.Day, "D2" ); i += skip; continue;
 						case 'f': builder.Append( value.Ticks / 100000 % 100, "D2" ); i += skip; continue;
 						case 'F': if( value.Ticks / 100000 % 100 != 0 ) builder.Append( value.Ticks / 100000 % 100, "D2" ); i += skip; continue;
 						case 'h': builder.Append( hour % 12, "D2" ); i += skip; continue;
 						case 'H': builder.Append( hour, "D2" ); i += skip; continue;
 						case 'm': builder.Append( minute, "D2" ); i += skip; continue;
-						case 'M': builder.Append( month, "D2" ); i += skip; continue;
+						case 'M': builder.Append( dateValues.Month, "D2" ); i += skip; continue;
 						case 's': builder.Append( second, "D2" ); i += skip; continue;
-						case 'y': builder.Append( year % 100, "D2" ); i += skip; continue;
-						case 'z': { // {0:zz}, hour offset from UTC, "+04"
-								var offset = DateTime.GetLocalFromUtcOffset( value );
-								if( offset.Hours >= 0 ) builder.Append( '+' );
+						case 'y': builder.Append( dateValues.Year % 100, "D2" ); i += skip; continue;
+						case 'z': // {0:zz}, hour offset from UTC, "+04"
+							if( kind == DateTimeKind.Unspecified ) {
+								builder.Append( "+00" );
+								i += skip;
+								continue;
+							}
+							else {
+								var offset = new TimeSpan( kind == DateTimeKind.Utc ? TimeZone.GetLocalFromUtcOffset( ticks ) : TimeZone.GetUtcFromLocalOffset( ticks ) );
+
+								if( offset >= TimeSpan.Zero ) builder.Append( '+' );
 								builder.Append( offset.Hours, "D2" );
 								i += skip;
 								continue;
@@ -2132,19 +2479,26 @@ namespace System {
 					var skip = 0;
 
 					switch( format[i] ) {
-						case 'd': builder.Append( day ); i += skip; continue;
+						case 'd': builder.Append( dateValues.Day ); i += skip; continue;
 						case 'f': builder.Append( value.Ticks / 1000000 % 10 ); i += skip; continue;
 						case 'F': if( value.Ticks / 1000000 % 10 != 0 ) builder.Append( value.Ticks / 1000000 % 10 ); i += skip; continue;
 						case 'h': builder.Append( hour % 12 ); i += skip; continue;
 						case 'H': builder.Append( hour ); i += skip; continue;
 						case 'm': builder.Append( minute ); i += skip; continue;
-						case 'M': builder.Append( month ); i += skip; continue;
+						case 'M': builder.Append( dateValues.Month ); i += skip; continue;
 						case 's': builder.Append( second ); i += skip; continue;
-						case 'y': builder.Append( year % 100 ); i += skip; continue;
-						case 'z': { // {0:z}, hour offset from UTC, "+4"
-								var offset = DateTime.GetLocalFromUtcOffset( value );
-								if( offset.Hours >= 0 ) builder.Append( '+' );
-								builder.Append( offset.Hours );
+						case 'y': builder.Append( dateValues.Year % 100 ); i += skip; continue;
+						case 'z': // {0:z}, hour offset from UTC, "+4"
+							if( kind == DateTimeKind.Unspecified ) {
+								builder.Append( "+0" );
+								i += skip;
+								continue;
+							}
+							else {
+								var offset = new TimeSpan( kind == DateTimeKind.Utc ? TimeZone.GetLocalFromUtcOffset( ticks ) : TimeZone.GetUtcFromLocalOffset( ticks ) );
+
+								if( offset >= TimeSpan.Zero ) builder.Append( '+' );
+								builder.Append( offset.Hours, "D1" );
 								i += skip;
 								continue;
 							}
@@ -2165,6 +2519,57 @@ namespace System {
 			}
 		}
 
+		// Format DateTimeUTC to 'Wed, 21 Jan 2004 19:51:30 GMT'
+		public static void FormatDateTime_RFC1123( StringBuilder builder, DateTimeUTC value ) {
+			var dateValues = value.GetDateValues();
+
+			var hour = value.Hour;
+			var minute = value.Minute;
+			var second = value.Second;
+
+			string dayOfWeekName;
+			switch( dateValues.DayOfWeek ) {
+				case DayOfWeek.Monday: dayOfWeekName = "Mon"; break;
+				case DayOfWeek.Tuesday: dayOfWeekName = "Tue"; break;
+				case DayOfWeek.Wednesday: dayOfWeekName = "Wed"; break;
+				case DayOfWeek.Thursday: dayOfWeekName = "Thu"; break;
+				case DayOfWeek.Friday: dayOfWeekName = "Fri"; break;
+				case DayOfWeek.Saturday: dayOfWeekName = "Sat"; break;
+				case DayOfWeek.Sunday: dayOfWeekName = "Sun"; break;
+			}
+
+			string monthName;
+			switch( dateValues.Month ) {
+				case 1: monthName = "Jan"; break;
+				case 2: monthName = "Feb"; break;
+				case 3: monthName = "Mar"; break;
+				case 4: monthName = "Apr"; break;
+				case 5: monthName = "May"; break;
+				case 6: monthName = "Jun"; break;
+				case 7: monthName = "Jul"; break;
+				case 8: monthName = "Aug"; break;
+				case 9: monthName = "Sep"; break;
+				case 10: monthName = "Oct"; break;
+				case 11: monthName = "Nov"; break;
+				case 12: monthName = "Dec"; break;
+			}
+
+			builder.Append( dayOfWeekName );
+			builder.Append( ", " );
+			builder.Append( dateValues.Day );
+			builder.Append( ' ' );
+			builder.Append( monthName );
+			builder.Append( ' ' );
+			builder.Append( dateValues.Year );
+			builder.Append( ' ' );
+			builder.Append( hour, "D2" );
+			builder.Append( ':' );
+			builder.Append( minute, "D2" );
+			builder.Append( ':' );
+			builder.Append( second, "D2" );
+			builder.Append( " GMT" );
+		}
+
 		private static bool StartsWithEqualChars( char* ptr, int max ) {
 			for( var i = 1; i < max; ++i ) {
 				if( ptr[i] != ptr[0] ) return false;
@@ -2173,35 +2578,159 @@ namespace System {
 			return true;
 		}
 
-		public static void FormatTimeSpan( StringBuilder builder, TimeSpan value, string format ) {
-			if( value.Ticks < 0 ) {
-				builder.Append( '-' );
-				value.Ticks = -value.Ticks;
+		private static void FormatTime_C( StringBuilder builder, TimeDuration value ) {
+			var days = value.Days;
+			if( days != 0 ) {
+				builder.Append( days );
+				builder.Append( '.' );
 			}
 
+			builder.Append( value.Hours, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Minutes, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Seconds, "D2" );
+
+			var fraction = ( uint )( value.Ticks / 10 % 1000000U );
+			if( fraction == 0 ) return;
+
+			builder.Append( '.' );
+			builder.Append( fraction, "D6" );
+		}
+
+		private static void FormatTime_q( StringBuilder builder, TimeDuration value ) {
 			var days = value.Days;
+			if( days != 0 ) {
+				builder.Append( days );
+				builder.Append( '.' );
+			}
 
+			builder.Append( value.Hours, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Minutes, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Seconds, "D2" );
+
+			var fraction = ( uint )( value.Ticks % 10000000U );
+			if( fraction == 0 ) return;
+
+			builder.Append( '.' );
+			builder.Append( fraction, "D7" );
+		}
+
+		private static void FormatTime_Q( StringBuilder builder, TimeDuration value ) {
+			var days = value.Days;
+			if( days != 0 ) {
+				builder.Append( days );
+				builder.Append( '.' );
+			}
+
+			builder.Append( value.Hours, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Minutes, "D2" );
+			builder.Append( ':' );
+			builder.Append( value.Seconds, "D2" );
+
+			var fraction = ( uint )( value.Ticks % 10000000U );
+			if( fraction == 0 ) return;
+
+			if( ( fraction % 1000000U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 1000000, "D1" );
+			}
+			else if( ( fraction % 100000U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 100000, "D2" );
+			}
+			else if( ( fraction % 10000U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 10000, "D3" );
+			}
+			else if( ( fraction % 1000U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 1000, "D4" );
+			}
+			else if( ( fraction % 100U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 100, "D5" );
+			}
+			else if( ( fraction % 10U ) == 0 ) {
+				builder.Append( '.' );
+				builder.Append( fraction / 10, "D6" );
+			}
+			else {
+				builder.Append( '.' );
+				builder.Append( fraction, "D7" );
+			}
+		}
+
+		private static void FormatTime_C( StringBuilder builder, TimeSpan value ) {
+			if( value.Ticks < 0 ) {
+				builder.Append( '-' );
+				FormatTime_C( builder, new TimeDuration( ( ulong ) -value.Ticks ) );
+			}
+			else FormatTime_C( builder, new TimeDuration( ( ulong ) value.Ticks ) );
+		}
+
+		private static void FormatTime_q( StringBuilder builder, TimeSpan value ) {
+			if( value.Ticks < 0 ) {
+				builder.Append( '-' );
+				FormatTime_q( builder, new TimeDuration( ( ulong ) -value.Ticks ) );
+			}
+			else FormatTime_q( builder, new TimeDuration( ( ulong ) value.Ticks ) );
+		}
+
+		private static void FormatTime_Q( StringBuilder builder, TimeSpan value ) {
+			if( value.Ticks < 0 ) {
+				builder.Append( '-' );
+				FormatTime_Q( builder, new TimeDuration( ( ulong ) -value.Ticks ) );
+			}
+			else FormatTime_Q( builder, new TimeDuration( ( ulong ) value.Ticks ) );
+		}
+
+		public static void FormatTimeSpan( StringBuilder builder, TimeSpan value, string format ) {
 			switch( format ) {
-				case "":
 				case "c":
-					if( days != 0 ) {
-						builder.Append( days );
-						builder.Append( '.' );
-					}
-
-					builder.Append( value.Hours, "D2" );
-					builder.Append( ':' );
-					builder.Append( value.Minutes, "D2" );
-					builder.Append( ':' );
-					builder.Append( value.Seconds, "D2" );
-
-					if( value.MicrosecondsWithMilliseconds != 0 ) {
-						builder.Append( '.' );
-						builder.Append( value.MicrosecondsWithMilliseconds, "D6" );
-					}
-
+				case "":
+				case null:
+					FormatTime_C( builder, value );
 					break;
-				default: builder.Append( "Invalid format!" ); break;
+
+				case "q":
+					FormatTime_q( builder, value );
+					break;
+
+				case "Q":
+					FormatTime_Q( builder, value );
+					break;
+
+				case "x": builder.Append( value.Ticks, "x16" ); break;
+				case "X": builder.Append( value.Ticks, "X16" ); break;
+
+				default: builder.AppendFormat( "Invalid format specified '{0}'", format ); break;
+			}
+		}
+
+		public static void FormatTimeDuration( StringBuilder builder, TimeDuration value, string format ) {
+			switch( format ) {
+				case "c":
+				case "":
+				case null:
+					FormatTime_C( builder, value );
+					break;
+
+				case "q":
+					FormatTime_q( builder, value );
+					break;
+
+				case "Q":
+					FormatTime_Q( builder, value );
+					break;
+
+				case "x": builder.Append( value.Ticks, "x16" ); break;
+				case "X": builder.Append( value.Ticks, "X16" ); break;
+
+				default: builder.AppendFormat( "Invalid format specified '{0}'", format ); break;
 			}
 		}
 
@@ -2249,8 +2778,8 @@ namespace System {
 			return result.Detach();
 		}
 
-		public static void FormatMemoryHexUtf16( StringBuilder builder, void* data, uintptr length, bool upperCase ) {
-			builder.EnsureCapacity( ( int ) length * 2 );
+		public static void FormatMemoryHexUtf16( StringBuilder builder, void* data, uint length, bool upperCase ) {
+			builder.EnsureCapacity( length * 2 );
 
 			var converter = StreamFormatMemoryHexUtf16( builder.GetChars() + builder.Length, length * 4U, data, length, upperCase );
 			converter.MoveNext();
@@ -2291,115 +2820,295 @@ namespace System {
 			}
 		}
 
-		[UnitTest]
-		public static void UnitTest() {
-			var& cc = CultureInfo.Current;
-
-			Assert.AreEqual( "NaN", FormatDoubleIEEE754Utf16( double.NaN ) );
-			Assert.AreEqual( "Infinity", FormatDoubleIEEE754Utf16( double.PositiveInfinity ) );
-			Assert.AreEqual( "-Infinity", FormatDoubleIEEE754Utf16( double.NegativeInfinity ) );
-
-			Assert.AreEqual( "0F", FormatInt8Hex( ( sbyte ) 15 ) );
-			Assert.AreEqual( "000F", FormatInt16Hex( ( short ) 15 ) );
-			Assert.AreEqual( "0000000F", FormatInt32Hex( ( int ) 15 ) );
-			Assert.AreEqual( "000000000000000F", FormatInt64Hex( ( long ) 15 ) );
-
-			Assert.AreEqual( "7F", FormatInt8Hex( sbyte.MaxValue ) );
-			Assert.AreEqual( "FF", FormatUInt8Hex( byte.MaxValue ) );
-			Assert.AreEqual( "7FFF", FormatInt16Hex( short.MaxValue ) );
-			Assert.AreEqual( "FFFF", FormatUInt16Hex( ushort.MaxValue ) );
-			Assert.AreEqual( "7FFFFFFF", FormatInt32Hex( int.MaxValue ) );
-			Assert.AreEqual( "FFFFFFFF", FormatUInt32Hex( uint.MaxValue ) );
-			Assert.AreEqual( "7FFFFFFFFFFFFFFF", FormatInt64Hex( long.MaxValue ) );
-			Assert.AreEqual( "FFFFFFFFFFFFFFFF", FormatUInt64Hex( ulong.MaxValue ) );
-
-			Assert.AreEqual( sbyte.MaxValue.ToString(), FormatInt8Utf16( sbyte.MaxValue ) );
-			Assert.AreEqual( sbyte.MinValue.ToString(), FormatInt8Utf16( sbyte.MinValue ) );
-			Assert.AreEqual( byte.MaxValue.ToString(), FormatUInt8Utf16( byte.MaxValue ) );
-			Assert.AreEqual( byte.MinValue.ToString(), FormatUInt8Utf16( byte.MinValue ) );
-
-			Assert.AreEqual( short.MaxValue.ToString(), FormatInt16Utf16( short.MaxValue ) );
-			Assert.AreEqual( short.MinValue.ToString(), FormatInt16Utf16( short.MinValue ) );
-			Assert.AreEqual( ushort.MaxValue.ToString(), FormatUInt16Utf16( ushort.MaxValue ) );
-			Assert.AreEqual( ushort.MinValue.ToString(), FormatUInt16Utf16( ushort.MinValue ) );
-
-			Assert.AreEqual( int.MaxValue.ToString(), FormatInt32Utf16( int.MaxValue ) );
-			Assert.AreEqual( int.MinValue.ToString(), FormatInt32Utf16( int.MinValue ) );
-			Assert.AreEqual( uint.MaxValue.ToString(), FormatUInt32Utf16( uint.MaxValue ) );
-			Assert.AreEqual( uint.MinValue.ToString(), FormatUInt32Utf16( uint.MinValue ) );
-
-			Assert.AreEqual( 0.01.ToString(), FormatDoubleIEEE754Utf16( 0.01 ) );
-			Assert.AreEqual( ( -10.01 ).ToString(), FormatDoubleIEEE754Utf16( -10.01 ) );
-
-			Assert.AreEqual( long.MaxValue.ToString(), FormatInt64Utf16( long.MaxValue ) );
-			Assert.AreEqual( long.MinValue.ToString(), FormatInt64Utf16( long.MinValue ) );
-			Assert.AreEqual( ulong.MaxValue.ToString(), FormatUInt64Utf16( ulong.MaxValue ) );
-			Assert.AreEqual( ulong.MinValue.ToString(), FormatUInt64Utf16( ulong.MinValue ) );
-
-			var time = new DateTime( 2013, 1, 5, 14, 33, 21, 456, DateTimeKind.Utc );
-
-			Assert.AreEqual( "2013-01-05T14:33:21", string.Format( "{0:s}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21", string.Format( "{0:S}", time ) );
-			Assert.AreEqual( "Sat, 05 Jan 2013 14:33:21 GMT", string.Format( "{0:r}", time ) );
-			Assert.AreEqual( "Sat, 05 Jan 2013 14:33:21 GMT", string.Format( "{0:R}", time ) );
-			Assert.AreEqual( "2013-01-05T14:33:21.4560000", string.Format( "{0:o}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21.4560000", string.Format( "{0:O}", time ) );
-			Assert.AreEqual( "2013-01-05 14:33:21Z", string.Format( "{0:u}", time ) );
-			Assert.AreEqual( "4 45 456 4560 45600 456000 4560000", string.Format( "{0:f ff fff ffff fffff ffffff fffffff}", time ) );
-			Assert.AreEqual( "13 13 2013 2013 02013 002013", string.Format( "{0:y yy yyy yyyy yyyyy yyyyyy}", time ) );
-			Assert.AreEqual( "21 21", string.Format( "{0:s ss}", time ) );
-
-			CultureInfo.Current = CultureInfo.EN;
-			Assert.AreEqual( "1/5/2013", string.Format( "{0:d}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013", string.Format( "{0:D}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33 PM", string.Format( "{0:f}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33:21 PM", string.Format( "{0:F}", time ) );
-			Assert.AreEqual( "1/5/2013 2:33 PM", string.Format( "{0:g}", time ) );
-			Assert.AreEqual( "1/5/2013 2:33:21 PM", string.Format( "{0:G}", time ) );
-			Assert.AreEqual( "2:33 PM", string.Format( "{0:t}", time ) );
-			Assert.AreEqual( "2:33:21 PM", string.Format( "{0:T}", time ) );
-			Assert.AreEqual( "Saturday, January 05, 2013 2:33:21 PM", string.Format( "{0:U}", time ) );
-			Assert.AreEqual( "January, 2013", string.Format( "{0:y}", time ) );
-			Assert.AreEqual( "January 05", string.Format( "{0:m}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:TS}", time ) );
-			Assert.AreEqual( "5 05 Sat Saturday", string.Format( "{0:d dd ddd dddd}", time ) );
-			Assert.AreEqual( "1/01/Jan/January", string.Format( "{0:M/MM/MMM/MMMM}", time ) );
-			Assert.AreEqual( "2:02", string.Format( "{0:h:hh}", time ) );
-
-			CultureInfo.Current = CultureInfo.RU;
-			Assert.AreEqual( "05.01.2013", string.Format( "{0:d}", time ) );
-			Assert.AreEqual( "5 января 2013 г.", string.Format( "{0:D}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33", string.Format( "{0:f}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33:21", string.Format( "{0:F}", time ) );
-			Assert.AreEqual( "05.01.2013 14:33", string.Format( "{0:g}", time ) );
-			Assert.AreEqual( "05.01.2013 14:33:21", string.Format( "{0:G}", time ) );
-			Assert.AreEqual( "14:33", string.Format( "{0:t}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:T}", time ) );
-			Assert.AreEqual( "5 января 2013 г. 14:33:21", string.Format( "{0:U}", time ) );
-			Assert.AreEqual( "января 05", string.Format( "{0:m}", time ) );
-			Assert.AreEqual( "14:33:21", string.Format( "{0:TS}", time ) );
-			Assert.AreEqual( "5 05 Сб суббота", string.Format( "{0:d dd ddd dddd}", time ) );
-			Assert.AreEqual( "1.01.янв.Январь", string.Format( "{0:M/MM/MMM/MMMM}", time ) );
-			Assert.AreEqual( "2:02", string.Format( "{0:h:hh}", time ) );
-
-			CultureInfo.Current = cc;
-		}
-
 		internal static byte[16] HexDigitsLower = { ( byte ) '0', ( byte ) '1', ( byte ) '2', ( byte ) '3', ( byte ) '4', ( byte ) '5', ( byte ) '6', ( byte ) '7', ( byte ) '8', ( byte ) '9', ( byte ) 'a', ( byte ) 'b', ( byte ) 'c', ( byte ) 'd', ( byte ) 'e', ( byte ) 'f' };
 		internal static byte[16] HexDigitsUpper = { ( byte ) '0', ( byte ) '1', ( byte ) '2', ( byte ) '3', ( byte ) '4', ( byte ) '5', ( byte ) '6', ( byte ) '7', ( byte ) '8', ( byte ) '9', ( byte ) 'A', ( byte ) 'B', ( byte ) 'C', ( byte ) 'D', ( byte ) 'E', ( byte ) 'F' };
 
-		public static int GetScaleOrder( int value ) {
-			for( int i = TenPowersTable.Length / 2 + 1; i >= 0; --i )
-				if( value >= TenPowersTable[i] )
-					return i + 1;
-			return 1;
+		public static byte GetFormattedLength( byte value ) {
+			if( value <= 99 ) {
+				if( value <= 9 ) return 1;
+				return 2;
+			}
+
+			return 3;
 		}
 
-		public static int GetScaleOrder( long value ) {
-			for( int i = TenPowersTable.Length - 1; i >= 0; --i )
-				if( value >= TenPowersTable[i] )
-					return i + 1;
-			return 1;
+		public static byte GetFormattedLength( ushort value ) {
+			if( value <= 999 ) {
+				if( value <= 9 ) return 1;
+				if( value <= 99 ) return 2;
+				return 3;
+			}
+
+			if( value <= 9999 ) return 4;
+			return 5;
+		}
+
+		public static byte GetFormattedLength( uint value ) {
+			if( value <= 99999 ) {
+				if( value <= 999 ) {
+					if( value <= 9 ) return 1;
+					if( value <= 99 ) return 2;
+
+					return 3;
+				}
+
+				if( value <= 9999 ) return 4;
+				return 5;
+			}
+
+			if( value <= 99999999 ) {
+				if( value <= 999999 ) return 6;
+				if( value <= 9999999 ) return 7;
+
+				return 8;
+			}
+
+			if( value <= 999999999 ) return 9;
+			return 10;
+		}
+
+		public static byte GetFormattedLength( ulong value ) {
+			if( value <= 999999999 ) {
+				if( value <= 9999 ) {
+					if( value <= 99 ) {
+						if( value <= 9 ) return 1;
+						return 2;
+					}
+					else {
+						if( value <= 999 ) return 3;
+						return 4;
+					}
+				}
+				else {
+					if( value <= 999999 ) {
+						if( value <= 99999 ) return 5;
+						return 6;
+					}
+					else {
+						if( value <= 99999999 ) {
+							if( value <= 9999999 ) return 7;
+							return 8;
+						}
+						else {
+							return 9;
+						}
+					}
+				}
+			}
+			else {
+				if( value <= 99999999999999 ) {
+					if( value <= 999999999999 ) {
+						if( value <= 9999999999 ) return 10;
+						if( value <= 99999999999 ) return 11;
+						return 12;
+					}
+					else {
+						if( value <= 9999999999999 ) return 13;
+						return 14;
+					}
+				}
+				else {
+					if( value <= 99999999999999999 ) {
+						if( value <= 999999999999999 ) return 15;
+						if( value <= 9999999999999999 ) return 16;
+						return 17;
+					}
+					else {
+						if( value <= 9999999999999999999 ) {
+							if( value <= 999999999999999999 ) return 18;
+							return 19;
+						}
+						else {
+							return 20;
+						}
+					}
+				}
+			}
+		}
+
+		public static byte GetFormattedLength( sbyte value ) {
+			if( value < 0 ) {
+				if( value <= -100 ) return 4;
+				if( value <= -10 ) return 3;
+				return 2;
+			}
+
+			if( value < 10 ) return 1;
+			if( value < 100 ) return 2;
+			return 3;
+		}
+
+		public static byte GetFormattedLength( short value ) {
+			if( value < 0 ) {
+				if( value <= -1000 ) {
+					if( value <= -10000 ) return 6;
+
+					return 5;
+				}
+				else {
+					if( value <= -100 ) return 4;
+					if( value <= -10 ) return 3;
+
+					return 2;
+				}
+			}
+
+			if( value < 1000 ) {
+				if( value < 10 ) return 1;
+				if( value < 100 ) return 2;
+
+				return 3;
+			}
+			else {
+				if( value < 10000 ) return 4;
+
+				return 5;
+			}
+		}
+
+		public static byte GetFormattedLength( int value ) {
+			if( value < 0 ) {
+				if( value <= -100000 ) {
+					if( value <= -10000000 ) {
+						if( value <= -1000000000 ) return 11;
+						if( value <= -100000000 ) return 10;
+
+						return 9;
+					}
+
+					if( value <= -1000000 ) return 8;
+					return 7;
+				}
+
+				if( value <= -100 ) {
+					if( value <= -10000 ) return 6;
+					if( value <= -1000 ) return 5;
+
+					return 4;
+				}
+
+				if( value <= -10 ) return 3;
+				return 2;
+			}
+
+			if( value <= 99999 ) {
+				if( value <= 999 ) {
+					if( value <= 9 ) return 1;
+					if( value <= 99 ) return 2;
+					return 3;
+				}
+
+				if( value <= 9999 ) return 4;
+				return 5;
+			}
+
+			if( value <= 99999999 ) {
+				if( value <= 999999 ) return 6;
+				if( value <= 9999999 ) return 7;
+
+				return 8;
+			}
+
+			if( value <= 999999999 ) return 9;
+			return 10;
+		}
+
+		public static byte GetFormattedLength( long value ) {
+			if( value < 0 ) {
+				if( value <= -1000000000 ) {
+					if( value <= -100000000000000 ) {
+						if( value <= -10000000000000000 ) {
+							if( value <= -1000000000000000000 ) return 20;
+							if( value <= -100000000000000000 ) return 19;
+							return 18;
+						}
+						else {
+							if( value <= -1000000000000000 ) return 17;
+							return 16;
+						}
+					}
+					else {
+						if( value <= -100000000000 ) {
+							if( value <= -10000000000000 ) return 15;
+							if( value <= -1000000000000 ) return 14;
+							return 13;
+						}
+
+						if( value <= -10000000000 ) return 12;
+						return 11;
+					}
+				}
+
+				if( value <= -10000 ) {
+					if( value <= -1000000 ) {
+						if( value <= -100000000 ) return 10;
+						if( value <= -10000000 ) return 9;
+						return 8;
+					}
+					else {
+						if( value <= -100000 ) return 7;
+						return 6;
+					}
+				}
+				else {
+					if( value <= -100 ) {
+						if( value <= -1000 ) return 5;
+						return 4;
+					}
+					else {
+						if( value <= -10 ) return 3;
+						return 2;
+					}
+				}
+			}
+
+			if( value <= 999999999 ) {
+				if( value <= 9999 ) {
+					if( value <= 99 ) {
+						if( value <= 9 ) return 1;
+						return 2;
+					}
+					else {
+						if( value <= 999 ) return 3;
+						return 4;
+					}
+				}
+				else {
+					if( value <= 999999 ) {
+						if( value <= 99999 ) return 5;
+						return 6;
+					}
+					else {
+						if( value <= 9999999 ) return 7;
+						if( value <= 99999999 ) return 8;
+
+						return 9;
+					}
+				}
+			}
+
+			if( value <= 99999999999999 ) {
+				if( value <= 999999999999 ) {
+					if( value <= 9999999999 ) return 10;
+					if( value <= 99999999999 ) return 11;
+					return 12;
+				}
+				else {
+					if( value <= 9999999999999 ) return 13;
+					return 14;
+				}
+			}
+			else {
+				if( value <= 99999999999999999 ) {
+					if( value <= 999999999999999 ) return 15;
+					if( value <= 9999999999999999 ) return 16;
+					return 17;
+				}
+				else {
+					if( value <= 999999999999999999 ) return 18;
+					return 19;
+				}
+			}
 		}
 	}
 }

@@ -20,9 +20,9 @@ namespace System.Runtime {
 		}
 
 		// Allocated 'count' private pages of 'DefaultPageSize' size
-		public static void* AllocatePages( int count ) { return AllocatePages( count, PageProperties.Read | PageProperties.Write ); }
+		public static void* AllocatePages( uint count ) { return AllocatePages( count, PageProperties.Read | PageProperties.Write ); }
 
-		public static void* AllocatePages( int count, PageProperties properties ) {
+		public static void* AllocatePages( uint count, PageProperties properties ) {
 			if( !Assert.IsTrue( count > 0 ) ) return null;
 
 			var result = _implAllocatePages( count, properties );
@@ -30,7 +30,7 @@ namespace System.Runtime {
 			return result;
 		}
 
-		public static void FreePages( void* ptr, int count ) {
+		public static void FreePages( void* ptr, uint count ) {
 			if( ptr == null ) return;
 			if( !Assert.IsTrue( count > 0 ) ) return;
 
@@ -38,13 +38,13 @@ namespace System.Runtime {
 			Valgrind.FreeLikeBlock( ptr, 0 );
 		}
 
-		public static void ModifyPages( void* ptr, int count, PageProperties properties ) {
+		public static void ModifyPages( void* ptr, uint count, PageProperties properties ) {
 			if( !Assert.IsTrue( count > 0 ) ) return;
 
 			_implModifyPages( ptr, count, properties );
 		}
 
-		public static void DecommitPages( void* ptr, int count ) {
+		public static void DecommitPages( void* ptr, uint count ) {
 			if( !Assert.IsTrue( count > 0 ) ) return;
 
 			_implDecommitPages( ptr, count );
@@ -73,7 +73,7 @@ namespace System.Runtime {
 			TrackAlignedAllocation( result, size, align );
 			return result;
 		}
-		
+
 		public static void* Allocate( uint size ) {
 			var result = _implAllocate( size );
 			TrackAllocation( result, size );
@@ -124,107 +124,89 @@ namespace System.Runtime {
 			TrackAlignedDeallocation( memory );
 		}
 
-		public static void Fill8( void* memory, byte value, uint length ) {
+		public static void Fill8( byte* memory, byte value, uint count ) {
 			if( memory == null ) return;
 
-			var ptr = bitcast<byte*>( memory );
-
-			for( var i = 0U; i < length; ++i )
-				ptr[i] = value;
+			for( var i = 0U; i < count; ++i )
+				memory[i] = value;
 		}
 
-		public static void Fill16( void* memory, ushort value, uint length ) {
+		public static void Fill16( ushort* memory, ushort value, uint count ) {
 			if( memory == null ) return;
 
-			var ptr = bitcast<ushort*>( memory );
-
-			for( var i = 0U; i < length; ++i )
-				ptr[i] = value;
+			for( var i = 0U; i < count; ++i )
+				memory[i] = value;
 		}
 
-		public static void Fill32( void* memory, uint value, uint length ) {
+		public static void Fill32( uint* memory, uint value, uint count ) {
 			if( memory == null ) return;
 
-			var ptr = bitcast<uint*>( memory );
-
-			for( var i = 0U; i < length; ++i )
-				ptr[i] = value;
+			for( var i = 0U; i < count; ++i )
+				memory[i] = value;
 		}
 
-		public static void Fill64( void* memory, ulong value, uint length ) {
+		public static void Fill64( ulong* memory, ulong value, uint count ) {
 			if( memory == null ) return;
 
-			var ptr = bitcast<ulong*>( memory );
-
-			for( var i = 0U; i < length; ++i )
-				ptr[i] = value;
+			for( var i = 0U; i < count; ++i )
+				memory[i] = value;
 		}
 
-		public static bool Compare8( void* memory, byte value, int length ) {
+		public static bool Compare8( byte* memory, byte value, uint count ) {
 			if( memory == null ) return false;
 
-			var ptr = bitcast<byte*>( memory );
-
-			for( int i = 0; i < length; ++i )
-				if( ptr[i] != value )
+			for( var i = 0U; i < count; ++i )
+				if( memory[i] != value )
 					return false;
 
 			return true;
 		}
 
-		public static bool Compare16( void* memory, ushort value, int length ) {
+		public static bool Compare16( ushort* memory, ushort value, uint count ) {
 			if( memory == null ) return false;
 
-			var ptr = bitcast<ushort*>( memory );
-
-			for( int i = 0; i < length; ++i )
-				if( ptr[i] != value )
+			for( var i = 0U; i < count; ++i )
+				if( memory[i] != value )
 					return false;
 
 			return true;
 		}
 
-		public static bool Compare32( void* memory, uint value, int length ) {
+		public static bool Compare32( uint* memory, uint value, uint count ) {
 			if( memory == null ) return false;
 
-			var ptr = bitcast<uint*>( memory );
-
-			for( int i = 0; i < length; ++i )
-				if( ptr[i] != value )
+			for( var i = 0U; i < count; ++i )
+				if( memory[i] != value )
 					return false;
 
 			return true;
 		}
 
-		public static bool Compare64( void* memory, ulong value, int length ) {
+		public static bool Compare64( ulong* memory, ulong value, uint count ) {
 			if( memory == null ) return false;
 
-			var ptr = bitcast<ulong*>( memory );
-
-			for( int i = 0; i < length; ++i )
-				if( ptr[i] != value )
+			for( var i = 0U; i < count; ++i )
+				if( memory[i] != value )
 					return false;
 
 			return true;
 		}
 
-		public static bool ComparePtr( void* memory, intptr value, int length ) {
+		public static bool ComparePtr( intptr* memory, intptr value, uint count ) {
 			if( memory == null ) return false;
 
-			var ptr = bitcast<intptr*>( memory );
-
-			for( int i = 0; i < length; ++i )
-				if( ptr[i] != value )
+			for( var i = 0U; i < count; ++i )
+				if( memory[i] != value )
 					return false;
 
 			return true;
 		}
 
-		public static bool Compare( void* memory1, void* memory2, int length ) {
+		public static bool Compare( void* memory1, void* memory2, uint byteCount ) {
 			if( memory1 == memory2 ) return true;
 			if( memory1 == null ^ memory2 == null ) return false;
 
-			return NativeMethods.memcmp( memory1, memory2, ( uint ) length ) == 0;
+			return NativeMethods.memcmp( memory1, memory2, byteCount ) == 0;
 		}
 
 		public static uint GetStride( uint size, uint alignment ) {
@@ -272,7 +254,7 @@ namespace System.Runtime {
 		public static void Copy( void* destination, void* source, uintptr length ) { memcpy( destination, source, length, false ); }
 
 		[ForceInline]
-		public static void Move( void* destination, void* source, uintptr length ) { memmove( destination, source, length, false ); }
+		public static void CopyOverlapped( void* destination, void* source, uintptr length ) { memmove( destination, source, length, false ); }
 
 		[ForceInline]
 		public static void Clear( void* destination, uintptr length ) { memset( destination, ( byte ) 0, length, false ); }
@@ -462,7 +444,7 @@ namespace System.Runtime {
 
 		public static bool IsCleared( void* source, uint count ) {
 			var ptr = ( byte* ) source;
-			
+
 			while( count-- != 0 ) {
 				if( *ptr++ != 0 )
 					return false;
@@ -470,25 +452,25 @@ namespace System.Runtime {
 
 			return true;
 		}
-		
+
 		public functor void MemoryAction( void* object );
 
-		public static void PerformFunctorOnStructArray( void* arrayStart, int elementSize, int elementsCount, MemoryAction @functor ) {
+		public static void PerformFunctorOnStructArray( void* arrayStart, uint elementSize, uint elementsCount, MemoryAction @functor ) {
 			if( @functor == null ) return;
 			var arrayStartPtr = ( byte* ) arrayStart;
 
-			while( elementsCount-- > 0 ) {
+			for( var i = 0U; i < elementsCount; ++i ) {
 				@functor( arrayStartPtr );
 
 				arrayStartPtr += elementSize;
 			}
 		}
 
-		public static void PerformFunctorOnClassArray( void* arrayStart, int elementsCount, MemoryAction @functor ) {
+		public static void PerformFunctorOnClassArray( void* arrayStart, uint elementsCount, MemoryAction @functor ) {
 			if( @functor == null ) return;
 			var arrayStartPtr = bitcast<void**>( arrayStart );
 
-			while( --elementsCount >= 0 ) {
+			for( var i = 0U; i < elementsCount; ++i ) {
 				if( *arrayStartPtr != null )
 					@functor( *arrayStartPtr );
 

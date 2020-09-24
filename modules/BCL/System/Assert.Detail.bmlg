@@ -12,24 +12,53 @@ using System.Runtime.CompilerServices;
 
 namespace System {
 	public static partial struct Assert {
-		/// Main goal is to avoid any memory alloctions, which can occur using something like this:
-		///		Console.WriteLine( string.Format( "Assertion failed: {0} expected '{1}' but actual is '{2}' at line {3} in {4}", callercontext.Expression, expected, actual, callercontext.Row, callercontext.Caller.FullQualifiedName ) );
-		public static bool AreEqual<T>( T expected, T actual, [In] CallerContext& context ) {
+		public static bool AreEqual<T>( T expected, T actual, string format, [In] CallerContext& context ) {
 			if( expected == actual ) return true;
 
-			Console.Write( "Assertion failed: " );
-			Console.Write( context.Expression );
-			Console.Write( " expected '" );
-			Console.Write( expected );
-			Console.Write( "' but actual is '" );
-			Console.Write( actual );
-			Console.Write( "' at line " );
-			Console.Write( context.Row );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( context );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed, expected '" );
+				builder.Value.Append( expected, format );
+				builder.Value.Append( "' but actual is '" );
+				builder.Value.Append( actual, format );
+				builder.Value.Append( '\'' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
+
+		public static bool AreEqual( TimeSpan expected, TimeSpan actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<TimeSpan>( expected, actual, "Q", callercontext ); }
+		public static bool AreEqual( TimeDuration expected, TimeDuration actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<TimeDuration>( expected, actual, null, callercontext ); }
+
+		public static bool AreEqual( DateTime expected, DateTime actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<ulong>( expected ) == bitcast<ulong>( actual ) ) return true;
+
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
+
+				builder.Value.Append( "Assertion failed, expected '" );
+				builder.Value.Append( expected, "Q" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( expected.Kind );
+				builder.Value.Append( ")' but actual is '" );
+				builder.Value.Append( actual, "Q" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( actual.Kind );
+				builder.Value.Append( ")'" );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
+			return false;
+		}
+
+		public static bool AreEqual( DateTimeUTC expected, DateTimeUTC actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<DateTimeUTC>( expected, actual, "Q", callercontext ); }
+		public static bool AreEqual( DateTimeLocal expected, DateTimeLocal actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<DateTimeLocal>( expected, actual, "Q", callercontext ); }
 
 		internal static void PrintContextInfo( [In] CallerContext& context ) {
 			if( context.Caller != nullref ) {

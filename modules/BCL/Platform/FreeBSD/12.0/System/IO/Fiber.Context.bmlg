@@ -18,10 +18,6 @@ using Platform.Libc;
 namespace System.IO {
 	public partial struct Fiber {
 		internal partial struct FiberInfo {
-			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
-				ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter );
-			}
-
 			private static void PrepareMainFiberEnvironment( FiberInfo* context ) {
 			}
 
@@ -31,6 +27,9 @@ namespace System.IO {
 			private static void SwitchEnvironment( FiberInfo* context, FiberInfo* newContext ) {
 			}
 
+			private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) {
+				ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter );
+			}
 			private static void SwitchCurrentContext( void** oldStack, void* newStack ) {
 				ContextSwitch.X86.Linux.SwitchCurrentContext( oldStack, newStack );
 			}

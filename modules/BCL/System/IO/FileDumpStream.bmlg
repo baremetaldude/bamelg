@@ -25,57 +25,62 @@ namespace System.IO {
 
 		public override void Dispose() { BaseStream = null; base.Dispose(); }
 
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			var readen = BaseStream.Read( buffer, count );
 
-			if( readen > 0 ) {
-				var now = DateTime.UnbiasedNow;
-				var file = Utf8String.Format( "{0} {1:HH-mm-ss.fff} read.bin", FilePrefix, now );
-				System.IO.File.WriteAllBytes( file, new MemorySegment( buffer, ( uintptr ) readen ) );
+			if( readen != 0 ) {
+				var now = TimeStamp.BootTime_ExcludeSuspend.Now;
+				var file = Utf8String.Format( "{0} {1} read.bin", FilePrefix, now );
+				System.IO.File.WriteAllBytes( file, new MemorySegment( buffer, readen ) );
 				// Console.WriteLine( "dump to file: {0}", DateTime.UnbiasedNow - now );
 			}
 
 			return readen;
 		}
 
-		public void Write( void* buffer, int count ) {
-			if( count > 0 ) {
-				var now = DateTime.UnbiasedNow;
-				var file = Utf8String.Format( "{0} {1:HH-mm-ss.fff} write.bin", FilePrefix, now );
-				System.IO.File.WriteAllBytes( file, new MemorySegment( buffer, ( uintptr ) count ) );
+		public uint Write( void* buffer, uint count ) {
+			if( count != 0 ) {
+				var now = TimeStamp.BootTime_ExcludeSuspend.Now;
+				var file = Utf8String.Format( "{0} {1} write.bin", FilePrefix, now );
+				System.IO.File.WriteAllBytes( file, new MemorySegment( buffer, count ) );
 				// Console.WriteLine( "dump to file: {0}", DateTime.UnbiasedNow - now );
 			}
 
-			BaseStream.Write( buffer, count );
+			return BaseStream.Write( buffer, count );
 		}
 
-		public int Read( vararg MemorySegment segments ) {
-			var result = 0;
+		public uint Read( vararg MemorySegment segments ) {
+			var result = 0U;
 			foreach( var segment in segments ) {
-				var readen = Read( segment.Start, ( int ) segment.Count );
-				if( readen <= 0 ) break;
+				var readen = Read( segment.Start, ( uint ) segment.Count );
+				if( readen == 0 ) break;
 
 				result += readen;
 			}
+
 			return result;
 		}
 
-		public void Write( vararg MemorySegment segments ) {
+		public uint Write( vararg MemorySegment segments ) {
+			uint result = 0U;
+
 			foreach( var segment in segments )
-				Write( segment.Start, ( int ) segment.Count );
+				result += Write( segment.Start, ( uint ) segment.Count );
+
+			return result;
 		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 			BaseStream.Flush( flushKind );
 		}
 
-		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

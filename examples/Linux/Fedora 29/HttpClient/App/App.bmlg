@@ -40,10 +40,10 @@ namespace Example {
 		private static void Worker() {
 			Fiber.Start( 8, LoadPage );
 
-			FetchStart = DateTime.UnbiasedNow;
+			FetchStart = TimeStamp.BootTime_ExcludeSuspend.Now;
 		}
 
-		private static DateTime FetchStart;
+		private static TimeStamp.BootTime_ExcludeSuspend FetchStart;
 
 		private static void LoadPage() {
 			var host = "www.gnu.org";
@@ -87,7 +87,7 @@ namespace Example {
 				return;
 			}
 
-			var filename = Utf8String.Format( "/tmp/{0:X16}.{1}.htm", DateTime.UnbiasedNow.Ticks, Fiber.Current );
+			var filename = Utf8String.Format( "/tmp/{0:X16}.{1}.htm", TimeStamp.BootTime_ExcludeSuspend.Now.Ticks, Fiber.Current );
 
 			using( Console.AttributedRegion( ConsoleColor.Yellow ) )
 				Console.WriteLine( "Begin write download stream written to '{0}'", filename );

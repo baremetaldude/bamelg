@@ -1,0 +1,256 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Runtime.InteropServices;
+
+namespace System.Runtime {
+	public struct VirtualRingBufferInfo_SPSC {
+		public VirtualRingBufferInfo_SPSC( uintptr capacity ) {
+			EnsureCapacityValid( capacity );
+			Capacity = capacity;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureCapacityValid( uintptr capacity ) {
+			if( !BitOperations.IsPowerOf2( capacity ) ) System.Diagnostics.Debugger.Break();
+		}
+
+		public uintptr WriteIndex = 0, ReadIndex = 0;
+		public readonly uintptr Capacity;
+
+		public uintptr AvailableToRead {
+			get {
+				var writeIndex = atomic( WriteIndex, Relaxed );
+				var readIndex = ReadIndex;
+
+				return writeIndex - readIndex;
+			}
+		}
+
+		public uintptr AvailableToWrite {
+			get {
+				var writeIndex = WriteIndex;
+				var readIndex = atomic( ReadIndex, Relaxed );
+
+				return Capacity - writeIndex + readIndex;
+			}
+		}
+
+		public bool TryWrite( uintptr length, uintptr& bufferPosition, uintptr& newWriteIndex ) {
+			var writeIndex = WriteIndex;
+			var readIndex = atomic( ReadIndex, Relaxed );
+			var availableToWrite = Capacity - writeIndex + readIndex;
+
+			if( availableToWrite < length ) return false;
+
+			newWriteIndex = writeIndex + length;
+			bufferPosition = writeIndex & ( Capacity - 1 );
+
+			return true;
+		}
+
+		public void FinalizeWrite( uintptr newWriteIndex ) {
+			atomic( WriteIndex = newWriteIndex, Release );
+		}
+
+		public bool TryRead( uintptr length, uintptr& bufferPosition, uintptr& newReadIndex ) {
+			var writeIndex = atomic( WriteIndex, Relaxed );
+			var readIndex = ReadIndex;
+			var availableToRead = writeIndex - readIndex;
+
+			if( availableToRead < length ) return false;
+
+			newReadIndex = readIndex + length;
+			bufferPosition = readIndex & ( Capacity - 1 );
+
+			return true;
+		}
+
+		public void FinalizeRead( uintptr newReadIndex ) {
+			atomic( ReadIndex = newReadIndex, Release );
+		}
+	}
+
+	public struct VirtualRingBufferInfo32_SPSC {
+		public VirtualRingBufferInfo32_SPSC( uint capacity ) {
+			EnsureCapacityValid( capacity );
+			Capacity = capacity;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureCapacityValid( uint capacity ) {
+			if( !BitOperations.IsPowerOf2( capacity ) ) System.Diagnostics.Debugger.Break();
+		}
+
+		public uint WriteIndex = 0, ReadIndex = 0;
+		public readonly uint Capacity;
+
+		public uint AvailableToRead {
+			get {
+				var writeIndex = atomic( WriteIndex, Relaxed );
+				var readIndex = ReadIndex;
+
+				return writeIndex - readIndex;
+			}
+		}
+
+		public uint AvailableToWrite {
+			get {
+				var writeIndex = WriteIndex;
+				var readIndex = atomic( ReadIndex, Relaxed );
+
+				return Capacity - writeIndex + readIndex;
+			}
+		}
+
+		public bool TryWrite( uint length, uint& bufferPosition, uint& newWriteIndex ) {
+			var writeIndex = WriteIndex;
+			var readIndex = atomic( ReadIndex, Relaxed );
+			var availableToWrite = Capacity - writeIndex + readIndex;
+
+			if( availableToWrite < length ) return false;
+
+			newWriteIndex = writeIndex + length;
+			bufferPosition = writeIndex & ( Capacity - 1 );
+
+			return true;
+		}
+
+		public void FinalizeWrite( uint newWriteIndex ) {
+			atomic( WriteIndex = newWriteIndex, Release );
+		}
+
+		public bool TryRead( uint length, uint& bufferPosition, uint& newReadIndex ) {
+			var writeIndex = atomic( WriteIndex, Relaxed );
+			var readIndex = ReadIndex;
+			var availableToRead = writeIndex - readIndex;
+
+			if( availableToRead < length ) return false;
+
+			newReadIndex = readIndex + length;
+			bufferPosition = readIndex & ( Capacity - 1 );
+
+			return true;
+		}
+
+		public void FinalizeRead( uint newReadIndex ) {
+			atomic( ReadIndex = newReadIndex, Release );
+		}
+	}
+
+	public abstract partial class VirtualRingBufferBase : IDisposable {
+		public void* Half0;
+		public void* Half1 { get { return ( byte* ) Half0 + Capacity; } }
+
+		public uintptr Capacity;
+
+		public VirtualRingBufferBase() {
+		}
+
+		~VirtualRingBufferBase() {
+			Dispose();
+		}
+
+		public bool Create( uintptr capacity ) {
+			return _implCreate( capacity );
+		}
+
+		protected abstract void OnMapped();
+	}
+
+	public sealed class VirtualRingBuffer_SPSC : VirtualRingBufferBase {
+		private VirtualRingBufferInfo_SPSC BufferInfo = default( VirtualRingBufferInfo_SPSC );
+
+		public VirtualRingBuffer_SPSC() {
+		}
+
+		public uintptr AvailableToRead { get { return BufferInfo.AvailableToRead; } }
+		public uintptr AvailableToWrite { get { return BufferInfo.AvailableToWrite; } }
+
+		public bool TryWrite( uintptr length, void*& buffer, uintptr& newWriteIndex ) {
+			uintptr bufferPosition;
+			if( BufferInfo.TryWrite( length, bufferPosition, newWriteIndex ) ) {
+				buffer = ( byte* ) Half0 + bufferPosition;
+				return true;
+			}
+
+			return false;
+		}
+
+		public void FinalizeWrite( uintptr newWriteIndex ) { BufferInfo.FinalizeWrite( newWriteIndex ); }
+
+		public bool TryRead( uintptr length, void*& buffer, uintptr& newReadIndex ) {
+			uintptr bufferPosition;
+			if( BufferInfo.TryRead( length, bufferPosition, newReadIndex ) ) {
+				buffer = ( byte* ) Half0 + bufferPosition;
+				return true;
+			}
+
+			return false;
+		}
+
+		public void FinalizeRead( uintptr newReadIndex ) { BufferInfo.FinalizeRead( newReadIndex ); }
+
+		protected override void OnMapped() {
+			BufferInfo = new VirtualRingBufferInfo_SPSC( Capacity );
+		}
+
+		public override void Dispose() {
+			BufferInfo = default( VirtualRingBufferInfo_SPSC );
+
+			base.Dispose();
+		}
+	}
+
+	public sealed class VirtualRingBuffer32_SPSC : VirtualRingBufferBase {
+		private VirtualRingBufferInfo32_SPSC BufferInfo = default( VirtualRingBufferInfo32_SPSC );
+
+		public VirtualRingBuffer32_SPSC() {
+		}
+
+		public uint AvailableToRead { get { return BufferInfo.AvailableToRead; } }
+		public uint AvailableToWrite { get { return BufferInfo.AvailableToWrite; } }
+
+		public bool TryWrite( uint length, void*& buffer, uint& newWriteIndex ) {
+			uint bufferPosition;
+			if( BufferInfo.TryWrite( length, bufferPosition, newWriteIndex ) ) {
+				buffer = ( byte* ) Half0 + bufferPosition;
+				return true;
+			}
+
+			return false;
+		}
+
+		public void FinalizeWrite( uint newWriteIndex ) { BufferInfo.FinalizeWrite( newWriteIndex ); }
+
+		public bool TryRead( uint length, void*& buffer, uint& newReadIndex ) {
+			uint bufferPosition;
+			if( BufferInfo.TryRead( length, bufferPosition, newReadIndex ) ) {
+				buffer = ( byte* ) Half0 + bufferPosition;
+				return true;
+			}
+
+			return false;
+		}
+
+		public void FinalizeRead( uint newReadIndex ) { BufferInfo.FinalizeRead( newReadIndex ); }
+
+		private void EnsureValidCapacity() {
+			System.Diagnostics.Debug.Assert( Capacity < uint.MaxValue );
+		}
+
+		protected override void OnMapped() {
+			EnsureValidCapacity();
+			BufferInfo = new VirtualRingBufferInfo32_SPSC( ( uint ) Capacity );
+		}
+
+		public override void Dispose() {
+			BufferInfo = default( VirtualRingBufferInfo32_SPSC );
+
+			base.Dispose();
+		}
+	}
+}

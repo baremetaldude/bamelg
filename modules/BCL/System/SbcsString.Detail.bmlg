@@ -103,24 +103,6 @@ namespace System {
 			return *right == 0;
 		}
 
-		public static void Copy( CString leftString, CString rightString ) {
-			var left = leftString.GetChars();
-			var right = rightString.GetChars();
-
-			while( ( *left++ = *right++ ) != 0 )
-				continue;
-		}
-
-		public static void Copy( CString leftString, CString rightString, int length ) {
-			var left = leftString.GetChars();
-			var right = rightString.GetChars();
-
-			while( length != 0 && ( *left++ = *right++ ) != 0 )
-				--length;
-
-			if( length == 0 ) *--left = 0;
-		}
-
 		public static void Concatenate( CString destinationString, CString sourceString ) {
 			var destination = destinationString.GetChars();
 			var source = sourceString.GetChars();

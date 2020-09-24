@@ -14,9 +14,9 @@ using Platform.Libc;
 namespace Platform.IO {
 	// Must be used with non-blocking sockets inside Fibers or with blocking sockets(in ST/MT environment)
 	public class PipeStream : IStream {
-		public TimeSpan ConnectTimeout { get; set; }
-		public TimeSpan WriteTimeout { get; set; }
-		public TimeSpan ReadTimeout { get; set; }
+		public TimeDuration ConnectTimeout { get; set; }
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
 
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
@@ -94,14 +94,14 @@ namespace Platform.IO {
 		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
 		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
 
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_readHandle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0U;
 		restart_Receive:
-			var error = _readHandle.Read( ReadTimeout, data, count, transmitted );
+			var error = _readHandle.Read( ReadTimeout, transmitted, data, count );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return transmitted;
@@ -110,20 +110,23 @@ namespace Platform.IO {
 			return transmitted;
 		}
 
-		public void Write( void* buffer, int count ) {
-			if( !_writeHandle.IsValid || count == 0 || buffer == null ) return;
+		public uint Write( void* buffer, uint count ) {
+			if( !_writeHandle.IsValid || count == 0 || buffer == null ) return 0;
 
+			uint transmitted = 0U;
 		restart_Send:
-			var error = _writeHandle.Write( WriteTimeout, buffer, count );
+			var error = _writeHandle.Write( WriteTimeout, transmitted, buffer, count );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
-				return;
+				return transmitted;
 			}
+
+			return transmitted;
 		}
 
-		public int Read( vararg MemorySegment segments ) {
+		public uint Read( vararg MemorySegment segments ) {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
-			int totalReaden;
+			uint totalReaden;
 
 		restart_Receive:
 			var error = _readHandle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
@@ -135,15 +138,18 @@ namespace Platform.IO {
 			return totalReaden;
 		}
 
-		public void Write( vararg MemorySegment segments ) {
+		public uint Write( vararg MemorySegment segments ) {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+			uint totalWritten = 0U;
 
 		restart_Send:
-			var error = _writeHandle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _writeHandle.Write( WriteTimeout, totalWritten, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
-				return;
+				return totalWritten;
 			}
+
+			return totalWritten;
 		}
 
 		void IStream.Flush( FlushKind flushKind ) { }
@@ -151,7 +157,7 @@ namespace Platform.IO {
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

@@ -20,13 +20,13 @@ namespace System.Runtime {
 
 		public Delegate( Delegate other ) {
 			extra {
-				return sizeof( InvokationItem ) * ( uint ) other._itemCount;
+				return sizeof( InvokationItem ) * other._itemCount;
 			}
 			body {
 				NoVtable = true;
 				_type = other._type;
 
-				Memory.Copy( GetItems(), other.GetItems(), ( uint ) _itemCount * sizeof( *GetItems() ) );
+				Memory.Copy( GetItems(), other.GetItems(), _itemCount * sizeof( *GetItems() ) );
 
 				TargetAddWeakReference();
 			}
@@ -38,7 +38,7 @@ namespace System.Runtime {
 			if( this == null || _itemCount == 0 ) return;
 
 			var buffer = GetItems();
-			for( var i = 0; i < _itemCount; ++i ) {
+			for( var i = 0U; i < _itemCount; ++i ) {
 				if( buffer[i].TargetType != null && buffer[i].TargetType->IsRuntimeObject ) bitcast<RuntimeObjectBase>( buffer[i].Target ).AddWeakReference();
 			}
 		}
@@ -47,7 +47,7 @@ namespace System.Runtime {
 			if( this == null || _itemCount == 0 ) return;
 
 			var buffer = GetItems();
-			for( var i = 0; i < _itemCount; ++i ) {
+			for( var i = 0U; i < _itemCount; ++i ) {
 				if( buffer[i].TargetType != null && buffer[i].TargetType->IsRuntimeObject ) bitcast<RuntimeObjectBase>( buffer[i].Target ).ReleaseWeakReference();
 			}
 		}
@@ -57,14 +57,14 @@ namespace System.Runtime {
 			if( this == null || _itemCount == 0 ) return;
 
 			var buffer = GetItems();
-			for( var i = 0; i < _itemCount; ++i )
+			for( var i = 0U; i < _itemCount; ++i )
 				EnsureTargetAlive( buffer + i );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private static void EnsureTargetAlive( InvokationItem* item ) {
 			if( item->TargetType != null && item->TargetType->IsRuntimeObject && bitcast<RuntimeObjectBase>( item->Target )._sharedReferenceCount == 0 ) {
-				Console.WriteLine( "Delegate: Object {0} with type '{1}' still remains in delegate after have been destroyed", item->Target, item->TargetType );
+				Console.WriteLine( "Delegate: Object {0} with type '{1}' still remains in delegate after have been destroyed", item->Target, *item->TargetType );
 				Diagnostics.StackTrace.Print();
 			}
 		}

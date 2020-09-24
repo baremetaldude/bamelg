@@ -4,10 +4,11 @@
 // See license at http://bamelg.com/license.txt
 //
 
+using System.Diagnostics;
 using System.Runtime;
 
 namespace System.IO {
-	public abstract class BufferedStream {
+	public class BufferedReadStream : IStream {
 		protected byte[] _buffer;
 
 		protected StreamingBufferInfo _bufferInfo;
@@ -16,237 +17,299 @@ namespace System.IO {
 		protected IStream _stream;
 		public IStream BaseStream { get { return _stream; } }
 
-		private const int DefaultBufferSize = 4096 * 4;
+		private const uint DefaultBufferSize = 4096U * 4;
 
-		private BufferedStream( IStream stream ) {
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read; } }
+
+		public BufferedReadStream( IStream stream, uint bufferSize = DefaultBufferSize ) {
 			_stream = stream;
+
+			_buffer = new[bufferSize] byte;
+
+			_bufferInfo.Start = &_buffer[0];
+			_bufferInfo.Capacity = _buffer.Length;
+			_bufferInfo.Position = 0;
+			_bufferInfo.AvailableToRead = 0;
 		}
 
-		public class ReadStream : BufferedStream, IStream {
-			public StreamCapabilities Capabilities { get { return StreamCapabilities.Read; } }
+		~BufferedReadStream() { Cleanup(); }
+		public override void Dispose() { Cleanup(); base.Dispose(); }
 
-			public ReadStream( IStream stream, int bufferSize = DefaultBufferSize )
-				: base( stream ) {
-				// Assert.IsTrue( bufferSize >= Memory.DefaultPageSize ); // ensure optimal buffer size
+		private void Cleanup() {
+			if( _stream == null ) return;
 
-				_buffer = new[bufferSize] byte;
+			_stream = null;
+			_buffer = null;
+			_bufferInfo = default( StreamingBufferInfo );
+		}
 
-				_bufferInfo.Start = &_buffer[0];
-				_bufferInfo.Capacity = _buffer.Length;
-				_bufferInfo.Position = 0;
-				_bufferInfo.AvailableToRead = 0;
+		private long _position = 0;
+
+		public uint Count { get { return _bufferInfo.AvailableToRead; } }
+		public uint Capacity { get { return _buffer.Length; } }
+
+		uint IStream.Write( void* buffer, uint length ) { Debug.Unreachable(); return 0; }
+
+		uint IStream.Read( vararg MemorySegment segments ) { var result = 0U; foreach( var segment in segments ) result += Read( segment.Start, ( uint ) segment.Count ); return result; }
+		uint IStream.Write( vararg MemorySegment segments ) { Debug.Unreachable(); return 0; }
+
+		// Used for fast lookups inside buffer
+		public void* Peek( uint length ) {
+			if( !Assert.IsTrue( length <= Capacity ) ) return null;
+
+			if( length <= _bufferInfo.AvailableToRead ) return &_buffer[_bufferInfo.Position];
+
+			Memory.CopyOverlapped( &_buffer[0], &_buffer[_bufferInfo.Position], _bufferInfo.AvailableToRead );
+			_position += _bufferInfo.Position;
+			_bufferInfo.Position = 0;
+
+			while( length > _bufferInfo.AvailableToRead ) {
+				var readen = _stream.Read( &_buffer[_bufferInfo.AvailableToRead], _bufferInfo.Capacity - _bufferInfo.AvailableToRead );
+				if( readen == 0 ) return null;
+
+				_bufferInfo.AvailableToRead += readen;
 			}
 
-			~ReadStream() { Cleanup(); }
-			public override void Dispose() { Cleanup(); base.Dispose(); }
+			return &_buffer[0];
+		}
 
-			private void Cleanup() {
-				if( _stream == null ) return;
+		public bool Drain( uint length ) {
+			if( length == 0 ) return true;
 
-				_stream = null;
-				_buffer = null;
-				_bufferInfo = default( StreamingBufferInfo );
-			}
-
-			public int Count { get { return _bufferInfo.AvailableToRead; } }
-			public int Capacity { get { return _buffer.Length; } }
-
-			void IStream.Write( void* buffer, int length ) { Assert.Unreachable(); }
-
-			int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-			void IStream.Write( vararg MemorySegment segments ) { Assert.Unreachable(); }
-
-			// Used for fast lookups inside buffer
-			public void* Peek( int length ) {
-				if( !Assert.IsTrue( length <= Capacity ) ) return null;
-
-				if( length <= _bufferInfo.AvailableToRead ) return &_buffer[_bufferInfo.Position];
-
-				Memory.Move( &_buffer[0], &_buffer[_bufferInfo.Position], ( uint ) _bufferInfo.AvailableToRead );
-				_bufferInfo.Position = 0;
-
-				while( length > _bufferInfo.AvailableToRead ) {
-					var readen = _stream.Read( &_buffer[_bufferInfo.AvailableToRead], _bufferInfo.Capacity - _bufferInfo.AvailableToRead );
-					if( readen == 0 ) return null;
-
-					_bufferInfo.AvailableToRead += readen;
-				}
-
-				return &_buffer[0];
-			}
-
-			public bool Drain( int length ) {
-				if( length <= 0 ) return true;
-
-				if( length <= _bufferInfo.AvailableToRead ) {
-					_bufferInfo.AvailableToRead -= length;
-					_bufferInfo.Position += length;
-					return true;
-				}
-
-				while( length > 0 ) {
-					if( _bufferInfo.AvailableToRead != 0 ) {
-						var bytesToCopy = Math.Min( length, _bufferInfo.AvailableToRead );
-						length -= bytesToCopy;
-						_bufferInfo.AvailableToRead -= bytesToCopy;
-						_bufferInfo.Position += bytesToCopy;
-					}
-
-					if( _bufferInfo.AvailableToRead == 0 ) Flush( FlushKind.Read );
-					if( _bufferInfo.AvailableToRead == 0 ) return false;
-				}
-
+			if( length <= _bufferInfo.AvailableToRead ) {
+				_bufferInfo.AvailableToRead -= length;
+				_bufferInfo.Position += length;
 				return true;
 			}
 
-			public int Read( void* buffer, int length ) {
-				if( length == 0 || buffer == null ) return 0;
-
-				if( length <= _bufferInfo.AvailableToRead ) {
-					Memory.Copy( buffer, &_buffer[_bufferInfo.Position], ( uint ) length );
-					_bufferInfo.AvailableToRead -= length;
-					_bufferInfo.Position += length;
-					return length;
+			while( length != 0 ) {
+				if( _bufferInfo.AvailableToRead != 0 ) {
+					var bytesToCopy = Math.Min( length, _bufferInfo.AvailableToRead );
+					length -= bytesToCopy;
+					_bufferInfo.AvailableToRead -= bytesToCopy;
+					_bufferInfo.Position += bytesToCopy;
 				}
 
-				var result = 0;
-				while( length > 0 ) {
-					if( _bufferInfo.AvailableToRead != 0 ) {
-						var bytesToCopy = Math.Min( length, _bufferInfo.AvailableToRead );
-						Memory.Copy( buffer, &_buffer[_bufferInfo.Position], ( uint ) bytesToCopy );
-
-						buffer = cast<byte*>( buffer ) + bytesToCopy;
-						length -= bytesToCopy;
-						_bufferInfo.AvailableToRead -= bytesToCopy;
-						_bufferInfo.Position += bytesToCopy;
-						result += bytesToCopy;
-					}
-
-					if( _bufferInfo.AvailableToRead == 0 ) Flush();
-					if( _bufferInfo.AvailableToRead == 0 ) break;
-				}
-
-				return result;
+				if( _bufferInfo.AvailableToRead == 0 ) Flush( FlushKind.Read );
+				if( _bufferInfo.AvailableToRead == 0 ) return false;
 			}
 
-			public void Flush( FlushKind flushKind = FlushKind.Read ) {
-				switch( flushKind ) {
-					case FlushKind.Read:
-						if( _bufferInfo.Position != 0 && _bufferInfo.AvailableToRead != 0 ) Memory.Move( &_buffer[0], &_buffer[_bufferInfo.Position], ( uint ) _bufferInfo.AvailableToRead );
-						_bufferInfo.Position = 0;
-
-						if( _bufferInfo.AvailableToRead < _bufferInfo.Capacity ) {
-							var readen = _stream.Read( &_buffer[_bufferInfo.AvailableToRead], _bufferInfo.Capacity - _bufferInfo.AvailableToRead );
-							_bufferInfo.AvailableToRead += readen;
-
-							if( readen == 0 ) break;
-						}
-
-						break;
-				}
-			}
-
-			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
-
-			long IStream.Position { get { return 0; } }
-			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-
-			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+			return true;
 		}
 
-		public class WriteStream : BufferedStream, IStream {
-			public StreamCapabilities Capabilities { get { return StreamCapabilities.Write; } }
+		public uint Read( void* buffer, uint length ) {
+			if( length == 0 || buffer == null ) return 0;
 
-			public WriteStream( IStream stream, int bufferSize = DefaultBufferSize )
-				: base( stream ) {
-				// Assert.IsTrue( bufferSize >= Memory.DefaultPageSize ); // ensure optimal buffer size
-
-				_buffer = new[bufferSize] byte;
-
-				_bufferInfo.Start = &_buffer[0];
-				_bufferInfo.Position = 0;
-				_bufferInfo.Capacity = _buffer.Length;
+			if( length <= _bufferInfo.AvailableToRead ) {
+				Memory.Copy( buffer, &_buffer[_bufferInfo.Position], length );
+				_bufferInfo.AvailableToRead -= length;
+				_bufferInfo.Position += length;
+				return length;
 			}
 
-			~WriteStream() { Cleanup(); }
-			public override void Dispose() { Cleanup(); base.Dispose(); }
-
-			private void Cleanup() {
-				if( _stream == null ) return;
-
-				Flush( FlushKind.Write );
-
-				_stream = null;
-				_buffer = null;
-				_bufferInfo = default( StreamingBufferInfo );
-			}
-
-			public int Count { get { return _bufferInfo.Position; } }
-			public int Capacity { get { return _buffer.Length; } }
-
-			public void Write( void* buffer, int length ) {
-				if( _stream == null ) return;
-				if( length == 0 ) return;
-
-				if( _bufferInfo.Position + length < _bufferInfo.Capacity ) {
-					Memory.Copy( &_buffer[_bufferInfo.Position], buffer, ( uint ) length );
-					_bufferInfo.OnWritePerformed( length );
-					return;
-				}
-
-				while( length > 0 ) {
-					var bytesToCopy = Math.Min( length, _bufferInfo.Capacity - _bufferInfo.Position );
-					Memory.Copy( &_buffer[_bufferInfo.Position], buffer, ( uint ) bytesToCopy );
+			var result = 0U;
+			while( length != 0 ) {
+				if( _bufferInfo.AvailableToRead != 0 ) {
+					var bytesToCopy = Math.Min( length, _bufferInfo.AvailableToRead );
+					Memory.Copy( buffer, &_buffer[_bufferInfo.Position], bytesToCopy );
 
 					buffer = cast<byte*>( buffer ) + bytesToCopy;
 					length -= bytesToCopy;
+					_bufferInfo.AvailableToRead -= bytesToCopy;
 					_bufferInfo.Position += bytesToCopy;
+					result += bytesToCopy;
+				}
 
-					if( _bufferInfo.Position == _bufferInfo.Capacity ) {
-						_stream.Write( &_buffer[0], _bufferInfo.Position );
+				if( _bufferInfo.AvailableToRead == 0 ) Flush();
+				if( _bufferInfo.AvailableToRead == 0 ) break;
+			}
+
+			return result;
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.Read ) {
+			switch( flushKind ) {
+				case FlushKind.Read:
+					if( _bufferInfo.Position != 0 && _bufferInfo.AvailableToRead != 0 ) Memory.CopyOverlapped( &_buffer[0], &_buffer[_bufferInfo.Position], _bufferInfo.AvailableToRead );
+					_position += _bufferInfo.Position;
+					_bufferInfo.Position = 0;
+
+					if( _bufferInfo.AvailableToRead < _bufferInfo.Capacity ) {
+						var readen = _stream.Read( &_buffer[_bufferInfo.AvailableToRead], _bufferInfo.Capacity - _bufferInfo.AvailableToRead );
+						_bufferInfo.AvailableToRead += readen;
+
+						if( readen == 0 ) break;
+					}
+
+					break;
+			}
+		}
+
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
+
+		long IStream.Position { get { return _position + _bufferInfo.Position; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
+	}
+
+	public class BufferedWriteStream : IStream {
+		protected byte[] _buffer;
+
+		protected StreamingBufferInfo _bufferInfo;
+		public StreamingBufferInfo* BufferInfo { get { return &_bufferInfo; } }
+
+		protected IStream _stream;
+		public IStream BaseStream { get { return _stream; } }
+
+		private const uint DefaultBufferSize = 4096U * 4;
+
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Write; } }
+
+		public BufferedWriteStream( IStream stream, uint bufferSize = DefaultBufferSize ) {
+			_stream = stream;
+
+			_buffer = new[bufferSize] byte;
+
+			_bufferInfo.Start = &_buffer[0];
+			_bufferInfo.Position = 0;
+			_bufferInfo.Capacity = _buffer.Length;
+		}
+
+		~BufferedWriteStream() { Cleanup(); }
+		public override void Dispose() { Cleanup(); base.Dispose(); }
+
+		private void Cleanup() {
+			if( _stream == null ) return;
+
+			Flush( FlushKind.Write );
+
+			_stream = null;
+			_buffer = null;
+			_bufferInfo = default( StreamingBufferInfo );
+		}
+
+		public uint Count { get { return _bufferInfo.Position; } }
+		public uint Capacity { get { return _buffer.Length; } }
+
+		public uint Write( void* buffer, uint length ) {
+			if( _stream == null ) return 0;
+			if( length == 0 ) return 0;
+
+			if( _bufferInfo.Position + length < _bufferInfo.Capacity ) {
+				Memory.Copy( &_buffer[_bufferInfo.Position], buffer, length );
+				_bufferInfo.OnWritePerformed( length );
+				return length;
+			}
+
+			uint totalBuffered = 0;
+
+		try_feed_already_buffered:
+			if( _bufferInfo.Position == 0 && length > _bufferInfo.Capacity ) {
+				uint bufferedBlockLength = length / _bufferInfo.Capacity * _bufferInfo.Capacity;
+
+				var written = _stream.Write( buffer, bufferedBlockLength );
+				buffer = ( byte* ) buffer + written;
+				length -= written;
+				totalBuffered += written;
+			}
+
+			while( length != 0 ) {
+				var bytesCopiedToBuffer = Math.Min( length, _bufferInfo.Capacity - _bufferInfo.Position );
+				Memory.Copy( &_buffer[_bufferInfo.Position], buffer, bytesCopiedToBuffer );
+
+				buffer = ( byte* ) buffer + bytesCopiedToBuffer;
+				length -= bytesCopiedToBuffer;
+				_bufferInfo.Position += bytesCopiedToBuffer;
+				totalBuffered += bytesCopiedToBuffer;
+
+				if( _bufferInfo.Position == _bufferInfo.Capacity ) {
+					var written = _stream.Write( &_buffer[0], _bufferInfo.Position );
+
+					if( written == 0 ) {
+						return totalBuffered;
+					}
+
+					if( written != _bufferInfo.Capacity ) {
+						var remainingBytes = _bufferInfo.Capacity - written;
+						Memory.CopyOverlapped( &_buffer[0], &_buffer[written], remainingBytes );
+
+						_bufferInfo.Position = remainingBytes;
+						_bufferInfo.AvailableToRead = 0;
+						continue;
+					}
+
+					_bufferInfo.Position = 0;
+					_bufferInfo.AvailableToRead = 0;
+					goto try_feed_already_buffered;
+				}
+			}
+
+			return totalBuffered;
+		}
+
+		uint IStream.Read( void* buffer, uint length ) { Debug.Unreachable(); return 0; }
+
+		uint IStream.Read( vararg MemorySegment segments ) { Debug.Unreachable(); return 0; }
+
+		uint IStream.Write( vararg MemorySegment segments ) {
+			var result = 0U;
+
+			foreach( var segment in segments ) {
+				var written = Write( segment.Start, ( uint ) segment.Count );
+				result += written;
+
+				if( written != segment.Count )
+					break;
+			}
+
+			return result;
+		}
+
+		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
+			if( _stream == null ) return;
+
+			switch( flushKind ) {
+				case FlushKind.Write:
+				case FlushKind.DeepWrite:
+				case FlushKind.SynchronizeWrite:
+					if( _bufferInfo.Position != 0 ) {
+						var written = _stream.Write( &_buffer[0], _bufferInfo.Position );
+						if( written != 0 ) {
+							if( written != _bufferInfo.Position ) {
+								var remainingBytes = _bufferInfo.Position - written;
+								Memory.CopyOverlapped( &_buffer[0], &_buffer[written], remainingBytes );
+
+								_bufferInfo.Position = remainingBytes;
+								_bufferInfo.AvailableToRead = 0;
+								break;
+							}
+						}
+
 						_bufferInfo.Position = 0;
 					}
-				}
+
+					switch( flushKind ) {
+						case FlushKind.DeepWrite:
+						case FlushKind.SynchronizeWrite:
+							_stream.Flush( flushKind );
+							break;
+					}
+
+					break;
 			}
-
-			int IStream.Read( void* buffer, int length ) { Assert.Unreachable(); return 0; }
-
-			int IStream.Read( vararg MemorySegment segments ) { Assert.Unreachable(); return 0; }
-			void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
-
-			public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
-				if( _stream == null ) return;
-
-				switch( flushKind ) {
-					case FlushKind.Write:
-					case FlushKind.DeepWrite:
-					case FlushKind.SynchronizeWrite:
-						if( _bufferInfo.Position > 0 ) {
-							_stream.Write( &_buffer[0], _bufferInfo.Position );
-							_bufferInfo.Position = 0;
-						}
-
-						switch( flushKind ) {
-							case FlushKind.DeepWrite:
-							case FlushKind.SynchronizeWrite:
-								_stream.Flush( flushKind );
-								break;
-						}
-
-						break;
-				}
-			}
-
-			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
-
-			long IStream.Position { get { return 0; } }
-			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-
-			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
 		}
+
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
+
+		private long _position = 0;
+		long IStream.Position { get { return _position + _bufferInfo.Position; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

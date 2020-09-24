@@ -19,7 +19,7 @@ namespace System.IO {
 		internal partial struct FiberInfo {
 			private _EXCEPTION_REGISTRATION_RECORD* ExceptionList = ( _EXCEPTION_REGISTRATION_RECORD* ) -1;
 
-			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+			private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) {
 				ContextSwitch.X86.Windows.PrepareContext_SSE( fiber, stack, stackSize, function, parameter );
 			}
 
@@ -27,7 +27,7 @@ namespace System.IO {
 				var& tib = _TEB.Current.NtTib;
 
 				context->_stack = tib.StackLimit;
-				context->_stackSize = ( int )( ( byte* ) tib.StackBase - ( byte* ) tib.StackLimit );
+				context->_stackSize = ( uint )( ( byte* ) tib.StackBase - ( byte* ) tib.StackLimit );
 				context->ExceptionList = tib.ExceptionList;
 			}
 
@@ -44,10 +44,10 @@ namespace System.IO {
 				tib.StackBase = ( byte* ) newContext->_stack + newContext->_stackSize;
 				tib.ExceptionList = newContext->ExceptionList;
 			}
-			
+
 			private static void SwitchCurrentContext( void** oldStack, void* newStack ) {
 				ContextSwitch.X86.Windows.SwitchCurrentContext_SSE( oldStack, newStack );
-			}			
+			}
 		}
 	}
 }

@@ -33,7 +33,7 @@ namespace System.IO {
 				public EventLoop CurrentEventLoop;
 				private FiberReadyEventSink _readySink;
 
-				/// @{ EventLoop support
+				#region EventLoop support
 				public void Attach( EventLoop eventLoop ) {
 					if( !Assert.IsTrue( CurrentEventLoop == null ) ) return;
 					CurrentEventLoop = eventLoop;
@@ -50,9 +50,9 @@ namespace System.IO {
 
 					CurrentEventLoop = null;
 				}
-				/// @}
+				#endregion
 
-				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeSpan interval, Functors.Action<void*> action, void* data ) {
+				private Dispatcher.AlarmUnbiased* BeginTimeout( TimeDuration interval, Functors.Action<void*> action, void* data ) {
 					return CurrentEventLoop.ScheduleUnbiased( interval, action, data );
 				}
 
@@ -137,17 +137,17 @@ namespace System.IO {
 					IOCompleted( errorCode, numberOfBytesTransfered, *( OVERLAPPED* ) &overlapped );
 				}
 
-				private SystemErrorCode FiberReadFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalReceived ) {
+				private SystemErrorCode FiberReadFile( TimeDuration timeout, uint& totalReceived, HANDLE handle, ulong offset, void* buffer, uint count ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
-					totalReceived = 0;
+					totalReceived = 0U;
 					// CurrentFiber->_asyncOperation.Internal = 0;
 					CurrentFiber->_asyncOperation.Offset = offset;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
 					CurrentFiber->_asyncErrorCode = SystemErrorCode.ERROR_SUCCESS;
 
 				restart:
-					if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, CurrentFiber->_asyncOperation, IOCompleted ) ) {
+					if( !Kernel32Api.ReadFileEx( handle, buffer, count, CurrentFiber->_asyncOperation, IOCompleted ) ) {
 						var code = Kernel32Api.LastError;
 
 						return code;
@@ -170,18 +170,18 @@ namespace System.IO {
 						if( isTimedOut ) return CurrentFiber->_asyncErrorCode = SystemErrorCode.ERROR_TIMEOUT;
 					}
 
-					totalReceived = ( int ) CurrentFiber->_asyncTransferred;
+					totalReceived = CurrentFiber->_asyncTransferred;
 					return CurrentFiber->_asyncErrorCode;
 				}
 
-				private SystemErrorCode FiberWriteFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalTransmitted ) {
+				private SystemErrorCode FiberWriteFile( TimeDuration timeout, uint& totalTransmitted, HANDLE handle, ulong offset, void* buffer, uint count ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
 					totalTransmitted = 0;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
 					CurrentFiber->_asyncOperation.Offset = offset;
 
-					if( !Kernel32Api.WriteFileEx( handle, buffer, ( uint ) count, CurrentFiber->_asyncOperation, IOCompleted ) )
+					if( !Kernel32Api.WriteFileEx( handle, buffer, count, CurrentFiber->_asyncOperation, IOCompleted ) )
 						return Kernel32Api.LastError;
 
 					BeginTimeout( timeout );
@@ -202,14 +202,14 @@ namespace System.IO {
 					return CurrentFiber->_asyncErrorCode;
 				}
 
-				private SystemErrorCode FiberSendTo( TimeSpan timeout, SocketHandle handle, void* address, int addressLength, void* buffer, int count, int& totalTransmitted ) {
+				private SystemErrorCode FiberSendTo( TimeDuration timeout, uint& totalTransmitted, SocketHandle handle, void* address, uint addressLength, void* buffer, uint count ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
-					totalTransmitted = 0;
+					totalTransmitted = 0U;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
 
 					uint written = 0;
-					var wsabuf = new WSABUF { Buffer = buffer, Length = ( uint ) count };
+					var wsabuf = new WSABUF { Buffer = buffer, Length = count };
 					if( WinsockApi.WSASendTo( handle, &wsabuf, 1U, written, 0U, ( sockaddr* ) address, addressLength, *( WSAOVERLAPPED* ) &CurrentFiber->_asyncOperation, WsaIOCompleted ) != 0 ) {
 						var status = Kernel32Api.LastError;
 
@@ -239,14 +239,14 @@ namespace System.IO {
 					return SystemErrorCode.NO_ERROR;
 				}
 
-				private SystemErrorCode FiberReceiveFrom( TimeSpan timeout, SocketHandle handle, void* address, int addressLength, void* buffer, int count, int& totalTransmitted ) {
+				private SystemErrorCode FiberReceiveFrom( TimeDuration timeout, uint& totalTransmitted, SocketHandle handle, void* address, uint addressLength, void* buffer, uint count ) {
 					// Console.WriteLine( "{0} count={1}", thismethod, count );
 
-					totalTransmitted = 0;
+					totalTransmitted = 0U;
 					CurrentFiber->_asyncOperation.Event = bitcast<HANDLE>( CurrentFiber );
 
 					uint written = 0;
-					var wsabuf = new WSABUF { Buffer = buffer, Length = ( uint ) count };
+					var wsabuf = new WSABUF { Buffer = buffer, Length = count };
 					if( WinsockApi.WSARecvFrom( handle, &wsabuf, 1U, written, 0U, ( sockaddr* ) address, addressLength, *( WSAOVERLAPPED* ) &CurrentFiber->_asyncOperation, WsaIOCompleted ) != 0 ) {
 						var status = Kernel32Api.LastError;
 
@@ -277,46 +277,44 @@ namespace System.IO {
 				}
 
 				// Less than 'count' bytes can be received
-				public static SystemErrorCode ReadFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalReceived ) {
+				public static SystemErrorCode ReadFile( TimeDuration timeout, uint& totalReceived, HANDLE handle, ulong offset, void* buffer, uint count ) {
 					totalReceived = 0;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberReadFile( timeout, handle, offset, buffer, count, totalReceived );
+						return Fiber.FiberManager.FiberReadFile( timeout, totalReceived, handle, offset, buffer, count );
 					}
 					else {
-						// uint readen;
-						// if( Kernel32Api.ReadFile( handle, buffer, ( uint ) count, readen, nullref ) ) {
-						// 	totalReceived = ( int ) readen;
-						// 	return SystemErrorCode.NO_ERROR;
-						// }
-
-						// totalReceived = ( int ) readen;
-						// return Kernel32Api.LastError;
-
 						var @event = default( SynchronousIOEvent );
 						var overlapped = default( OVERLAPPED );
 						overlapped.Event = bitcast<HANDLE>( &@event );
 						overlapped.Offset = offset;
 
-						if( !Kernel32Api.ReadFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
+						if( !Kernel32Api.ReadFileEx( handle, buffer, count, overlapped, SyncIOCompleted ) )
 							return Kernel32Api.LastError;
 
-						if( timeout > TimeSpan.Zero ) {
-							var startedAt = DateTime.UnbiasedNow;
+						if( timeout > TimeDuration.Zero ) {
+							var startedAt = TimeStamp.BootTime_ExcludeSuspend.Now;
+							var waitUntil = startedAt + timeout;
+
 							var now = startedAt;
 
 							for( ; !@event.Completed; ) {
-								var ms = ( timeout - ( now - startedAt ) ).TotalMilliseconds;
+								if( now > waitUntil ) goto cancel_io;
 
-								if( Kernel32Api.SleepEx( ( uint ) ms, true ) == 0 ) {
+								var waitMilliseconds = ( waitUntil - now ).TotalMilliseconds;
+								var waitMilliseconds32 = ( uint ) waitMilliseconds;
+								if( waitMilliseconds >= Kernel32Api.INFINITE ) waitMilliseconds32 = Kernel32Api.INFINITE - 1;
+
+								if( Kernel32Api.SleepEx( waitMilliseconds32, true ) == 0 ) {
+								cancel_io:
 									totalReceived = 0;
 									Kernel32Api.CancelIoEx( handle, overlapped );
 
 									return SystemErrorCode.ERROR_TIMEOUT;
 								}
 
-								now = DateTime.UnbiasedNow;
+								now = TimeStamp.BootTime_ExcludeSuspend.Now;
 							}
 						}
 						else {
@@ -331,7 +329,7 @@ namespace System.IO {
 
 				struct SynchronousIOEvent {
 					public bool Completed;
-					public int Written;
+					public uint Written;
 					public SystemErrorCode ErrorCode;
 				}
 
@@ -341,52 +339,48 @@ namespace System.IO {
 
 					@event.Completed = true;
 					@event.ErrorCode = errorCode;
-					@event.Written = ( int ) numberOfBytesTransfered;
+					@event.Written = numberOfBytesTransfered;
 				}
 
 				// Less than 'count' bytes can be transmitted
-				public static SystemErrorCode WriteFile( TimeSpan timeout, HANDLE handle, ulong offset, void* buffer, int count, int& totalTransmitted ) {
+				public static SystemErrorCode WriteFile( TimeDuration timeout, uint& totalTransmitted, HANDLE handle, ulong offset, void* buffer, uint count ) {
 					totalTransmitted = 0;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberWriteFile( timeout, handle, offset, buffer, count, totalTransmitted );
+						return Fiber.FiberManager.FiberWriteFile( timeout, totalTransmitted, handle, offset, buffer, count );
 					}
 					else {
-						// all files created with overlapped flag, otherwise them cannot be used in fibers later
-
-						// uint written;
-						// if( Kernel32Api.WriteFile( handle, buffer, ( uint ) count, written, nullref ) ) {
-						// 	totalTransmitted = ( int ) written;
-						// 	return SystemErrorCode.NO_ERROR;
-						// }
-
-						// totalTransmitted = ( int ) written;
-						// return Kernel32Api.LastError;
-
 						var @event = default( SynchronousIOEvent );
 						var overlapped = default( OVERLAPPED );
 						overlapped.Event = bitcast<HANDLE>( &@event );
 						overlapped.Offset = offset;
 
-						if( !Kernel32Api.WriteFileEx( handle, buffer, ( uint ) count, overlapped, SyncIOCompleted ) )
+						if( !Kernel32Api.WriteFileEx( handle, buffer, count, overlapped, SyncIOCompleted ) )
 							return Kernel32Api.LastError;
 
-						if( timeout > TimeSpan.Zero ) {
-							var startedAt = DateTime.UnbiasedNow;
+						if( timeout > TimeDuration.Zero ) {
+							var startedAt = TimeStamp.BootTime_ExcludeSuspend.Now;
+							var waitUntil = startedAt + timeout;
+
 							var now = startedAt;
 
 							for( ; !@event.Completed; ) {
-								var ms = ( timeout - ( now - startedAt ) ).TotalMilliseconds;
+								if( now > waitUntil ) goto cancel_io;
 
-								if( Kernel32Api.SleepEx( ( uint ) ms, true ) == 0 ) {
+								var waitMilliseconds = ( waitUntil - now ).TotalMilliseconds;
+								var waitMilliseconds32 = ( uint ) waitMilliseconds;
+								if( waitMilliseconds >= Kernel32Api.INFINITE ) waitMilliseconds32 = Kernel32Api.INFINITE - 1;
+
+								if( Kernel32Api.SleepEx( waitMilliseconds32, true ) == 0 ) {
+								cancel_io:
 									totalTransmitted = 0;
 									Kernel32Api.CancelIoEx( handle, overlapped );
 
 									return SystemErrorCode.ERROR_TIMEOUT;
 								}
 
-								now = DateTime.UnbiasedNow;
+								now = TimeStamp.BootTime_ExcludeSuspend.Now;
 							}
 						}
 						else {
@@ -399,44 +393,44 @@ namespace System.IO {
 					}
 				}
 
-				public static SystemErrorCode SendTo( TimeSpan timeout, SocketHandle handle, void* address, int addressLength, void* buffer, int count, int& totalTransmitted ) {
-					totalTransmitted = 0;
+				public static SystemErrorCode SendTo( TimeDuration timeout, uint& totalTransmitted, SocketHandle handle, void* address, uint addressLength, void* buffer, uint count ) {
+					totalTransmitted = 0U;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberSendTo( timeout, handle, address, addressLength, buffer, count, totalTransmitted );
+						return Fiber.FiberManager.FiberSendTo( timeout, totalTransmitted, handle, address, addressLength, buffer, count );
 					}
 					else {
-						var wsabuf = new WSABUF { Buffer = buffer, Length = ( uint ) count };
+						var wsabuf = new WSABUF { Buffer = buffer, Length = count };
 
 						uint written;
 						if( WinsockApi.WSASendTo( handle, &wsabuf, 1U, written, 0U, ( sockaddr* ) address, addressLength, nullref, null ) == 0 ) {
-							totalTransmitted = ( int ) written;
+							totalTransmitted = written;
 							return SystemErrorCode.NO_ERROR;
 						}
 
-						totalTransmitted = ( int ) written;
+						totalTransmitted = written;
 						return Kernel32Api.LastError;
 					}
 				}
 
-				public static SystemErrorCode ReceiveFrom( TimeSpan timeout, SocketHandle handle, void* address, int addressLength, void* buffer, int count, int& totalReceived ) {
+				public static SystemErrorCode ReceiveFrom( TimeDuration timeout, uint& totalReceived, SocketHandle handle, void* address, uint addressLength, void* buffer, uint count ) {
 					totalReceived = 0;
 					if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemErrorCode.NO_ERROR;
 
 					if( Fiber.IsFiberExecuting ) {
-						return Fiber.FiberManager.FiberReceiveFrom( timeout, handle, address, addressLength, buffer, count, totalReceived );
+						return Fiber.FiberManager.FiberReceiveFrom( timeout, totalReceived, handle, address, addressLength, buffer, count );
 					}
 					else {
-						var wsabuf = new WSABUF { Buffer = buffer, Length = ( uint ) count };
+						var wsabuf = new WSABUF { Buffer = buffer, Length = count };
 
 						uint readen;
 						if( WinsockApi.WSARecvFrom( handle, &wsabuf, 1U, readen, 0U, ( sockaddr* ) address, addressLength, nullref, null ) == 0 ) {
-							totalReceived = ( int ) readen;
+							totalReceived = readen;
 							return SystemErrorCode.NO_ERROR;
 						}
 
-						totalReceived = ( int ) readen;
+						totalReceived = readen;
 						return Kernel32Api.LastError;
 					}
 				}
@@ -582,7 +576,7 @@ namespace System.IO {
 					}
 				}
 
-				/// @{ Tracing
+				#region Tracing
 
 				// [Conditional( ConditionString = TraceConditionString )]
 				// private static void TraceIONotify( FiberInfo* fiber, epoll_event& @event ) {
@@ -604,7 +598,7 @@ namespace System.IO {
 				// 	Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", CurrentFiber->ID, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
 				// }
 
-				/// @}
+				#endregion
 			}
 		}
 	}

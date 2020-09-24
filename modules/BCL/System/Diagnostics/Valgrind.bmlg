@@ -58,8 +58,8 @@ namespace System.Diagnostics {
 
 		[Alignment( Boundary = 4 )]
 		[BackendSection( Name = ".text" )]
-		private static uint_bigendian[10] ClientRequest_ARM32 = new uint_bigendian[10] {
-			0x10402de9, // push {r4, lr}
+		private static readonly uint_bigendian[10] ClientRequest_ARM32 = new uint_bigendian[10] {
+			0x10402DE9, // push {r4, lr}
 			0x0030A0E1, // mov r3, r0
 			0x0140A0E1, // mov r4, r1
 			0xECC1A0E1, // ror r12, r12, #3
@@ -68,12 +68,12 @@ namespace System.Diagnostics {
 			0xECC9A0E1, // ror r12, r12, #19
 			0x0AA08AE1, // orr r10, r10, r10
 			0x0300A0E1, // mov r0, r3
-			0x1080bde8  // pop {r4, pc}
+			0x1080BDE8  // pop {r4, pc}
 		};
 
 		[Alignment( Boundary = 4 )]
 		[BackendSection( Name = ".text" )]
-		private static uint_bigendian[9] ClientRequest_ARM64 = new uint_bigendian[9] {
+		private static readonly uint_bigendian[9] ClientRequest_ARM64 = new uint_bigendian[9] {
 			0xE30300AA, // mov x3, x0
 			0xE40301AA, // mov x4, x1
 			0x8C0DCC93, // ror x12, x12, #3
@@ -116,11 +116,11 @@ namespace System.Diagnostics {
 
 		public static void DiscardTranslations( void* address, intptr length ) { ClientRequest( 0, new intptr[6] { RequestID.DiscardTranslations.Value(), ( intptr ) address, length, 0, 0, 0 } ); }
 
-		public static void MallocLikeBlock( void* address, int length, int redzoneLength, bool isCleared ) { ClientRequest( 0, new intptr[6] { RequestID.MallocLikeBlock.Value(), ( intptr ) address, length, redzoneLength, ( intptr ) isCleared, 0 } ); }
+		public static void MallocLikeBlock( void* address, uint length, uint redzoneLength, bool isCleared ) { ClientRequest( 0, new intptr[6] { RequestID.MallocLikeBlock.Value(), ( intptr ) address, ( intptr ) length, ( intptr ) redzoneLength, ( intptr ) isCleared, 0 } ); }
 		public static void ResizeInPlaceBlock( void* address, int old, int @new, int redzoneLength ) { ClientRequest( 0, new intptr[6] { RequestID.ResizeInPlaceBlock.Value(), ( intptr ) address, old, @new, redzoneLength, 0 } ); }
 		public static void FreeLikeBlock( void* address, int redzoneLength ) { ClientRequest( 0, new intptr[6] { RequestID.FreeLikeBlock.Value(), ( intptr ) address, redzoneLength, 0, 0, 0 } ); }
 
-		public static void MempoolCreate( void* pool, int redzoneLength, bool isCleared ) { ClientRequest( 0, new intptr[6] { RequestID.MempoolCreate.Value(), ( intptr ) pool, redzoneLength, ( intptr ) isCleared, 0, 0 } ); }
+		public static void MempoolCreate( void* pool, uint redzoneLength, bool isCleared ) { ClientRequest( 0, new intptr[6] { RequestID.MempoolCreate.Value(), ( intptr ) pool, ( intptr ) redzoneLength, ( intptr ) isCleared, 0, 0 } ); }
 		public static void MempoolDestroy( void* pool ) { ClientRequest( 0, new intptr[6] { RequestID.MempoolDestroy.Value(), ( intptr ) pool, 0, 0, 0, 0 } ); }
 		public static void MempoolAlloc( void* pool, void* start, intptr length ) { ClientRequest( 0, new intptr[6] { RequestID.MempoolAlloc.Value(), ( intptr ) pool, ( intptr ) start, length, 0, 0 } ); }
 		public static void MempoolFree( void* pool, void* start ) { ClientRequest( 0, new intptr[6] { RequestID.MempoolFree.Value(), ( intptr ) pool, ( intptr ) start, 0, 0, 0 } ); }

@@ -12,7 +12,7 @@ namespace Platform.Kernel {
 		public const int _LINUX_CAPABILITY_VERSION = 429392688;
 
 	}
-	public enum IoctlCommand : uint {
+	public enum FileDriverCommand : uint {
 		TIOCPKT_DATA =        0,
 		TIOCPKT_FLUSHREAD =   1,
 		TIOCPKT_FLUSHWRITE =  2,
@@ -757,6 +757,118 @@ namespace Platform.Kernel {
 		public ushort nr_firstnet;
 		[ExplicitOffset( Offset = 4 )]
 		public ushort nr_lastnet;
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_icounter_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int cts;
+		[ExplicitOffset( Offset = 4 )]
+		public int dsr;
+		[ExplicitOffset( Offset = 8 )]
+		public int rng;
+		[ExplicitOffset( Offset = 12 )]
+		public int dcd;
+		[ExplicitOffset( Offset = 16 )]
+		public int rx;
+		[ExplicitOffset( Offset = 20 )]
+		public int tx;
+		[ExplicitOffset( Offset = 24 )]
+		public int frame;
+		[ExplicitOffset( Offset = 28 )]
+		public int overrun;
+		[ExplicitOffset( Offset = 32 )]
+		public int parity;
+		[ExplicitOffset( Offset = 36 )]
+		public int brk;
+		[ExplicitOffset( Offset = 40 )]
+		public int buf_overrun;
+		[ExplicitOffset( Offset = 44 )]
+		public int[9] reserved;
+	}
+	[ExplicitSize( Size = 168 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_multiport_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int irq;
+		[ExplicitOffset( Offset = 4 )]
+		public int port1;
+		[ExplicitOffset( Offset = 8 )]
+		public byte mask1;
+		[ExplicitOffset( Offset = 9 )]
+		public byte match1;
+		[ExplicitOffset( Offset = 12 )]
+		public int port2;
+		[ExplicitOffset( Offset = 16 )]
+		public byte mask2;
+		[ExplicitOffset( Offset = 17 )]
+		public byte match2;
+		[ExplicitOffset( Offset = 20 )]
+		public int port3;
+		[ExplicitOffset( Offset = 24 )]
+		public byte mask3;
+		[ExplicitOffset( Offset = 25 )]
+		public byte match3;
+		[ExplicitOffset( Offset = 28 )]
+		public int port4;
+		[ExplicitOffset( Offset = 32 )]
+		public byte mask4;
+		[ExplicitOffset( Offset = 33 )]
+		public byte match4;
+		[ExplicitOffset( Offset = 36 )]
+		public int port_monitor;
+		[ExplicitOffset( Offset = 40 )]
+		public int[32] reserved;
+	}
+	[ExplicitSize( Size = 60 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int type;
+		[ExplicitOffset( Offset = 4 )]
+		public int line;
+		[ExplicitOffset( Offset = 8 )]
+		public uint port;
+		[ExplicitOffset( Offset = 12 )]
+		public int irq;
+		[ExplicitOffset( Offset = 16 )]
+		public int flags;
+		[ExplicitOffset( Offset = 20 )]
+		public int xmit_fifo_size;
+		[ExplicitOffset( Offset = 24 )]
+		public int custom_divisor;
+		[ExplicitOffset( Offset = 28 )]
+		public int baud_base;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort close_delay;
+		[ExplicitOffset( Offset = 34 )]
+		public sbyte io_type;
+		[ExplicitOffset( Offset = 35 )]
+		public sbyte[1] reserved_char;
+		[ExplicitOffset( Offset = 36 )]
+		public int hub6;
+		[ExplicitOffset( Offset = 40 )]
+		public ushort closing_wait;
+		[ExplicitOffset( Offset = 42 )]
+		public ushort closing_wait2;
+		[ExplicitOffset( Offset = 44 )]
+		public byte* iomem_base;
+		[ExplicitOffset( Offset = 48 )]
+		public ushort iomem_reg_shift;
+		[ExplicitOffset( Offset = 52 )]
+		public uint port_high;
+		[ExplicitOffset( Offset = 56 )]
+		public int[1] reserved;
+	}
+	[ExplicitSize( Size = 12 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_uart_config {
+		[ExplicitOffset( Offset = 0 )]
+		public CUtf8String name;
+		[ExplicitOffset( Offset = 4 )]
+		public int dfl_xmit_fifo_size;
+		[ExplicitOffset( Offset = 8 )]
+		public int flags;
 	}
 	[ExplicitSize( Size = 88 )]
 	[Alignment( Boundary = 4 )]

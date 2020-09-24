@@ -13,14 +13,11 @@ using System.Runtime;
 namespace System.Serialization {
 	/// Stream serializer for *.ini files
 	public static struct HttpPostSerializer {
-		public static void Deserialize( Binder.MapperCUtf16Span mapper, Binder.Context& context, CUtf16StringSpan name, StringBuilder value ) {
+		public static Convert.ConversionResult Deserialize( Binder.MapperCUtf16Span mapper, Binder.Context& context, CUtf16StringSpan name, StringBuilder value ) {
 			var mapping = mapper[name];
-			if( mapping == -1 ) {
-				context.BinderEvent.NotFound( name );
-				return;
-			}
+			if( mapping == uint.MaxValue ) return Convert.ConversionResult.MissedMapping;
 
-			context.Binder.SetValue( context, mapping, value );
+			return context.Binder.SetValue( context.Object, mapping, value );
 		}
 	}
 }

@@ -12,13 +12,13 @@ namespace System.IO {
 	public class ReadSubStream : IStream {
 		private IStream _baseStream;
 
-		private long _limit;
+		private ulong _limit;
 		private StreamingBufferInfo* _bufferInfo;
-		private int _oldAvailableValue = -1, _oldPositionValue = 0;
+		private uint _oldAvailableValue = uint.MaxValue, _oldPositionValue = 0;
 
-		public long Count { get { return _limit; } }
+		public ulong Count { get { return _limit; } }
 
-		public ReadSubStream( IStream baseStream, long limit ) {
+		public ReadSubStream( IStream baseStream, ulong limit ) {
 			_baseStream = baseStream;
 			_limit = limit;
 
@@ -33,16 +33,21 @@ namespace System.IO {
 			if( _bufferInfo == null ) return;
 
 			if( _bufferInfo->AvailableToRead > _limit ) {
-				Debug.Assert( _oldAvailableValue == -1 );
-				_oldAvailableValue = _bufferInfo->AvailableToRead - ( int ) _limit;
-				_bufferInfo->AvailableToRead = ( int ) _limit;
+				var limit32 = ( uint ) _limit;
+
+				Debug.Assert( _oldAvailableValue == uint.MaxValue );
+				_oldAvailableValue = _bufferInfo->AvailableToRead - limit32;
+				_bufferInfo->AvailableToRead = limit32;
 			}
 		}
 
 		#region IStream Members
 
-		public int Read( void* buffer, int count ) {
-			var toRead = ( int ) Math.Min( count, _limit );
+		public uint Read( void* buffer, uint count ) {
+			var toRead = 0U;
+			if( _limit > count ) toRead = count;
+			else toRead = ( uint ) _limit;
+
 			if( toRead == 0 ) return 0;
 
 			var readen = _baseStream.Read( buffer, toRead );
@@ -58,10 +63,10 @@ namespace System.IO {
 			return toRead;
 		}
 
-		public void Write( void* buffer, int count ) { Assert.Unreachable(); }
+		public uint Write( void* buffer, uint count ) { Debug.Unreachable(); return 0; }
 
-		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
-		void IStream.Write( vararg MemorySegment segments ) { Assert.Unreachable(); }
+		uint IStream.Read( vararg MemorySegment segments ) { var result = 0U; foreach( var segment in segments ) result += Read( segment.Start, ( uint ) segment.Count ); return result; }
+		uint IStream.Write( vararg MemorySegment segments ) { Assert.Unreachable(); return 0; }
 
 		public void Flush( FlushKind flushKind ) {
 			switch( flushKind ) {
@@ -102,8 +107,8 @@ namespace System.IO {
 			if( _baseStream != null ) {
 				this.DrainToEnd();
 
-				if( _limit == 0 & _oldAvailableValue != -1 )
-					_bufferInfo->AvailableToRead = ( int ) _oldAvailableValue;
+				if( _limit == 0 & _oldAvailableValue != uint.MaxValue )
+					_bufferInfo->AvailableToRead = _oldAvailableValue;
 
 				_baseStream = null;
 				_bufferInfo = null;
@@ -112,13 +117,13 @@ namespace System.IO {
 			base.Dispose();
 		}
 
-		TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-		TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+		TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+		TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

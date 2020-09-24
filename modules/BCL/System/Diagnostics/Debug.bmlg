@@ -9,12 +9,23 @@ using System.Runtime.CompilerServices;
 namespace System.Diagnostics {
 	public static class Debug {
 		[Conditional( ConditionString = "DEBUG" )]
+		public static void Unreachable( [In] CallerContext& callercontext = nullref ) {
+			Assert.Unreachable( callercontext );
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		public static void Fail( [In] CallerContext& callercontext = nullref ) {
+			Assert.Fail( callercontext );
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
 		public static void Fail( string message, [In] CallerContext& callercontext = nullref ) {
 			Assert.Fail( message, callercontext );
 		}
 
 		[Conditional( ConditionString = "DEBUG" )]
 		public static void Assert( bool expression, [In] CallerContext& callercontext = nullref ) {
+			// if( !Assert.IsTrue( expression, null, callercontext ) ) Debugger.Break();
 			Assert.IsTrue( expression, null, callercontext );
 		}
 

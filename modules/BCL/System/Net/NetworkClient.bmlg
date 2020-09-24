@@ -10,9 +10,9 @@ using System.Serialization;
 
 namespace System.Net {
 	public abstract partial class NetworkClient {
-		public TimeSpan ConnectTimeout { get { return _implConnectTimeout; } set { _implConnectTimeout = value; } }
-		public TimeSpan ReadTimeout { get { return _implReadTimeout; } set { _implReadTimeout = value; } }
-		public TimeSpan WriteTimeout { get { return _implWriteTimeout; } set { _implWriteTimeout = value; } }
+		public TimeDuration ConnectTimeout { get { return _implConnectTimeout; } set { _implConnectTimeout = value; } }
+		public TimeDuration ReadTimeout { get { return _implReadTimeout; } set { _implReadTimeout = value; } }
+		public TimeDuration WriteTimeout { get { return _implWriteTimeout; } set { _implWriteTimeout = value; } }
 		public bool ImmediateDelivery { get { return _implImmediateDelivery; } set { _implImmediateDelivery = value; } }
 
 		protected IStream _stream;
@@ -48,5 +48,10 @@ namespace System.Net {
 		/// @}
 
 		protected virtual bool OnConnected() { return true; }
+
+		public bool IsClosed() { return _implIsClosed(); }
+
+		public void EnableKeepAlive( TimeDuration timeout, TimeDuration interval, uint count ) { _implEnableKeepAlive( timeout, interval, count ); }
+		public void DisableKeepAlive() { _implDisableKeepAlive(); }
 	}
 }

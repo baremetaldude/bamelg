@@ -52,6 +52,7 @@ namespace Example {
 						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
 					}
 
+					SendStatus( HttpStatusCode.NotFound );
 					return null;
 				}
 			}
@@ -78,24 +79,24 @@ namespace Example {
 				public override void OnRender() {
 					Response.UseAutoFlush = false;
 
-					var delay = TimeSpan.FromSeconds( 1 );
+					var delay = TimeDuration.FromSeconds( 1 );
 
 					while( true ) {
 						using( Fiber.CancellationRegion() ) {
 							Response.Write( "data: " );
-							Response.Write( Fiber.UtcNow.ToUnixMilliseconds() );
+							Response.Write( Fiber.UtcNow.ToUnixTimeMilliseconds() );
 							Response.WriteLine();
 
 							Response.Write( "id: " );
-							Response.Write( @Fiber.UtcNow.Ticks );
+							Response.Write( Fiber.UtcNow.Ticks );
 							Response.WriteLine();
 
 							WriteEventEnd();
-							
+
 							Flush();
 							if( Session.StreamError ) break;
 
-							Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+							Fiber.Sleep( new TimeDuration( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
 							if( Fiber.IsCancelled ) break;
 						}
 					}
@@ -105,7 +106,7 @@ namespace Example {
 					base.AddCustomHeaders();
 
 					// for debug purpose
-					HttpFormatter.HeaderAccessControl( Headers, "allow" ); 
+					HttpFormatter.HeaderAccessControl( Headers, "allow" );
 					HttpFormatter.HeaderAccessControlAllowOrigin( Headers, "*" );
 				}
 			}
@@ -117,7 +118,7 @@ namespace Example {
 
 				public override void OnRender() {
 					var server = ( CustomHttpServer ) Session.Server;
-					var time = Fiber.Now;
+					var time = Fiber.UtcNow;
 
 					Response.Append( "<html>" );
 					{
@@ -163,7 +164,7 @@ namespace Example {
 			}
 
 			if( Options.MaxThreads <= 0 ) Options.MaxThreads = Environment.ProcessorCount;
-			
+
 			Memory.MultithreadedEnvironment = Options.MaxThreads > 0;
 			Fiber.UseGuardPage = Options.FiberUseGuardPage;
 

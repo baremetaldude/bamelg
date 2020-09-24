@@ -16,9 +16,9 @@ namespace Platform.Kernel {
 			LibcApi.Assert( this = LibcApi.timerfd_create( clockType, TimerHandleCreateFlag.TFD_NONBLOCK | TimerHandleCreateFlag.TFD_CLOEXEC ) );
 		}
 
-		public void SetInterval( TimeSpan interval ) { SetInterval( interval, interval ); }
+		public void SetInterval( TimeDuration interval ) { SetInterval( interval, interval ); }
 
-		public void SetInterval( TimeSpan interval, TimeSpan initialExpiration ) {
+		public void SetInterval( TimeDuration interval, TimeDuration initialExpiration ) {
 			var timer = new itimerspec {
 				it_interval = ( timespec ) interval,
 				it_value = ( timespec ) initialExpiration
@@ -28,7 +28,7 @@ namespace Platform.Kernel {
 		}
 
 		// initialExpiration value depends on clockid
-		public void SetInterval( TimeSpan interval, DateTime initialExpiration ) {
+		public void SetInterval( TimeDuration interval, DateTime initialExpiration ) {
 			var timer = new itimerspec {
 				it_interval = ( timespec ) interval,
 				it_value = ( timespec ) initialExpiration

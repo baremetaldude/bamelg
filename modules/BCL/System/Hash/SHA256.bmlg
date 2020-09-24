@@ -36,7 +36,7 @@ namespace System.Hash {
 		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], ( uint ) Hash.Length, true );
+			PrimitiveTypesFormatter.FormatMemoryHexUtf16( builder, &Hash[0], Hash.Length, true );
 		}
 
 		public struct Evaluator {
@@ -45,8 +45,8 @@ namespace System.Hash {
 			private uint[8] State;
 			private byte[BlockSize] Buffer;
 
-			private const int BlockSize = 1 << 6;
-			private const int BlockMask = BlockSize - 1;
+			private const uint BlockSize = 1U << 6;
+			private const uint BlockMask = BlockSize - 1;
 
 			public Evaluator() {
 				ResetState();
@@ -220,12 +220,6 @@ namespace System.Hash {
 				State[6] += g;
 				State[7] += h;
 			}
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.AreEqual( "E3B0C44298FC1C149AFBF4C8996FB92427AE41E4649B934CA495991B7852B855", new thistype( new MemorySegment( null, 0 ) ).ToString() );
-			Assert.AreEqual( "D7A8FBB307D7809469CA9ABCB0082E4F8D5651E46D3CDB762D02D0BF37C9E592", new thistype( ( SbcsString ) "The quick brown fox jumps over the lazy dog" ).ToString() );
 		}
 	}
 }

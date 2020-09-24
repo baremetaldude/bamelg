@@ -1,0 +1,35 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Libc;
+
+namespace Platform.Uuid {
+	[ExternLibrary( Image = "/usr/lib/arm-linux-gnueabihf/libuuid.so.1" )]
+	public static partial struct UuidApi {
+		public extern static void uuid_clear( Guid& uu );
+		public extern static int uuid_compare( Guid& uu1, Guid& uu2 );
+		public extern static void uuid_copy( Guid& dst, Guid& src );
+		public extern static void uuid_generate( Guid& out );
+		public extern static void uuid_generate_md5( byte* out, byte* ns, CUtf8String name, uint len );
+		public extern static void uuid_generate_random( Guid& out );
+		public extern static void uuid_generate_sha1( byte* out, byte* ns, CUtf8String name, uint len );
+		public extern static void uuid_generate_time( Guid& out );
+		public extern static int uuid_generate_time_safe( Guid& out );
+		public extern static byte[16]* uuid_get_template( sbyte* alias );
+		public extern static int uuid_is_null( Guid& uu );
+		public extern static int uuid_parse( CUtf8String in, Guid& uu );
+		public extern static int uuid_parse_range( sbyte* inStart, sbyte* inEnd, byte* uu );
+		public extern static intptr uuid_time( Guid& uu, timeval* retTv );
+		public extern static int uuid_type( Guid& uu );
+		public extern static void uuid_unparse( Guid& uu, sbyte* out );
+		public extern static void uuid_unparse_lower( Guid& uu, sbyte* out );
+		public extern static void uuid_unparse_upper( Guid& uu, sbyte* out );
+		public extern static int uuid_variant( Guid& uu );
+	}
+}

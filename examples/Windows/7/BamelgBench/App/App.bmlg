@@ -4,12 +4,26 @@
 
 using System;
 using System.Diagnostics;
-using System.Text;
-using System.Xml;
 
 using Platform;
 
 namespace BamelgBench {
+	enum CommandLineState {
+		Control,
+		Priority,
+		ThreadPriority,
+		Output,
+		Format,
+
+		Parameters,
+	}
+
+	enum OutputFormat {
+		XML,
+		JSON,
+		HumanReadable,
+	}
+
 	public partial class App {
 		private static ExitCodes Worker() {
 			if( Environment.CommandLine.Length < 2 ) return ExitCodes.NotEnoughMinerals;
@@ -17,29 +31,135 @@ namespace BamelgBench {
 			// for( var i = 0; i < Environment.CommandLine.Length; ++i ) Console.WriteLine( "[{0}]='{1}'", i, Environment.CommandLine[i] );
 			var commandLineBuilder = new CommandLineBuilder();
 
-			for( var i = 1; i < Environment.CommandLine.Length; ++i )
-				commandLineBuilder.Append( Environment.CommandLine[i] );
+			var setProcessPriority = ProcessPriorityClass.IDLE_PRIORITY_CLASS;
+			var setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_IDLE;
 
-			// Console.WriteLine( "Running '{0}'", builder );
+			var allowControlCommand = true;
+			var outputFormat = OutputFormat.HumanReadable;
+			var state = CommandLineState.Control;
+			string outputPath = null;
+			uint executablePathIndex = 1;
+
+			bool prioritySpecified = false;
+			bool threadPrioritySpecified = false;
+
+			for( var i = 1U; i < Environment.CommandLine.Length; ++i ) {
+				switch( state ) {
+					case CommandLineState.Control:
+						if( allowControlCommand ) {
+							switch( Environment.CommandLine[i] ) {
+								case "/priority": state = CommandLineState.Priority; continue;
+								case "/thread_priority": state = CommandLineState.ThreadPriority; continue;
+								case "/output": state = CommandLineState.Output; continue;
+								case "/format": state = CommandLineState.Format; continue;
+
+								default:
+									state = CommandLineState.Parameters;
+									executablePathIndex = i;
+									commandLineBuilder.Append( Environment.CommandLine[i] );
+									continue;
+							}
+						}
+
+						break;
+
+					case CommandLineState.ThreadPriority:
+						threadPrioritySpecified = true;
+
+						switch( Environment.CommandLine[i] ) {
+							case "idle": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_IDLE; break;
+							case "below_normal": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_BELOW_NORMAL; break;
+							case "normal": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_NORMAL; break;
+							case "above_normal": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_ABOVE_NORMAL; break;
+							case "high": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_HIGHEST; break;
+							case "time_critical": setThreadPriority = Platform.ThreadPriority.THREAD_PRIORITY_TIME_CRITICAL; break;
+
+							default: Console.WriteLine( "Wrong thread prority specified" ); return ExitCodes.IncorrectParameter;
+						}
+
+						state = CommandLineState.Control;
+						break;
+
+					case CommandLineState.Priority:
+						prioritySpecified = true;
+
+						switch( Environment.CommandLine[i] ) {
+							case "idle": setProcessPriority = ProcessPriorityClass.IDLE_PRIORITY_CLASS; break;
+							case "below_normal": setProcessPriority = ProcessPriorityClass.BELOW_NORMAL_PRIORITY_CLASS; break;
+							case "normal": setProcessPriority = ProcessPriorityClass.NORMAL_PRIORITY_CLASS; break;
+							case "above_normal": setProcessPriority = ProcessPriorityClass.ABOVE_NORMAL_PRIORITY_CLASS; break;
+							case "high": setProcessPriority = ProcessPriorityClass.HIGH_PRIORITY_CLASS; break;
+							case "realtime": setProcessPriority = ProcessPriorityClass.REALTIME_PRIORITY_CLASS; break;
+
+							default: Console.WriteLine( "Wrong process prority specified" ); return ExitCodes.IncorrectParameter;
+						}
+
+						state = CommandLineState.Control;
+						break;
+
+					case CommandLineState.Output:
+						outputPath = Environment.CommandLine[i];
+						state = CommandLineState.Control;
+						break;
+
+					case CommandLineState.Format:
+						switch( Environment.CommandLine[i] ) {
+							case "human": outputFormat = OutputFormat.HumanReadable; break;
+							case "xml": outputFormat = OutputFormat.XML; break;
+							case "json": outputFormat = OutputFormat.JSON; break;
+							default: Console.WriteLine( "Wrong format specified" ); return ExitCodes.IncorrectParameter;
+						}
+
+						state = CommandLineState.Control;
+						break;
+
+					case CommandLineState.Parameters:
+						commandLineBuilder.Append( Environment.CommandLine[i] );
+						break;
+				}
+			}
+
+			switch( state ) {
+				case CommandLineState.Output:
+					Console.WriteLine( "Output path missed" );
+					return ExitCodes.MissedParameter;
+
+				case CommandLineState.Priority:
+					Console.WriteLine( "Priority value missed" );
+					return ExitCodes.MissedParameter;
+
+				case CommandLineState.Format:
+					Console.WriteLine( "Format value missed" );
+					return ExitCodes.MissedParameter;
+
+				case CommandLineState.Control:
+				case CommandLineState.Parameters:
+					break;
+
+				default:
+					Console.WriteLine( "Unknown value missed" );
+					return ExitCodes.MissedParameter;
+			}
 
 			var startupInfo = new STARTUPINFOW();
 			var processInformation = new PROCESS_INFORMATION { };
 
-			var started = DateTime.UnbiasedNow;
-			if( !Kernel32Api.CreateProcess( Environment.CommandLine[1], commandLineBuilder.Value.GetNullTerminatingBuffer(), nullref, nullref, false, 0x20, null, CUtf16String.Null, startupInfo, processInformation ) ) return ExitCodes.UnableToCreateProcess;
-			Kernel32Api.SetPriorityClass( processInformation.Process, ProcessPriorityClass.HIGH_PRIORITY_CLASS );
+			var started = TimeStamp.BootTime_ExcludeSuspend.Now;
+			if( !Kernel32Api.CreateProcess( Environment.CommandLine[executablePathIndex], commandLineBuilder.Value.GetNullTerminatingBuffer(), nullref, nullref, false, 0x20, null, CUtf16String.Null, startupInfo, processInformation ) ) return ExitCodes.UnableToCreateProcess;
+			if( prioritySpecified ) Kernel32Api.SetPriorityClass( processInformation.Process, setProcessPriority );
+			if( threadPrioritySpecified ) Kernel32Api.SetThreadPriority( Platform.ThreadHandle.CurrentThreadPseudoHandle, setThreadPriority );
 			Kernel32Api.WaitForSingleObject( processInformation.Process, Kernel32Api.INFINITE );
 
 			uint exitCode;
 			ulong processCycles, mainThreadCycles;
-			var waitTime = DateTime.UnbiasedNow - started;
+			var waitTime = TimeStamp.BootTime_ExcludeSuspend.Now - started;
 
 			if( !Kernel32Api.QueryProcessCycleTime( processInformation.Process, processCycles ) ) return ExitCodes.UnableToReadProcessInfo;
 			if( !Kernel32Api.QueryThreadCycleTime( processInformation.Thread, mainThreadCycles ) ) return ExitCodes.UnableToReadThreadInfo;
 			if( !Kernel32Api.GetExitCodeProcess( processInformation.Process, exitCode ) ) return ExitCodes.UnableToReadProcessInfo;
 
 			FILETIME creationTime2, exitTime2;
-			TimeSpan kernelTime, userTime;
+			TimeDuration kernelTime, userTime;
 			if( !Kernel32Api.GetProcessTimes( processInformation.Process, creationTime2, exitTime2, kernelTime, userTime ) ) return ExitCodes.UnableToReadProcessInfo;
 
 			DateTime creationTime = ( DateTime ) creationTime2, exitTime = ( DateTime ) exitTime2;
@@ -48,77 +168,106 @@ namespace BamelgBench {
 			PROCESS_MEMORY_COUNTERS_EX memCounters;
 			if( !Kernel32Api.K32GetProcessMemoryInfo( processInformation.Process, memCounters, ( uint ) sizeof( PROCESS_MEMORY_COUNTERS_EX ) ) ) return ExitCodes.UnableToReadProcessInfo;
 
+			// uint remainingHandleCount;
+			// Kernel32Api.GetProcessHandleCount( processInformation.Process, remainingHandleCount );
+
 			Kernel32Api.CloseHandle( processInformation.Process );
 			Kernel32Api.CloseHandle( processInformation.Thread );
 
 			var builder = new StringBuilder();
 
-			Delegates.Action xmlReport = () => {
-				using( var writer = new XmlWriter( builder ) { Formatting = true } ) {
-					writer.Declaration();
+			switch( outputFormat ) {
+				case OutputFormat.XML:
+					using( var writer = new System.Xml.XmlWriter( builder ) { Formatting = true } ) {
+						writer.Declaration();
 
-					using( writer.Tag( "result" ) ) {
-						using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( creationTime.ToLocalTime() );
-						using( writer.Tag( "ExitTimeReadable" ) ) writer.Write( exitTime.ToLocalTime() );
-						using( writer.Tag( "WaitTimeReadable" ) ) writer.Write( waitTime );
+						using( writer.Tag( "result" ) ) {
+							using( writer.Tag( "CreationTimeReadable" ) ) writer.Write( creationTime.ToLocalTime() );
+							using( writer.Tag( "ExitTimeReadable" ) ) writer.Write( exitTime.ToLocalTime() );
+							using( writer.Tag( "WaitTimeReadable" ) ) writer.Write( waitTime );
 
-						using( writer.Tag( "KernelTimeReadable" ) ) writer.Write( kernelTime );
-						using( writer.Tag( "UserTimeReadable" ) ) writer.Write( userTime );
-						using( writer.Tag( "TotalTimeReadable" ) ) writer.Write( totalTime );
+							using( writer.Tag( "KernelTimeReadable" ) ) writer.Write( kernelTime );
+							using( writer.Tag( "UserTimeReadable" ) ) writer.Write( userTime );
+							using( writer.Tag( "TotalTimeReadable" ) ) writer.Write( totalTime );
 
-						using( writer.Tag( "ExitCode" ) ) writer.Write( exitCode );
+							using( writer.Tag( "ExitCode" ) ) writer.Write( exitCode );
 
-						using( writer.Tag( "CreationTime" ) ) writer.Write( creationTime.Ticks );
-						using( writer.Tag( "ExitTime" ) ) writer.Write( exitTime.Ticks );
-						using( writer.Tag( "WaitTime" ) ) writer.Write( waitTime.Ticks );
+							using( writer.Tag( "CreationTime" ) ) writer.Write( creationTime.Ticks );
+							using( writer.Tag( "ExitTime" ) ) writer.Write( exitTime.Ticks );
+							using( writer.Tag( "WaitTime" ) ) writer.Write( waitTime.Ticks );
 
-						using( writer.Tag( "KernelTime" ) ) writer.Write( kernelTime.Ticks );
-						using( writer.Tag( "UserTime" ) ) writer.Write( userTime.Ticks );
-						using( writer.Tag( "TotalTime" ) ) writer.Write( totalTime.Ticks );
+							using( writer.Tag( "KernelTime" ) ) writer.Write( kernelTime.Ticks );
+							using( writer.Tag( "UserTime" ) ) writer.Write( userTime.Ticks );
+							using( writer.Tag( "TotalTime" ) ) writer.Write( totalTime.Ticks );
 
-						using( writer.Tag( "ProcessCycles" ) ) writer.Write( processCycles );
-						using( writer.Tag( "MainThreadCycles" ) ) writer.Write( mainThreadCycles );
+							using( writer.Tag( "ProcessCycles" ) ) writer.Write( processCycles );
+							using( writer.Tag( "MainThreadCycles" ) ) writer.Write( mainThreadCycles );
 
-						using( writer.Tag( "PeakWorkingSetSize" ) ) writer.Write( memCounters.PeakWorkingSetSize );
-						using( writer.Tag( "PeakPagefileUsage" ) ) writer.Write( memCounters.PeakPagefileUsage );
-						using( writer.Tag( "PageFaultCount" ) ) writer.Write( memCounters.PageFaultCount );
+							using( writer.Tag( "PeakWorkingSetSize" ) ) writer.Write( memCounters.PeakWorkingSetSize );
+							using( writer.Tag( "PeakPagefileUsage" ) ) writer.Write( memCounters.PeakPagefileUsage );
+							using( writer.Tag( "PageFaultCount" ) ) writer.Write( memCounters.PageFaultCount );
+
+							// using( writer.Tag( "HandleCount" ) ) writer.Write( remainingHandleCount );
+						}
 					}
-				}
-			};
+					break;
 
-			var format = Environment.GetEnvironmentVariable( "BB_OUTPUT_FORMAT" );
-			if( format.IsNullOrEmpty )
-				xmlReport();
-			else {
-				switch( format ) {
-					case "xml":
-						xmlReport();
-						break;
+				case OutputFormat.JSON:
+					using( var writer = new System.Web.JsonWriter( builder ) ) {
+						using( writer.Object() )
+						using( writer.Object( "result" ) ) {
+							writer.Property( "CreationTimeReadable", creationTime.ToLocalTime() );
+							writer.Property( "ExitTimeReadable", exitTime.ToLocalTime() );
+							writer.Property( "WaitTimeReadable", waitTime );
 
-					case "human":
-						builder.Append( "CreationTime: " ); builder.Append( creationTime.ToLocalTime() ); builder.AppendLine();
-						builder.Append( "ExitTime: " ); builder.Append( exitTime.ToLocalTime() ); builder.AppendLine();
-						builder.Append( "WaitTime: " ); builder.Append( waitTime ); builder.AppendLine();
+							writer.Property( "KernelTimeReadable", kernelTime );
+							writer.Property( "UserTimeReadable", userTime );
+							writer.Property( "TotalTimeReadable", totalTime );
 
-						builder.Append( "KernelTimeReadable: " ); builder.Append( kernelTime ); builder.AppendLine();
-						builder.Append( "UserTimeReadable: " ); builder.Append( userTime ); builder.AppendLine();
-						builder.Append( "TotalTimeReadable: " ); builder.Append( totalTime ); builder.AppendLine();
+							writer.Property( "ExitCode", exitCode );
 
-						builder.Append( "ExitCode: " ); builder.Append( exitCode ); builder.AppendLine();
+							writer.Property( "CreationTime", creationTime.Ticks );
+							writer.Property( "ExitTime", exitTime.Ticks );
+							writer.Property( "WaitTime", waitTime.Ticks );
 
-						break;
+							writer.Property( "KernelTime", kernelTime.Ticks );
+							writer.Property( "UserTime", userTime.Ticks );
+							writer.Property( "TotalTime", totalTime.Ticks );
 
-					default:
-						builder.Append( "Wrong format specified: " );
-						builder.Append( '\'' );
-						builder.Append( format );
-						builder.Append( '\'' );
-						builder.AppendLine();
-						break;
-				}
+							writer.Property( "ProcessCycles", processCycles );
+							writer.Property( "MainThreadCycles", mainThreadCycles );
+
+							writer.Property( "PeakWorkingSetSize", memCounters.PeakWorkingSetSize );
+							writer.Property( "PeakPagefileUsage", memCounters.PeakPagefileUsage );
+							writer.Property( "PageFaultCount", memCounters.PageFaultCount );
+
+							// writer.Property( "HandleCount", remainingHandleCount );
+						}
+					}
+					break;
+
+				case OutputFormat.HumanReadable:
+					builder.Append( "CreationTime: " ); builder.Append( creationTime.ToLocalTime() ); builder.AppendLine();
+					builder.Append( "ExitTime: " ); builder.Append( exitTime.ToLocalTime() ); builder.AppendLine();
+					builder.Append( "WaitTime: " ); builder.Append( waitTime ); builder.AppendLine();
+
+					builder.Append( "KernelTimeReadable: " ); builder.Append( kernelTime ); builder.AppendLine();
+					builder.Append( "UserTimeReadable: " ); builder.Append( userTime ); builder.AppendLine();
+					builder.Append( "TotalTimeReadable: " ); builder.Append( totalTime ); builder.AppendLine();
+
+					builder.Append( "ProcessCycles: " ); builder.Append( processCycles ); builder.AppendLine();
+					builder.Append( "MainThreadCycles: " ); builder.Append( mainThreadCycles ); builder.AppendLine();
+
+					builder.Append( "PeakWorkingSetSize: " ); builder.Append( memCounters.PeakWorkingSetSize ); builder.AppendLine();
+					builder.Append( "PeakPagefileUsage: " ); builder.Append( memCounters.PeakPagefileUsage ); builder.AppendLine();
+					builder.Append( "PageFaultCount: " ); builder.Append( memCounters.PageFaultCount ); builder.AppendLine();
+
+					// builder.Append( "HandleCount: " ); builder.Append( remainingHandleCount ); builder.AppendLine();
+
+					builder.Append( "ExitCode: " ); builder.Append( exitCode ); builder.AppendLine();
+					break;
 			}
 
-			var outputPath = Environment.GetEnvironmentVariable( "BB_OUTPUT_PATH" );
 			if( !outputPath.IsNullOrEmpty )
 				System.IO.File.WriteAllText( ( string ) outputPath, builder );
 			else
@@ -134,10 +283,14 @@ namespace BamelgBench {
 			UnableToCreateProcess =   2,
 			UnableToReadProcessInfo = 3,
 			UnableToReadThreadInfo =  4,
+			MissedParameter =         5,
+			IncorrectParameter =      6,
 		}
 
 		[EntryPoint]
 		private static void Main() {
+			System.Globalization.CultureInfo.Default = System.Globalization.CultureInfo.Current = System.Globalization.CultureInfo.RU;
+
 			var code = Worker();
 			Environment.ExitCode = code;
 
@@ -147,13 +300,16 @@ namespace BamelgBench {
 						Console.WriteLine( "Created by Eugeny Grishul. More info at http://bamelg.com" );
 						Console.WriteLine( "Usage:" );
 						Console.WriteLine( @"  bamelgbench.exe TestApp.exe parameter1 ""par ame ter2""" );
-						Console.WriteLine( "Environment variables:" );
-						Console.WriteLine( "  BB_OUTPUT_PATH=FileName.ext output to file instead of stdout" );
+						Console.WriteLine( @"  bamelgbench.exe /priority high TestApp.exe" );
+						Console.WriteLine( @"  bamelgbench.exe /format xml /output result.xml TestApp.exe" );
+						Console.WriteLine( @"  bamelgbench.exe /format json /output result.json TestApp.exe" );
 						break;
 
 					case ExitCodes.UnableToCreateProcess: Console.WriteLine( "Unable to create process" ); break;
 					case ExitCodes.UnableToReadProcessInfo: Console.WriteLine( "Unable to read process info" ); break;
 					case ExitCodes.UnableToReadThreadInfo: Console.WriteLine( "Unable to read thread info" ); break;
+					case ExitCodes.IncorrectParameter: break;
+					case ExitCodes.MissedParameter: break;
 
 					default: Console.WriteLine( "Unknown error" ); break;
 				}

@@ -15,7 +15,7 @@ namespace Platform {
 	[DllImport( Image = "ktmw32.dll" )]
 	[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 	public static partial struct TransactionApi {
-		/// @{ Transaction
+		#region Transaction
 		public extern static TransactionHandle CreateTransaction( SECURITY_ATTRIBUTES& attributes, [Unused] Guid& UOW, uint createOptions, [Unused] uint isolationLevel, [Unused] uint isolationFlags, uint timeout, CUtf16String description );
 		public extern static TransactionHandle OpenTransaction( TransactionAccessRights desiredAccess, Guid& transactionId );
 
@@ -29,9 +29,9 @@ namespace Platform {
 		public extern static bool GetTransactionInformation( TransactionHandle transaction, uint& outcome, [Unused] uint& isolationLevel, [Unused] uint& isolationFlags, uint& timeout, uint bufferLength, char* description );
 		public extern static bool SetTransactionInformation( TransactionHandle transaction, [Unused] uint isolationLevel, [Unused] uint isolationFlags, uint timeout, CUtf16String description );
 
-		/// @}
+		#endregion
 
-		/// @{ Transaction manager
+		#region Transaction manager
 		public extern static TransactionManagerHandle CreateTransactionManager( SECURITY_ATTRIBUTES& attributes, CUtf16String logFileName, uint createOptions, [Unused] uint commitStrength );
 		public extern static TransactionManagerHandle OpenTransactionManager( CUtf16String logFileName, TransactionManagerAccessRights desiredAccess, [Unused] uint openOptions );
 		public extern static TransactionManagerHandle OpenTransactionManagerById( Guid& transactionManagerId, TransactionManagerAccessRights desiredAccess, [Unused] uint openOptions );
@@ -45,9 +45,9 @@ namespace Platform {
 		public extern static bool GetCurrentClockTransactionManager( TransactionManagerHandle transactionManager, long& tmVirtualClock );
 
 		public extern static bool RollforwardTransactionManager( TransactionManagerHandle transactionManager, long& virtualClock );
-		/// @}
+		#endregion
 
-		/// @{ Resource manager
+		#region Resource manager
 		public extern static TransactionResourceManagerHandle CreateResourceManager( SECURITY_ATTRIBUTES& attributes, Guid& resourceManagerID, uint createOptions, TransactionManagerHandle transactionManager, CUtf16String description );
 		public extern static TransactionResourceManagerHandle OpenResourceManager( ResourceManagerAccessRights desiredAccess, TransactionManagerHandle transactionManager, Guid& esourceManagerGuid );
 
@@ -58,9 +58,9 @@ namespace Platform {
 		public extern static bool GetNotificationResourceManager( TransactionResourceManagerHandle resourceManager, TRANSACTION_NOTIFICATION* transactionNotification, uint notificationLength, uint milliseconds, uint returnLength );
 		public extern static bool GetNotificationResourceManagerAsync( TransactionResourceManagerHandle resourceManager, TRANSACTION_NOTIFICATION* transactionNotification, uint transactionNotificationLength, [Out] uint& returnLength, OVERLAPPED& overlapped );
 
-		/// @}
+		#endregion
 
-		/// @{ Enslistment
+		#region Enslistment
 		public extern static TransactionEnlistmentHandle CreateEnlistment( SECURITY_ATTRIBUTES& attributes, TransactionResourceManagerHandle resourceManager, TransactionHandle TransactionHandle, NOTIFICATION_MASK notificationMask, uint CreateOptions, void* EnlistmentKey );
 		public extern static TransactionEnlistmentHandle OpenEnlistment( EnslistmentAccessRights desiredAccess, TransactionResourceManagerHandle resourceManager, Guid& enlistmentId );
 
@@ -83,7 +83,7 @@ namespace Platform {
 		public extern static bool RecoverEnlistment( TransactionEnlistmentHandle enlistment, long& virtualClock );
 
 		public extern static bool SinglePhaseReject( TransactionEnlistmentHandle enlistment, long& virtualClock );
-		/// @}
+		#endregion
 	}
 
 	public partial struct TransactionHandle : SystemHandle {

@@ -56,9 +56,9 @@ namespace System.Runtime {
 				if( ( typedEdx & System.Runtime.X86_32.Intel.CpuidFunction00000001FeaturesEdx.CMPXCHG8B ) != 0 ) features |= X86_32.Cmpxchg8b;
 
 				if( _isCPUInfoTraced ) {
-					Console.WriteLine( "Intel CPU detected" );
-					Console.WriteLine( "ecx: {0}", typedEcx.ToString() );
-					Console.WriteLine( "edx: {0}", typedEdx.ToString() );
+					Console.WriteLine( "CPUID function 0x00000001:" );
+					Console.WriteLine( "ecx: {0}", typedEcx );
+					Console.WriteLine( "edx: {0}", typedEdx );
 				}
 			}
 			// AMD
@@ -76,6 +76,8 @@ namespace System.Runtime {
 					if( ( typedEcx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEcx.POPCNT ) != 0 ) features |= X86_32.Popcnt;
 					if( ( typedEcx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEcx.LZCNT ) != 0 ) features |= X86_32.Lzcnt;
 					if( ( typedEcx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEcx.CMPXCHG16B ) != 0 ) features |= X86_32.Cmpxchg16b;
+					if( ( typedEcx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEcx.SSE4_1 ) != 0 ) features |= X86_32.SSE4_1;
+					if( ( typedEcx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEcx.SSE4_2 ) != 0 ) features |= X86_32.SSE4_2;
 
 					if( ( typedEdx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEdx.CMOV ) != 0 ) features |= X86_32.CMov;
 					if( ( typedEdx & System.Runtime.X86_32.AMD.CpuidFunction00000001FeaturesEdx.MMX ) != 0 ) features |= X86_32.MMX;
@@ -85,12 +87,11 @@ namespace System.Runtime {
 
 					if( _isCPUInfoTraced ) {
 						Console.WriteLine( "CPUID function 0x00000001:" );
-						Console.WriteLine( "\t" + "ecx: {0}", typedEcx.ToString() );
-						Console.WriteLine( "\t" + "edx: {0}", typedEdx.ToString() );
+						Console.WriteLine( "\t" + "ecx: {0}", typedEcx );
+						Console.WriteLine( "\t" + "edx: {0}", typedEdx );
 					}
 				}
 
-				// x86_cpuid( eax = ( int ) 0x80000000, ebx, ecx, edx );
 				eax = ( int ) 0x80000000;
 				x86_cpuid( eax, ebx, ecx, edx );
 
@@ -106,8 +107,8 @@ namespace System.Runtime {
 
 					if( _isCPUInfoTraced ) {
 						Console.WriteLine( "CPUID function 0x80000001:" );
-						Console.WriteLine( "\t" + "ecx: {0}", typedEcx.ToString() );
-						Console.WriteLine( "\t" + "edx: {0}", typedEdx.ToString() );
+						Console.WriteLine( "\t" + "ecx: {0}", typedEcx );
+						Console.WriteLine( "\t" + "edx: {0}", typedEdx );
 					}
 				}
 			}
@@ -117,33 +118,9 @@ namespace System.Runtime {
 			}
 			else {
 				TraceCPU( "Unknown" );
-
-				// Console.Write( ( char )( ( ebx >> 0 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ebx >> 8 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ebx >> 16 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ebx >> 24 ) & 0xFF ) );
-				// Console.Write( ( char )( ( edx >> 0 ) & 0xFF ) );
-				// Console.Write( ( char )( ( edx >> 8 ) & 0xFF ) );
-				// Console.Write( ( char )( ( edx >> 16 ) & 0xFF ) );
-				// Console.Write( ( char )( ( edx >> 24 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ecx >> 0 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ecx >> 8 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ecx >> 16 ) & 0xFF ) );
-				// Console.Write( ( char )( ( ecx >> 24 ) & 0xFF ) );
-
-				// Console.Write( ", ebx == " );
-				// Console.WriteHex( ebx );
-				// Console.Write( ", edx == " );
-				// Console.WriteHex( edx );
-				// Console.Write( ", ecx == " );
-				// Console.WriteHex( ecx );
-
-				// Console.WriteLine();
 			}
 
 			Environment.CurrentCpuFeatures = features;
-
-			// Console.WriteLine( "ebx={0}, edx={1}, ecx={2}", ebx, edx, ecx );
 		}
 
 		private static bool _isCPUInfoTraced = false;
@@ -287,17 +264,14 @@ namespace System.Runtime {
 		// @}
 
 		// @{ readonly FLS initializer segment
-		internal static int _flsSnapshotSize, _flsSnapshotAlignment;
+		internal static uint _flsSnapshotSize, _flsSnapshotAlignment;
 		internal static void* _flsSnapshotStart;
 		// @}
 
 		[ThreadStatic]
 		internal static void* FlsSegment;
 
-		// unittests + methods marked with [EntryPoint]
+		// Methods marked with [UnitTest] and [EntryPoint]
 		internal extern static void EntryPoint();
-
-		// internal static System.Reflection.Assembly* StaticAssembly;
-		// internal static int StaticAssemblyCount;
 	}
 }

@@ -10,7 +10,6 @@ using System.IO;
 using System.Net;
 using System.Runtime;
 using System.Runtime.InteropServices;
-using System.Web;
 
 using Platform;
 using Platform.IO;
@@ -24,12 +23,11 @@ namespace BamelgForwarder {
 
 			public bool Trace = true, TraceTransfer = true;
 			public bool HttpApi = true;
-			public TimeSpan RestoreTimeout = TimeSpan.FromSeconds( 1 );
+			public TimeDuration RestoreTimeout = TimeDuration.FromSeconds( 1 );
 
-
-			public int PagesPerControlFiber = 4;
-			public int PagesPerTransferFiber = 4;
-			public int PagesPerRestarterFiber = 4;
+			public uint PagesPerControlFiber = 4;
+			public uint PagesPerTransferFiber = 4;
+			public uint PagesPerRestarterFiber = 4;
 
 			public void ToString( StringBuilder builder, string format ) { // use 'sbf' snippet
 				builder.Concat( "Trace='", Trace, "' TraceTransfer='", TraceTransfer, "' HttpApi='", HttpApi, '\'' );

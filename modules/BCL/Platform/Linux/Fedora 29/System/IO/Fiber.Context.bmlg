@@ -27,7 +27,7 @@ namespace System.IO {
 			private static void SwitchEnvironment( FiberInfo* context, FiberInfo* newContext ) {
 			}
 
-			private static void PrepareContext( FiberInfo* fiber, void* stack, int stackSize, Functors.Action<void*> function, void* parameter ) {
+			private static void PrepareContext( FiberInfo* fiber, void* stack, uint stackSize, Functors.Action<void*> function, void* parameter ) {
 				switch( Environment.CurrentCpu ) {
 					case System.Runtime.CompilerServices.CpuID.X86_32: ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter ); break;
 					case System.Runtime.CompilerServices.CpuID.X86_64: ContextSwitch.X86.Linux.PrepareContext( fiber, stack, stackSize, function, parameter ); break;

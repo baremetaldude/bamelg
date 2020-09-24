@@ -29,29 +29,29 @@ namespace Example {
 					} ).Detach();
 				} );
 
-				var unseen = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
+				var unseen = eventLoop.BeginAlarmUnbiased( TimeDuration.FromSeconds( 1 ), TimeDuration.FromSeconds( 1 ), () => {
 					Console.WriteLine( "Unseen alarm" );
 				} );
 
-				eventLoop.ScheduleUnbiased( TimeSpan.FromMilliseconds( 500 ), () => {
+				eventLoop.ScheduleUnbiased( TimeDuration.FromMilliseconds( 500 ), () => {
 					eventLoop.RemoveAlarm( unseen );
 				} );
 
-				var alarm1 = eventLoop.BeginAlarmUnbiased( TimeSpan.FromSeconds( 1 ), TimeSpan.FromSeconds( 1 ), () => {
-					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTime.Now );
+				var alarm1 = eventLoop.BeginAlarmUnbiased( TimeDuration.FromSeconds( 1 ), TimeDuration.FromSeconds( 1 ), () => {
+					Console.WriteLine( "Unbiased alarm signalled at '{0}'", DateTimeLocal.Now );
 				} );
 
-				var alarm2 = eventLoop.BeginAlarmUtc( TimeSpan.FromSeconds( 3 ), TimeSpan.FromSeconds( 1 ), () => {
-					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTime.UtcNow );
+				var alarm2 = eventLoop.BeginAlarmUtc( TimeDuration.FromSeconds( 3 ), TimeDuration.FromSeconds( 1 ), () => {
+					Console.WriteLine( "UTC alarm signalled at '{0}'", DateTimeUTC.UtcNow );
 				} );
 
-				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 6 ), () => {
+				eventLoop.ScheduleUnbiased( TimeDuration.FromSeconds( 6 ), () => {
 					Console.WriteLine( "Remove alarms" );
 					eventLoop.RemoveAlarm( alarm1 );
 					eventLoop.RemoveAlarm( alarm2 );
 				} );
 
-				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {
+				eventLoop.ScheduleUnbiased( TimeDuration.FromSeconds( 8 ), () => {
 					eventLoop.RequestExit();
 				} );
 

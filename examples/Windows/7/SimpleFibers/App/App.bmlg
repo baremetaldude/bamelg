@@ -10,7 +10,7 @@ using Platform.IO;
 
 namespace Example {
 	public partial class App {
-		const int Pages = 2;
+		const int Pages = 16;
 
 		[FiberStatic]
 		static int FiberLocalData = 123;
@@ -76,17 +76,17 @@ namespace Example {
 
 			// @{ use of 'Fiber.Sleep'
 			Fiber.Start( Pages, () => {
-				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTime.UtcNow );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTimeUTC.UtcNow );
 				Fiber.Sleep( 1000 );
-				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTime.UtcNow );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTimeUTC.UtcNow );
 
 				_eventLoop.RequestExit();
 			}, "slp0" );
 
 			Fiber.Start( Pages, () => {
-				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTime.UtcNow );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTimeUTC.UtcNow );
 				Fiber.Sleep( 500 );
-				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTime.UtcNow );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, ThreadHandle.CurrentThreadID, DateTimeUTC.UtcNow );
 			}, "slp1" );
 			// @}
 

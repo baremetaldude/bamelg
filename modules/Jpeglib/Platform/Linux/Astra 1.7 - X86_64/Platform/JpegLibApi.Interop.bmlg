@@ -1,0 +1,683 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime.InteropServices;
+
+using Platform.Libc;
+
+namespace Platform.JpegLib {
+	[ExternLibrary( Image = "/usr/lib/x86_64-linux-gnu/libjpeg.so.62" )]
+	public static partial struct JpegLibApi {
+		public const int Version = 62;
+
+		public extern static void jpeg_abort( jpeg_common_struct* cinfo );
+		public extern static void jpeg_abort_compress( jpeg_compress_struct* cinfo );
+		public extern static void jpeg_abort_decompress( jpeg_decompress_struct* cinfo );
+		public extern static void jpeg_add_quant_table( jpeg_compress_struct* cinfo, int whichTbl, uint* basicTable, int scaleFactor, Boolean32 forceBaseline );
+		public extern static JHUFF_TBL* jpeg_alloc_huff_table( jpeg_common_struct* cinfo );
+		public extern static JQUANT_TBL* jpeg_alloc_quant_table( jpeg_common_struct* cinfo );
+		public extern static void jpeg_calc_output_dimensions( jpeg_decompress_struct* cinfo );
+		public extern static int jpeg_consume_input( jpeg_decompress_struct* cinfo );
+		public extern static void jpeg_copy_critical_parameters( jpeg_decompress_struct* srcinfo, jpeg_compress_struct* dstinfo );
+		public extern static void jpeg_CreateCompress( jpeg_compress_struct* cinfo, int version, uint structsize );
+		public extern static void jpeg_CreateDecompress( jpeg_decompress_struct* cinfo, int version, uint structsize );
+		public extern static void jpeg_crop_scanline( jpeg_decompress_struct* cinfo, uint* xoffset, uint* width );
+		public extern static void jpeg_default_colorspace( jpeg_compress_struct* cinfo );
+		public extern static void jpeg_destroy( jpeg_common_struct* cinfo );
+		public extern static void jpeg_destroy_compress( jpeg_compress_struct* cinfo );
+		public extern static void jpeg_destroy_decompress( jpeg_decompress_struct* cinfo );
+		public extern static void jpeg_finish_compress( jpeg_compress_struct* cinfo );
+		public extern static Boolean32 jpeg_finish_decompress( jpeg_decompress_struct* cinfo );
+		public extern static Boolean32 jpeg_finish_output( jpeg_decompress_struct* cinfo );
+		public extern static Boolean32 jpeg_has_multiple_scans( jpeg_decompress_struct* cinfo );
+		public extern static Boolean32 jpeg_input_complete( jpeg_decompress_struct* cinfo );
+		public extern static void jpeg_mem_dest( jpeg_compress_struct* cinfo, byte** outbuffer, uintptr* outsize );
+		public extern static void jpeg_mem_src( jpeg_decompress_struct* cinfo, byte* inbuffer, uintptr insize );
+		public extern static void jpeg_new_colormap( jpeg_decompress_struct* cinfo );
+		public extern static int jpeg_quality_scaling( int quality );
+		public extern static jvirt_barray_control** jpeg_read_coefficients( jpeg_decompress_struct* cinfo );
+		public extern static int jpeg_read_header( jpeg_decompress_struct* cinfo, Boolean32 requireImage );
+		public extern static uint jpeg_read_raw_data( jpeg_decompress_struct* cinfo, byte*** data, uint maxLines );
+		public extern static uint jpeg_read_scanlines( jpeg_decompress_struct* cinfo, byte** scanlines, uint maxLines );
+		public extern static Boolean32 jpeg_resync_to_restart( jpeg_decompress_struct* cinfo, int desired );
+		public extern static void jpeg_save_markers( jpeg_decompress_struct* cinfo, int markerCode, uint lengthLimit );
+		public extern static void jpeg_set_colorspace( jpeg_compress_struct* cinfo, J_COLOR_SPACE colorspace );
+		public extern static void jpeg_set_defaults( jpeg_compress_struct* cinfo );
+		public extern static void jpeg_set_linear_quality( jpeg_compress_struct* cinfo, int scaleFactor, Boolean32 forceBaseline );
+		public extern static void jpeg_set_marker_processor( jpeg_decompress_struct* cinfo, int markerCode, Functors.Func<jpeg_decompress_struct*, Boolean32> routine );
+		public extern static void jpeg_set_quality( jpeg_compress_struct* cinfo, int quality, Boolean32 forceBaseline );
+		public extern static void jpeg_simple_progression( jpeg_compress_struct* cinfo );
+		public extern static uint jpeg_skip_scanlines( jpeg_decompress_struct* cinfo, uint numLines );
+		public extern static void jpeg_start_compress( jpeg_compress_struct* cinfo, Boolean32 writeAllTables );
+		public extern static Boolean32 jpeg_start_decompress( jpeg_decompress_struct* cinfo );
+		public extern static Boolean32 jpeg_start_output( jpeg_decompress_struct* cinfo, int scanNumber );
+		public extern static jpeg_error_mgr* jpeg_std_error( jpeg_error_mgr* err );
+		public extern static void jpeg_stdio_dest( jpeg_compress_struct* cinfo, FILE* outfile );
+		public extern static void jpeg_stdio_src( jpeg_decompress_struct* cinfo, FILE* infile );
+		public extern static void jpeg_suppress_tables( jpeg_compress_struct* cinfo, Boolean32 suppress );
+		public extern static void jpeg_write_coefficients( jpeg_compress_struct* cinfo, jvirt_barray_control** coefArrays );
+		public extern static void jpeg_write_m_byte( jpeg_compress_struct* cinfo, int val );
+		public extern static void jpeg_write_m_header( jpeg_compress_struct* cinfo, int marker, uint datalen );
+		public extern static void jpeg_write_marker( jpeg_compress_struct* cinfo, int marker, byte* dataptr, uint datalen );
+		public extern static uint jpeg_write_raw_data( jpeg_compress_struct* cinfo, byte*** data, uint numLines );
+		public extern static uint jpeg_write_scanlines( jpeg_compress_struct* cinfo, byte** scanlines, uint numLines );
+		public extern static void jpeg_write_tables( jpeg_compress_struct* cinfo );
+	}
+	public enum J_COLOR_SPACE : uint {
+		JCS_UNKNOWN =   0,
+		JCS_GRAYSCALE = 1,
+		JCS_RGB =       2,
+		JCS_YCbCr =     3,
+		JCS_CMYK =      4,
+		JCS_YCCK =      5,
+		JCS_EXT_RGB =   6,
+		JCS_EXT_RGBX =  7,
+		JCS_EXT_BGR =   8,
+		JCS_EXT_BGRX =  9,
+		JCS_EXT_XBGR = 10,
+		JCS_EXT_XRGB = 11,
+		JCS_EXT_RGBA = 12,
+		JCS_EXT_BGRA = 13,
+		JCS_EXT_ABGR = 14,
+		JCS_EXT_ARGB = 15,
+		JCS_RGB565 =   16,
+	}
+	public enum J_DCT_METHOD : uint {
+		JDCT_ISLOW = 0,
+		JDCT_IFAST = 1,
+		JDCT_FLOAT = 2,
+	}
+	public enum J_DITHER_MODE : uint {
+		JDITHER_NONE =    0,
+		JDITHER_ORDERED = 1,
+		JDITHER_FS =      2,
+	}
+	[ExplicitSize( Size = 280 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct JHUFF_TBL {
+		[ExplicitOffset( Offset = 0 )]
+		public byte[17] bits;
+		[ExplicitOffset( Offset = 17 )]
+		public byte[256] huffval;
+		[ExplicitOffset( Offset = 276 )]
+		public Boolean32 sent_table;
+	}
+	public partial struct jpeg_c_coef_controller {
+	}
+	public partial struct jpeg_c_main_controller {
+	}
+	public partial struct jpeg_c_prep_controller {
+	}
+	public partial struct jpeg_color_converter {
+	}
+	public partial struct jpeg_color_deconverter {
+	}
+	public partial struct jpeg_color_quantizer {
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_common_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public jpeg_error_mgr* err;
+		[ExplicitOffset( Offset = 8 )]
+		public jpeg_memory_mgr* mem;
+		[ExplicitOffset( Offset = 16 )]
+		public jpeg_progress_mgr* progress;
+		[ExplicitOffset( Offset = 24 )]
+		public void* client_data;
+		[ExplicitOffset( Offset = 32 )]
+		public Boolean32 is_decompressor;
+		[ExplicitOffset( Offset = 36 )]
+		public int global_state;
+	}
+	public partial struct jpeg_comp_master {
+	}
+	[ExplicitSize( Size = 96 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_component_info {
+		[ExplicitOffset( Offset = 0 )]
+		public int component_id;
+		[ExplicitOffset( Offset = 4 )]
+		public int component_index;
+		[ExplicitOffset( Offset = 8 )]
+		public int h_samp_factor;
+		[ExplicitOffset( Offset = 12 )]
+		public int v_samp_factor;
+		[ExplicitOffset( Offset = 16 )]
+		public int quant_tbl_no;
+		[ExplicitOffset( Offset = 20 )]
+		public int dc_tbl_no;
+		[ExplicitOffset( Offset = 24 )]
+		public int ac_tbl_no;
+		[ExplicitOffset( Offset = 28 )]
+		public uint width_in_blocks;
+		[ExplicitOffset( Offset = 32 )]
+		public uint height_in_blocks;
+		[ExplicitOffset( Offset = 36 )]
+		public int DCT_scaled_size;
+		[ExplicitOffset( Offset = 40 )]
+		public uint downsampled_width;
+		[ExplicitOffset( Offset = 44 )]
+		public uint downsampled_height;
+		[ExplicitOffset( Offset = 48 )]
+		public Boolean32 component_needed;
+		[ExplicitOffset( Offset = 52 )]
+		public int MCU_width;
+		[ExplicitOffset( Offset = 56 )]
+		public int MCU_height;
+		[ExplicitOffset( Offset = 60 )]
+		public int MCU_blocks;
+		[ExplicitOffset( Offset = 64 )]
+		public int MCU_sample_width;
+		[ExplicitOffset( Offset = 68 )]
+		public int last_col_width;
+		[ExplicitOffset( Offset = 72 )]
+		public int last_row_height;
+		[ExplicitOffset( Offset = 80 )]
+		public JQUANT_TBL* quant_table;
+		[ExplicitOffset( Offset = 88 )]
+		public void* dct_table;
+	}
+	[ExplicitSize( Size = 520 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_compress_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public jpeg_error_mgr* err;
+		[ExplicitOffset( Offset = 8 )]
+		public jpeg_memory_mgr* mem;
+		[ExplicitOffset( Offset = 16 )]
+		public jpeg_progress_mgr* progress;
+		[ExplicitOffset( Offset = 24 )]
+		public void* client_data;
+		[ExplicitOffset( Offset = 32 )]
+		public Boolean32 is_decompressor;
+		[ExplicitOffset( Offset = 36 )]
+		public int global_state;
+		[ExplicitOffset( Offset = 40 )]
+		public jpeg_destination_mgr* dest;
+		[ExplicitOffset( Offset = 48 )]
+		public uint image_width;
+		[ExplicitOffset( Offset = 52 )]
+		public uint image_height;
+		[ExplicitOffset( Offset = 56 )]
+		public int input_components;
+		[ExplicitOffset( Offset = 60 )]
+		public J_COLOR_SPACE in_color_space;
+		[ExplicitOffset( Offset = 64 )]
+		public double input_gamma;
+		[ExplicitOffset( Offset = 72 )]
+		public int data_precision;
+		[ExplicitOffset( Offset = 76 )]
+		public int num_components;
+		[ExplicitOffset( Offset = 80 )]
+		public J_COLOR_SPACE jpeg_color_space;
+		[ExplicitOffset( Offset = 88 )]
+		public jpeg_component_info* comp_info;
+		[ExplicitOffset( Offset = 96 )]
+		public JQUANT_TBL*[4] quant_tbl_ptrs;
+		[ExplicitOffset( Offset = 128 )]
+		public JHUFF_TBL*[4] dc_huff_tbl_ptrs;
+		[ExplicitOffset( Offset = 160 )]
+		public JHUFF_TBL*[4] ac_huff_tbl_ptrs;
+		[ExplicitOffset( Offset = 192 )]
+		public byte[16] arith_dc_L;
+		[ExplicitOffset( Offset = 208 )]
+		public byte[16] arith_dc_U;
+		[ExplicitOffset( Offset = 224 )]
+		public byte[16] arith_ac_K;
+		[ExplicitOffset( Offset = 240 )]
+		public int num_scans;
+		[ExplicitOffset( Offset = 248 )]
+		public jpeg_scan_info* scan_info;
+		[ExplicitOffset( Offset = 256 )]
+		public Boolean32 raw_data_in;
+		[ExplicitOffset( Offset = 260 )]
+		public Boolean32 arith_code;
+		[ExplicitOffset( Offset = 264 )]
+		public Boolean32 optimize_coding;
+		[ExplicitOffset( Offset = 268 )]
+		public Boolean32 CCIR601_sampling;
+		[ExplicitOffset( Offset = 272 )]
+		public int smoothing_factor;
+		[ExplicitOffset( Offset = 276 )]
+		public J_DCT_METHOD dct_method;
+		[ExplicitOffset( Offset = 280 )]
+		public uint restart_interval;
+		[ExplicitOffset( Offset = 284 )]
+		public int restart_in_rows;
+		[ExplicitOffset( Offset = 288 )]
+		public Boolean32 write_JFIF_header;
+		[ExplicitOffset( Offset = 292 )]
+		public byte JFIF_major_version;
+		[ExplicitOffset( Offset = 293 )]
+		public byte JFIF_minor_version;
+		[ExplicitOffset( Offset = 294 )]
+		public byte density_unit;
+		[ExplicitOffset( Offset = 296 )]
+		public ushort X_density;
+		[ExplicitOffset( Offset = 298 )]
+		public ushort Y_density;
+		[ExplicitOffset( Offset = 300 )]
+		public Boolean32 write_Adobe_marker;
+		[ExplicitOffset( Offset = 304 )]
+		public uint next_scanline;
+		[ExplicitOffset( Offset = 308 )]
+		public Boolean32 progressive_mode;
+		[ExplicitOffset( Offset = 312 )]
+		public int max_h_samp_factor;
+		[ExplicitOffset( Offset = 316 )]
+		public int max_v_samp_factor;
+		[ExplicitOffset( Offset = 320 )]
+		public uint total_iMCU_rows;
+		[ExplicitOffset( Offset = 324 )]
+		public int comps_in_scan;
+		[ExplicitOffset( Offset = 328 )]
+		public jpeg_component_info*[4] cur_comp_info;
+		[ExplicitOffset( Offset = 360 )]
+		public uint MCUs_per_row;
+		[ExplicitOffset( Offset = 364 )]
+		public uint MCU_rows_in_scan;
+		[ExplicitOffset( Offset = 368 )]
+		public int blocks_in_MCU;
+		[ExplicitOffset( Offset = 372 )]
+		public int[10] MCU_membership;
+		[ExplicitOffset( Offset = 412 )]
+		public int Ss;
+		[ExplicitOffset( Offset = 416 )]
+		public int Se;
+		[ExplicitOffset( Offset = 420 )]
+		public int Ah;
+		[ExplicitOffset( Offset = 424 )]
+		public int Al;
+		[ExplicitOffset( Offset = 432 )]
+		public jpeg_comp_master* master;
+		[ExplicitOffset( Offset = 440 )]
+		public jpeg_c_main_controller* main;
+		[ExplicitOffset( Offset = 448 )]
+		public jpeg_c_prep_controller* prep;
+		[ExplicitOffset( Offset = 456 )]
+		public jpeg_c_coef_controller* coef;
+		[ExplicitOffset( Offset = 464 )]
+		public jpeg_marker_writer* marker;
+		[ExplicitOffset( Offset = 472 )]
+		public jpeg_color_converter* cconvert;
+		[ExplicitOffset( Offset = 480 )]
+		public jpeg_downsampler* downsample;
+		[ExplicitOffset( Offset = 488 )]
+		public jpeg_forward_dct* fdct;
+		[ExplicitOffset( Offset = 496 )]
+		public jpeg_entropy_encoder* entropy;
+		[ExplicitOffset( Offset = 504 )]
+		public jpeg_scan_info* script_space;
+		[ExplicitOffset( Offset = 512 )]
+		public int script_space_size;
+	}
+	public partial struct jpeg_d_coef_controller {
+	}
+	public partial struct jpeg_d_main_controller {
+	}
+	public partial struct jpeg_d_post_controller {
+	}
+	public partial struct jpeg_decomp_master {
+	}
+	[ExplicitSize( Size = 632 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_decompress_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public jpeg_error_mgr* err;
+		[ExplicitOffset( Offset = 8 )]
+		public jpeg_memory_mgr* mem;
+		[ExplicitOffset( Offset = 16 )]
+		public jpeg_progress_mgr* progress;
+		[ExplicitOffset( Offset = 24 )]
+		public void* client_data;
+		[ExplicitOffset( Offset = 32 )]
+		public Boolean32 is_decompressor;
+		[ExplicitOffset( Offset = 36 )]
+		public int global_state;
+		[ExplicitOffset( Offset = 40 )]
+		public jpeg_source_mgr* src;
+		[ExplicitOffset( Offset = 48 )]
+		public uint image_width;
+		[ExplicitOffset( Offset = 52 )]
+		public uint image_height;
+		[ExplicitOffset( Offset = 56 )]
+		public int num_components;
+		[ExplicitOffset( Offset = 60 )]
+		public J_COLOR_SPACE jpeg_color_space;
+		[ExplicitOffset( Offset = 64 )]
+		public J_COLOR_SPACE out_color_space;
+		[ExplicitOffset( Offset = 68 )]
+		public uint scale_num;
+		[ExplicitOffset( Offset = 72 )]
+		public uint scale_denom;
+		[ExplicitOffset( Offset = 80 )]
+		public double output_gamma;
+		[ExplicitOffset( Offset = 88 )]
+		public Boolean32 buffered_image;
+		[ExplicitOffset( Offset = 92 )]
+		public Boolean32 raw_data_out;
+		[ExplicitOffset( Offset = 96 )]
+		public J_DCT_METHOD dct_method;
+		[ExplicitOffset( Offset = 100 )]
+		public Boolean32 do_fancy_upsampling;
+		[ExplicitOffset( Offset = 104 )]
+		public Boolean32 do_block_smoothing;
+		[ExplicitOffset( Offset = 108 )]
+		public Boolean32 quantize_colors;
+		[ExplicitOffset( Offset = 112 )]
+		public J_DITHER_MODE dither_mode;
+		[ExplicitOffset( Offset = 116 )]
+		public Boolean32 two_pass_quantize;
+		[ExplicitOffset( Offset = 120 )]
+		public int desired_number_of_colors;
+		[ExplicitOffset( Offset = 124 )]
+		public Boolean32 enable_1pass_quant;
+		[ExplicitOffset( Offset = 128 )]
+		public Boolean32 enable_external_quant;
+		[ExplicitOffset( Offset = 132 )]
+		public Boolean32 enable_2pass_quant;
+		[ExplicitOffset( Offset = 136 )]
+		public uint output_width;
+		[ExplicitOffset( Offset = 140 )]
+		public uint output_height;
+		[ExplicitOffset( Offset = 144 )]
+		public int out_color_components;
+		[ExplicitOffset( Offset = 148 )]
+		public int output_components;
+		[ExplicitOffset( Offset = 152 )]
+		public int rec_outbuf_height;
+		[ExplicitOffset( Offset = 156 )]
+		public int actual_number_of_colors;
+		[ExplicitOffset( Offset = 160 )]
+		public byte** colormap;
+		[ExplicitOffset( Offset = 168 )]
+		public uint output_scanline;
+		[ExplicitOffset( Offset = 172 )]
+		public int input_scan_number;
+		[ExplicitOffset( Offset = 176 )]
+		public uint input_iMCU_row;
+		[ExplicitOffset( Offset = 180 )]
+		public int output_scan_number;
+		[ExplicitOffset( Offset = 184 )]
+		public uint output_iMCU_row;
+		[ExplicitOffset( Offset = 192 )]
+		public int[64]* coef_bits;
+		[ExplicitOffset( Offset = 200 )]
+		public JQUANT_TBL*[4] quant_tbl_ptrs;
+		[ExplicitOffset( Offset = 232 )]
+		public JHUFF_TBL*[4] dc_huff_tbl_ptrs;
+		[ExplicitOffset( Offset = 264 )]
+		public JHUFF_TBL*[4] ac_huff_tbl_ptrs;
+		[ExplicitOffset( Offset = 296 )]
+		public int data_precision;
+		[ExplicitOffset( Offset = 304 )]
+		public jpeg_component_info* comp_info;
+		[ExplicitOffset( Offset = 312 )]
+		public Boolean32 progressive_mode;
+		[ExplicitOffset( Offset = 316 )]
+		public Boolean32 arith_code;
+		[ExplicitOffset( Offset = 320 )]
+		public byte[16] arith_dc_L;
+		[ExplicitOffset( Offset = 336 )]
+		public byte[16] arith_dc_U;
+		[ExplicitOffset( Offset = 352 )]
+		public byte[16] arith_ac_K;
+		[ExplicitOffset( Offset = 368 )]
+		public uint restart_interval;
+		[ExplicitOffset( Offset = 372 )]
+		public Boolean32 saw_JFIF_marker;
+		[ExplicitOffset( Offset = 376 )]
+		public byte JFIF_major_version;
+		[ExplicitOffset( Offset = 377 )]
+		public byte JFIF_minor_version;
+		[ExplicitOffset( Offset = 378 )]
+		public byte density_unit;
+		[ExplicitOffset( Offset = 380 )]
+		public ushort X_density;
+		[ExplicitOffset( Offset = 382 )]
+		public ushort Y_density;
+		[ExplicitOffset( Offset = 384 )]
+		public Boolean32 saw_Adobe_marker;
+		[ExplicitOffset( Offset = 388 )]
+		public byte Adobe_transform;
+		[ExplicitOffset( Offset = 392 )]
+		public Boolean32 CCIR601_sampling;
+		[ExplicitOffset( Offset = 400 )]
+		public jpeg_marker_struct* marker_list;
+		[ExplicitOffset( Offset = 408 )]
+		public int max_h_samp_factor;
+		[ExplicitOffset( Offset = 412 )]
+		public int max_v_samp_factor;
+		[ExplicitOffset( Offset = 416 )]
+		public int min_DCT_scaled_size;
+		[ExplicitOffset( Offset = 420 )]
+		public uint total_iMCU_rows;
+		[ExplicitOffset( Offset = 424 )]
+		public byte* sample_range_limit;
+		[ExplicitOffset( Offset = 432 )]
+		public int comps_in_scan;
+		[ExplicitOffset( Offset = 440 )]
+		public jpeg_component_info*[4] cur_comp_info;
+		[ExplicitOffset( Offset = 472 )]
+		public uint MCUs_per_row;
+		[ExplicitOffset( Offset = 476 )]
+		public uint MCU_rows_in_scan;
+		[ExplicitOffset( Offset = 480 )]
+		public int blocks_in_MCU;
+		[ExplicitOffset( Offset = 484 )]
+		public int[10] MCU_membership;
+		[ExplicitOffset( Offset = 524 )]
+		public int Ss;
+		[ExplicitOffset( Offset = 528 )]
+		public int Se;
+		[ExplicitOffset( Offset = 532 )]
+		public int Ah;
+		[ExplicitOffset( Offset = 536 )]
+		public int Al;
+		[ExplicitOffset( Offset = 540 )]
+		public int unread_marker;
+		[ExplicitOffset( Offset = 544 )]
+		public jpeg_decomp_master* master;
+		[ExplicitOffset( Offset = 552 )]
+		public jpeg_d_main_controller* main;
+		[ExplicitOffset( Offset = 560 )]
+		public jpeg_d_coef_controller* coef;
+		[ExplicitOffset( Offset = 568 )]
+		public jpeg_d_post_controller* post;
+		[ExplicitOffset( Offset = 576 )]
+		public jpeg_input_controller* inputctl;
+		[ExplicitOffset( Offset = 584 )]
+		public jpeg_marker_reader* marker;
+		[ExplicitOffset( Offset = 592 )]
+		public jpeg_entropy_decoder* entropy;
+		[ExplicitOffset( Offset = 600 )]
+		public jpeg_inverse_dct* idct;
+		[ExplicitOffset( Offset = 608 )]
+		public jpeg_upsampler* upsample;
+		[ExplicitOffset( Offset = 616 )]
+		public jpeg_color_deconverter* cconvert;
+		[ExplicitOffset( Offset = 624 )]
+		public jpeg_color_quantizer* cquantize;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_destination_mgr {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* next_output_byte;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr free_in_buffer;
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Action<jpeg_compress_struct*> init_destination;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<jpeg_compress_struct*, Boolean32> empty_output_buffer;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<jpeg_compress_struct*> term_destination;
+	}
+	public partial struct jpeg_downsampler {
+	}
+	public partial struct jpeg_entropy_decoder {
+	}
+	public partial struct jpeg_entropy_encoder {
+	}
+	[ExplicitSize( Size = 168 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_error_mgr {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<jpeg_common_struct*> error_exit;
+		[ExplicitOffset( Offset = 8 )]
+		public Functors.Action<jpeg_common_struct*, int> emit_message;
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Action<jpeg_common_struct*> output_message;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Action<jpeg_common_struct*, sbyte*> format_message;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<jpeg_common_struct*> reset_error_mgr;
+		[ExplicitOffset( Offset = 40 )]
+		public int msg_code;
+		[ExplicitOffset( Offset = 44 )]
+		public UnnamedUnion_0081D478 msg_parm;
+		[ExplicitOffset( Offset = 124 )]
+		public int trace_level;
+		[ExplicitOffset( Offset = 128 )]
+		public intptr num_warnings;
+		[ExplicitOffset( Offset = 136 )]
+		public sbyte** jpeg_message_table;
+		[ExplicitOffset( Offset = 144 )]
+		public int last_jpeg_message;
+		[ExplicitOffset( Offset = 152 )]
+		public sbyte** addon_message_table;
+		[ExplicitOffset( Offset = 160 )]
+		public int first_addon_message;
+		[ExplicitOffset( Offset = 164 )]
+		public int last_addon_message;
+	}
+	public partial struct jpeg_forward_dct {
+	}
+	public partial struct jpeg_input_controller {
+	}
+	public partial struct jpeg_inverse_dct {
+	}
+	public partial struct jpeg_marker_reader {
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_marker_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public jpeg_marker_struct* next;
+		[ExplicitOffset( Offset = 8 )]
+		public byte marker;
+		[ExplicitOffset( Offset = 12 )]
+		public uint original_length;
+		[ExplicitOffset( Offset = 16 )]
+		public uint data_length;
+		[ExplicitOffset( Offset = 24 )]
+		public byte* data;
+	}
+	public partial struct jpeg_marker_writer {
+	}
+	[ExplicitSize( Size = 104 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_memory_mgr {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Func<jpeg_common_struct*, int, uintptr, void*> alloc_small;
+		[ExplicitOffset( Offset = 8 )]
+		public Functors.Func<jpeg_common_struct*, int, uintptr, void*> alloc_large;
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Func<jpeg_common_struct*, int, uint, uint, byte**> alloc_sarray;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<jpeg_common_struct*, int, uint, uint, short[64]**> alloc_barray;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Func<jpeg_common_struct*, int, Boolean32, uint, uint, uint, jvirt_sarray_control*> request_virt_sarray;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<jpeg_common_struct*, int, Boolean32, uint, uint, uint, jvirt_barray_control*> request_virt_barray;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Action<jpeg_common_struct*> realize_virt_arrays;
+		[ExplicitOffset( Offset = 56 )]
+		public Functors.Func<jpeg_common_struct*, jvirt_sarray_control*, uint, uint, Boolean32, byte**> access_virt_sarray;
+		[ExplicitOffset( Offset = 64 )]
+		public Functors.Func<jpeg_common_struct*, jvirt_barray_control*, uint, uint, Boolean32, short[64]**> access_virt_barray;
+		[ExplicitOffset( Offset = 72 )]
+		public Functors.Action<jpeg_common_struct*, int> free_pool;
+		[ExplicitOffset( Offset = 80 )]
+		public Functors.Action<jpeg_common_struct*> self_destruct;
+		[ExplicitOffset( Offset = 88 )]
+		public intptr max_memory_to_use;
+		[ExplicitOffset( Offset = 96 )]
+		public intptr max_alloc_chunk;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_progress_mgr {
+		[ExplicitOffset( Offset = 0 )]
+		public Functors.Action<jpeg_common_struct*> progress_monitor;
+		[ExplicitOffset( Offset = 8 )]
+		public intptr pass_counter;
+		[ExplicitOffset( Offset = 16 )]
+		public intptr pass_limit;
+		[ExplicitOffset( Offset = 24 )]
+		public int completed_passes;
+		[ExplicitOffset( Offset = 28 )]
+		public int total_passes;
+	}
+	[ExplicitSize( Size = 36 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct jpeg_scan_info {
+		[ExplicitOffset( Offset = 0 )]
+		public int comps_in_scan;
+		[ExplicitOffset( Offset = 4 )]
+		public int[4] component_index;
+		[ExplicitOffset( Offset = 20 )]
+		public int Ss;
+		[ExplicitOffset( Offset = 24 )]
+		public int Se;
+		[ExplicitOffset( Offset = 28 )]
+		public int Ah;
+		[ExplicitOffset( Offset = 32 )]
+		public int Al;
+	}
+	[ExplicitSize( Size = 56 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct jpeg_source_mgr {
+		[ExplicitOffset( Offset = 0 )]
+		public byte* next_input_byte;
+		[ExplicitOffset( Offset = 8 )]
+		public uintptr bytes_in_buffer;
+		[ExplicitOffset( Offset = 16 )]
+		public Functors.Action<jpeg_decompress_struct*> init_source;
+		[ExplicitOffset( Offset = 24 )]
+		public Functors.Func<jpeg_decompress_struct*, Boolean32> fill_input_buffer;
+		[ExplicitOffset( Offset = 32 )]
+		public Functors.Action<jpeg_decompress_struct*, intptr> skip_input_data;
+		[ExplicitOffset( Offset = 40 )]
+		public Functors.Func<jpeg_decompress_struct*, int, Boolean32> resync_to_restart;
+		[ExplicitOffset( Offset = 48 )]
+		public Functors.Action<jpeg_decompress_struct*> term_source;
+	}
+	public partial struct jpeg_upsampler {
+	}
+	[ExplicitSize( Size = 132 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct JQUANT_TBL {
+		[ExplicitOffset( Offset = 0 )]
+		public ushort[64] quantval;
+		[ExplicitOffset( Offset = 128 )]
+		public Boolean32 sent_table;
+	}
+	public partial struct jvirt_barray_control {
+	}
+	public partial struct jvirt_sarray_control {
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct UnnamedUnion_0081D478 {
+		[Overlapped( Offset = 0 )]
+		public int[8] i;
+		[Overlapped( Offset = 0 )]
+		public sbyte[80] s;
+	}
+}

@@ -73,7 +73,7 @@ namespace Platform.Libc {
 		public extern static sbyte* asctime_r( tm* p0, sbyte* p1 );
 		public extern static uintptr clock();
 		public extern static int clock_getcpuclockid( int p0, int* p1 );
-		public extern static int clock_getres( int p0, timespec* p1 );
+		public extern static int clock_getres( ClockType p0, timespec* p1 );
 		public extern static int clock_gettime( int p0, timespec* p1 );
 		public extern static int clock_nanosleep( int p0, int p1, timespec* p2, timespec* p3 );
 		public extern static int clock_settime( int p0, timespec* p1 );
@@ -153,7 +153,7 @@ namespace Platform.Libc {
 		public extern static int getpeername( IOHandle fd, void* addr, int& addrLen );
 		public extern static int getsockname( IOHandle fd, void* addr, int& addrLen );
 		public extern static int getsockopt( IOHandle fd, SocketPropertyGroup level, int optname, void* optval, int& optlen );
-		public extern static int listen( IOHandle fd, int n );
+		public extern static int listen( IOHandle fd, uint n );
 		public extern static intptr recv( IOHandle fd, void* p1, uintptr p2, int p3 );
 		public extern static intptr recvfrom( IOHandle fd, void* p1, uintptr p2, MessageFlags p3, void* address, int& addressLength );
 		public extern static intptr recvmmsg( int p0, mmsghdr* p1, uintptr p2, int p3, timespec* p4 );
@@ -175,13 +175,13 @@ namespace Platform.Libc {
 		public extern static int _rtld_is_dlopened( void* p0 );
 		public extern static int dl_iterate_phdr( Functors.Func<dl_phdr_info*, uintptr, void*, int> p0, void* p1 );
 
-		public extern static int kevent( KQueueHandle kq, kevent* changelist, int nchanges, kevent* eventlist, int nevents, timespec& timeout );
+		public extern static int kevent( KQueueHandle kq, kevent* changelist, uint nchanges, kevent* eventlist, uint nevents, timespec& timeout );
 		public extern static KQueueHandle kqueue();
 
 		public extern static intptr preadv( int p0, iovec* p1, int p2, long p3 );
 		public extern static intptr pwritev( int p0, iovec* p1, int p2, long p3 );
-		public extern static intptr readv( IOHandle p0, iovec* p1, int count );
-		public extern static intptr writev( IOHandle p0, iovec* p1, int count );
+		public extern static intptr readv( IOHandle p0, iovec* p1, uint count );
+		public extern static intptr writev( IOHandle p0, iovec* p1, uint count );
 
 		public extern static int getipv4sourcefilter( int p0, in_addr p1, in_addr p2, uint* p3, uint* p4, in_addr* p5 );
 		public extern static int getsourcefilter( int p0, uint p1, sockaddr* p2, uint p3, uint* p4, uint* p5, sockaddr_storage* p6 );
@@ -248,7 +248,7 @@ namespace Platform.Libc {
 		public extern static Functors.Action<__dlfunc_arg> dlfunc( void* p0, sbyte* p1 );
 		public extern static int dlinfo( void* p0, int p1, void* p2 );
 		public extern static void dllockinit( void* context, Functors.Func<void*, void*> lockCreate, Functors.Action<void*> rlockAcquire, Functors.Action<void*> wlockAcquire, Functors.Action<void*> lockRelease, Functors.Action<void*> lockDestroy, Functors.Action<void*> contextDestroy );
-		public extern static void* dlopen( sbyte* p0, int p1 );
+		public extern static void* dlopen( CUtf8String file, DynamicLibraryLoadFlag mode );
 		public extern static void* dlsym( void* p0, sbyte* p1 );
 		public extern static void* dlvsym( void* p0, sbyte* p1, sbyte* p2 );
 		public extern static void* fdlopen( int p0, int p1 );
@@ -657,7 +657,7 @@ namespace Platform.Libc {
 		public extern static int rcmd( sbyte** p0, int p1, sbyte* p2, sbyte* p3, sbyte* p4, int* p5 );
 		public extern static int rcmd_af( sbyte** p0, int p1, sbyte* p2, sbyte* p3, sbyte* p4, int* p5, int p6 );
 		public extern static int rcmdsh( sbyte** p0, int p1, sbyte* p2, sbyte* p3, sbyte* p4, sbyte* p5 );
-		public extern static intptr read( IOHandle p0, void* p1, intptr p2 );
+		public extern static intptr read( IOHandle p0, void* p1, uintptr p2 );
 		public extern static intptr readlink( CUtf8String p0, sbyte* p1, uintptr p2 );
 		public extern static intptr readlinkat( IOHandle p0, CUtf8String p1, sbyte* p2, uintptr p3 );
 		public extern static int reboot( int p0 );
@@ -710,7 +710,7 @@ namespace Platform.Libc {
 		public extern static int usleep( uint p0 );
 		public extern static void* valloc( uintptr p0 );
 		public extern static int vfork();
-		public extern static intptr write( IOHandle p0, void* p1, intptr p2 );
+		public extern static intptr write( IOHandle p0, void* p1, uintptr p2 );
 
 		public extern static DIR* __opendir2( CUtf8String p0, int p1 );
 		public extern static int alphasort( dirent** p0, dirent** p1 );
@@ -1623,7 +1623,7 @@ namespace Platform.Libc {
 		STT_SPARC_REGISTER = 13,
 		STT_HIPROC =         15,
 	}
-	public enum FctlCommand : uint {
+	public enum FileDescriptorCommand : uint {
 		F_DUPFD =         0,
 		F_GETFD =         1,
 		F_SETFD =         2,
@@ -1643,65 +1643,11 @@ namespace Platform.Libc {
 		F_RDAHEAD =      16,
 	}
 	[Flags]
-	public enum FctlFlags : int {
-		O_RDONLY =         0,
-		O_WRONLY =         1,
-		O_RDWR =           2,
-		O_NDELAY =         4,
-		O_NONBLOCK =       4,
-		O_APPEND =         8,
-		FASYNC =          64,
-		O_SYNC =         128,
-		O_NOFOLLOW =     256,
-		O_CREAT =        512,
-		O_TRUNC =       1024,
-		O_EXCL =        2048,
-		O_NOCTTY =     32768,
-		O_DIRECT =     65536,
-		O_DIRECTORY = 131072,
-		O_ACCMODE =        3,
-	}
-	[Flags]
-	public enum FileDescriptorFlag : int {
+	public enum FileDescriptorFlags : int {
 		None =       0,
 		FD_CLOEXEC = 1,
 	}
-	public enum FileSeekOrigin : int {
-		SEEK_SET =  0,
-		SEEK_CUR =  1,
-		SEEK_END =  2,
-		SEEK_DATA = 3,
-		SEEK_HOLE = 4,
-	}
-	public enum FPResult : uint {
-		FP_FAST_FMAF =         1,
-		FP_INFINITE =          1,
-		FP_NAN =               2,
-		FP_NORMAL =            4,
-		FP_SUBNORMAL =         8,
-		FP_ZERO =             16,
-		FP_ILOGBNAN = 2147483647,
-		FP_ILOGB0 =   2147483649,
-	}
-	public enum idtype : uint {
-		P_PID =     0,
-		P_PPID =    1,
-		P_PGID =    2,
-		P_SID =     3,
-		P_CID =     4,
-		P_UID =     5,
-		P_GID =     6,
-		P_ALL =     7,
-		P_LWPID =   8,
-		P_TASKID =  9,
-		P_PROJID = 10,
-		P_POOLID = 11,
-		P_JAILID = 12,
-		P_CTID =   13,
-		P_CPUID =  14,
-		P_PSETID = 15,
-	}
-	public enum IoctlCommand : uint {
+	public enum FileDriverCommand : uint {
 		TIOCPKT_DATA =        0,
 		TIOCPKT_FLUSHREAD =   1,
 		TIOCPKT_FLUSHWRITE =  2,
@@ -1735,6 +1681,68 @@ namespace Platform.Libc {
 		TIOCPKT =    2147775600,
 		TIOCSPGRP =  2147775606,
 		TIOCSWINSZ = 2148037735,
+	}
+	[Flags]
+	public enum FileOpenFlags : int {
+		O_RDONLY =         0,
+		O_WRONLY =         1,
+		O_RDWR =           2,
+		O_NDELAY =         4,
+		O_NONBLOCK =       4,
+		O_APPEND =         8,
+		O_ASYNC =         64,
+		O_SYNC =         128,
+		O_NOFOLLOW =     256,
+		O_CREAT =        512,
+		O_TRUNC =       1024,
+		O_EXCL =        2048,
+		O_NOCTTY =     32768,
+		O_DIRECT =     65536,
+		O_DIRECTORY = 131072,
+		O_CLOEXEC =  1048576,
+	}
+	public enum FileSeekOrigin : int {
+		SEEK_SET =  0,
+		SEEK_CUR =  1,
+		SEEK_END =  2,
+		SEEK_DATA = 3,
+		SEEK_HOLE = 4,
+	}
+	[Flags]
+	public enum FileStatusFlags : int {
+		None =         0,
+		O_NONBLOCK =   4,
+		O_APPEND =     8,
+		O_ASYNC =     64,
+		O_DIRECT = 65536,
+	}
+	public enum FPResult : uint {
+		FP_FAST_FMAF =         1,
+		FP_INFINITE =          1,
+		FP_NAN =               2,
+		FP_NORMAL =            4,
+		FP_SUBNORMAL =         8,
+		FP_ZERO =             16,
+		FP_ILOGBNAN = 2147483647,
+		FP_ILOGB0 =   2147483649,
+	}
+	public enum idtype : uint {
+		P_PID =     0,
+		P_PPID =    1,
+		P_PGID =    2,
+		P_SID =     3,
+		P_CID =     4,
+		P_UID =     5,
+		P_GID =     6,
+		P_ALL =     7,
+		P_LWPID =   8,
+		P_TASKID =  9,
+		P_PROJID = 10,
+		P_POOLID = 11,
+		P_JAILID = 12,
+		P_CTID =   13,
+		P_CPUID =  14,
+		P_PSETID = 15,
 	}
 	public enum IPProtocol : uint {
 		IPPROTO_HOPOPTS =        0,
@@ -1927,6 +1935,11 @@ namespace Platform.Libc {
 		NOTE_LINK =   16,
 		NOTE_RENAME = 32,
 		NOTE_REVOKE = 64,
+	}
+	[Flags]
+	public enum LinkatFlags : uint {
+		None =                 0,
+		AT_SYMLINK_FOLLOW = 1024,
 	}
 	public enum MemoryAdvise : int {
 		MADV_NORMAL =     0,

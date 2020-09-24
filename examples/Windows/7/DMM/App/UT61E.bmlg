@@ -5,17 +5,12 @@
 //
 
 using System;
-using System.IO;
-using System.Net;
-using System.Web;
 
-using Platform;
-using Platform.IO;
-
-namespace Dmm {
+namespace DMM {
 	public enum ParseError {
 		[ErrorCodeSuccess]
 		None,
+		BadEncoding,
 		BadFormat,
 		WrongFraming,
 		NeedMoreData,
@@ -42,45 +37,49 @@ namespace Dmm {
 			public Parser() {
 			}
 
-			public int SkipBytes = 0;
+			public uint SkipBytes = 0;
 
 			public const double ResistanceDisconnected = 225800000;
 
 			public MeasurementMode Mode = MeasurementMode.Volts;
+
+			public bool Overload { get; set; } = false;
+			public bool Underload { get; set; } = false;
+
 			public bool Relative { get; set; } = false;
+
 			public bool LowBattery { get; set; } = false;
 			public bool Hold { get; set; } = false;
 			public bool DC { get; set; } = false;
 			public bool AC { get; set; } = false;
 			public bool AutoRange { get; set; } = false;
-			public bool Overload { get; set; } = false;
-			public bool Underload { get; set; } = false;
 			public bool Frequency { get; set; } = false;
 			public bool Duty { get; set; } = false;
-			public bool Max { get; set; } = false;
-			public bool Min { get; set; } = false;
+			public bool PeakMax { get; set; } = false;
+			public bool PeakMin { get; set; } = false;
 
 			public double Value = 0;
-			public int Mantissa = 0;
+			public byte MeasurementRange = 0, ExponentTableIndex = 0;
+			public uint Significand = 0;
 			public double Exponent = 1;
 
-			public static readonly double[5] VoltageExponentMap = new double[5] {
-				0.0001,
-				 0.001,
-				  0.01,
-				   0.1,
-				     1
-			};
+			// public static readonly double[5] VoltageExponentMap = new double[5] {
+			// 	0.0001,
+			// 	 0.001,
+			// 	  0.01,
+			// 	   0.1,
+			// 	     1
+			// };
 
-			public static readonly double[7] ResistanceExponentMap = new double[7] {
-				 0.01,
-				  0.1,
-				    1,
-				   10,
-				  100,
-				 1000,
-				10000
-			};
+			// public static readonly double[7] ResistanceExponentMap = new double[7] {
+			// 	 0.01,
+			// 	  0.1,
+			// 	    1,
+			// 	   10,
+			// 	  100,
+			// 	 1000,
+			// 	10000
+			// };
 
 			public static readonly double[20] ExponentMap = new double[20] {
 				0.000000000001,
@@ -105,23 +104,36 @@ namespace Dmm {
 				      10000000
 			};
 
-			private const int ExponentBias = 12;
+			private const byte ExponentBias = 12;
 
-			public ParseError Parse( byte* data, int length ) {
+			public ParseError Parse( byte* data, uint length ) {
 				if( length < 14 ) { SkipBytes = 0; return ParseError.NeedMoreData; }
 				if( data[12] != '\r' || data[13] != '\n' ) { SkipBytes = 1; return ParseError.WrongFraming; }
 
+				for( var i = 0; i < 12; ++i ) {
+					if( ( data[i] & 0b11110000 ) != 0b00110000 ) {
+						SkipBytes = 14;
+						return ParseError.BadEncoding;
+					}
+				}
+
 				SkipBytes = 14;
 
-				// Console.WriteLine( "raw data: {0}", new CStringSpan( data, ( uint ) length - 2 ) );
-				// Console.Write( "data: " );
-				// Console.Write( new CStringSpan( data, ( uint ) 6 ) );
-				// for( var i = 7; i < 12; ++i )
-				// 	Console.Write( " [{0}]={1:B8}", i, data[i] );
-				// System.Console.WriteLine();
+				// if( false ) {
+				// 	Console.WriteLine( "raw data: '{0}'", new CStringSpan( data, ( uint ) length - 2 ) );
+				// }
 
-				var exponent = ( int ) data[0] - '0';
-				if( !Math.InRange( 0, exponent, 9 ) )
+				// if( false ) {
+				// 	Console.Write( "data: " );
+				// 	Console.Write( new CStringSpan( data, ( uint ) 6 ) );
+				// 	for( var i = 7; i < 12; ++i )
+				// 		Console.Write( " [{0}]={1:B8}", i, data[i] );
+
+				// 	Console.WriteLine();
+				// }
+
+				MeasurementRange = ( byte )( data[0] - '0' );
+				if( MeasurementRange > 9 )
 					return ParseError.BadValue;
 
 				Overload = BitOperations.BitTest( data[7], ( byte ) 0 );
@@ -131,8 +143,8 @@ namespace Dmm {
 
 				Relative = BitOperations.BitTest( data[8], ( byte ) 1 );
 
-				Min = BitOperations.BitTest( data[9], ( byte ) 1 );
-				Max = BitOperations.BitTest( data[9], ( byte ) 2 );
+				PeakMin = BitOperations.BitTest( data[9], ( byte ) 1 );
+				PeakMax = BitOperations.BitTest( data[9], ( byte ) 2 );
 				Underload = BitOperations.BitTest( data[9], ( byte ) 3 );
 
 				Frequency = BitOperations.BitTest( data[10], ( byte ) 0 );
@@ -147,56 +159,57 @@ namespace Dmm {
 					case ( byte ) '1': Mode = MeasurementMode.Diode; break;
 					case ( byte ) '2': Mode = MeasurementMode.Frequency; break;
 					case ( byte ) '3': Mode = MeasurementMode.Resistance; break;
-					// case (byte)'4':Mode=MeasurementMode.Temperature;break;
 					case ( byte ) '5': Mode = MeasurementMode.Continuity; break;
 					case ( byte ) '6': Mode = MeasurementMode.Capacitance; break;
 					case ( byte ) '9': Mode = MeasurementMode.AmpsManual; break;
 					case ( byte ) ';': Mode = MeasurementMode.Volts; break;
 					case ( byte ) '=': Mode = MeasurementMode.MicroAmps; break;
-					// case (byte)' ':Mode=MeasurementMode.MicroAmps;break;
 					case ( byte ) '?': Mode = MeasurementMode.MilliAmps; break;
 
 					default: return ParseError.UnknownMeasurementMode;
 				}
 
-				if( !int.TryParse( new CStringSpan( data + 1, 5 ), Mantissa ) )
+				if( !uint.TryParse( new CStringSpan( data + 1, 5 ), Significand ) )
 					return ParseError.BadValue;
 
-				if( Mode == MeasurementMode.Volts && !AutoRange && Mantissa >= 4 )
+				if( Mode == MeasurementMode.Volts && MeasurementRange >= 4 )
 					Mode = MeasurementMode.MilliVolts;
 
-				var bias = 0;
+				byte bias = 0;
 
 				switch( Mode ) {
-					case MeasurementMode.Capacitance: bias = -12; break;
+					case MeasurementMode.Capacitance: bias = 12; break;
 
-					case MeasurementMode.MicroAmps: bias = -9; break;
-					case MeasurementMode.MilliAmps: bias = -6; break;
-					case MeasurementMode.Amps: bias = -3; break;
+					case MeasurementMode.MicroAmps: bias = 2; break; // Value in uA
+					case MeasurementMode.MilliAmps: bias = 3; break; // Value in mA
+					case MeasurementMode.Amps: bias = 3; break; // Value in A
 
-					case MeasurementMode.MilliVolts: bias = -9; break;
+					case MeasurementMode.MilliVolts: bias = 6; break; // Value in mV
+					case MeasurementMode.Volts: bias = 4; break; // Value in V
 
-					case MeasurementMode.Volts: bias = -4; break;
-					case MeasurementMode.Diode: bias = -4; break;
+					case MeasurementMode.Diode: bias = 4; break;
 
 					case MeasurementMode.Resistance:
 					case MeasurementMode.Continuity:
 					case MeasurementMode.Frequency:
-						bias = -2;
+						bias = 2;
 						break;
 				}
 
 				if( Duty ) {
-					Exponent = ExponentMap[ExponentBias + exponent - 2];
-					Value = Mantissa * Exponent;
+					ExponentTableIndex = ExponentBias + MeasurementRange - 2;
+					Exponent = ExponentMap[ExponentTableIndex];
+					Value = Significand * Exponent;
 				}
 				else if( Frequency ) {
-					Exponent = ExponentMap[ExponentBias + exponent - 2];
-					Value = Mantissa * Exponent;
+					ExponentTableIndex = ExponentBias + MeasurementRange - 2;
+					Exponent = ExponentMap[ExponentTableIndex];
+					Value = Significand * Exponent;
 				}
 				else {
-					Exponent = ExponentMap[ExponentBias + exponent + bias];
-					Value = Mantissa * Exponent;
+					ExponentTableIndex = ExponentBias + MeasurementRange - bias;
+					Exponent = ExponentMap[ExponentTableIndex];
+					Value = Significand * Exponent;
 				}
 
 				if( negative ) Value = -Value;
@@ -205,7 +218,43 @@ namespace Dmm {
 			}
 
 			public void ToString( StringBuilder builder, string format ) {
-				builder.Concat( "Value='", Value, "' Mode='", Mode, "' Relative='", Relative, "' LowBattery='", LowBattery, "' Hold='", Hold, "' DC='", DC, "' AC='", AC, "' AutoRange='", AutoRange, "' Overload='", Overload, "' Underload='", Underload, "' Frequency='", Frequency, "' Duty='", Duty, "' Max='", Max, "' Min='", Min, '\'' );
+				if( format == "t" ) {
+					if( ExponentTableIndex < ExponentBias )
+						builder.Append( Value, "F" + ( ExponentBias - ExponentTableIndex ) );
+					else
+						builder.Append( Value, "F" );
+
+					builder.Append( '\t' );
+
+					switch( Mode ) {
+						case MeasurementMode.Capacitance: builder.Append( "nF" ); break;
+
+						case MeasurementMode.MicroAmps: builder.Append( "uA" ); break;
+						case MeasurementMode.MilliAmps: builder.Append( "mA" ); break;
+						case MeasurementMode.Amps: builder.Append( "A" ); break;
+
+						case MeasurementMode.MilliVolts: builder.Append( "mV" ); break;
+
+						case MeasurementMode.Diode:
+						case MeasurementMode.Volts:
+							builder.Append( 'V' );
+							break;
+
+						case MeasurementMode.Resistance: builder.Append( 'Ω' ); break;
+						case MeasurementMode.Continuity: break;
+						case MeasurementMode.Frequency: builder.Append( "Hz" ); break;
+					}
+				}
+				else {
+					builder.Append( "Value='" );
+					if( ExponentTableIndex < ExponentBias )
+						builder.Append( Value, "F" + ( ExponentBias - ExponentTableIndex ) );
+					else
+						builder.Append( Value, "F" );
+
+					builder.Concat( "' Mode='", Mode, "' Relative='", Relative, "' LowBattery='", LowBattery, "' Hold='", Hold, "' DC='", DC, "' AC='", AC, "' AutoRange='", AutoRange, "' Overload='", Overload, "' Underload='", Underload, "' Frequency='", Frequency, "' Duty='", Duty, "' PeakMax='", PeakMax, "' PeakMin='", PeakMin, '\'' );
+					builder.Concat( "' Significand='", Significand, "' MeasurementRange='", MeasurementRange, "' Exponent='", Exponent, '\'' );
+				}
 			}
 		}
 	}

@@ -52,6 +52,7 @@ namespace Example {
 						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
 					}
 
+					SendStatus( HttpStatusCode.NotFound );
 					return null;
 				}
 			}
@@ -78,12 +79,12 @@ namespace Example {
 				public override void OnRender() {
 					Response.UseAutoFlush = false;
 
-					var delay = TimeSpan.FromSeconds( 1 );
+					var delay = TimeDuration.FromSeconds( 1 );
 
 					while( true ) {
 						using( Fiber.CancellationRegion() ) {
 							Response.Write( "data: " );
-							Response.Write( Fiber.UtcNow.ToUnixMilliseconds() );
+							Response.Write( Fiber.UtcNow.ToUnixTimeMilliseconds() );
 							Response.WriteLine();
 
 							Response.Write( "id: " );
@@ -91,11 +92,11 @@ namespace Example {
 							Response.WriteLine();
 
 							WriteEventEnd();
-							
+
 							Flush();
 							if( Session.StreamError ) break;
 
-							Fiber.Sleep( new TimeSpan( delay.Ticks - ( Fiber.UtcNow.Ticks % delay.Ticks ) ) ); // wait for event completion
+							Fiber.Sleep( new TimeDuration( delay.Ticks - Fiber.UtcNow.Ticks % delay.Ticks ) ); // wait for event completion
 							if( Fiber.IsCancelled ) break;
 						}
 					}
@@ -117,7 +118,7 @@ namespace Example {
 
 				public override void OnRender() {
 					var server = ( CustomHttpServer ) Session.Server;
-					var time = Fiber.Now;
+					var time = Fiber.UtcNow;
 
 					Response.Append( "<html>" );
 					{
@@ -191,10 +192,13 @@ namespace Example {
 				var threads = new List<Thread>( Options.MaxThreads );
 				_eventLoops = new List<EventLoop>();
 
-				for( var i = 1; i < Options.MaxThreads; ++i )
+				for( var i = 1U; i < Options.MaxThreads; ++i )
 					threads.Add( Thread.Start( CreateAdditionalServer ) );
 
-				CreateServer();
+				var server = new ServerInfo();
+				server.CreatePrimaryEventLoop();
+				server.CreateServer();
+				server.Dispatch();
 
 				foreach( var eventLoop in _eventLoops )
 					eventLoop.RequestExit();
@@ -203,101 +207,118 @@ namespace Example {
 					thread.Join();
 			}
 			else {
-				CreateServer();
+				var server = new ServerInfo();
+				server.CreatePrimaryEventLoop();
+				server.CreateServer();
+				server.Dispatch();
 			}
-		}
-
-		static void CreateServer() {
-			var eventLoop = new EventLoop() { Tracing = true };
-			eventLoop.CatchExitSignals(); // convert signals to events
-
-			CreateServer( eventLoop );
 		}
 
 		static List<EventLoop> _eventLoops;
 		static Mutex _eventLoopsLock;
 
 		static void CreateAdditionalServer() {
-			var eventLoop = new EventLoop();
-
-			using( _eventLoopsLock.LockRegion() )
-				_eventLoops.Add( eventLoop );
-
-			eventLoop.BlockExitSignals(); // block signals
-
-			CreateServer( eventLoop );
+			var server = new ServerInfo();
+			server.CreateSecondaryEventLoop();
+			server.CreateServer();
+			server.Dispatch();
 		}
 
-		static void CreateServer( EventLoop eventLoop ) {
-			var server = new CustomHttpServer() { // one server per thread
-				ListenBacklog = Options.ListenBacklog,
-				ClientFiberStackPages = Options.ClientFiberStackPages,
-				MaxClientRequestLength = Options.MaxClientRequestLength,
-				MaxSessions = Options.MaxSessions,
-				ReusePort = Options.MaxThreads > 1
-			};
+		public class ServerInfo {
+			public CustomHttpServer Server;
+			public EventLoop EventLoop;
 
-			server.Attach( eventLoop );
+			public ServerInfo() {
+			}
 
-			eventLoop.BeginInvoke( () => {
-				Fiber.Start( 16, () => {
-					var tcpListen = false;
-					var tcpListenReported = false;
+			public void CreatePrimaryEventLoop() {
+				EventLoop = new EventLoop() { Tracing = true };
+				EventLoop.CatchExitSignals(); // convert signals to events
+				if( Options.TraceFiber ) EventLoop.EnqueueInvoke( () => Fiber.FiberManager.Tracing = true );
+			}
 
-					var unixListen = !MainThread.IsCurrent;
-					var unixListenReported = false;
+			public void CreateSecondaryEventLoop() {
+				EventLoop = new EventLoop();
+				EventLoop.BlockExitSignals(); // block signals
 
-					while( true ) {
-						if( !tcpListen ) {
-							tcpListen = server.Listen( Options.ListenEndpoint );
+				using( _eventLoopsLock.LockRegion() )
+					_eventLoops.Add( EventLoop );
+			}
 
-							if( tcpListen )
-								Console.WriteLine( "Listen {0}", Options.ListenEndpoint );
-							else if( !tcpListenReported ) {
-								Console.WriteLine( "Unable bind {0}", Options.ListenEndpoint );
-								tcpListenReported = true;
+			void CreateServer() {
+				Server = new CustomHttpServer() { // one server per thread
+					ListenBacklog = Options.ListenBacklog,
+					ClientFiberStackPages = Options.ClientFiberStackPages,
+					MaxClientRequestLength = Options.MaxClientRequestLength,
+					MaxSessions = Options.MaxSessions,
+					ReusePort = Options.MaxThreads > 1
+				};
+
+				Server.Attach( EventLoop );
+
+				EventLoop.BeginInvoke( () => {
+					Fiber.Start( 16, () => {
+						var tcpListen = false;
+						var tcpListenReported = false;
+
+						var unixListen = !MainThread.IsCurrent;
+						var unixListenReported = false;
+
+						while( true ) {
+							if( !tcpListen ) {
+								tcpListen = Server.Listen( Options.ListenEndpoint );
+
+								if( tcpListen )
+									Console.WriteLine( "Listen {0}", Options.ListenEndpoint );
+								else if( !tcpListenReported ) {
+									Console.WriteLine( "Unable bind {0}", Options.ListenEndpoint );
+									tcpListenReported = true;
+								}
 							}
+
+							if( !unixListen ) {
+								unixListen = Server.Listen( Options.ListenUnixPath );
+
+								if( unixListen )
+									Console.WriteLine( "Listen socket '{0}'", Options.ListenUnixPath );
+								else if( !unixListenReported ) {
+									Console.WriteLine( "Unable to bind socket '{0}'", Options.ListenUnixPath );
+									unixListenReported = true;
+								}
+							}
+
+							var all = true;
+
+							all &= tcpListen;
+							all &= unixListen;
+
+							if( !all ) {
+								using( Fiber.CancellationRegion() ) {
+									Fiber.Sleep( 1000 );
+									if( Fiber.IsCancelled ) return;
+								}
+
+								continue;
+							}
+
+							break;
 						}
 
-						if( !unixListen ) {
-							unixListen = server.Listen( Options.ListenUnixPath );
+						if( MainThread.IsCurrent ) PrintConnectionOptions();
+					}, "resource allocator" );
+				} );
 
-							if( unixListen )
-								Console.WriteLine( "Listen socket '{0}'", Options.ListenUnixPath );
-							else if( !unixListenReported ) {
-								Console.WriteLine( "Unable to bind socket '{0}'", Options.ListenUnixPath );
-								unixListenReported = true;
-							}
-						}
+			}
 
-						var all = true;
-
-						all &= tcpListen;
-						all &= unixListen;
-
-						if( !all ) {
-							using( Fiber.CancellationRegion() ) {
-								Fiber.Sleep( 1000 );
-								if( Fiber.IsCancelled ) return;
-							}
-
-							continue;
-						}
-
-						break;
-					}
-
-					if( MainThread.IsCurrent ) PrintConnectionOptions();
-				}, "resource allocator" );
-			} );
-
-			if( Options.Trace ) Console.WriteLine( "Thread {0} dispatching HTTP requests", pthread_t.CurrentThreadId );
-			eventLoop.Dispatch();
+			public void Dispatch() {
+				if( Options.Trace ) Console.WriteLine( "Thread {0} dispatching HTTP requests", pthread_t.CurrentThreadId );
+				EventLoop.Dispatch();
+			}
 		}
 
 		static void PrintConnectionOptions() {
 			Console.WriteLine( "@{ Possible connection URLs:" );
-			
+
 			foreach( var @interface in LibcApi.GetNetworkInterfaces() ) {
 				if( @interface->ifa_addr == null ) continue;
 
