@@ -5,6 +5,7 @@
 //
 
 using System;
+using System.Diagnostics;
 using System.IO;
 
 using Platform.Zlib;
@@ -79,14 +80,26 @@ namespace Platform.IO {
 				CheckStatus( ZlibApi.inflateEnd( &_zState ) );
 			}
 
-			int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
+			uint IStream.Read( vararg MemorySegment segments ) {
+				var result = 0U;
+
+				foreach( var segment in segments ) {
+					var readen = Read( segment.Start, ( uint ) segment.Count );
+					result += readen;
+
+					if( readen != segment.Count )
+						break;
+				}
+
+				return result;
+			}
 
 			public void Flush( FlushKind flushKind = FlushKind.Read ) { _stream.Flush( flushKind ); }
 
-			public int Read( void* data, int length ) {
+			public uint Read( void* data, uint length ) {
 				if( _stream == null || length == 0 || data == null ) return 0;
 
-				var result = 0;
+				var result = 0U;
 
 				do {
 					if( _bufferInfo->AvailableToRead == 0 ) {
@@ -95,10 +108,10 @@ namespace Platform.IO {
 					}
 
 					_zState.next_in = ( byte* ) _bufferInfo->ReadBufferStart;
-					_zState.avail_in = ( uint ) _bufferInfo->AvailableToRead;
+					_zState.avail_in = _bufferInfo->AvailableToRead;
 
 					_zState.next_out = ( byte* ) data;
-					_zState.avail_out = ( uint ) length;
+					_zState.avail_out = length;
 
 					if( !CheckStatus( ZlibApi.inflate( &_zState, FlushOptions.Z_NO_FLUSH ) ) )
 						return result;
@@ -106,27 +119,27 @@ namespace Platform.IO {
 					var decompressedBytes = length - _zState.avail_out;
 					var readCompressed = _bufferInfo->AvailableToRead - _zState.avail_in;
 
-					result += ( int ) decompressedBytes;
-					length -= ( int ) decompressedBytes;
+					result += decompressedBytes;
+					length -= decompressedBytes;
 					data = cast<byte*>( data ) + decompressedBytes;
 
-					_bufferInfo->OnReadPerformed( ( int ) readCompressed );
+					_bufferInfo->OnReadPerformed( readCompressed );
 				} while( length > 0 );
 
 				return result;
 			}
 
-			void IStream.Write( void* buffer, int length ) { Assert.Unreachable(); }
-			void IStream.Write( vararg MemorySegment segments ) { Assert.Unreachable(); }
+			uint IStream.Write( void* buffer, uint length ) { Debug.Unreachable(); return 0; }
+			uint IStream.Write( vararg MemorySegment segments ) { Debug.Unreachable(); return 0; }
 
-			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+			TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+			TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+			MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+			MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 		}
 
 		public sealed class WriteStream : ZlibStream, IStream {
@@ -152,15 +165,17 @@ namespace Platform.IO {
 				_stream = null;
 			}
 
-			private void Compress( void* data, int length, FlushOptions options ) {
+			private uint Compress( void* data, uint length, FlushOptions options ) {
+				uint totalWritten = 0U;
+
 				_zState.next_in = ( byte* ) data;
-				_zState.avail_in = ( uint ) length;
+				_zState.avail_in = length;
 
 				do {
 					if( _bufferInfo->AvailableToWrite == 0 ) _stream.Flush( FlushKind.Write );
 
 					var readenBytes = _zState.avail_in;
-					var bufferLength = ( uint ) _bufferInfo->AvailableToWrite;
+					var bufferLength = _bufferInfo->AvailableToWrite;
 
 					_zState.avail_out = bufferLength;
 					_zState.next_out = _bufferInfo->WriteBufferStart;
@@ -171,30 +186,45 @@ namespace Platform.IO {
 					var compressedBytes = bufferLength - _zState.avail_out;
 					readenBytes = readenBytes - _zState.avail_in;
 
-					_bufferInfo->OnWritePerformed( ( int ) compressedBytes );
+					_bufferInfo->OnWritePerformed( compressedBytes );
+					totalWritten += compressedBytes;
 					_canFlush = true;
 				} while( _zState.avail_in > 0 | _zState.avail_out == 0 );
+
+				return totalWritten;
 			}
 
-			public void Write( void* buffer, int length ) {
-				if( _stream == null || length == 0 || buffer == null ) return;
+			public uint Write( void* buffer, uint length ) {
+				if( _stream == null || length == 0 || buffer == null ) return 0;
 
-				Compress( buffer, length, FlushOptions.Z_NO_FLUSH );
+				return Compress( buffer, length, FlushOptions.Z_NO_FLUSH );
 			}
 
-			void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
+			uint IStream.Write( vararg MemorySegment segments ) {
+				var result = 0U;
 
-			int IStream.Read( void* buffer, int length ) { Assert.Unreachable(); return 0; }
-			int IStream.Read( vararg MemorySegment segments ) { Assert.Unreachable(); return 0; }
+				foreach( var segment in segments ) {
+					var written = Write( segment.Start, ( uint ) segment.Count );
+					result += written;
 
-			TimeSpan IStream.ReadTimeout { get { return TimeSpan.Zero; } set { } }
-			TimeSpan IStream.WriteTimeout { get { return TimeSpan.Zero; } set { } }
+					if( written != segment.Count )
+						break;
+				}
+
+				return result;
+			}
+
+			uint IStream.Read( void* buffer, uint length ) { Debug.Unreachable(); return 0; }
+			uint IStream.Read( vararg MemorySegment segments ) { Debug.Unreachable(); return 0; }
+
+			TimeDuration IStream.ReadTimeout { get { return TimeDuration.Zero; } set { } }
+			TimeDuration IStream.WriteTimeout { get { return TimeDuration.Zero; } set { } }
 
 			long IStream.Position { get { return 0; } }
 			long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 
-			MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-			MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+			MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+			MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 
 			public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 				if( _stream == null ) return;

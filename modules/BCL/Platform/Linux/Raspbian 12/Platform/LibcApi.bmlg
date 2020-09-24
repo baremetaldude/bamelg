@@ -1,0 +1,1034 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.Net;
+using System.Runtime;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
+
+using Platform.Kernel;
+
+namespace Platform.Libc {
+	public static partial struct LibcApi {
+		public static readonly intptr PageSize = LibcApi.getpagesize();
+
+		public static IOHandle StdIn { get { return new IOHandle( 0 ); } }
+		public static IOHandle StdOut { get { return new IOHandle( 1 ); } }
+		public static IOHandle StdErr { get { return new IOHandle( 2 ); } }
+
+		public const Functors.Action<int> SIG_DFL = bitcast<Functors.Action<int>>( ( intptr ) 0 );
+		public const Functors.Action<int> SIG_IGN = bitcast<Functors.Action<int>>( ( intptr ) 1 );
+		// public const Functors.Action<int> SIG_ERR = bitcast<Functors.Action<int>>( ( intptr ) -1 );
+
+		public static SystemError LastError { get { return *__errno_location(); } set { *__errno_location() = value; } }
+
+		public extern static CUtf8String* environ;
+		public extern static CUtf8String program_invocation_name, program_invocation_short_name;
+
+		/// http://linux.die.net/man/3/makecontext
+		public extern static void makecontext( ucontext_t& ucp, Functors.Action<Functors.Action<void*>, void*> nonTerminatingMethod, int argc, Functors.Action<void*> method, void* parameter );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/prctl.2.html
+		public extern static int prctl( ProcessControlActions action, uintptr arg2 = 0, uintptr arg3 = 0, uintptr arg4 = 0, uintptr arg5 = 0 );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/open.2.html
+		public extern static IOHandle open( CUtf8String name, FileOpenFlags flags, uint permissions );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl.2.html
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl_list.2.html
+		public extern static int ioctl( IOHandle handle, FileDriverCommand option, void* result );
+		public extern static int fcntl( IOHandle handle, FileDescriptorCommand option, int value );
+
+		/// http://www.kernel.org/doc/man-pages/online/pages/man2/openat.2.html
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption option );
+
+		///  http://www.kernel.org/doc/man-pages/online/pages/man3/sem_open.3.html
+		public extern static sem_t* sem_open( CUtf8String name, FileOpenFlags oflag, int permissions, uint initialValue );
+
+		public static bool Assert( int code, [In] CallerContext& callercontext = nullref ) {
+			if( code != 0 ) {
+				Console.WriteConcat( "Error code ", ( SystemError ) code, " assertion ", callercontext.Expression, " at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static bool AssertErrno( intptr code, [In] CallerContext& callercontext = nullref ) {
+			if( code < 0 ) {
+				var lastError = LibcApi.LastError;
+
+				Console.WriteConcat( "Error code ", lastError, " assertion '", callercontext.Expression, "' at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static bool Assert( IOHandle code, [In] CallerContext& callercontext = nullref ) {
+			if( !code.IsValid ) {
+				var lastError = LibcApi.LastError;
+
+				Console.Write( "Error code ", lastError, " assertion '", callercontext.Expression, "' at line ", callercontext.Row );
+
+				Assert.PrintContextInfo( callercontext );
+				return false;
+			}
+
+			return true;
+		}
+
+		public static bool TryGetMACAddress( Utf8String interfaceName, IPv4Address address, MACAddress& result ) {
+			var fd = LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_DGRAM, IPProtocol.IPPROTO_IP );
+			if( fd == -1 ) return false;
+
+			var s = default( arpreq );
+			*( sockaddr_in* ) &s.arp_pa = new sockaddr_in( address, 0 );
+
+			System.Runtime.Memory.FillTerminatedBuffer( ( byte* ) &s.arp_dev[0], sizeof( s.arp_dev ), interfaceName );
+
+			using( var socket = bitcast<SocketHandle>( fd ) )
+				if( LibcApi.ioctl( socket, ( FileDriverCommand ) SocketIOControl.SIOCGARP, &s ) < 0 ) {
+					LibcApi.AssertErrno( -1 );
+					return false;
+				}
+
+			result = *( MACAddress* ) &s.arp_ha.sa_data[0];
+			return true;
+		}
+
+		public static bool TryGetMACAddress( Utf8String interfaceName, MACAddress& result ) {
+			var fd = LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_DGRAM, IPProtocol.IPPROTO_IP );
+			if( fd == -1 ) return false;
+
+			ifreq s;
+			System.Runtime.Memory.FillTerminatedBuffer( ( byte* ) &s.ifr_ifrn.ifrn_name[0], sizeof( s.ifr_ifrn.ifrn_name ), interfaceName );
+
+			using( var socket = bitcast<SocketHandle>( fd ) )
+				if( LibcApi.ioctl( socket, ( FileDriverCommand ) SocketIOControl.SIOCGIFHWADDR, &s ) < 0 )
+					return false;
+
+			result = *( MACAddress* ) &s.ifr_ifru.ifru_addr.sa_data[0];
+			return true;
+		}
+
+		public static yield<ifaddrs*> GetNetworkInterfaces() {
+			ifaddrs* interfaces = null;
+			LibcApi.getifaddrs( &interfaces ); finally { LibcApi.freeifaddrs( interfaces ); }
+
+			for( var @interface = interfaces; @interface != null; @interface = @interface->ifa_next )
+				yield return @interface;
+		}
+
+		public static string GetHostName() {
+			string hostName;
+			using( var page = Memory.CachedPages.PopScoped() ) {
+				var buffer = ( byte* ) page.Value;
+				var bufferLength = ( uint ) Memory.DefaultPageSize;
+
+				LibcApi.AssertErrno( LibcApi.gethostname( ( sbyte* ) buffer, bufferLength ) );
+				hostName = string.FromSBCS( Environment.DefaultCodePage, buffer );
+			}
+
+			return hostName;
+		}
+
+		public static CString GetErrorDescription( SystemError code ) {
+			// using( var page = Memory.CachedPages.PopScoped() ) {
+			// 	var buffer = ( sbyte* ) page.Value;
+			// 	var bufferLength = ( uint ) Memory.DefaultPageSize;
+			//
+			// 	LibcApi.strerror_r( code, buffer, bufferLength );
+
+			// 	return string.FromSBCS( new CString( buffer ) );
+			// }
+
+			return LibcApi.strerror( code );
+		}
+
+		public static void SignalInstallDefault( vararg SignalCode codes ) {
+			var ignoreAction = default( sigaction );
+			ignoreAction.__sigaction_handler.sa_handler = LibcApi.SIG_DFL;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &ignoreAction, null ) );
+		}
+
+		public static void SignalInstallIgnore( vararg SignalCode codes ) {
+			var ignoreAction = default( sigaction );
+			ignoreAction.__sigaction_handler.sa_handler = LibcApi.SIG_IGN;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &ignoreAction, null ) );
+		}
+
+		public static void SignalInstallHandler( Functors.Action<int> handler, vararg SignalCode codes ) {
+			var newAction = default( sigaction );
+			newAction.__sigaction_handler.sa_handler = handler;
+
+			foreach( var code in codes )
+				LibcApi.AssertErrno( LibcApi.sigaction( code, &newAction, null ) );
+		}
+
+		public static void SignalBlock( vararg SignalCode codes ) {
+			var signalSet = new sigset_t( vararg( codes, codes.Length ) );
+			LibcApi.AssertErrno( LibcApi.pthread_sigmask( ApplySignalCommand.SIG_BLOCK, &signalSet, null ) );
+		}
+
+		public static void SignalUnblock( vararg SignalCode codes ) {
+			var signalSet = new sigset_t( vararg( codes, codes.Length ) );
+			LibcApi.AssertErrno( LibcApi.pthread_sigmask( ApplySignalCommand.SIG_UNBLOCK, &signalSet, null ) );
+		}
+
+		public extern static intptr syscall( SystemCall code );
+		public extern static intptr syscall( SystemCall code, intptr p0 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3, intptr p4 );
+		public extern static intptr syscall( SystemCall code, intptr p0, intptr p1, intptr p2, intptr p3, intptr p4, intptr p5 );
+	}
+
+	public partial struct in_addr {
+		public in_addr( IPv4Address& address ) {
+			Address = address.UIntData;
+		}
+
+		[Overlapped( Offset = memberinfo( s_addr ).ByteOffset )]
+		public uint_bigendian Address;
+	}
+
+	public partial struct in6_addr {
+		public in6_addr( IPv6Address& address ) {
+			Address = address;
+		}
+
+		[Overlapped( Offset = 0 )]
+		public IPv6Address Address;
+
+		public static explicit operator thistype( IPv6Address& address ) {
+			return new thistype( address );
+		}
+
+		public static explicit operator IPv6Address( thistype& @this ) {
+			return @this.Address;
+		}
+	}
+
+	public partial struct sockaddr_in : IFormattable {
+		public sockaddr_in( IPv4Address& address, ushort port ) {
+			ProtocolFamily = ProtocolFamily.PF_INET;
+			Address = address.UIntData;
+			Port = port;
+		}
+
+		public static explicit operator thistype( IPv4Endpoint& endpoint ) {
+			return new thistype( endpoint.Address, endpoint.Port );
+		}
+
+		public static explicit operator IPv4Endpoint( thistype& @this ) {
+			return new IPv4Endpoint( new IPv4Address( @this.Address ), @this.Port );
+		}
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sin_family; } set { sin_family = value.Value(); } }
+		public uint_bigendian& Address { get { return *( uint_bigendian* ) &sin_addr.s_addr; } set { *( uint_bigendian* ) &sin_addr.s_addr = value; } }
+		public ushort_bigendian& Port { get { return *( ushort_bigendian* ) &sin_port; } set { *( ushort_bigendian* ) &sin_port = value; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			cast<IPv4Endpoint>( this ).ToString( builder, format );
+		}
+	}
+
+	public partial struct sockaddr_in6 : IFormattable {
+		public sockaddr_in6( IPv6Address address, ushort port ) {
+			ProtocolFamily = Platform.Libc.ProtocolFamily.PF_INET6;
+			Address = address.Data;
+			Port = port;
+
+			sin6_flowinfo = 0;
+			sin6_scope_id = 0;
+		}
+
+		public static explicit operator sockaddr_in6( IPv6Endpoint& endpoint ) {
+			return new sockaddr_in6( endpoint.Address, endpoint.Port ) { sin6_scope_id = endpoint.ZoneId };
+		}
+
+		public static explicit operator IPv6Endpoint( sockaddr_in6& @this ) {
+			return new IPv6Endpoint( new IPv6Address( @this.Address ), @this.Port ) { ZoneId = @this.sin6_scope_id };
+		}
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sin6_family; } set { sin6_family = value.Value(); } }
+		public byte[16]& Address { get { return *( byte[16]* ) &sin6_addr; } set { *( byte[16]* ) &sin6_addr = value; } }
+		public ushort_bigendian& Port { get { return *( ushort_bigendian* ) &sin6_port; } set { *( ushort_bigendian* ) &sin6_port = value; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			cast<IPv6Endpoint>( this ).ToString( builder, format );
+		}
+	}
+
+	public partial struct sockaddr_un : IFormattable {
+		public sockaddr_un() {
+			ProtocolFamily = ProtocolFamily.PF_UNIX;
+			sun_path[0] = 0;
+		}
+
+		public sockaddr_un( Utf8String path, bool @abstract = false ) {
+			if( @abstract ) {
+				if( !Assert.IsTrue( path.ByteLength + 2 < sun_path.Length ) ) return;
+
+				ProtocolFamily = ProtocolFamily.PF_UNIX;
+				sun_path[0] = 0;
+				Memory.Copy( &sun_path[1], path.GetChars(), path.ByteLength + 1 );
+				Memory.Clear( &sun_path[path.ByteLength + 2], sun_path.Length - path.ByteLength - 2 );
+			}
+			else {
+				if( !Assert.IsTrue( path.ByteLength + 1 < sun_path.Length ) ) return;
+
+				ProtocolFamily = ProtocolFamily.PF_UNIX;
+				Memory.Copy( &sun_path[0], path.GetChars(), path.ByteLength + 1 );
+			}
+		}
+
+		public bool IsAbstract { get { return sun_path[0] == 0; } }
+
+		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sun_family; } set { sun_family = value.Value(); } }
+
+		public new void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Path='{0}' }}", new CUtf8String( &sun_path[0] ) );
+		}
+	}
+
+	public partial struct sockaddr_storage : IFormattable {
+		public new void ToString( StringBuilder builder, string format ) {
+			switch( ss_family ) {
+				case ProtocolFamily.PF_INET: cast<sockaddr_in*>( &this )->ToString( builder, format ); break;
+				case ProtocolFamily.PF_INET6: cast<sockaddr_in6*>( &this )->ToString( builder, format ); break;
+				case ProtocolFamily.PF_UNIX: cast<sockaddr_un*>( &this )->ToString( builder, format ); break;
+			}
+		}
+	}
+
+	public partial struct DynamicLibraryHandle {
+		public static DynamicLibraryHandle RTLD_DEFAULT = bitcast<DynamicLibraryHandle>( ( intptr ) 0 );
+		public static DynamicLibraryHandle RTLD_NEXT = bitcast<DynamicLibraryHandle>( ( intptr ) -1 );
+	}
+
+	public partial struct timeval : IFormattable {
+		public static readonly thistype Zero = new thistype { tv_sec = 0, tv_usec = 0 };
+		public static readonly thistype MaxValue = new thistype { tv_sec = int.MaxValue, tv_usec = 999999 };
+		public static readonly thistype MinValue = new thistype { tv_sec = int.MinValue, tv_usec = 0 };
+
+		public timeval() { tv_sec = 0; tv_usec = 0; }
+
+		public static thistype UtcNow {
+			get {
+				thistype result;
+				LibcApi.gettimeofday( result, null );
+				return result;
+			}
+		}
+
+		public static explicit operator thistype( TimeSpan value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeSpan( thistype value ) { TimeSpan result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( TimeDuration value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeDuration( thistype value ) { TimeDuration result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTime value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTime( thistype value ) { DateTime result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public long TimeSpanTicks { get { EnsureNormalized(); return tv_sec * 10000000L + ( uint ) tv_usec * 10U; } }
+		public ulong TimeDurationTicks { get { EnsureNormalized(); return tv_sec >= 0 ? ( uint ) tv_sec * 10000000UL + ( uint ) tv_usec * 10U : ( ulong )( ( long ) tv_sec * -10000000L ) - ( uint ) tv_usec * 10U; } }
+		public ulong DateTimeTicks { get { EnsureNormalized(); return ( ulong ) TimeSpanTicks + TimeDuration.Ticks_1970_1_1; } }
+
+		public long TotalSeconds { get { EnsureNormalized(); return tv_sec; } }
+		public long TotalMilliseconds { get { EnsureNormalized(); return tv_sec * 1000L + ( int )( ( uint ) tv_usec / 1000UL ); } }
+
+		public static thistype FromMilliseconds( uint value ) {
+			return new thistype {
+				tv_sec = ( int )( value / 1000U ),
+				tv_usec = ( int )( value % 1000U * 1000U )
+			};
+		}
+
+		public static thistype FromSeconds( uint value ) {
+			if( value > ( uint ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( ulong value ) {
+			if( value > ( ulong ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( int value ) {
+			return new thistype {
+				tv_sec = value,
+				tv_usec = 0
+			};
+		}
+
+		public static thistype FromSeconds( long value ) {
+			if( value > int.MaxValue ) return MaxValue;
+			if( value < int.MinValue ) return MinValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_usec = 0
+			};
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeSpan value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( value.Ticks <= -21474836480000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_usec = ( int )( ( value.Ticks / 10 ) % 1000000 );
+
+			if( result->tv_usec < 0 ) {
+				result->tv_usec += 1000000;
+				if( checkwrap( --result->tv_sec ) ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeDuration value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_usec = ( int )( ( value.Ticks / 10U ) % 1000000U );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTime time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeSpan.TicksPerSecond - TimeSpan.Ticks_1970_1_1 / TimeSpan.TicksPerSecond );
+			result->tv_usec = ( int )( result->tv_sec >= 0 ? ( uint )( ticks % TimeSpan.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond : ( uint )( ( ticks + 9 ) % TimeSpan.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeDuration.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerSecond );
+			result->tv_usec = ( int )( result->tv_sec >= 0 ? ( uint )( ticks % TimeDuration.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond : ( uint )( ( ticks + 9 ) % TimeDuration.TicksPerSecond ) / TimeDuration.TicksPerMicrosecond );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeSpan* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeSpanTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeDuration* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeDurationTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTime* result, thistype value ) {
+			value.EnsureNormalized();
+
+			*result = new DateTime( ( long ) value.DateTimeTicks, DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.DateTimeTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public Convert.ConversionResult Normalize() {
+			while( tv_usec >= 1000000 ) {
+				tv_usec -= 1000000;
+				if( checkwrap( ++tv_sec ) ) { this = MaxValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			while( tv_usec < 0 ) {
+				tv_usec += 1000000;
+				if( checkwrap( --tv_sec ) ) { this = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureNormalized() {
+			Assert.IsTrue( tv_usec < 1000000 );
+			Assert.IsTrue( tv_usec >= 0 );
+		}
+
+		public static Convert.ConversionResult TryAdd( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec + right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_usec = left.tv_usec + right.tv_usec;
+			return result->Normalize();
+		}
+
+		public static Convert.ConversionResult TrySubtract( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec - right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_usec = left.tv_usec - right.tv_usec;
+			return result->Normalize();
+		}
+
+		public thistype operator -() {
+			EnsureNormalized();
+			if( tv_sec == int.MinValue ) return MaxValue;
+
+			var result = new thistype {
+				tv_sec = -tv_sec,
+				tv_usec = -tv_usec
+			};
+
+			if( result.tv_usec < 0 ) {
+				result.tv_usec += 1000000;
+				if( checkwrap( --result.tv_sec ) ) return MinValue;
+			}
+
+			return result;
+		}
+
+		public static thistype operator +( thistype left, thistype right ) { thistype result; Assert.IsTrue( TryAdd( &result, left, right ) ); return result; }
+		public static thistype operator -( thistype left, thistype right ) { thistype result; Assert.IsTrue( TrySubtract( &result, left, right ) ); return result; }
+
+		public static bool operator ==( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec == right.tv_sec && left.tv_usec == right.tv_usec; }
+		public static bool operator !=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec != right.tv_sec || left.tv_usec != right.tv_usec; }
+
+		public static bool operator <( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec < right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec < right.tv_usec ); }
+		public static bool operator <=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec <= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec <= right.tv_usec ); }
+		public static bool operator >( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec > right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec > right.tv_usec ); }
+		public static bool operator >=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec >= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_usec >= right.tv_usec ); }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( ( DateTimeUTC ) this, format ?? "Q" );
+		}
+	}
+
+	public partial struct timespec : IFormattable {
+		public static readonly thistype Zero = new thistype { tv_sec = 0, tv_nsec = 0 };
+		public static readonly thistype MaxValue = new thistype { tv_sec = int.MaxValue, tv_nsec = 999999999 };
+		public static readonly thistype MinValue = new thistype { tv_sec = int.MinValue, tv_nsec = 0 };
+
+		public timespec() { tv_sec = 0; tv_nsec = 0; }
+
+		public static timespec UtcNow { get { return RealTime; } }
+
+		public static timespec RealTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_REALTIME, result ) ); return result; } }
+		public static timespec MonotonicTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_MONOTONIC, result ) ); return result; } }
+		public static timespec BootTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_BOOTTIME, result ) ); return result; } }
+		public static timespec InternationalAtomicTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_TAI, result ) ); return result; } }
+		public static timespec ProcessTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_PROCESS_CPUTIME_ID, result ) ); return result; } }
+		public static timespec ThreadTime { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_gettime( ClockType.CLOCK_THREAD_CPUTIME_ID, result ) ); return result; } }
+
+		public static timespec RealTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_REALTIME, result ) ); return result; } }
+		public static timespec MonotonicTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_MONOTONIC, result ) ); return result; } }
+		public static timespec BootTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_BOOTTIME, result ) ); return result; } }
+		public static timespec InternationalAtomicTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_TAI, result ) ); return result; } }
+		public static timespec ProcessTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_PROCESS_CPUTIME_ID, result ) ); return result; } }
+		public static timespec ThreadTimeResolution { get { timespec result; LibcApi.AssertErrno( LibcApi.clock_getres( ClockType.CLOCK_THREAD_CPUTIME_ID, result ) ); return result; } }
+
+		public static explicit operator thistype( TimeSpan value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeSpan( thistype value ) { TimeSpan result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( TimeDuration value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeDuration( thistype value ) { TimeDuration result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTime value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTime( thistype value ) { DateTime result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public long TimeSpanTicks { get { EnsureNormalized(); return tv_sec * 10000000L + ( long )( ( uint ) tv_nsec / 100U ); } }
+		public ulong TimeDurationTicks { get { EnsureNormalized(); return tv_sec >= 0 ? ( uint ) tv_sec * 10000000UL + ( uint ) tv_nsec / 100U : ( ulong )( ( long ) tv_sec * -10000000L ) - ( uint ) tv_nsec / 100U; } }
+		public ulong DateTimeTicks { get { EnsureNormalized(); return ( ulong ) TimeSpanTicks + TimeDuration.Ticks_1970_1_1; } }
+
+		public long TotalSeconds { get { EnsureNormalized(); return tv_sec; } }
+		public long TotalMilliseconds { get { EnsureNormalized(); return tv_sec * 1000L + ( int )( ( uint ) tv_nsec / 1000000UL ); } }
+
+		public static thistype FromMilliseconds( uint value ) {
+			return new thistype {
+				tv_sec = ( int )( value / 1000U ),
+				tv_nsec = ( int )( value % 1000U * 1000000U )
+			};
+		}
+
+		public static thistype FromSeconds( uint value ) {
+			if( value > ( uint ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( ulong value ) {
+			if( value > ( ulong ) int.MaxValue ) return MaxValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( int value ) {
+			return new thistype {
+				tv_sec = value,
+				tv_nsec = 0
+			};
+		}
+
+		public static thistype FromSeconds( long value ) {
+			if( value > int.MaxValue ) return MaxValue;
+			if( value < int.MinValue ) return MinValue;
+
+			return new thistype {
+				tv_sec = ( int ) value,
+				tv_nsec = 0
+			};
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeSpan value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( value.Ticks <= -21474836480000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_nsec = ( int )( value.Ticks % TimeSpan.TicksPerSecond * 100 );
+
+			if( result->tv_nsec < 0 ) {
+				result->tv_nsec += 1000000000;
+				if( checkwrap( --result->tv_sec ) ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, TimeDuration value ) {
+			if( value.Ticks >= 21474836479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int ) value.TotalSeconds;
+			result->tv_nsec = ( int )( value.Ticks % TimeDuration.TicksPerSecond * 100U );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTime time ) {
+			var ticks = time.Ticks;
+			if( ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( ticks / TimeSpan.TicksPerSecond - TimeSpan.Ticks_1970_1_1 / TimeSpan.TicksPerSecond );
+			result->tv_nsec = ( int )( ticks % TimeSpan.TicksPerSecond * 100 - TimeSpan.Ticks_1970_1_1 % TimeSpan.TicksPerSecond * 100 );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC time ) {
+			if( time.Ticks >= 642830804479999990 ) { *result = MaxValue; return Convert.ConversionResult.Clamped; }
+			if( time.Ticks <= 599881131520000000 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			result->tv_sec = ( int )( time.Ticks / TimeDuration.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerSecond );
+			result->tv_nsec = ( int )( time.Ticks % TimeDuration.TicksPerSecond * 100 - TimeDuration.Ticks_1970_1_1 % TimeDuration.TicksPerSecond * 100 );
+			result->EnsureNormalized();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeSpan* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeSpanTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( TimeDuration* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.TimeDurationTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTime* result, thistype value ) {
+			value.EnsureNormalized();
+
+			*result = new DateTime( ( long ) value.DateTimeTicks, DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			value.EnsureNormalized();
+
+			result->Ticks = value.DateTimeTicks;
+			return Convert.ConversionResult.OK;
+		}
+
+		public Convert.ConversionResult Normalize() {
+			while( tv_nsec >= 1000000000 ) {
+				tv_nsec -= 1000000000;
+				if( checkwrap( ++tv_sec ) ) { this = MaxValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			while( tv_nsec < 0 ) {
+				tv_nsec += 1000000000;
+				if( checkwrap( --tv_sec ) ) { this = MinValue; return Convert.ConversionResult.Clamped; }
+			}
+
+			return Convert.ConversionResult.OK;
+		}
+
+		[Conditional( ConditionString = "DEBUG" )]
+		private void EnsureNormalized() {
+			Assert.IsTrue( tv_nsec < 1000000000 );
+			Assert.IsTrue( tv_nsec >= 0 );
+		}
+
+		public static Convert.ConversionResult TryAdd( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec + right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_nsec = left.tv_nsec + right.tv_nsec;
+			return result->Normalize();
+		}
+
+		public static Convert.ConversionResult TrySubtract( thistype* result, thistype left, thistype right ) {
+			left.EnsureNormalized();
+			right.EnsureNormalized();
+
+			if( checkwrap( result->tv_sec = left.tv_sec - right.tv_sec ) ) { *result = left.tv_sec >= 0 ? MaxValue : MinValue; return Convert.ConversionResult.Clamped; }
+			result->tv_nsec = left.tv_nsec - right.tv_nsec;
+			return result->Normalize();
+		}
+
+		public thistype operator -() {
+			EnsureNormalized();
+			if( tv_sec == int.MinValue ) return MaxValue;
+
+			var result = new thistype {
+				tv_sec = -tv_sec,
+				tv_nsec = -tv_nsec
+			};
+
+			if( result.tv_nsec < 0 ) {
+				result.tv_nsec += 1000000000;
+				if( checkwrap( --result.tv_sec ) ) return MinValue;
+			}
+
+			return result;
+		}
+
+		public static thistype operator +( thistype left, thistype right ) { thistype result; Assert.IsTrue( TryAdd( &result, left, right ) ); return result; }
+		public static thistype operator -( thistype left, thistype right ) { thistype result; Assert.IsTrue( TrySubtract( &result, left, right ) ); return result; }
+
+		public static bool operator ==( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec == right.tv_sec && left.tv_nsec == right.tv_nsec; }
+		public static bool operator !=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec != right.tv_sec || left.tv_nsec != right.tv_nsec; }
+
+		public static bool operator <( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec < right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec < right.tv_nsec ); }
+		public static bool operator <=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec <= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec <= right.tv_nsec ); }
+		public static bool operator >( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec > right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec > right.tv_nsec ); }
+		public static bool operator >=( thistype left, thistype right ) { left.EnsureNormalized(); right.EnsureNormalized(); return left.tv_sec >= right.tv_sec || ( left.tv_sec == right.tv_sec && left.tv_nsec >= right.tv_nsec ); }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.Append( ( DateTimeUTC ) this, format ?? "Q" );
+		}
+	}
+
+	public partial struct tm : IFormattable {
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			// if( value.Day > 31 || ( value.Month - 1 ) > 11 ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+			// if( value.Day > 31 || ( value.Month - 1 ) > 11 ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			ulong dateTicks;
+			if( !DateValues.TryDateToTicks( dateTicks, 1900 + ( ushort ) value.tm_year, ( byte ) value.tm_mon + 1, ( byte ) value.tm_mday ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			ulong timeTicks;
+			if( !DateValues.TryTimeToTicks( timeTicks, ( byte ) value.tm_hour, ( byte ) value.tm_min, ( byte ) value.tm_sec ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			if( checkwrap( result->Ticks = dateTicks + timeTicks ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC value ) {
+			var dateValues = value.GetDateValues();
+
+			result->tm_year = dateValues.Year - 1900;
+			result->tm_mon = dateValues.Month - 1;
+			result->tm_wday = ( dateValues.DayOfWeek.Value() + 1 ) % 7;
+			result->tm_mday = dateValues.Day;
+			result->tm_hour = value.Hour;
+			result->tm_min = value.Minute;
+			result->tm_sec = value.Second;
+			result->tm_isdst = 0;
+			result->tm_yday = dateValues.DayOfYear - 1;
+			result->tm_gmtoff = 0;
+			result->tm_zone = ( sbyte* ) cast<SbcsString>( "GMT" ).GetChars();
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			if( format == null ) {
+				builder.Append( 1900 + tm_year, "D4" );
+				builder.Append( '-' );
+				builder.Append( tm_mon + 1, "D2" );
+				builder.Append( '-' );
+				builder.Append( tm_mday, "D2" );
+				builder.Append( ' ' );
+				builder.Append( tm_hour, "D2" );
+				builder.Append( ':' );
+				builder.Append( tm_min, "D2" );
+				builder.Append( ':' );
+				builder.Append( tm_sec, "D2" );
+
+				builder.Append( " tm_isdst:" );
+				builder.Append( tm_isdst );
+
+				builder.Append( " tm_wday:" );
+				builder.Append( tm_wday );
+
+				builder.Append( " tm_yday:" );
+				builder.Append( tm_yday );
+
+				builder.Append( " tm_gmtoff:" );
+				builder.Append( tm_gmtoff );
+
+				builder.Append( " tm_zone:" );
+				builder.Append( new CString( tm_zone ) );
+			}
+			else
+				builder.Append( ( DateTimeUTC ) this, "Q" );
+		}
+
+		public static bool operator ==( thistype left, thistype right ) {
+			return left.tm_year == right.tm_year && left.tm_mon == right.tm_mon && left.tm_mday == right.tm_mday && left.tm_hour == right.tm_hour && left.tm_min == right.tm_min && left.tm_sec == right.tm_sec && left.tm_isdst == right.tm_isdst && left.tm_wday == right.tm_wday && left.tm_yday == right.tm_yday && left.tm_gmtoff == right.tm_gmtoff && new CString( left.tm_zone ) == new CString( right.tm_zone );
+		}
+
+		public static bool operator !=( thistype left, thistype right ) { return !( left == right ); }
+	}
+
+	public partial struct pollfd : IFormattable {
+		public IOHandle Handle { get { return *( IOHandle* ) &fd; } set { *( IOHandle* ) &fd = value; } }
+		public PollEvents ListenedEvents { get { return *( PollEvents* ) &events; } set { *( PollEvents* ) &events = value; } }
+		public PollEvents RaisedEvents { get { return *( PollEvents* ) &revents; } set { *( PollEvents* ) &revents = value; } }
+
+		public bool InputEvent { get { return ( RaisedEvents & PollEvents.POLLIN ) != 0; } }
+		public bool OutputEvent { get { return ( RaisedEvents & PollEvents.POLLOUT ) != 0; } }
+		public bool ErrorEvent { get { return ( RaisedEvents & ( PollEvents.POLLERR | PollEvents.POLLHUP | PollEvents.POLLNVAL ) ) != 0; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Handle={0} ListenedEvents={1} RaisedEvents={2} }}", Handle.ID, ListenedEvents, RaisedEvents );
+		}
+	}
+
+	[Flags]
+	public enum Permission : uint {
+		None,
+
+		OthersExecute,
+		OthersWrite,
+		OthersRead,
+
+		GroupExecute,
+		GroupWrite,
+		GroupRead,
+
+		OwnerExecute,
+		OwnerWrite,
+		OwnerRead,
+	}
+
+	public partial struct dirent64 {
+		public ulong INode { get { return d_ino; } }
+		public long Offset { get { return d_off; } }
+		public ushort Length { get { return d_reclen; } }
+		public DirectoryEntryType Type { get { return ( DirectoryEntryType ) d_type; } }
+	}
+
+	public partial struct stat {
+		public bool IsFile { get { return !IsDirectory; } }
+		public bool IsDirectory { get { return ( st_mode & StatFlags.S_IFDIR ) == StatFlags.S_IFDIR; } }
+		public bool IsSymlink { get { return ( st_mode & StatFlags.S_IFLNK ) == StatFlags.S_IFLNK; } }
+		public bool IsCharacterSpecial { get { return ( st_mode & StatFlags.S_IFCHR ) == StatFlags.S_IFCHR; } }
+		public bool IsSocket { get { return ( st_mode & StatFlags.S_IFSOCK ) == StatFlags.S_IFSOCK; } }
+
+		public DateTimeUTC CreationTime { get { return ( DateTimeUTC ) st_ctim; } }
+		public DateTimeUTC LastAccessTime { get { return ( DateTimeUTC ) st_atim; } }
+		public DateTimeUTC LastModificationTime { get { return ( DateTimeUTC ) st_mtim; } }
+	}
+
+	public partial struct iovec {
+		public iovec( void* address, uintptr length ) { iov_base = address; iov_len = length; }
+
+		public static implicit operator iovec( MemorySegment& value ) { return new iovec( value.Start, ( uint ) value.Count ); }
+	}
+
+	public static partial struct AdaptationLayer {
+		public static FileSeekOrigin MapSeekOrigin( System.IO.SeekOrigin value ) {
+			[CheckAllEnumValues]
+			switch( value ) {
+				case System.IO.SeekOrigin.Begin: return FileSeekOrigin.SEEK_SET;
+				case System.IO.SeekOrigin.Current: return FileSeekOrigin.SEEK_CUR;
+				case System.IO.SeekOrigin.End: return FileSeekOrigin.SEEK_END;
+			}
+
+			Assert.InvalidParameter( nameof( value ) );
+			return FileSeekOrigin.SEEK_SET;
+		}
+
+		public static System.IO.SeekOrigin MapSeekOrigin( FileSeekOrigin value ) {
+			[CheckAllEnumValues]
+			switch( value ) {
+				case FileSeekOrigin.SEEK_SET: return System.IO.SeekOrigin.Begin;
+				case FileSeekOrigin.SEEK_CUR: return System.IO.SeekOrigin.Current;
+				case FileSeekOrigin.SEEK_END: return System.IO.SeekOrigin.End;
+				case FileSeekOrigin.SEEK_DATA:
+				case FileSeekOrigin.SEEK_HOLE: Assert.NotImplemented(); return System.IO.SeekOrigin.Begin;
+			}
+
+			Assert.InvalidParameter( nameof( value ) );
+			return System.IO.SeekOrigin.Begin;
+		}
+
+		public const bool IsMemorySegmentLayoutEqualsToIovec = memberinfo( MemorySegment.Start ).ByteOffset == memberinfo( iovec.iov_base ).ByteOffset && sizeof( MemorySegment ) == sizeof( iovec );
+	}
+
+	public static partial struct LibcApi {
+		public static SignalCode SIGRTMIN { get { return __libc_current_sigrtmin(); } }
+		public static SignalCode SIGRTMAX { get { return __libc_current_sigrtmax(); } }
+	}
+
+	public partial struct sigset_t {
+		public sigset_t() { LibcApi.sigemptyset( &this ); }
+		public sigset_t( vararg SignalCode signals )
+			: this() {
+			Add( vararg( signals, signals.Length ) );
+		}
+
+		public void Empty() { LibcApi.sigemptyset( &this ); }
+		public void Fill() { LibcApi.sigfillset( &this ); }
+
+		public void Add( vararg SignalCode signals ) { foreach( var signal in signals ) Add( signal ); }
+		public void Remove( vararg SignalCode signals ) { foreach( var signal in signals ) Remove( signal ); }
+
+		public void Add( SignalCode signal ) { LibcApi.sigaddset( &this, signal ); }
+		public void Remove( SignalCode signal ) { LibcApi.sigdelset( &this, signal ); }
+
+		public bool Contains( SignalCode signal ) { return LibcApi.sigismember( &this, signal ) == 0; }
+
+		private const uint MaxSignals = ( uint ) sizeof( thistype ) * 8;
+
+		public yield<SignalCode> GetEnumerator() {
+			var accessor = new BitArrayAccessor( ( uint* ) &this, MaxSignals );
+			for( var i = 0U; i < MaxSignals; ++i ) {
+				if( accessor[i] )
+					yield return ( SignalCode )( i + 1 );
+			}
+		}
+	}
+
+	public struct AlarmRegion : IDisposable {
+		private struct TimerHolder {
+			PosixTimerHandle Handle;
+
+			~TimerHolder() { Handle.Close(); }
+		}
+
+		private TimeDuration _timeout;
+
+		[ThreadStatic]
+		private static TimerHolder _timer = new TimerHolder { Handle = PosixTimerHandle.Invalid };
+
+		public AlarmRegion( TimeDuration timeout ) {
+			_timeout = timeout;
+			if( timeout == TimeDuration.Zero ) return;
+
+			if( _timer.Handle == PosixTimerHandle.Invalid )
+				_timer.Handle = PosixTimerHandle.CreateThreadTimeout();
+
+			var interval = new itimerspec { it_interval = default( timespec ), it_value = ( timespec ) timeout };
+			_timer.Handle.SetInterval( interval );
+		}
+
+		public void Dispose() {
+			if( _timeout == TimeDuration.Zero ) return;
+
+			_timer.Handle.Stop();
+		}
+
+		private static void AlarmSignalHandler( int signal ) {
+		}
+	}
+
+	[PrimitiveType( Size = sizeof( uintptr ) )]
+	public partial struct DynamicLibraryHandle {
+	}
+
+	public partial struct epoll_event : IFormattable {
+		public EPOLL_EVENTS Events { get { return *( EPOLL_EVENTS* ) &events; } set { *( EPOLL_EVENTS* ) &events = value; } }
+		public void* Data { get { return data.ptr; } set { data = new epoll_data( value ); } }
+
+		public bool InputEvent { get { return ( Events & EPOLL_EVENTS.EPOLLIN ) != 0; } }
+		public bool OutputEvent { get { return ( Events & EPOLL_EVENTS.EPOLLOUT ) != 0; } }
+		public bool ErrorEvent { get { return ( Events & ( EPOLL_EVENTS.EPOLLERR | EPOLL_EVENTS.EPOLLHUP | EPOLL_EVENTS.EPOLLRDHUP ) ) != 0; } }
+
+		public void ToString( StringBuilder builder, string format ) {
+			builder.AppendFormat( "{{ Events={0} Data={1} }}", Events, Data );
+		}
+	}
+
+	public partial struct epoll_data {
+		public epoll_data( void* value ) { this = default( thistype ); var& rv = ptr; rv = value; }
+		public epoll_data( int value ) { this = default( thistype ); var& rv = fd; rv = value; }
+		public epoll_data( uint value ) { this = default( thistype ); var& rv = u32; rv = value; }
+		public epoll_data( ulong value ) { this = default( thistype ); var& rv = u64; rv = value; }
+	}
+}

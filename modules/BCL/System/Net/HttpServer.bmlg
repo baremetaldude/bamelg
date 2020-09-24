@@ -21,41 +21,40 @@ namespace System.Net {
 	/// Override 'CreateHandler' to provide appropriate handlers for URLs
 	public partial class HttpServer : NetworkServer {
 		// @{ stats
-		public int ValidRequestCount = 0, InvalidRequestCount = 0; // how many valid requests arrived
-		public int ActiveHandlerCount = 0, PeakHandlerCount = 0;
+		public uint ValidRequestCount = 0, InvalidRequestCount = 0; // how many valid requests arrived
+		public uint ActiveHandlerCount = 0, PeakHandlerCount = 0;
 		// @}
 
 		// @{ Shared resources for accepted clients
 		protected CachingStack<StringBuilder> _headerBuilders = new CachingStack<StringBuilder>( () => new StringBuilder() { NewLine = "\r\n" }, x => x.Clear() );
 		protected CachingStack<StringBuilder> _responseBuilders = new CachingStack<StringBuilder>( () => new StringBuilder() { NewLine = "\r\n" }, x => x.Clear() );
 
-		public int CachedHeaderBuilders { get { return _headerBuilders.Count; } }
-		public int CachedResponseBuilders { get { return _responseBuilders.Count; } }
+		public uint CachedHeaderBuilders { get { return _headerBuilders.Count; } }
+		public uint CachedResponseBuilders { get { return _responseBuilders.Count; } }
 		// @}
 
 		public bool SendServerTokens { get; set; } = true;
 		public bool SendDetailedErrors { get; set; } = true;
 
-		[ReflectionMetadata( Mask = ReflectionMetadata.PublicFields | ReflectionMetadata.NonPublicFields )]
 		public struct ServerStats {
-			public int ValidRequestCount;
-			public int InvalidRequestCount;
-			public int CachedHeaderBuilders;
-			public int CachedResponseBuilders;
-			public int ActiveSessionCount;
-			public int TotalAcceptedClientCount;
+			public uint ValidRequestCount;
+			public uint InvalidRequestCount;
+			public uint CachedHeaderBuilders;
+			public uint CachedResponseBuilders;
+			public uint ActiveSessionCount;
+			public uint TotalAcceptedClientCount;
 			public bool ReusePort;
 			public bool DefferedAccept;
-			public int ListenBacklog;
-			public int ClientFiberStackPages;
-			public int MaxClientRequestLength;
-			public int ResponseBufferLength;
-			public int MaxSessions;
-			public int PeakActiveSessionCount;
-			public int ActiveHandlerCount;
-			public int PeakHandlerCount;
+			public uint ListenBacklog;
+			public uint ClientFiberStackPages;
+			public uint MaxClientRequestLength;
+			public uint ResponseBufferLength;
+			public uint MaxSessions;
+			public uint PeakActiveSessionCount;
+			public uint ActiveHandlerCount;
+			public uint PeakHandlerCount;
 
-			public int FiberCount;
+			public uint FiberCount;
 
 			public ServerStats() {
 			}
@@ -105,8 +104,9 @@ namespace System.Net {
 			public bool IsKeepAliveRequest { get; set; } // dont close connection after response sent
 			internal bool Quit { get; set; }
 
-			public DateTime _if_modified_since;
-			public long _contentLength;
+			public DecompressionMethods _acceptEncoding;
+			public DateTimeUTC _if_modified_since;
+			public ulong _contentLength;
 			public bool _needToParseFormData;
 
 			public CStringSpan Resource { get { return _parser.Resource; } }
@@ -116,8 +116,8 @@ namespace System.Net {
 			}
 
 			private void Reset() {
-				_contentLength = -1;
-				_if_modified_since = DateTime.MinValue;
+				_contentLength = 0;
+				_if_modified_since = DateTimeUTC.MinValue;
 				_needToParseFormData = false;
 			}
 
@@ -129,6 +129,7 @@ namespace System.Net {
 					case "/stat.json": return new HttpStatisticPageHandler( this );
 				}
 
+				SendStatus( HttpStatusCode.NotFound );
 				return null;
 			}
 
@@ -137,7 +138,7 @@ namespace System.Net {
 				var requestBuffer = ReadStream.BufferInfo;
 
 				while( !Quit ) {
-					int readen = requestBuffer->AvailableToRead;
+					var readen = requestBuffer->AvailableToRead;
 					if( readen == 0 ) WriteStream.Flush( FlushKind.DeepWrite ); // try to flush multiple responses
 
 					using( Fiber.CancellationRegion() ) {
@@ -183,14 +184,11 @@ namespace System.Net {
 								TraceClientRequest( this );
 
 								Handler = CreateHandler();
-								if( Handler == null ) {
-									SendStatus( HttpStatusCode.NotFound );
-									goto parseNext;
-								}
+								if( Handler == null ) goto parseNext; // CreateHandler() must send appropriate status code
 
 								if( Handler.GetType().IsOverriden( memberinfo( RequestHandler.OnParameterParsed ) ) )
 									if( _parser._queryEnd != null )
-										Handler.ParseParameters( null, _parser._queryEnd - _parser._queryStart, _parser._queryStart );
+										Handler.ParseParameters( null, ( uintptr )( _parser._queryEnd - _parser._queryStart ), _parser._queryStart );
 
 								++Server.ActiveHandlerCount;
 								if( Server.ActiveHandlerCount > Server.PeakHandlerCount ) Server.PeakHandlerCount = Server.ActiveHandlerCount;
@@ -199,11 +197,11 @@ namespace System.Net {
 							}
 
 						case HttpRequestParser.ParsingResult.Finished: {
-								var bytesToTrim = ( int )( _parser._current - requestBuffer->ReadBufferStart );
+								var bytesToTrim = ( uint )( _parser._current - requestBuffer->ReadBufferStart );
 								requestBuffer->OnReadPerformed( bytesToTrim );
 
 								if( Handler != null ) {
-									if( _if_modified_since != DateTime.MinValue && !Handler.CheckModifiedSince( _if_modified_since ) ) {
+									if( _if_modified_since != DateTimeUTC.MinValue && !Handler.CheckModifiedSince( _if_modified_since ) ) {
 										SendStatus( HttpStatusCode.NotModified );
 									}
 									else {
@@ -237,7 +235,7 @@ namespace System.Net {
 				}
 			}
 
-			public void SendStatus( HttpStatusCode code ) {
+			protected void SendStatus( HttpStatusCode code ) {
 				TraceResponseStatus( this, code );
 
 				var formatter = new PrimitiveTypesFormatter.Formatter();
@@ -249,7 +247,7 @@ namespace System.Net {
 
 				var codeBuffer = formatter.Buffer;
 
-				Stream.Write( codeBuffer.GetChars(), ( int ) codeBuffer.Length );
+				Stream.Write( codeBuffer.GetChars(), codeBuffer.Length );
 			}
 
 			#region HttpRequestParser.StreamListener implementation
@@ -266,12 +264,16 @@ namespace System.Net {
 						break;
 
 					case "if-modified-since":
-						HttpFormatter.TryParseDateTime( value.Location, value.Length, _if_modified_since );
+						PrimitiveTypesParser.TryParseDateTime_RFC1123( value.Location, value.Length, _if_modified_since );
 						break;
 
 					case "content-length":
-						long.TryParse( value, _contentLength );
-						if( _contentLength <= 0 ) _contentLength = -1;
+						if( !ulong.TryParse( value, _contentLength ) )
+							_contentLength = 0;
+						break;
+
+					case "accept-encoding":
+						HttpFormatter.TryParseAcceptEncoding( value.Location, value.Length, _acceptEncoding );
 						break;
 
 					case "content-type":
@@ -289,7 +291,7 @@ namespace System.Net {
 		public abstract class RequestHandler {
 			protected SessionHandler Session;
 
-			public long RequestLength { get { return Session._contentLength; } }
+			public ulong RequestLength { get { return Session._contentLength; } }
 			public HttpMethod Method { get { return Session._parser._method; } }
 
 			public RequestHandler( SessionHandler session ) {
@@ -309,7 +311,7 @@ namespace System.Net {
 
 			protected virtual void OnParameterParsed( CUtf16StringSpan name, StringBuilder value, bool isQueryParameter ) { }
 
-			internal void ParseParameters( IStream requestStream, long parameterBlockLength, byte* preloadedBuffer ) {
+			internal void ParseParameters( IStream requestStream, ulong parameterBlockLength, byte* preloadedBuffer ) {
 				using( var nameBuilder = StringBuilder.CachedBuilders.PopScoped() )
 				using( var valueBuilder = StringBuilder.CachedBuilders.PopScoped() ) {
 					var requestBuffer = requestStream?.BufferInfo;
@@ -322,7 +324,7 @@ namespace System.Net {
 					byte[2] escaped;
 
 					for( var total = parameterBlockLength; total > 0; ) {
-						int readen = requestBuffer != null ? requestBuffer->AvailableToRead : ( int ) parameterBlockLength;
+						uint readen = requestBuffer != null ? requestBuffer->AvailableToRead : ( uint ) parameterBlockLength;
 						if( readen == 0 )
 							using( Fiber.CancellationRegion() ) {
 								requestStream.Flush( FlushKind.Read );
@@ -333,11 +335,11 @@ namespace System.Net {
 						if( readen == 0 ) return;
 
 						var buffer = preloadedBuffer ?? requestBuffer->ReadBufferStart;
-						TraceParameters( new CStringSpan( buffer, ( uint ) readen ) );
+						TraceParameters( new CStringSpan( buffer, readen ) );
 
 						total -= readen;
 
-						for( var i = 0; i < readen; ++i ) {
+						for( var i = 0U; i < readen; ++i ) {
 							switch( buffer[i] ) {
 								case '+':
 									buffer[i] = ' ';
@@ -399,7 +401,7 @@ namespace System.Net {
 				}
 			}
 
-			public virtual bool CheckModifiedSince( DateTime date ) { return true; }
+			public virtual bool CheckModifiedSince( DateTimeUTC date ) { return true; }
 
 			public override void Dispose() {
 				--Session.Server.ActiveHandlerCount;
@@ -476,7 +478,7 @@ namespace System.Net {
 				Headers.AppendLine(); // end of headers
 				// @}
 
-				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
 
 				FreeHeaders();
 
@@ -491,14 +493,14 @@ namespace System.Net {
 			}
 
 			public void Flush() {
-				// StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
+				// StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), Response.Length, TextEncodingKind, TextEncodingCodepage );
 				// Response.Clear();
 				Response.Flush( FlushKind.Write );
 			}
 		}
 
 		// Designed for ease of use, not for streaming
-		public abstract class PageHandler : RequestHandler, Binder.IEvent {
+		public abstract class PageHandler : RequestHandler, Binder.IErrorHandler {
 			public PageHandler( SessionHandler session, string mediaType = "text/html" )
 				: base( session ) {
 				Headers = Session.Server._headerBuilders.Pop();
@@ -543,7 +545,7 @@ namespace System.Net {
 				}
 			}
 
-			protected void AddHeaderDate( DateTime time ) {
+			protected void AddHeaderDate( DateTimeUTC time ) {
 				if( CacheTimeout <= 0 )
 					HttpFormatter.HeaderDate( Headers, time, "Date", "Expires", "Last-Modified" );
 				else {
@@ -579,8 +581,8 @@ namespace System.Net {
 					case TextEncodingKind.Utf8: {
 							uint characterCount16;
 							uint bytesCount;
-							Unicode.GetUtf16ByteCountInUtf8( Response.GetChars(), ( uint ) Response.Length, characterCount16, bytesCount );
-							contentLength = ( int ) bytesCount;
+							Unicode.GetUtf16ByteCountInUtf8( Response.GetChars(), Response.Length, characterCount16, bytesCount );
+							contentLength = bytesCount;
 						} break;
 
 					case TextEncodingKind.Utf16:
@@ -605,28 +607,31 @@ namespace System.Net {
 				Headers.AppendLine(); // end of headers
 				// @}
 
-				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
-				StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), ( uint ) Response.Length, TextEncodingKind, TextEncodingCodepage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Response.GetChars(), Response.Length, TextEncodingKind, TextEncodingCodepage );
 			}
 
-			void Binder.IEvent.BadMapping( int mapping ) {
-				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': bad mapping", mapping );
+			void Binder.IErrorHandler.Clamped( uint mapping ) {
 			}
 
-			void Binder.IEvent.NotFound( IFormattable name ) {
+			void Binder.IErrorHandler.MissedMapping( uint mapping ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': mapping not found", name );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "Unknown parameter", mapping );
 			}
 
-			void Binder.IEvent.IncompatibleMapping( Binder.Mapping* mapping, System.Reflection.Type& type ) {
+			void Binder.IErrorHandler.IncompatibleType( uint mapping ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': incompatible type {1}", *mapping, type );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "Incompatible type", mapping );
 			}
 
-			void Binder.IEvent.ParseError( Binder.Mapping* mapping ) {
+			void Binder.IErrorHandler.IncompatibleValue( uint mapping ) {
 				StatusCode = HttpStatusCode.BadRequest;
-				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "'{0}': parsing error", *mapping );
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "Incompatible value", mapping );
+			}
+
+			void Binder.IErrorHandler.EmptyValue( uint mapping ) {
+				StatusCode = HttpStatusCode.BadRequest;
+				if( Session.Server.SendDetailedErrors ) Response.AppendLine( "Empty value", mapping );
 			}
 		}
 
@@ -666,18 +671,23 @@ namespace System.Net {
 			private byte[] _dataHolder;
 
 			public string MediaType;
+			public DecompressionMethods ContentEncoding;
 
 			public bool XFrameOptions { get; set; }
 
-			public DateTime LastModified = System.Runtime.CompilerServices.CompilerInfo.BuildDate;
+			private static DateTimeUTC DefaultLastModified = System.Runtime.CompilerServices.CompilerInfo.BuildDate.Floor( new TimeDuration( TimeDuration.TicksPerSecond ) );
+			public DateTimeUTC LastModified = DefaultLastModified;
 
-			public override bool CheckModifiedSince( DateTime date ) {
+			public override bool CheckModifiedSince( DateTimeUTC date ) {
 				return LastModified > date;
 			}
 
 			protected virtual void AddCustomHeaders() {
 				HttpFormatter.HeaderDate( Headers, Fiber.UtcNow );
 				HttpFormatter.HeaderLastModified( Headers, LastModified );
+
+				if( ContentEncoding != DecompressionMethods.None )
+					HttpFormatter.HeaderContentEncoding( Headers, ContentEncoding );
 
 				HttpFormatter.HeaderContentType( Headers, MediaType );
 
@@ -690,8 +700,6 @@ namespace System.Net {
 			}
 
 			public override void BeginOutput() {
-				var time = Fiber.Now.ToUniversalTime();
-
 				// @{ headers
 				HttpFormatter.StatusCode( Headers, HttpStatusCode.OK );
 
@@ -705,7 +713,7 @@ namespace System.Net {
 				Headers.AppendLine();
 				// @}
 
-				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), ( uint ) Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
+				StreamWriter.WriteEncodedBytes( Session.Stream, Headers.GetChars(), Headers.Length, TextEncodingKind.CodePage, Environment.DefaultCodePage );
 				Session.Stream.Write( _data );
 			}
 		}
@@ -727,8 +735,6 @@ namespace System.Net {
 					Response.AppendLine( "<body>" );
 					{
 						Response.AppendLine( "<p>Welcome to Bamelg embedded HTTP server!</p>" );
-						Response.AppendLine( "<p>Define custom 'SessionHandler' and override 'CreateSession'</p>" );
-
 					}
 					Response.AppendLine( "</body>" );
 				}
@@ -766,7 +772,25 @@ namespace System.Net {
 
 			public override void OnRender() {
 				var stats = Session.Server.GetStats();
-				System.Serialization.JsonSerializer<ServerStats>.Serialize( stats, Response );
+
+				Response.Append( '{', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( ',', '"' ); Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '"', ':' ); Response.Append( stats.ValidRequestCount );
+				Response.Append( '}' );
 			}
 		}
 
@@ -779,7 +803,24 @@ namespace System.Net {
 
 			public override void OnRender() {
 				var stats = Session.Server.GetStats();
-				System.Serialization.IniSerializer<ServerStats>.Serialize( stats, Response );
+
+				Response.Append( ( string ) memberinfo( ServerStats.ValidRequestCount ).Name ); Response.Append( '=' ); Response.Append( stats.ValidRequestCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.InvalidRequestCount ).Name ); Response.Append( '=' ); Response.Append( stats.InvalidRequestCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.CachedHeaderBuilders ).Name ); Response.Append( '=' ); Response.Append( stats.CachedHeaderBuilders ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.CachedResponseBuilders ).Name ); Response.Append( '=' ); Response.Append( stats.CachedResponseBuilders ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ActiveSessionCount ).Name ); Response.Append( '=' ); Response.Append( stats.ActiveSessionCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.TotalAcceptedClientCount ).Name ); Response.Append( '=' ); Response.Append( stats.TotalAcceptedClientCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ReusePort ).Name ); Response.Append( '=' ); Response.Append( stats.ReusePort ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.DefferedAccept ).Name ); Response.Append( '=' ); Response.Append( stats.ReusePort ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ListenBacklog ).Name ); Response.Append( '=' ); Response.Append( stats.ListenBacklog ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ClientFiberStackPages ).Name ); Response.Append( '=' ); Response.Append( stats.ClientFiberStackPages ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.MaxClientRequestLength ).Name ); Response.Append( '=' ); Response.Append( stats.MaxClientRequestLength ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ResponseBufferLength ).Name ); Response.Append( '=' ); Response.Append( stats.ResponseBufferLength ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.MaxSessions ).Name ); Response.Append( '=' ); Response.Append( stats.MaxSessions ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.PeakActiveSessionCount ).Name ); Response.Append( '=' ); Response.Append( stats.PeakActiveSessionCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.ActiveHandlerCount ).Name ); Response.Append( '=' ); Response.Append( stats.ActiveHandlerCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.PeakHandlerCount ).Name ); Response.Append( '=' ); Response.Append( stats.PeakHandlerCount ); Response.AppendLine();
+				Response.Append( ( string ) memberinfo( ServerStats.FiberCount ).Name ); Response.Append( '=' ); Response.Append( stats.FiberCount ); Response.AppendLine();
 			}
 
 			protected override void AddCustomHeaders() {

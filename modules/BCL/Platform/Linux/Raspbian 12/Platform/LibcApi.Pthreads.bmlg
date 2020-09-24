@@ -1,0 +1,387 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Runtime;
+using System.Runtime.InteropServices;
+
+using Platform.Kernel;
+
+namespace Platform.Libc {
+	public partial struct pthread_t : IFormattable {
+		public static pthread_t Invalid = bitcast<pthread_t>( uintptr.MaxValue );
+		public bool IsValid { get { return this != Invalid; } }
+		public bool IsCurrent { get { return this == CurrentThread; } }
+
+		public static pthread_t CurrentThread { get { return LibcApi.pthread_self(); } }
+		public static uintptr CurrentThreadId { get { return bitcast<uintptr>( CurrentThread ); } }
+
+		public pthread_t( System.Delegates.Action start, pthread_attr_t& attrs = nullref ) {
+			cast<RuntimeObjectBase>( start ).AddReference();
+
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, parameter => {
+				var& @delegate = *( System.Delegates.Action* ) &parameter; // dont touch refcount here
+				@delegate();
+				cast<RuntimeObjectBase>( @delegate ).ReleaseReference();
+
+				return null;
+			}, bitcast<void*>( start ) ) );
+		}
+
+		public pthread_t( System.Threading.DPC* start, pthread_attr_t& attrs = nullref ) {
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, data => { System.Threading.DPC.RunAndDispose( bitcast<System.Threading.DPC*>( data ) ); return null; }, start ) );
+		}
+
+		public pthread_t( System.Functors.Func<void*, void*> start, void* parameter = null, pthread_attr_t& attrs = nullref ) {
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, start, parameter ) );
+		}
+
+		public pthread_t( System.Functors.Action start, pthread_attr_t& attrs = nullref ) {
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, data => { bitcast<System.Functors.Action>( data )(); return null; }, bitcast<void*>( start ) ) );
+		}
+
+		public pthread_t( System.Functors.Action<void*> start, void* parameter, pthread_attr_t& attrs = nullref ) {
+			LibcApi.Assert( PthreadsApi.pthread_create( &this, &attrs, bitcast<System.Functors.Func<void*, void*>>( start ), parameter ) );
+		}
+
+		public void Detach() { LibcApi.pthread_detach( this ); }
+
+		public void Join() { LibcApi.pthread_join( this, null ); }
+		public void Join( void*& result ) { LibcApi.pthread_join( this, &result ); }
+
+		public static void Exit() { LibcApi.pthread_exit( null ); }
+		public static void Exit( void* result ) { LibcApi.pthread_exit( result ); }
+
+		public static void Yield() { LibcApi.sched_yield(); }
+
+		public void Signal( SignalCode signal ) { LibcApi.pthread_kill( this, signal ); }
+
+		public static Utf8String Name {
+			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_NAME, ( uintptr ) value.GetChars(), 0, 0, 0 ) ); }
+		}
+
+		public static bool IsDumpable {
+			get { return ( bool ) LibcApi.prctl( ProcessControlActions.PR_GET_DUMPABLE, 0, 0, 0, 0 ); }
+			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_DUMPABLE, ( uint ) value, 0, 0, 0 ) ); }
+		}
+
+		public static bool IsKeepCaps {
+			get { return ( bool ) LibcApi.prctl( ProcessControlActions.PR_GET_KEEPCAPS, 0, 0, 0, 0 ); }
+			set { LibcApi.AssertErrno( LibcApi.prctl( ProcessControlActions.PR_SET_KEEPCAPS, ( uint ) value, 0, 0, 0 ) ); }
+		}
+
+		public static void Sleep( TimeDuration value ) {
+			var timeToWait = ( timespec ) value;
+			timespec remaindedTime;
+
+		sleepAgain:
+			if( LibcApi.nanosleep( &timeToWait, &remaindedTime ) == -1 ) {
+				timeToWait = remaindedTime;
+				goto sleepAgain;
+			}
+		}
+
+		public pthread_attr_t GetAttributes() {
+			pthread_attr_t result;
+			LibcApi.pthread_getattr_np( this, &result );
+			return result;
+		}
+
+		void IFormattable.ToString( StringBuilder builder, string format ) {
+			builder.Append( bitcast<void*>( this ) );
+		}
+	}
+
+	public partial struct pthread_attr_t : IDisposable {
+		public pthread_attr_t() {
+			LibcApi.pthread_attr_init( &this );
+		}
+
+		public void Dispose() {
+			LibcApi.pthread_attr_destroy( &this );
+		}
+
+		public void SetStack( void* stack, uintptr size ) {
+			if( stack == null ) size = Math.Max( size, ( uint ) LibcApi.PTHREAD_STACK_MIN );
+			LibcApi.pthread_attr_setstack( &this, stack, size );
+		}
+
+		public uintptr StackSize {
+			get { void* stack; uintptr size; LibcApi.pthread_attr_getstack( &this, &stack, &size ); return size; }
+			set { void* stack; uintptr size; LibcApi.pthread_attr_getstack( &this, &stack, &size ); SetStack( stack, value ); }
+		}
+
+		public uintptr GuardPageSize {
+			get { uintptr result; LibcApi.pthread_attr_getguardsize( &this, &result ); return result; }
+			set { LibcApi.pthread_attr_setguardsize( &this, value ); }
+		}
+
+		public void* Stack {
+			get { void* stack; uintptr size; LibcApi.pthread_attr_getstack( &this, &stack, &size ); return stack; }
+			set { void* stack; uintptr size; LibcApi.pthread_attr_getstack( &this, &stack, &size ); SetStack( value, size ); }
+		}
+	}
+
+	public partial struct pthread_mutex_t {
+		public pthread_mutex_t() { LibcApi.Assert( LibcApi.pthread_mutex_init( &this, null ) ); }
+
+		public pthread_mutex_t( MutexKind kind ) {
+			using( var attrs = new pthread_mutexattr_t() ) {
+				attrs.Kind = kind;
+				LibcApi.Assert( LibcApi.pthread_mutex_init( &this, &attrs ) );
+			}
+		}
+
+		~pthread_mutex_t() { LibcApi.Assert( LibcApi.pthread_mutex_destroy( &this ) ); }
+
+		public void Lock() { LibcApi.Assert( LibcApi.pthread_mutex_lock( &this ) ); }
+
+		public bool TryLock() {
+			SystemError code;
+
+		restart:
+			switch( code = ( SystemError ) LibcApi.pthread_mutex_trylock( &this ) ) {
+				case SystemError.None: return true;
+				case SystemError.EBUSY: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+
+		public void Unlock() { LibcApi.Assert( LibcApi.pthread_mutex_unlock( &this ) ); }
+
+		public RegionHolder LockRegion() { return new RegionHolder( &this ); }
+
+		public struct RegionHolder : IDisposable {
+			private declaringtype* _parent;
+
+			public RegionHolder( declaringtype* parent ) {
+				_parent = parent;
+				if( _parent != null )
+					_parent->Lock();
+			}
+
+			public void Dispose() {
+				if( _parent != null ) {
+					_parent->Unlock();
+					_parent = null;
+				}
+			}
+		}
+	}
+
+	public partial struct pthread_mutexattr_t : IDisposable {
+		public pthread_mutexattr_t() {
+			LibcApi.pthread_mutexattr_init( &this );
+		}
+
+		public void Dispose() {
+			LibcApi.pthread_mutexattr_destroy( &this );
+		}
+
+		public bool IsShared {
+			get {
+				Boolean32 pshared;
+				LibcApi.pthread_mutexattr_getpshared( &this, &pshared );
+				return pshared;
+			}
+			set {
+				LibcApi.pthread_mutexattr_setpshared( &this, value );
+			}
+		}
+
+		public MutexKind Kind {
+			get {
+				MutexKind kind;
+				LibcApi.pthread_mutexattr_gettype( &this, &kind );
+				return kind;
+			}
+			set {
+				LibcApi.pthread_mutexattr_settype( &this, value );
+			}
+		}
+	}
+
+	public partial struct pthread_cond_t {
+		public pthread_cond_t() { LibcApi.Assert( LibcApi.pthread_cond_init( &this, null ) ); }
+		~pthread_cond_t() { LibcApi.Assert( LibcApi.pthread_cond_destroy( &this ) ); }
+		// public void Dispose() { LibcApi.Assert( LibcApi.pthread_cond_destroy( &this ) ); }
+
+		public void SignalCode() { LibcApi.Assert( LibcApi.pthread_cond_signal( &this ) ); }
+		public void Broadcast() { LibcApi.Assert( LibcApi.pthread_cond_broadcast( &this ) ); }
+		public void Wait( pthread_mutex_t& mutex ) { LibcApi.Assert( LibcApi.pthread_cond_wait( &this, &mutex ) ); }
+
+		public void Wait( pthread_mutex_t& mutex, TimeDuration time ) {
+			var timer = ( timespec ) time;
+			LibcApi.Assert( LibcApi.pthread_cond_timedwait( &this, &mutex, &timer ) );
+		}
+	}
+
+	public partial struct pthread_rwlock_t {
+		public pthread_rwlock_t() { LibcApi.Assert( LibcApi.pthread_rwlock_init( &this, null ) ); }
+		~pthread_rwlock_t() { LibcApi.Assert( LibcApi.pthread_rwlock_destroy( &this ) ); }
+		// public void Dispose() { LibcApi.Assert( PthreadsApi.pthread_rwlock_destroy( &this ) ); }
+
+		public void ReadLock() { LibcApi.Assert( LibcApi.pthread_rwlock_rdlock( &this ) ); }
+		public void ReadLock( TimeDuration timeout ) { LibcApi.Assert( LibcApi.pthread_rwlock_timedrdlock( &this, ( timespec ) timeout ) ); }
+
+		public bool TryReadLock() {
+			SystemError code;
+
+		restart:
+			switch( code = ( SystemError ) LibcApi.pthread_rwlock_tryrdlock( &this ) ) {
+				case SystemError.None: return true;
+				case SystemError.EBUSY: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+
+		public void WriteLock() { LibcApi.Assert( LibcApi.pthread_rwlock_wrlock( &this ) ); }
+		public void WriteLock( TimeDuration timeout ) { LibcApi.Assert( LibcApi.pthread_rwlock_timedwrlock( &this, ( timespec ) timeout ) ); }
+
+		public bool TryWriteLock() {
+			SystemError code;
+
+		restart:
+			switch( code = ( SystemError ) LibcApi.pthread_rwlock_trywrlock( &this ) ) {
+				case SystemError.None: return true;
+				case SystemError.EBUSY: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+
+		public void Unlock() { LibcApi.Assert( LibcApi.pthread_rwlock_unlock( &this ) ); }
+
+		public ReaderLock ReadLockRegion() { return new ReaderLock( &this ); }
+		public struct ReaderLock : IDisposable {
+			private declaringtype* _parent;
+
+			public ReaderLock( declaringtype* parent ) {
+				_parent = parent;
+				if( _parent != null ) {
+					_parent->ReadLock();
+				}
+			}
+
+			public void Dispose() {
+				if( _parent != null ) {
+					_parent->Unlock();
+					_parent = null;
+				}
+			}
+		}
+
+		public WriterLock WriteLockRegion() { return new WriterLock( &this ); }
+		public struct WriterLock : IDisposable {
+			private declaringtype* _parent;
+
+			public WriterLock( declaringtype* parent ) {
+				_parent = parent;
+				if( _parent != null ) {
+					_parent->WriteLock();
+				}
+			}
+
+			public void Dispose() {
+				if( _parent != null ) {
+					_parent->Unlock();
+					_parent = null;
+				}
+			}
+		}
+
+	}
+
+	public partial struct sem_t {
+		public sem_t() { LibcApi.Assert( LibcApi.sem_init( &this, 0, 0 ) ); }
+		public sem_t( uint initialValue ) { LibcApi.Assert( LibcApi.sem_init( &this, 0, initialValue ) ); }
+		~sem_t() { LibcApi.Assert( LibcApi.sem_destroy( &this ) ); }
+		// public void Dispose() { LibcApi.Assert( PthreadsApi.sem_destroy( &this ) ); }
+
+		public int Value { get { int result; LibcApi.Assert( LibcApi.sem_getvalue( &this, &result ) ); return result; } }
+
+		public void Post() { LibcApi.Assert( LibcApi.sem_post( &this ) ); }
+		public void Wait() { LibcApi.Assert( LibcApi.sem_wait( &this ) ); }
+
+		public bool Wait( TimeSpan timespan ) {
+			var absTime = ( timespec )( DateTimeUTC.UtcNow + timespan );
+
+		restart:
+			if( LibcApi.sem_timedwait( &this, absTime ) == 0 ) return true;
+
+			var code = LibcApi.LastError;
+			switch( code ) {
+				case SystemError.None: return true;
+				case SystemError.ETIMEDOUT: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+
+		public bool TryWait() {
+		restart:
+			if( LibcApi.sem_trywait( &this ) == 0 ) return true;
+
+			var code = LibcApi.LastError;
+			switch( code ) {
+				case SystemError.None: return true;
+				case SystemError.EAGAIN:
+				case SystemError.EBUSY: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+	}
+
+	public partial struct pthread_spinlock_t {
+		public pthread_spinlock_t() { LibcApi.Assert( LibcApi.pthread_spin_init( &this, false ) ); }
+		~pthread_spinlock_t() { LibcApi.Assert( LibcApi.pthread_spin_destroy( &this ) ); }
+		// public void Dispose() { LibcApi.Assert( LibcApi.pthread_spin_destroy( &this ) ); }
+
+		public void Lock() { LibcApi.Assert( LibcApi.pthread_spin_lock( &this ) ); }
+
+		public bool TryLock() {
+			SystemError code;
+
+		restart:
+			switch( code = ( SystemError ) LibcApi.pthread_spin_trylock( &this ) ) {
+				case SystemError.None: return true;
+				case SystemError.EBUSY: return false;
+				case SystemError.EINTR: goto restart;
+				default: LibcApi.Assert( code ); return false;
+			}
+		}
+
+		public void Unlock() { LibcApi.Assert( LibcApi.pthread_spin_unlock( &this ) ); }
+
+		public struct UnlockScope {
+			private pthread_spinlock_t* _parent;
+
+			public UnlockScope( pthread_spinlock_t* parent ) {
+				_parent = parent;
+			}
+
+			~UnlockScope() {
+				if( _parent != null ) {
+					_parent->Unlock();
+					_parent = null;
+				}
+			}
+		}
+
+		public UnlockScope LockRegion() { Lock(); return new UnlockScope( &this ); }
+	}
+
+	public partial struct pthread_barrier_t {
+		public pthread_barrier_t( uint count ) { LibcApi.Assert( LibcApi.pthread_barrier_init( &this, null, count ) ); }
+		~pthread_barrier_t() { LibcApi.Assert( LibcApi.pthread_barrier_destroy( &this ) ); }
+		// public void Dispose() { LibcApi.Assert( PthreadsApi.pthread_barrier_destroy( &this ) ); }
+
+		public void Wait() { LibcApi.pthread_barrier_wait( &this ); }
+	}
+}

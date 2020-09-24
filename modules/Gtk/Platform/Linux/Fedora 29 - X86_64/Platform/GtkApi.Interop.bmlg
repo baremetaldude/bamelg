@@ -1893,7 +1893,7 @@ namespace Platform.Gtk {
 		public extern static Boolean32 gtk_list_store_iter_is_valid( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static void gtk_list_store_move_after( GtkListStore* store, GtkTreeIter& iter, GtkTreeIter& position );
 		public extern static void gtk_list_store_move_before( GtkListStore* store, GtkTreeIter& iter, GtkTreeIter& position );
-		public extern static GtkListStore* gtk_list_store_newv( int nColumns, GType* types );
+		public extern static GtkListStore* gtk_list_store_newv( uint nColumns, GType* types );
 		public extern static void gtk_list_store_prepend( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static Boolean32 gtk_list_store_remove( GtkListStore* listStore, GtkTreeIter& iter );
 		public extern static void gtk_list_store_reorder( GtkListStore* store, int* newOrder );
@@ -2000,10 +2000,10 @@ namespace Platform.Gtk {
 		public extern static void gtk_entry_set_icon_from_gicon( GtkEntry* entry, GtkEntryIconPosition iconPos, GIcon* icon );
 		public extern static void gtk_entry_set_icon_from_icon_name( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String iconName );
 		public extern static void gtk_entry_set_icon_from_pixbuf( GtkEntry* entry, GtkEntryIconPosition iconPos, GdkPixbuf* pixbuf );
-		public extern static void gtk_entry_set_icon_from_stock( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* stockId );
+		public extern static void gtk_entry_set_icon_from_stock( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String stockId );
 		public extern static void gtk_entry_set_icon_sensitive( GtkEntry* entry, GtkEntryIconPosition iconPos, Boolean32 sensitive );
-		public extern static void gtk_entry_set_icon_tooltip_markup( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* tooltip );
-		public extern static void gtk_entry_set_icon_tooltip_text( GtkEntry* entry, GtkEntryIconPosition iconPos, sbyte* tooltip );
+		public extern static void gtk_entry_set_icon_tooltip_markup( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String tooltip );
+		public extern static void gtk_entry_set_icon_tooltip_text( GtkEntry* entry, GtkEntryIconPosition iconPos, CUtf8String tooltip );
 		public extern static void gtk_entry_set_inner_border( GtkEntry* entry, GtkBorder* border );
 		public extern static void gtk_entry_set_invisible_char( GtkEntry* entry, uint ch );
 		public extern static void gtk_entry_set_max_length( GtkEntry* entry, int max );
@@ -2655,10 +2655,10 @@ namespace Platform.Gtk {
 		[BackendHintReadNone]
 		public extern static GType gtk_image_menu_item_get_type();
 		public extern static Boolean32 gtk_image_menu_item_get_use_stock( GtkImageMenuItem* imageMenuItem );
-		public extern static GtkWidget* gtk_image_menu_item_new();
-		public extern static GtkWidget* gtk_image_menu_item_new_from_stock( CUtf8String stockId, GtkAccelGroup* accelGroup );
-		public extern static GtkWidget* gtk_image_menu_item_new_with_label( CUtf8String label );
-		public extern static GtkWidget* gtk_image_menu_item_new_with_mnemonic( CUtf8String label );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new();
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_from_stock( CUtf8String stockId, GtkAccelGroup* accelGroup );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_with_label( CUtf8String label );
+		public extern static GtkImageMenuItem* gtk_image_menu_item_new_with_mnemonic( CUtf8String label );
 		public extern static void gtk_image_menu_item_set_accel_group( GtkImageMenuItem* imageMenuItem, GtkAccelGroup* accelGroup );
 		public extern static void gtk_image_menu_item_set_always_show_image( GtkImageMenuItem* imageMenuItem, Boolean32 alwaysShow );
 		public extern static void gtk_image_menu_item_set_image( GtkImageMenuItem* imageMenuItem, GtkWidget* image );
@@ -5621,12 +5621,12 @@ namespace Platform.Gtk {
 		public bool _depressed { get { return ( cast<byte*>( &this )[140] & 128 ) != 0; } set { cast<byte*>( &this )[140] &= 127; cast<byte*>( &this )[140] |= cast<byte>( value ) << 7; } }
 		public bool _depress_on_activate { get { return ( cast<byte*>( &this )[141] & 1 ) != 0; } set { cast<byte*>( &this )[141] &= 254; cast<byte*>( &this )[141] |= cast<byte>( value ) << 0; } }
 		public bool _focus_on_click { get { return ( cast<byte*>( &this )[141] & 2 ) != 0; } set { cast<byte*>( &this )[141] &= 253; cast<byte*>( &this )[141] |= cast<byte>( value ) << 1; } }
-		public uint ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalClicked<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "clicked", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalEnter<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "enter", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalLeave<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "leave", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalPressed<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "pressed", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalReleased<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "released", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalClicked<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "clicked", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalEnter<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "enter", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalLeave<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "leave", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalPressed<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "pressed", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalReleased<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "released", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 152 )]
 	[Alignment( Boundary = 8 )]
@@ -5842,6 +5842,7 @@ namespace Platform.Gtk {
 		public bool _cell_background_set { get { return ( cast<byte*>( &this )[52] & 32 ) != 0; } set { cast<byte*>( &this )[52] &= 223; cast<byte*>( &this )[52] |= cast<byte>( value ) << 5; } }
 		public bool _sensitive { get { return ( cast<byte*>( &this )[52] & 64 ) != 0; } set { cast<byte*>( &this )[52] &= 191; cast<byte*>( &this )[52] |= cast<byte>( value ) << 6; } }
 		public bool _editing { get { return ( cast<byte*>( &this )[52] & 128 ) != 0; } set { cast<byte*>( &this )[52] &= 127; cast<byte*>( &this )[52] |= cast<byte>( value ) << 7; } }
+		public uintptr ConnectSignalEditingStarted<TData>( Functors.Action<thistype*, GtkCellEditable*, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "editing-started", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 160 )]
 	[Alignment( Boundary = 8 )]
@@ -6012,7 +6013,7 @@ namespace Platform.Gtk {
 		public bool _strikethrough_set { get { return ( cast<byte*>( &this )[116] & 128 ) != 0; } set { cast<byte*>( &this )[116] &= 127; cast<byte*>( &this )[116] |= cast<byte>( value ) << 7; } }
 		public bool _editable_set { get { return ( cast<byte*>( &this )[117] & 1 ) != 0; } set { cast<byte*>( &this )[117] &= 254; cast<byte*>( &this )[117] |= cast<byte>( value ) << 0; } }
 		public bool _calc_fixed_height { get { return ( cast<byte*>( &this )[117] & 2 ) != 0; } set { cast<byte*>( &this )[117] &= 253; cast<byte*>( &this )[117] |= cast<byte>( value ) << 1; } }
-		public uint ConnectSignalEdited<TData>( Functors.Action<thistype*, CUtf8String, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "edited", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalEdited<TData>( Functors.Action<thistype*, CUtf8String, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "edited", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 64 )]
 	[Alignment( Boundary = 8 )]
@@ -6034,7 +6035,7 @@ namespace Platform.Gtk {
 		public bool _active { get { return ( cast<byte*>( &this )[56] & 1 ) != 0; } set { cast<byte*>( &this )[56] &= 254; cast<byte*>( &this )[56] |= cast<byte>( value ) << 0; } }
 		public bool _activatable { get { return ( cast<byte*>( &this )[56] & 2 ) != 0; } set { cast<byte*>( &this )[56] &= 253; cast<byte*>( &this )[56] |= cast<byte>( value ) << 1; } }
 		public bool _radio { get { return ( cast<byte*>( &this )[56] & 4 ) != 0; } set { cast<byte*>( &this )[56] &= 251; cast<byte*>( &this )[56] |= cast<byte>( value ) << 2; } }
-		public uint ConnectSignalToggled<TData>( Functors.Action<thistype*, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggled", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalToggled<TData>( Functors.Action<thistype*, CUtf8String, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggled", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 24 )]
 	[Alignment( Boundary = 8 )]
@@ -6466,8 +6467,8 @@ namespace Platform.Gtk {
 		}
 		[ExplicitOffset( Offset = 120 )]
 		public GtkComboBoxPrivate* _priv;
-		public uint ConnectSignalChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalPopup<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "popup", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalPopup<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "popup", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 136 )]
 	[Alignment( Boundary = 8 )]
@@ -6837,7 +6838,9 @@ namespace Platform.Gtk {
 		public uint _invisible_char;
 		[ExplicitOffset( Offset = 204 )]
 		public int _width_chars;
-		public uint ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalPopulatePopup<TData>( Functors.Action<thistype*, GtkMenu*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "populate-popup", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalIconPress<TData>( Functors.Action<thistype*, GtkEntryIconPosition, GdkEvent*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "icon-press", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 32 )]
 	[Alignment( Boundary = 8 )]
@@ -8110,7 +8113,7 @@ namespace Platform.Gtk {
 		public bool _from_menubar { get { return ( cast<byte*>( &this )[152] & 32 ) != 0; } set { cast<byte*>( &this )[152] &= 223; cast<byte*>( &this )[152] |= cast<byte>( value ) << 5; } }
 		[ExplicitOffset( Offset = 156 )]
 		public uint _timer;
-		public uint ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalActivate<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "activate", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 152 )]
 	[Alignment( Boundary = 8 )]
@@ -8297,7 +8300,7 @@ namespace Platform.Gtk {
 		public bool _has_before_next { get { return ( cast<byte*>( &this )[170] & 8 ) != 0; } set { cast<byte*>( &this )[170] &= 247; cast<byte*>( &this )[170] |= cast<byte>( value ) << 3; } }
 		public bool _has_after_previous { get { return ( cast<byte*>( &this )[170] & 16 ) != 0; } set { cast<byte*>( &this )[170] &= 239; cast<byte*>( &this )[170] |= cast<byte>( value ) << 4; } }
 		public bool _has_after_next { get { return ( cast<byte*>( &this )[170] & 32 ) != 0; } set { cast<byte*>( &this )[170] &= 223; cast<byte*>( &this )[170] |= cast<byte>( value ) << 5; } }
-		public uint ConnectSignalSwitchPage<TData>( Functors.Action<thistype*, GtkNotebookPage*, uint, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "switch-page", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalSwitchPage<TData>( Functors.Action<thistype*, GtkWidget*, uint, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "switch-page", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	public partial struct GtkNotebookPage {
 	}
@@ -8316,7 +8319,7 @@ namespace Platform.Gtk {
 		}
 		[ExplicitOffset( Offset = 24 )]
 		public uint _flags;
-		public uint ConnectSignalDestroy<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "destroy", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalDestroy<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "destroy", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 240 )]
 	[Alignment( Boundary = 8 )]
@@ -8487,12 +8490,12 @@ namespace Platform.Gtk {
 		public int _drag_pos;
 		[ExplicitOffset( Offset = 212 )]
 		public int _original_position;
-		public uint ConnectSignalAcceptPosition<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "accept_position", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalCancelPosition<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cancel_position", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalCycleChildFocus<TData>( Functors.Func<thistype*, int, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cycle_child_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalCycleHandleFocus<TData>( Functors.Func<thistype*, int, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cycle_handle_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalMoveHandle<TData>( Functors.Func<thistype*, GtkScrollType, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "move_handle", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalToggleHandleFocus<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggle_handle_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalAcceptPosition<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "accept_position", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalCancelPosition<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cancel_position", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalCycleChildFocus<TData>( Functors.Func<thistype*, int, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cycle_child_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalCycleHandleFocus<TData>( Functors.Func<thistype*, int, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "cycle_handle_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalMoveHandle<TData>( Functors.Func<thistype*, GtkScrollType, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "move_handle", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalToggleHandleFocus<TData>( Functors.Func<thistype*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggle_handle_focus", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	public partial struct GtkPanedPrivate {
 	}
@@ -8877,10 +8880,10 @@ namespace Platform.Gtk {
 		public uint _update_timeout_id;
 		[ExplicitOffset( Offset = 184 )]
 		public GdkDrawable* _event_window;
-		public uint ConnectSignalAdjustBounds<TData>( Functors.Action<thistype*, double, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "adjust-bounds", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalChangeValue<TData>( Functors.Func<thistype*, GtkScrollType, double, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "change-value", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalMoveSlider<TData>( Functors.Action<thistype*, GtkScrollType, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "move-slider", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalValueChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "value-changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalAdjustBounds<TData>( Functors.Action<thistype*, double, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "adjust-bounds", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalChangeValue<TData>( Functors.Func<thistype*, GtkScrollType, double, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "change-value", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalMoveSlider<TData>( Functors.Action<thistype*, GtkScrollType, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "move-slider", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalValueChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "value-changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	public partial struct GtkRangeLayout {
 	}
@@ -10328,7 +10331,7 @@ namespace Platform.Gtk {
 		public bool _active { get { return ( cast<byte*>( &this )[144] & 1 ) != 0; } set { cast<byte*>( &this )[144] &= 254; cast<byte*>( &this )[144] |= cast<byte>( value ) << 0; } }
 		public bool _draw_indicator { get { return ( cast<byte*>( &this )[144] & 2 ) != 0; } set { cast<byte*>( &this )[144] &= 253; cast<byte*>( &this )[144] |= cast<byte>( value ) << 1; } }
 		public bool _inconsistent { get { return ( cast<byte*>( &this )[144] & 4 ) != 0; } set { cast<byte*>( &this )[144] &= 251; cast<byte*>( &this )[144] |= cast<byte>( value ) << 2; } }
-		public uint ConnectSignalToggled<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggled", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalToggled<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "toggled", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 144 )]
 	[Alignment( Boundary = 8 )]
@@ -10743,6 +10746,7 @@ namespace Platform.Gtk {
 		public void* _user_data;
 		[ExplicitOffset( Offset = 56 )]
 		public Functors.Action<void*> _destroy;
+		public uintptr ConnectSignalChanged<TData>( Functors.Action<thistype*, TData*> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "changed", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	public partial struct GtkTreeSortable {
 	}
@@ -11245,16 +11249,17 @@ namespace Platform.Gtk {
 		public GdkDrawable* _window;
 		[ExplicitOffset( Offset = 88 )]
 		public GtkWidget* _parent;
-		public uint ConnectSignalButtonPressEvent<TData>( Functors.Func<thistype*, GdkEventButton*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "button_press_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalButtonReleaseEvent<TData>( Functors.Func<thistype*, GdkEventButton*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "button_release_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalDeleteEvent<TData>( Functors.Func<thistype*, GdkEventAny*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "delete-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalDestroyEvent<TData>( Functors.Func<thistype*, GdkEventAny*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "destroy-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalExposeEvent<TData>( Functors.Func<thistype*, GdkEventExpose*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "expose_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalFocusInEvent<TData>( Functors.Func<thistype*, GdkEventFocus*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "focus-in-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalFocusOutEvent<TData>( Functors.Func<thistype*, GdkEventFocus*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "focus-out-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalKeyPressEvent<TData>( Functors.Func<thistype*, GdkEventKey*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "key-press-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalMotionNotifyEvent<TData>( Functors.Func<thistype*, GdkEventMotion*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "motion_notify_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
-		public uint ConnectSignalScrollEvent<TData>( Functors.Func<thistype*, GdkEventScroll*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "scroll_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, GConnectFlags.None ); }
+		public uintptr ConnectSignalButtonPressEvent<TData>( Functors.Func<thistype*, GdkEventButton*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "button_press_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalButtonReleaseEvent<TData>( Functors.Func<thistype*, GdkEventButton*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "button_release_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalDeleteEvent<TData>( Functors.Func<thistype*, GdkEventAny*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "delete-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalDestroyEvent<TData>( Functors.Func<thistype*, GdkEventAny*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "destroy-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalExposeEvent<TData>( Functors.Func<thistype*, GdkEventExpose*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "expose_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalFocusInEvent<TData>( Functors.Func<thistype*, GdkEventFocus*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "focus-in-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalFocusOutEvent<TData>( Functors.Func<thistype*, GdkEventFocus*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "focus-out-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalKeyPressEvent<TData>( Functors.Func<thistype*, GdkEventKey*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "key-press-event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalMotionNotifyEvent<TData>( Functors.Func<thistype*, GdkEventMotion*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "motion_notify_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalScrollEvent<TData>( Functors.Func<thistype*, GdkEventScroll*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "scroll_event", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
+		public uintptr ConnectSignalQueryTooltip<TData>( Functors.Func<thistype*, int, int, Boolean32, GtkTooltip*, TData*, Boolean32> value, TData* data ) { return GObjectApi.g_signal_connect_data( &this, "query-tooltip", bitcast<Functors.Action<void*, void*>>( value ), data, null, ( GConnectFlags ) 0 ); }
 	}
 	[ExplicitSize( Size = 20 )]
 	[Alignment( Boundary = 4 )]

@@ -24,7 +24,7 @@ namespace Platform {
 		[BackendSymbol( Name = "ExpandEnvironmentStringsW" )]
 		public extern static uint ExpandEnvironmentStrings( CUtf16String source, char* destination, uint destinationLength );
 
-		/// @{ Pipe
+		#region Pipe
 		public extern static Boolean32 CreatePipe( HANDLE& readPipe, HANDLE& writePipe, SECURITY_ATTRIBUTES& pipeAttributes, uint size = 0 );
 		[BackendSymbol( Name = "CreateNamedPipeA" )]
 		public extern static NamedPipeHandle CreateNamedPipe( CString name, NamedPipeAccessMode openMode, NamedPipeCreateMode pipeMode, uint maxInstances, uint outBufferSize, uint inBufferSize, uint defaultTimeOut, SECURITY_ATTRIBUTES& attributes );
@@ -67,9 +67,9 @@ namespace Platform {
 		public extern static Boolean32 WaitNamedPipe( CString name, uint timeOut );
 		[BackendSymbol( Name = "WaitNamedPipeW" )]
 		public extern static Boolean32 WaitNamedPipe( CUtf16String name, uint timeOut );
-		/// @}
+		#endregion
 
-		/// @{ Heap
+		#region Heap
 		public extern static HeapHandle GetProcessHeap();
 		public extern static HeapHandle HeapCreate( HeapCreateFlags flags, uint initialSize, uint maxSize );
 		public extern static Boolean32 HeapDestroy( HeapHandle value );
@@ -79,9 +79,9 @@ namespace Platform {
 		public extern static uint HeapSize( HeapHandle heap, HeapSerializationFlags flags, void* memory );
 		public extern static Boolean32 HeapValidate( HeapHandle hHeap, HeapSerializationFlags flags, void* memory );
 		public extern static uint HeapCompact( HeapHandle heap, HeapSerializationFlags flags );
-		/// @}
+		#endregion
 
-		/// @{ Error handling
+		#region Error handling
 		public extern static Boolean32 Beep( uint freq, uint durationMilliseconds );
 
 		/// http://msdn.microsoft.com/en-us/library/ms679360(v=vs.85).aspx
@@ -122,9 +122,9 @@ namespace Platform {
 		public extern static void FatalAppExit( [Unused] uint reserved, CString messageText );
 		[BackendSymbol( Name = "FatalAppExitW" )]
 		public extern static void FatalAppExit( [Unused] uint reserved, CUtf16String messageText );
-		/// @}
+		#endregion
 
-		/// @{ Error recovery
+		#region Error recovery
 		public functor uint ApplicationRecoveryCallback( void* parameter );
 		public extern static SystemErrorCode ApplicationRecoveryInProgress( int& canceled );
 		public extern static SystemErrorCode UnregisterApplicationRecoveryCallback();
@@ -133,9 +133,9 @@ namespace Platform {
 		public extern static SystemErrorCode RegisterApplicationRecoveryCallback( ApplicationRecoveryCallback recoveryCallback, void* parameter, uint pingInterval, [Unused] uint reserved );
 		public extern static SystemErrorCode GetApplicationRecoveryCallback( ProcessHandle process, ApplicationRecoveryCallback& recoveryCallback, void*& parameter, uint pingInterval, [Unused] uint reserved );
 		public extern static SystemErrorCode GetApplicationRestartSettings( ProcessHandle process, char* commandline, uint& commandLineLength, RegisterApplicationRestartFlags& flags );
-		/// @}
+		#endregion
 
-		/// @{ Debugging
+		#region Debugging
 		public extern static Boolean32 IsDebuggerPresent();
 
 		public extern static void DebugBreak();
@@ -153,16 +153,16 @@ namespace Platform {
 		[BackendSymbol( Name = "OutputDebugStringW" )]
 		public extern static void OutputDebugString( CUtf16String value );
 
-		/// @}
+		#endregion
 
-		/// @{ Handle
+		#region Handle
 		public extern static Boolean32 CloseHandle( HANDLE handle );
 		public extern static Boolean32 GetHandleInformation( HANDLE handle, uint& flags );
 		public extern static Boolean32 SetHandleInformation( HANDLE handle, uint mask, uint flags );
 		public extern static Boolean32 DuplicateHandle( HANDLE sourceProcessHandle, HANDLE sourceHandle, HANDLE targetProcessHandle, HANDLE& targetHandle, uint dwDesiredAccess, bool bInheritHandle, uint options );
-		/// @}
+		#endregion
 
-		/// @{ Console http://msdn.microsoft.com/en-us/library/ms682073(v=vs.85).aspx
+		#region Console http://msdn.microsoft.com/en-us/library/ms682073(v=vs.85).aspx
 		public functor Boolean32 HandlerRoutine( ConsoleTerminationEvent @event );
 		public extern static Boolean32 SetConsoleCtrlHandler( HandlerRoutine handlerRoutine, bool add );
 
@@ -214,9 +214,9 @@ namespace Platform {
 		public extern static Boolean32 WriteConsole( HANDLE consoleOutput, char* buffer, uint numberOfCharsToWrite, uint& numberOfCharsWritten, [Unused] void* reserved );
 
 		public extern static Boolean32 GetConsoleMode( HANDLE console, uint& mode );
-		/// @}
+		#endregion
 
-		/// @{ File management
+		#region File management
 		public functor void FileIOCompletionRoutine( SystemErrorCode errorCode, uint numberOfBytesTransfered, OVERLAPPED& overlapped );
 
 		[BackendSymbol( Name = "CreateFileA" )]
@@ -388,9 +388,9 @@ namespace Platform {
 		[BackendSymbol( Name = "CreateHardLinkTransactedW" )]
 		public extern static Boolean32 CreateHardLinkTransacted( CUtf16String lpFileName, CUtf16String lpExistingFileName, SECURITY_ATTRIBUTES& securityAttributes, TransactionHandle transaction );
 
-		/// @}
+		#endregion
 
-		/// @{ Ptr check
+		#region Ptr check
 		public extern static Boolean32 IsBadCodePtr( void* function );
 		public extern static Boolean32 IsBadReadPtr( void* ptr, uintptr length );
 		[BackendSymbol( Name = "IsBadStringPtrA" )]
@@ -399,9 +399,9 @@ namespace Platform {
 		public extern static Boolean32 IsBadStringPtr( CUtf16String ptr, uintptr length );
 		public extern static Boolean32 IsBadWritePtr( void* ptr, uintptr length );
 
-		/// @}
+		#endregion
 
-		/// @{ Memory-mapped files
+		#region Memory-mapped files
 		[BackendSymbol( Name = "CreateFileMappingA" )]
 		public extern static FileMappingHandle CreateFileMapping( HANDLE file, SECURITY_ATTRIBUTES& attributes, FileMappingCreateFlags flags, uint maximumSizeHigh, uint maximumSizeLow, CString name );
 		[BackendSymbol( Name = "CreateFileMappingW" )]
@@ -428,9 +428,9 @@ namespace Platform {
 
 		public extern static Boolean32 FlushViewOfFile( void* baseAddress, uintptr numberOfBytesToFlush );
 		public extern static Boolean32 UnmapViewOfFile( void* baseAddress );
-		/// @}
+		#endregion
 
-		/// @{ Virtual Memory
+		#region Virtual Memory
 		public extern static void* VirtualAlloc( void* address, uintptr size, VirtualAllocFlags allocationType, PageProtectionFlags protect );
 		public extern static void* VirtualAllocEx( ProcessHandle process, void* address, uintptr size, VirtualAllocFlags allocationType, PageProtectionFlags protect );
 		public extern static void* VirtualAllocExNuma( ProcessHandle process, void* address, uintptr size, VirtualAllocFlags allocationType, PageProtectionFlags protect, uint preferredNode );
@@ -442,9 +442,9 @@ namespace Platform {
 		public extern static uintptr VirtualQuery( void* address, MEMORY_BASIC_INFORMATION& buffer, uintptr length );
 		public extern static uintptr VirtualQueryEx( ProcessHandle process, void* address, MEMORY_BASIC_INFORMATION& buffer, uintptr length );
 		public extern static Boolean32 VirtualUnlock( void* address, uintptr size );
-		/// @}
+		#endregion
 
-		/// @{ Synchronization
+		#region Synchronization
 		public functor void APCProc( uintptr parameter );
 		public extern static uint QueueUserAPC( APCProc callback, HANDLE thread, uintptr data );
 
@@ -559,11 +559,13 @@ namespace Platform {
 		public extern static Boolean32 InitOnceExecuteOnce( INIT_ONCE& initOnce, InitOnceCallback initFn, void* Parameter, void*& context );
 		public extern static Boolean32 InitOnceComplete( INIT_ONCE& initOnce, InitOnceCompleteFlags dwFlags, void* context );
 
-		/// @}
+		#endregion
 
-		/// @{ Time
+		#region Time
 		public extern static uint GetTickCount();
 		public extern static ulong GetTickCount64();
+
+		// public extern static Boolean32 QueryInterruptTime( ulong& unbiasedTime );
 		public extern static Boolean32 QueryUnbiasedInterruptTime( ulong& unbiasedTime );
 
 		public extern static void GetSystemTime( [Out] SYSTEMTIME& systemTime );
@@ -588,9 +590,12 @@ namespace Platform {
 		public extern static Boolean32 QueryPerformanceCounter( ulong& value );
 		public extern static Boolean32 QueryPerformanceFrequency( ulong& value );
 
-		/// @}
+		public extern static Boolean32 SystemTimeToTzSpecificLocalTime( void* lpTimeZoneInformation, SYSTEMTIME& systemTime, SYSTEMTIME& localTime );
+		public extern static Boolean32 TzSpecificLocalTimeToSystemTime( void* lpTimeZoneInformation, SYSTEMTIME& localTime, SYSTEMTIME& systemTime );
 
-		/// @{ DLLs
+		#endregion
+
+		#region DLLs
 		[BackendSymbol( Name = "SetDllDirectoryA" )]
 		public extern static Boolean32 SetDllDirectory( CString path );
 		[BackendSymbol( Name = "SetDllDirectoryW" )]
@@ -623,9 +628,9 @@ namespace Platform {
 		public extern static HMODULE GetModuleHandle( CString moduleName );
 		[BackendSymbol( Name = "GetModuleHandleW" )]
 		public extern static HMODULE GetModuleHandle( CUtf16String moduleName );
-		/// @}
+		#endregion
 
-		/// @{ Stats
+		#region Stats
 		public extern static Boolean32 GetProcessWorkingSetSize( ProcessHandle process, uintptr& minimumWorkingSetSize, uintptr& maximumWorkingSetSize );
 		public extern static uint GetMaximumProcessorCount( ushort GroupNumber );
 		public extern static ushort GetMaximumProcessorGroupCount();
@@ -654,9 +659,9 @@ namespace Platform {
 
 		public extern static Boolean32 GetThreadTimes( ThreadHandle thread, FILETIME& creationTime, FILETIME& exitTime, FILETIME& kernelTime, FILETIME& userTime );
 		public extern static Boolean32 QueryThreadCycleTime( ThreadHandle thread, ulong& result );
-		/// @}
+		#endregion
 
-		/// @{ Processes
+		#region Processes
 		[BackendSymbol( Name = "CreateProcessA" )]
 		public extern static Boolean32 CreateProcess( CString path, CString commandLine, SECURITY_ATTRIBUTES& processAttributes, SECURITY_ATTRIBUTES& threadAttributes, Boolean32 inheritHandles, uint dwCreationFlags, void* environment, CString currentDirectory, STARTUPINFOA& startupInfo, PROCESS_INFORMATION& processInformation );
 		[BackendSymbol( Name = "CreateProcessW" )]
@@ -679,25 +684,27 @@ namespace Platform {
 		public extern static Boolean32 GetProcessAffinityMask( ProcessHandle process, uintptr& processAffinityMask, uintptr& systemAffinityMask );
 		public extern static Boolean32 GetProcessGroupAffinity( ProcessHandle process, ushort& groupCount, ushort* groupArray );
 
+		public extern static Boolean32 SetProcessAffinityMask( ProcessHandle process, uintptr mask );
+
 		public extern static Boolean32 QueryProcessCycleTime( ProcessHandle process, ulong& result );
 		public extern static Boolean32 QueryIdleProcessorCycleTime( uint& bufferLength, ulong* processorIdleCycleTime );
-		public extern static Boolean32 GetProcessTimes( ProcessHandle process, FILETIME& creationTime, FILETIME& exitTime, TimeSpan& kernelTime, TimeSpan& userTime );
+		public extern static Boolean32 GetProcessTimes( ProcessHandle process, FILETIME& creationTime, FILETIME& exitTime, TimeDuration& kernelTime, TimeDuration& userTime );
 
 		public extern static uint GetProcessVersion( uint processId );
 
 		public extern static void FlushProcessWriteBuffers();
 
 
-		/// @{ From PSAPI
+		#region From PSAPI
 		public extern static Boolean32 K32EmptyWorkingSet( ProcessHandle process );
 		public extern static Boolean32 K32EnumProcesses( uint* processIds, uint byteCount, uint* bytesReturned );
 		public extern static Boolean32 K32GetProcessMemoryInfo( ProcessHandle process, PROCESS_MEMORY_COUNTERS_EX& counters, uint countersSize );
 
-		/// @}
+		#endregion
 
-		/// @}
+		#endregion
 
-		/// @{ Threads
+		#region Threads
 		public extern static ThreadHandle GetCurrentThread();
 		public extern static uint GetCurrentThreadId();
 		public extern static uint GetThreadId( ThreadHandle thread );
@@ -730,7 +737,7 @@ namespace Platform {
 		public extern static void* TlsGetValue( uint tlsIndex );
 		public extern static Boolean32 TlsSetValue( uint tlsIndex, void* tlsValue );
 
-		/// @{ Thread pool
+		#region Thread pool
 		public extern static Boolean32 QueueUserWorkItem( ThreadProc function, void* context, uint flags );
 
 		public extern static ThreadPoolHandle CreateThreadpool( void* reserved = null );
@@ -742,10 +749,10 @@ namespace Platform {
 		public extern static ThreadPoolCleanupGroupHandle CreateThreadpoolCleanupGroup();
 		public extern static void CloseThreadpoolCleanupGroup( ThreadPoolCleanupGroupHandle handle );
 
-		/// @}
-		/// @}
+		#endregion
+		#endregion
 
-		/// @{ Fibers
+		#region Fibers
 		public functor void FiberProc( void* parameter );
 		public functor void FlsCallback( void* flsData );
 
@@ -762,9 +769,9 @@ namespace Platform {
 		public extern static Boolean32 FlsFree( uint flsIndex );
 		public extern static void* FlsGetValue( uint flsIndex );
 		public extern static Boolean32 FlsSetValue( uint flsIndex, void* flsData );
-		/// @}
+		#endregion
 
-		/// @{ IO completion ports
+		#region IO completion ports
 
 		// create or assign IOCP
 		// Listen notifications from:
@@ -782,9 +789,9 @@ namespace Platform {
 		public extern static Boolean32 GetQueuedCompletionStatus( IoCompletionPortHandle completionPort, uint& numberOfBytes, uintptr completionKey, OVERLAPPED*& overlapped, uint dwMilliseconds );
 		public extern static Boolean32 GetQueuedCompletionStatusEx( IoCompletionPortHandle completionPort, OVERLAPPED_ENTRY* overlappedEntries, uint count, uint& numEntriesRemoved, uint milliseconds, Boolean32 alertable );
 		public extern static Boolean32 PostQueuedCompletionStatus( IoCompletionPortHandle completionPort, uint numberOfBytesTransferred, uintptr cCompletionKey, OVERLAPPED& overlapped );
-		/// @}
+		#endregion
 
-		/// @{ Mailslots
+		#region Mailslots
 		[BackendSymbol( Name = "CreateMailslotA" )]
 		public extern static MailslotHandle CreateMailslot( CString name, uint maxMessageSize, uint readTimeout, SECURITY_ATTRIBUTES& securityAttributes );
 		[BackendSymbol( Name = "CreateMailslotW" )]
@@ -792,7 +799,7 @@ namespace Platform {
 
 		public extern static Boolean32 GetMailslotInfo( MailslotHandle mailslot, [Out] uint& maxMessageSize, [Out] uint& nextSize, [Out] uint& messageCount, [Out] uint& readTimeout );
 		public extern static Boolean32 SetMailslotInfo( MailslotHandle mailslot, uint readTimeout );
-		/// @}
+		#endregion
 
 		// [Obsolete]
 		// public extern static uint GetVersion();
@@ -1017,11 +1024,11 @@ namespace Platform {
 		public static new thistype Invalid { get { return bitcast<thistype>( uintptr.MaxValue ); } }
 		public static new thistype Null { get { return bitcast<thistype>( ( uintptr ) 0 ); } }
 
-		public SystemErrorCode Write( TimeSpan timeout, ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( timeout, this, offset, buffer, count, total ); }
-		public SystemErrorCode Read( TimeSpan timeout, ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( timeout, this, offset, buffer, count, total ); }
+		public SystemErrorCode Write( TimeDuration timeout, ulong offset, void* buffer, uint count, uint& totalWritten ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( timeout, totalWritten, this, offset, buffer, count ); }
+		public SystemErrorCode Read( TimeDuration timeout, ulong offset, void* buffer, uint count, uint& totalReaden ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( timeout, totalReaden, this, offset, buffer, count ); }
 
-		public SystemErrorCode Write( ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( TimeSpan.Zero, this, offset, buffer, count, total ); }
-		public SystemErrorCode Read( ulong offset, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeSpan.Zero, this, offset, buffer, count, total ); }
+		public SystemErrorCode Write( ulong offset, void* buffer, uint count, uint& totalWritten ) { return System.IO.Fiber.FiberInfo.Manager.WriteFile( TimeDuration.Zero, totalWritten, this, offset, buffer, count ); }
+		public SystemErrorCode Read( ulong offset, void* buffer, uint count, uint& totalReaden ) { return System.IO.Fiber.FiberInfo.Manager.ReadFile( TimeDuration.Zero, totalReaden, this, offset, buffer, count ); }
 	}
 
 	public struct FileHandle : IOHandle {
@@ -1160,8 +1167,8 @@ namespace Platform {
 		// public static uint CurrentThreadID { get { return Kernel32Api.GetCurrentThreadId(); } }
 		public static uint CurrentThreadID { get { return _TEB.CurrentThreadId; } }
 
-		public static void Sleep( uint milliseconds = uint.MaxValue ) { Kernel32Api.Sleep( milliseconds ); }
-		public static uint SleepAlertable( uint milliseconds = uint.MaxValue ) { return Kernel32Api.SleepEx( milliseconds, true ); }
+		public static void Sleep( uint milliseconds = Kernel32Api.INFINITE ) { Kernel32Api.Sleep( milliseconds ); }
+		public static uint SleepAlertable( uint milliseconds = Kernel32Api.INFINITE ) { return Kernel32Api.SleepEx( milliseconds, true ); }
 	}
 
 	public partial struct ProcessHandle : HANDLE { }
@@ -1266,12 +1273,47 @@ namespace Platform {
 	}
 
 	public partial struct FILETIME : IFormattable {
-		public ulong DateTime64 { get { return ( cast<ulong>( HighDateTime ) << 32 ) | LowDateTime; } }
+		public static readonly FILETIME MinValue = new FILETIME { LowDateTime = 0, HighDateTime = 0 };
+		public static readonly FILETIME MaxValue = new FILETIME { LowDateTime = uint.MaxValue, HighDateTime = ( uint ) int.MaxValue };
 
-		public static explicit operator DateTime( thistype& @this ) { return new DateTime( bitcast<long>( @this.DateTime64 ) + 0x701CE1722770000L, DateTimeKind.Utc ); }
+		public static explicit operator thistype( DateTime value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTime( thistype value ) { DateTime result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public static Convert.ConversionResult TryConvert( DateTime* result, thistype value ) {
+			var ticks = bitcast<ulong>( value );
+			if( ticks >= ( ulong ) DateTime.MaxValue.Ticks - TimeDuration.Ticks_1601_1_1 ) { *result = DateTime.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			*result = new DateTime( ( long )( ticks + TimeDuration.Ticks_1601_1_1 ), DateTimeKind.Utc );
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTime time ) {
+			if( time.Ticks < TimeDuration.Ticks_1601_1_1 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			*( ulong* ) result = time.Ticks - TimeDuration.Ticks_1601_1_1;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			var ticks = bitcast<ulong>( value );
+			if( ticks > ulong.MaxValue - TimeDuration.Ticks_1601_1_1 ) { result->Ticks = ulong.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			result->Ticks = ticks + TimeDuration.Ticks_1601_1_1;
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC time ) {
+			if( time.Ticks < TimeDuration.Ticks_1601_1_1 ) { *result = MinValue; return Convert.ConversionResult.Clamped; }
+
+			*( ulong* ) result = time.Ticks - TimeDuration.Ticks_1601_1_1;
+			return Convert.ConversionResult.OK;
+		}
 
 		void IFormattable.ToString( StringBuilder builder, string format ) {
-			builder.Append( ( DateTime ) this );
+			builder.Append( ( DateTimeUTC ) this, format ?? "Q" );
 		}
 	}
 
@@ -1311,4 +1353,66 @@ namespace Platform {
 			SelfSize = sizeof( thistype );
 		}
 	}
+
+	public partial struct SYSTEMTIME : IFormattable {
+		public static Convert.ConversionResult TryConvert( DateTimeUTC* result, thistype value ) {
+			ulong dateTicks;
+			if( !DateValues.TryDateToTicks( dateTicks, value.Year, ( byte ) value.Month, ( byte ) value.Day ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+
+			ulong timeTicks;
+			if( !DateValues.TryTimeToTicks( timeTicks, ( byte ) value.Hour, ( byte ) value.Minute, ( byte ) value.Second ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.IncompatibleValue; }
+			timeTicks += value.Milliseconds * TimeDuration.TicksPerMillisecond;
+
+			if( checkwrap( result->Ticks = dateTicks + timeTicks ) ) { *result = DateTimeUTC.MaxValue; return Convert.ConversionResult.Clamped; }
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static Convert.ConversionResult TryConvert( thistype* result, DateTimeUTC value ) {
+			var bdt = value.GetDateValues();
+
+			result->Year = bdt.Year;
+			result->Month = bdt.Month;
+			result->DayOfWeek = ( bdt.DayOfWeek.Value() + 1 ) % 7;
+			result->Day = bdt.Day;
+			result->Hour = value.Hour;
+			result->Minute = value.Minute;
+			result->Second = value.Second;
+			result->Milliseconds = value.Millisecond;
+
+			return Convert.ConversionResult.OK;
+		}
+
+		public static explicit operator thistype( DateTimeUTC value ) { thistype result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( thistype value ) { DateTimeUTC result; Assert.IsTrue( TryConvert( &result, value ) ); return result; }
+
+		public void ToString( StringBuilder builder, string format ) {
+			if( format == null ) {
+				builder.Append( Year, "D4" );
+				builder.Append( '-' );
+				builder.Append( Month, "D2" );
+				builder.Append( '-' );
+				builder.Append( Day, "D2" );
+				builder.Append( ' ' );
+				builder.Append( Hour, "D2" );
+				builder.Append( ':' );
+				builder.Append( Minute, "D2" );
+				builder.Append( ':' );
+				builder.Append( Second, "D2" );
+				builder.Append( "." );
+				builder.Append( Milliseconds, "D3" );
+				builder.Append( '(' );
+				builder.Append( ( System.DayOfWeek ) DayOfWeek );
+				builder.Append( ')' );
+			}
+			else
+				builder.Append( ( DateTimeUTC ) this, "Q" );
+		}
+	}
+
+	// [DllImport( Image = "KERNELBASE.dll" )]
+	// [CallingConvention( Value = NtApi.DefaultCallingConvention )]
+	// public static partial struct KernelBaseApi {
+	// 	public extern static Boolean32 QueryInterruptTime( ulong& unbiasedTime );
+	// }
 }

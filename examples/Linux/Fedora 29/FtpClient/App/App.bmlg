@@ -3,15 +3,11 @@
 //
 
 using System;
-using System.Collections;
 using System.IO;
 using System.Net;
 using System.Net.Ftp;
-using System.Text;
 
 using Platform.IO;
-using Platform.Kernel;
-using Platform.Libc;
 
 namespace Example {
 	public partial class App {
@@ -30,16 +26,16 @@ namespace Example {
 		private static void Worker() {
 			Fiber.Start( 8, FtpConnector );
 
-			FetchStart = DateTime.UnbiasedNow;
+			FetchStart = TimeStamp.BootTime_ExcludeSuspend.Now;
 		}
 
-		private static DateTime FetchStart;
+		private static TimeStamp.BootTime_ExcludeSuspend FetchStart;
 
 		private static void FtpConnector() {
 			var client = new FtpClient( true );
-			client.ConnectTimeout = TimeSpan.FromSeconds( 2 );
-			client.ReadTimeout = TimeSpan.FromSeconds( 20 );
-			client.WriteTimeout = TimeSpan.FromSeconds( 2 );
+			client.ConnectTimeout = TimeDuration.FromSeconds( 2 );
+			client.ReadTimeout = TimeDuration.FromSeconds( 20 );
+			client.WriteTimeout = TimeDuration.FromSeconds( 2 );
 
 			if( !client.Connect( new IPv4Endpoint( 192, 168, 50, 141, 21 ) ) ) {
 				using( Console.AttributedRegion( ConsoleColor.DarkRed ) )
@@ -65,13 +61,12 @@ namespace Example {
 			if( client.Capabilities.UTF8 ) client.Utf8();
 
 			client.System();
-			client.Pwd();
+			client.GetWorkingDirectory();
 			client.TextMode();
-			// client.List();
+
 			client.SetWorkingDirectory( "Video" );
 			client.BinaryMode();
-			// client.ReadFile( "metar.txt", "/tmp/ftpr.txt" );
-			
+
 			client.WriteText( "content.txt", "1 2 3 4 5 6 7 8 9" );
 
 			string content;

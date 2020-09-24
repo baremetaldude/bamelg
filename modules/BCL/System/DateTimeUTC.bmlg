@@ -1,0 +1,214 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.Diagnostics;
+
+namespace System {
+	public sealed partial struct DateTimeUTC {
+		public static readonly thistype MinValue = new thistype { Ticks = 0 };
+		public static readonly thistype MaxValue = new thistype { Ticks = ulong.MaxValue };
+
+		public DateTimeUTC( ulong ticks ) {
+			Ticks = ticks;
+		}
+
+		public DateTimeUTC( ushort year, byte month, byte day ) {
+			Assert.IsTrue( DateValues.TryDateToTicks( Ticks, year, month, day ) );
+		}
+
+		public DateTimeUTC( ushort year, byte month, byte day, byte hour, byte minute, byte second ) {
+			ulong dateTicks;
+			Assert.IsTrue( DateValues.TryDateToTicks( dateTicks, year, month, day ) );
+
+			ulong timeTicks;
+			Assert.IsTrue( DateValues.TryTimeToTicks( timeTicks, hour, minute, second ) );
+
+			Assert.IsFalse( checkwrap( Ticks = dateTicks + timeTicks ) );
+		}
+
+		public DateTimeUTC( ushort year, byte month, byte day, byte hour, byte minute, byte second, ushort millisecond ) {
+			if( !Assert.IsFalse( millisecond >= 1000 ) ) millisecond = 0;
+
+			ulong dateTicks;
+			Assert.IsTrue( DateValues.TryDateToTicks( dateTicks, year, month, day ) );
+
+			ulong timeTicks;
+			Assert.IsTrue( DateValues.TryTimeToTicks( timeTicks, hour, minute, second ) );
+
+			Assert.IsFalse( checkwrap( Ticks = dateTicks + timeTicks + millisecond * ( 10UL * 1000 ) ) );
+		}
+
+		public static bool IsDateValid( ushort year, byte month, byte day ) { return DateValues.IsDateValid( year, month, day ); }
+		public static bool IsTimeValid( byte hours, byte minutes, byte seconds ) { return DateValues.IsTimeValid( hours, minutes, seconds ); }
+
+		public static bool IsLeapYear( uint year ) { return DateValues.IsLeapYear( year ); }
+
+		public DateValues GetDateValues() { return new DateValues( Ticks ); }
+
+		public ulong Ticks;
+
+		public ushort Year { get { return GetDateValues().Year; } }
+		public byte Month { get { return GetDateValues().Month; } }
+		public byte Day { get { return GetDateValues().Day; } }
+
+		public ushort DayOfYear { get { return GetDateValues().DayOfYear; } }
+		public DayOfWeek DayOfWeek { get { return ( DayOfWeek )( Ticks / ( 10L * 1000 * 1000 * 60 * 60 * 24 ) % 7L ); } }
+
+		public byte Hour { get { return ( byte )( ( Ticks / ( 60L * 60 * 1000 * 1000 * 10 ) ) % 24UL ); } }
+		public byte Minute { get { return ( byte )( ( Ticks / ( 60L * 1000 * 1000 * 10 ) ) % 60L ); } }
+		public byte Second { get { return ( byte )( ( Ticks / ( 1000L * 1000 * 10 ) ) % 60L ); } }
+		public ushort Millisecond { get { return ( ushort )( ( Ticks / ( 1000L * 10 ) ) % 1000UL ); } }
+		public ushort Microsecond { get { return ( ushort )( ( Ticks / 10 ) % 1000UL ); } }
+		public uint MicrosecondsWithMilliseconds { get { return ( uint )( ( Ticks / 10 ) % 1000000UL ); } }
+
+		public thistype Date {
+			get {
+				ulong ticks = Ticks;
+				return new thistype { Ticks = ( ticks - ( ticks % ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ) ) };
+			}
+		}
+
+		public TimeDuration TimeOfDay { get { return new TimeDuration( Ticks % ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ); } }
+
+		public static TimeDuration operator %( thistype t1, TimeDuration t2 ) { return new TimeDuration( t1.Ticks % t2.Ticks ); }
+
+		public static TimeSpan operator -( [In] thistype& left, [In] thistype& right ) { return new TimeSpan( ( long )( left.Ticks - right.Ticks ) ); }
+
+		public static thistype operator +( [In] thistype& left, [In] TimeSpan& right ) { return new thistype( left.Ticks + right.Ticks ); }
+		public static thistype operator -( [In] thistype& left, [In] TimeSpan& right ) { return new thistype( left.Ticks - right.Ticks ); }
+
+		public static thistype operator +( [In] thistype& left, [In] TimeDuration& right ) { return new thistype( left.Ticks + right.Ticks ); }
+		public static thistype operator -( [In] thistype& left, [In] TimeDuration& right ) { return new thistype( left.Ticks - right.Ticks ); }
+
+		public static bool operator ==( [In] thistype& left, [In] thistype& right ) { return left.Ticks == right.Ticks; }
+		public static bool operator !=( [In] thistype& left, [In] thistype& right ) { return left.Ticks != right.Ticks; }
+
+		public static bool operator <( [In] thistype& left, [In] thistype& right ) { return left.Ticks < right.Ticks; }
+		public static bool operator >( [In] thistype& left, [In] thistype& right ) { return left.Ticks > right.Ticks; }
+
+		public static bool operator <=( [In] thistype& left, [In] thistype& right ) { return left.Ticks <= right.Ticks; }
+		public static bool operator >=( [In] thistype& left, [In] thistype& right ) { return left.Ticks >= right.Ticks; }
+
+		public static bool TryDaysInMonth( byte& result, ushort year, byte month ) { return DateValues.TryDaysInMonth( result, year, month ); }
+
+		public static byte DaysInMonth( ushort year, byte month ) {
+			byte result;
+			Assert.IsTrue( TryDaysInMonth( result, year, month ) );
+			return result;
+		}
+
+		public static thistype GetLastDayOfMonth( ushort year, byte month ) {
+			thistype result;
+			Assert.IsTrue( TryGetLastDayOfMonth( result, year, month ) );
+			return result;
+		}
+
+		public static bool TryGetLastDayOfMonth( thistype& result, ushort year, byte month ) { return DateValues.TryGetLastDayOfMonth( result.Ticks, year, month ); }
+
+		public static thistype GetLastDayOfWeek( ushort year, byte month, DayOfWeek dayOfWeek ) {
+			var date = GetLastDayOfMonth( year, month );
+			var lastDayOfWeek = date.DayOfWeek;
+
+			if( lastDayOfWeek == dayOfWeek ) return date;
+			return date.AddDays( dayOfWeek - lastDayOfWeek - ( lastDayOfWeek < dayOfWeek ? 7 : 0 ) );
+		}
+
+		public bool TryAddTicks( thistype& result, long value ) { return DateValues.TryAddTicks( result.Ticks, Ticks, value ); }
+		public bool TryAddTicks( thistype& result, ulong value ) { return DateValues.TryAddTicks( result.Ticks, Ticks, value ); }
+		public thistype AddTicks( long value ) { thistype result; Assert.IsTrue( DateValues.TryAddTicks( result.Ticks, Ticks, value ) ); return result; }
+		public thistype AddTicks( ulong value ) { thistype result; Assert.IsTrue( DateValues.TryAddTicks( result.Ticks, Ticks, value ) ); return result; }
+
+		public bool TrySubtractTicks( thistype& result, long value ) { return DateValues.TrySubtractTicks( result.Ticks, Ticks, value ); }
+		public bool TrySubtractTicks( thistype& result, ulong value ) { return DateValues.TrySubtractTicks( result.Ticks, Ticks, value ); }
+		public thistype SubtractTicks( long value ) { thistype result; Assert.IsTrue( DateValues.TrySubtractTicks( result.Ticks, Ticks, value ) ); return result; }
+		public thistype SubtractTicks( ulong value ) { thistype result; Assert.IsTrue( DateValues.TrySubtractTicks( result.Ticks, Ticks, value ) ); return result; }
+
+		public thistype AddMicroseconds( ulong value ) { return AddTicks( value * 10UL ); }
+		public thistype AddMilliseconds( ulong value ) { return AddTicks( value * ( 10UL * 1000 ) ); }
+		public thistype AddSeconds( ulong value ) { return AddTicks( value * ( 10UL * 1000 * 1000 ) ); }
+		public thistype AddMinutes( ulong value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 ) ); }
+		public thistype AddHours( ulong value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 * 60 ) ); }
+		public thistype AddDays( ulong value ) { return AddTicks( value * ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) ); }
+
+		public thistype AddMicroseconds( long value ) { return AddTicks( value * 10L ); }
+		public thistype AddMilliseconds( long value ) { return AddTicks( value * ( 10L * 1000 ) ); }
+		public thistype AddSeconds( long value ) { return AddTicks( value * ( 10L * 1000 * 1000 ) ); }
+		public thistype AddMinutes( long value ) { return AddTicks( value * ( 10L * 1000 * 1000 * 60 ) ); }
+		public thistype AddHours( long value ) { return AddTicks( value * ( 10L * 1000 * 1000 * 60 * 60 ) ); }
+		public thistype AddDays( long value ) { return AddTicks( value * ( 10L * 1000 * 1000 * 60 * 60 * 24 ) ); }
+
+		public bool TryAddMonths( thistype& result, int value ) { return DateValues.TryAddMonths( result.Ticks, Ticks, value ); }
+		public thistype AddMonths( int value ) { thistype result; Assert.IsTrue( TryAddMonths( result, value ) ); return result; }
+
+		public bool TryAddYears( thistype& result, int value ) { return TryAddMonths( result, value * 12 ); }
+		public thistype AddYears( int value ) { return AddMonths( value * 12 ); }
+
+		public static thistype Min( thistype& left, thistype& right ) { return left < right ? left : right; }
+		public static thistype Max( thistype& left, thistype& right ) { return left > right ? left : right; }
+
+		public uint GetHashCode() { return Ticks.GetHashCode(); }
+
+		// this='12:33:01' interval='00:00:05' ==> '12:33:05'
+		public thistype Ceil( TimeDuration interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+			if( remainder.Ticks != 0 ) result += interval;
+
+			return result;
+		}
+
+		// this='12:33:01' interval='00:00:05' ==> '12:33:00'
+		public thistype Floor( TimeDuration interval ) {
+			var result = this;
+			var remainder = result % interval;
+
+			result -= remainder;
+
+			return result;
+		}
+
+		public static thistype FromUnixTimeSeconds( long value ) { return new thistype( ( ulong )( value * TimeSpan.TicksPerSecond ) + TimeSpan.Ticks_1970_1_1 ); }
+		public static thistype FromUnixTimeMilliseconds( long value ) { return new thistype( ( ulong )( value * TimeSpan.TicksPerMillisecond ) + TimeSpan.Ticks_1970_1_1 ); }
+
+		public long ToUnixTimeSeconds() { return ( long )( Ticks / TimeDuration.TicksPerSecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerSecond ); }
+		public long ToUnixTimeMilliseconds() { return ( long )( Ticks / TimeDuration.TicksPerMillisecond - TimeDuration.Ticks_1970_1_1 / TimeDuration.TicksPerMillisecond ); }
+
+		public double ToUnixTimeSecondsFractional() { return ( ( long ) Ticks - TimeSpan.Ticks_1970_1_1 ) / 10000000.0; }
+		public double ToUnixTimeMillisecondsFractional() { return ( ( long ) Ticks - TimeSpan.Ticks_1970_1_1 ) / 10000.0; }
+
+		public static thistype Parse( CString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static thistype Parse( CStringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf8StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf16StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( CUtf32StringSpan input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static thistype Parse( SbcsString input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf8String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf16String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+		public static thistype Parse( Utf32String input, System.Runtime.CompilerServices.CallerContext& callercontext = nullref ) { thistype result; var status = TryParse( input, result ); BclErrorHandler.ConvertException( status, callercontext ); return result; }
+
+		public static Convert.ConversionResult TryParse( CString input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<uint>( input.GetChars(), input.Length, value ); }
+
+		public static Convert.ConversionResult TryParse( CStringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf8StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( CUtf16StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( CUtf32StringSpan input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<uint>( input.GetChars(), input.Length, value ); }
+
+		public static Convert.ConversionResult TryParse( SbcsString input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf8String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<byte>( input.GetChars(), input.ByteLength, value ); }
+		public static Convert.ConversionResult TryParse( Utf16String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<char>( input.GetChars(), input.Length, value ); }
+		public static Convert.ConversionResult TryParse( Utf32String input, thistype& value ) { return PrimitiveTypesParser.TryParseDateTime<uint>( input.GetChars(), input.Length, value ); }
+	}
+}

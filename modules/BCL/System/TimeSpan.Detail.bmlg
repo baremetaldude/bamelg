@@ -13,8 +13,11 @@ namespace System {
 		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadTimeSpan(); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "c" ); }
-		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { TryParse<char>( builder.GetChars(), ( uint ) builder.Length, *( thistype* ) object ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { PrimitiveTypesParser.TryParseTimeSpan<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); }
 
 		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatTimeSpan( builder, this, format ?? "c" ); }
+
+		public static explicit operator TimeSpan( TimeDuration value ) { TimeSpan result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+		public static explicit operator TimeDuration( TimeSpan value ) { TimeDuration result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
 	}
 }

@@ -13,156 +13,277 @@ namespace System {
 	/// Assert.Verify() - checks assert expression in any build and print diagnostic info for DEBUG build
 	/// Assert.IsTrue()/IsFalse()/AreEqual() - checks assert expression and print diagnostic info for any build
 	public static partial struct Assert {
-		public static bool AreEqual( SbcsString expected, SbcsString actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<SbcsString>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf8String expected, Utf8String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf8String>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf16String expected, Utf16String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf16String>( expected, actual, callercontext ); }
-		public static bool AreEqual( Utf32String expected, Utf32String actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Utf32String>( expected, actual, callercontext ); }
+		public static bool AreEqual( SbcsString expected, SbcsString actual, [In] CallerContext& context = nullref ) { return AreEqual<SbcsString>( expected, actual, null, context ); }
+		public static bool AreEqual( Utf8String expected, Utf8String actual, [In] CallerContext& context = nullref ) { return AreEqual<Utf8String>( expected, actual, null, context ); }
+		public static bool AreEqual( Utf16String expected, Utf16String actual, [In] CallerContext& context = nullref ) { return AreEqual<Utf16String>( expected, actual, null, context ); }
+		public static bool AreEqual( Utf32String expected, Utf32String actual, [In] CallerContext& context = nullref ) { return AreEqual<Utf32String>( expected, actual, null, context ); }
 
-		public static bool AreEqual( bool expected, bool actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<bool>( expected, actual, callercontext ); }
+		public static bool AreEqual( CStringSpan expected, CStringSpan actual, [In] CallerContext& context = nullref ) { return AreEqual<CStringSpan>( expected, actual, null, context ); }
+		public static bool AreEqual( CUtf8StringSpan expected, CUtf8StringSpan actual, [In] CallerContext& context = nullref ) { return AreEqual<CUtf8StringSpan>( expected, actual, null, context ); }
+		public static bool AreEqual( CUtf16StringSpan expected, CUtf16StringSpan actual, [In] CallerContext& context = nullref ) { return AreEqual<CUtf16StringSpan>( expected, actual, null, context ); }
+		public static bool AreEqual( CUtf32StringSpan expected, CUtf32StringSpan actual, [In] CallerContext& context = nullref ) { return AreEqual<CUtf32StringSpan>( expected, actual, null, context ); }
 
-		public static bool AreEqual( Guid expected, Guid actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<Guid>( expected, actual, callercontext ); }
+		public static bool AreEqual( bool expected, bool actual, [In] CallerContext& context = nullref ) { return AreEqual<bool>( expected, actual, null, context ); }
+		public static bool AreEqual( Convert.ConversionResult expected, Convert.ConversionResult actual, [In] CallerContext& context = nullref ) { return AreEqual<Convert.ConversionResult>( expected, actual, null, context ); }
 
-		public static bool AreEqual( float expected, float actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<float>( expected, actual, callercontext ); }
-		public static bool AreEqual( double expected, double actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<double>( expected, actual, callercontext ); }
+		public static bool AreEqual( Guid expected, Guid actual, [In] CallerContext& context = nullref ) { return AreEqual<Guid>( expected, actual, null, context ); }
 
-		public static bool AreEqual( sbyte expected, sbyte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<sbyte>( expected, actual, callercontext ); }
-		public static bool AreEqual( byte expected, byte actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<byte>( expected, actual, callercontext ); }
+		public static bool AreEqual( float expected, float actual, [In] CallerContext& context = nullref ) { return AreEqual<float>( expected, actual, null, context ); }
+		public static bool AreEqual( double expected, double actual, [In] CallerContext& context = nullref ) { return AreEqual<double>( expected, actual, null, context ); }
 
-		public static bool AreEqual( short expected, short actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<short>( expected, actual, callercontext ); }
-		public static bool AreEqual( ushort expected, ushort actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ushort>( expected, actual, callercontext ); }
+		public static bool AreEqual( sbyte expected, sbyte actual, [In] CallerContext& context = nullref ) { return AreEqual<sbyte>( expected, actual, null, context ); }
+		public static bool AreEqual( byte expected, byte actual, [In] CallerContext& context = nullref ) { return AreEqual<byte>( expected, actual, null, context ); }
 
-		public static bool AreEqual( int expected, int actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<int>( expected, actual, callercontext ); }
-		public static bool AreEqual( uint expected, uint actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<uint>( expected, actual, callercontext ); }
+		public static bool AreEqual( short expected, short actual, [In] CallerContext& context = nullref ) { return AreEqual<short>( expected, actual, null, context ); }
+		public static bool AreEqual( ushort expected, ushort actual, [In] CallerContext& context = nullref ) { return AreEqual<ushort>( expected, actual, null, context ); }
 
-		public static bool AreEqual( long expected, long actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<long>( expected, actual, callercontext ); }
-		public static bool AreEqual( ulong expected, ulong actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<ulong>( expected, actual, callercontext ); }
+		public static bool AreEqual( int expected, int actual, [In] CallerContext& context = nullref ) { return AreEqual<int>( expected, actual, null, context ); }
+		public static bool AreEqual( uint expected, uint actual, [In] CallerContext& context = nullref ) { return AreEqual<uint>( expected, actual, null, context ); }
 
-		public static bool AreEqual( void* expected, void* actual, [In] CallerContext& callercontext = nullref ) { return AreEqual<void*>( expected, actual, callercontext ); }
+		public static bool AreEqual( long expected, long actual, [In] CallerContext& context = nullref ) { return AreEqual<long>( expected, actual, null, context ); }
+		public static bool AreEqual( ulong expected, ulong actual, [In] CallerContext& context = nullref ) { return AreEqual<ulong>( expected, actual, null, context ); }
 
-		public static bool AreEqual( Type& expected, Type& actual, [In] CallerContext& callercontext = nullref ) {
+		public static bool AreEqual( void* expected, void* actual, [In] CallerContext& context = nullref ) { return AreEqual<void*>( expected, actual, null, context ); }
+
+		public static bool AreEqual( Type& expected, Type& actual, [In] CallerContext& context = nullref ) {
 			if( &expected == &actual ) return true;
 
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " expected '" );
-			Console.Write( expected.Name );
-			Console.Write( "' but actual is '" );
-			Console.Write( actual.Name );
-			Console.Write( "' at line " );
-			Console.Write( callercontext.Row );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed, expected '" );
+				builder.Value.Append( expected );
+				builder.Value.Append( "' but actual is '" );
+				builder.Value.Append( actual );
+				builder.Value.Append( '\'' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool Verify( bool expression, [In] CallerContext& callercontext = nullref ) {
+		public static bool AreExact( float expected, float actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<uint>( expected ) == bitcast<uint>( actual ) ) return true;
+
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
+
+				builder.Value.Append( "Assertion failed, expected '" );
+				builder.Value.Append( expected, "@F" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( bitcast<uint>( actual ), "X8" );
+				builder.Value.Append( ")' but actual is '" );
+				builder.Value.Append( actual, "@F" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( bitcast<uint>( actual ), "X8" );
+				builder.Value.Append( ")'" );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
+			return false;
+		}
+
+		public static bool AreExact( double expected, double actual, [In] CallerContext& context = nullref ) {
+			if( bitcast<ulong>( expected ) == bitcast<ulong>( actual ) ) return true;
+
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
+
+				builder.Value.Append( "Assertion failed, expected '" );
+				builder.Value.Append( expected, "@F" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( bitcast<ulong>( actual ), "X16" );
+				builder.Value.Append( ")' but actual is '" );
+				builder.Value.Append( actual, "@F" );
+				builder.Value.Append( '(' );
+				builder.Value.Append( bitcast<ulong>( actual ), "X16" );
+				builder.Value.Append( ")'" );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
+			return false;
+		}
+
+		public static bool Verify( bool expression, [In] CallerContext& context = nullref ) {
 			if( expression ) return true;
 
-			Debug.Assert( expression, callercontext );
+			Debug.Assert( expression, context );
 			return false;
 		}
 
-		public static bool IsTrue( bool expression, string message = null, [In] CallerContext& callercontext = nullref ) {
+		public static bool IsTrue( bool expression, string message = null, [In] CallerContext& context = nullref ) {
 			if( expression ) return true;
 
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed" );
+				if( message != null ) {
+					builder.Value.Append( ": " );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.Append( '.' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool IsFalse( bool expression, string message = null, [In] CallerContext& callercontext = nullref ) {
+		public static bool IsFalse( bool expression, string message = null, [In] CallerContext& context = nullref ) {
 			if( !expression ) return true;
 
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed" );
+				if( message != null ) {
+					builder.Value.Append( ": " );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.Append( '.' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool Unreachable( [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool Unreachable( [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Unreachable!" );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool NotImplemented( [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( callercontext.Expression );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool NotImplemented( [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Not implemented!" );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool NotImplemented( string message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool NotImplemented( string message, [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Not implemented!" );
+				if( message != null ) {
+					builder.Value.Append( ' ' );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool NotImplemented( Utf8String message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool NotImplemented( Utf8String message, [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Not implemented!" );
+				if( message != null ) {
+					builder.Value.Append( ' ' );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool Fail( Utf8String message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool Fail( [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed." );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool Fail( string message, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: " );
-			Console.Write( message );
-			Console.Write( " at line " );
-			Console.Write( callercontext.Row );
+		public static bool Fail( Utf8String message, [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed" );
+				if( message != null ) {
+					builder.Value.Append( ": " );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.Append( '.' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 
-		public static bool InvalidParameter( string parameter, [In] CallerContext& callercontext = nullref ) {
-			Console.Write( "Assertion failed: parameter '" );
-			Console.Write( parameter );
-			Console.Write( "' has invalid value; at line " );
-			Console.Write( callercontext.Row );
+		public static bool Fail( string message, [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
 
-			PrintContextInfo( callercontext );
-			Console.WriteLine();
+				builder.Value.Append( "Assertion failed" );
+				if( message != null ) {
+					builder.Value.Append( ": " );
+					builder.Value.Append( message );
+				}
+
+				builder.Value.Append( '.' );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
+			return false;
+		}
+
+		public static bool InvalidParameter( string parameter, [In] CallerContext& context = nullref ) {
+			using( var builder = StringBuilder.CachedBuilders.PopScoped() ) {
+				if( context != nullref ) builder.Value.Append( context );
+
+				builder.Value.Append( "Assertion failed: parameter '" );
+				builder.Value.Append( parameter );
+				builder.Value.Append( "' has invalid value." );
+				builder.Value.AppendLine();
+
+				Console.Write( builder.Value );
+			}
+
 			return false;
 		}
 	}

@@ -1,0 +1,20 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Libc;
+
+namespace System {
+	public sealed partial struct TimeStamp {
+		internal static ulong UTC_Ticks { get { return timespec.UtcNow.DateTimeTicks; } }
+		internal static ulong BootTime_ExcludeSuspend_Ticks { get { return timespec.UtcNow.TimeDurationTicks; } }
+		internal static ulong BootTime_IncludeSuspend_Ticks { get { return timespec.UtcNow.TimeDurationTicks; } }
+
+		public sealed partial struct UTC : IFormattable {
+			public static explicit operator DateTimeUTC( thistype value ) { return new DateTimeUTC { Ticks = value.Ticks }; }
+			public static explicit operator thistype( DateTimeUTC value ) { return new thistype { Ticks = value.Ticks }; }
+		}
+	}
+}

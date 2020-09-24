@@ -9,23 +9,21 @@ namespace System.Collections {
 		private BitArrayAccessor _accessor;
 		private uint[] _itemsHolder;
 
-		public BitArray( int length, bool defaultValue ) {
-			if( !Assert.IsTrue( length >= 0 ) ) return;
-
+		public BitArray( uint length, bool defaultValue ) {
 			_itemsHolder = new[BitArrayAccessor.GetArrayLength( length )] uint;
 			_accessor.Start = &_itemsHolder[0];
 			_accessor.Count = length;
 
 			var defaultIntValue = defaultValue ? uint.MaxValue : 0U;
-			for( int i = 0; i < _itemsHolder.Length; i++ )
+			for( var i = 0U; i < _itemsHolder.Length; i++ )
 				_itemsHolder[i] = defaultIntValue;
 		}
 
-		public BitArray( int length )
+		public BitArray( uint length )
 			: this( length, false ) {
 		}
 
-		public BitArray( uint[] array, int length ) {
+		public BitArray( uint[] array, uint length ) {
 			if( !Assert.IsTrue( array.Length < BitArrayAccessor.GetArrayLength( length ) ) ) return;
 
 			_itemsHolder = array;
@@ -33,39 +31,39 @@ namespace System.Collections {
 			_accessor.Count = length;
 		}
 
-		public bool this[int index] {
+		public bool this[uint index] {
 			get { return _accessor[index]; }
 			set { _accessor[index] = value; }
 		}
 
 		public void Clear() {
-			System.Runtime.Memory.Clear( &_itemsHolder[0], ( uint )( _itemsHolder.Length * sizeof( _itemsHolder[0] ) ) );
+			System.Runtime.Memory.Clear( &_itemsHolder[0], _itemsHolder.Length * sizeof( _itemsHolder[0] ) );
 		}
 
-		public int Count { get { return _accessor.Count; } }
+		public uint Count { get { return _accessor.Count; } }
 	}
 
 	public sealed struct BitArrayAccessor {
 		public uint* Start;
-		public int Count;
+		public uint Count;
 
-		public BitArrayAccessor( uint* array, int length ) {
+		public BitArrayAccessor( uint* array, uint length ) {
 			Start = array;
 			Count = length;
 		}
 
-		public static int GetArrayLength( int bitLength ) {
+		public static uint GetArrayLength( uint bitLength ) {
 			return ( ( bitLength - 1 ) / 32 + 1 );
 		}
 
-		public bool this[int index] {
+		public bool this[uint index] {
 			get {
-				if( !Assert.Verify( index >= 0 & index < Count ) ) return false;
-				return BitOperations.BitTest( Start[index >> 5], ( uint ) index & 31 );
+				if( !Assert.Verify( index < Count ) ) return false;
+				return BitOperations.BitTest( Start[index >> 5], index & 31 );
 			}
 			set {
-				if( !Assert.Verify( index >= 0 & index < Count ) ) return;
-				Start[index >> 5] = BitOperations.BitSet( Start[index >> 5], ( uint ) index & 31, value );
+				if( !Assert.Verify( index < Count ) ) return;
+				Start[index >> 5] = BitOperations.BitSet( Start[index >> 5], index & 31, value );
 			}
 		}
 	}

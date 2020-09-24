@@ -1,0 +1,185 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System.IO;
+using System.Serialization;
+
+namespace System {
+	public sealed partial struct DateTimeUTC : IBinarySerializable, ITextSerializable, IFormattable {
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.Write( this ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadDateTimeUTC(); }
+
+		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "S" ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { PrimitiveTypesParser.TryParseDateTime<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); }
+
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, Ticks, DateTimeKind.Utc, format ?? "G" ); }
+
+		public DateTimeLocal ToLocalTime() { DateTimeLocal result; Assert.IsTrue( Convert.TryConvert( &result, this ) ); return result; }
+
+		public static DateTimeUTC UtcNow { get { return ( thistype ) TimeStamp.UTC.Now; } }
+	}
+
+	public partial struct DateValues {
+		public ushort Year;
+		public ushort DayOfYear;
+		public byte Month;
+		public byte Day;
+		public DayOfWeek DayOfWeek;
+
+		private const uint _daysPer400Years = 146097;
+		private const uint _daysPer100Years = 36524;
+		private const uint _daysPer4Years = 1461;
+
+		public DateValues( ulong ticks ) {
+			uint totalDays = ( uint )( ticks / ( 10UL * 1000 * 1000 * 60 * 60 * 24 ) );
+			DayOfWeek = ( DayOfWeek )( totalDays % 7 );
+
+			uint _400years = totalDays / _daysPer400Years;
+			totalDays -= _400years * _daysPer400Years;
+
+			uint _100years = totalDays / _daysPer100Years;
+			if( _100years == 4 ) _100years = 3;
+			totalDays -= _100years * _daysPer100Years;
+
+			var _4years = totalDays / _daysPer4Years;
+			totalDays -= _4years * _daysPer4Years;
+
+			var totalYears = totalDays / 365;
+			if( totalYears == 4 ) totalYears = 3;
+			Year = ( ushort )( _400years * 400 + _100years * 100 + _4years * 4 + totalYears + 1 );
+
+			totalDays -= totalYears * 365;
+			DayOfYear = ( ushort )( totalDays + 1 );
+
+			var isLeapYear = totalYears == 3 && ( _4years != 24 || _100years == 3 );
+			var& totalDaysInMonth = isLeapYear ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
+
+			var index = totalDays >> 5 + 1;
+			while( totalDays >= totalDaysInMonth[index] )
+				++index;
+
+			Month = ( byte ) index;
+			Day = ( byte )( totalDays - totalDaysInMonth[index - 1] + 1 );
+		}
+
+		internal static bool TryGetLastDayOfMonth( ulong& result, ushort year, byte month ) {
+			if( year == 0 || year > 58456U || month - 1 > 11 ) return false;
+			if( year == 58456U ) {
+				if( month - 1 > 4 ) return false;
+				if( month == 5 ) { result = 0xFFFFFFD1092C8000; return true; }
+			}
+
+			var dayOfYear = IsLeapYear( year ) ? PrimitiveTypesParser.TotalDaysInMonth366[month] : PrimitiveTypesParser.TotalDaysInMonth365[month];
+
+			--year;
+			uint totalDays = ( uint ) year * 365 + year / 4 - year / 100 + year / 400 + dayOfYear - 1;
+			result = totalDays * ( 10UL * 1000 * 1000 * 60 * 60 * 24 );
+			return true;
+		}
+
+		internal static bool TryAddMonths( ulong& result, ulong ticks, int value ) {
+			var dateValues = new DateValues( ticks );
+
+			var newMonth = ( int ) dateValues.Month + value;
+			if( newMonth >= 1 ) {
+				dateValues.Month = ( byte )( ( newMonth - 1 ) % 12 + 1 );
+				dateValues.Year += ( ushort )( ( newMonth - 1 ) / 12 );
+			}
+			else {
+				dateValues.Month = ( byte )( 12 + newMonth % 12 );
+				dateValues.Year += ( ushort )( newMonth / 12 - 1 );
+			}
+
+			var daysInMonth = IsLeapYear( dateValues.Year ) ? PrimitiveTypesParser.DaysInMonth366[dateValues.Month] : PrimitiveTypesParser.DaysInMonth365[dateValues.Month];
+			if( dateValues.Day > daysInMonth )
+				dateValues.Day = daysInMonth;
+
+			ulong dateTicks;
+			if( !DateValues.TryDateToTicks( dateTicks, dateValues.Year, dateValues.Month, dateValues.Day ) ) { result = ulong.MaxValue; return false; }
+
+			result = dateTicks + ticks % ( 10UL * 1000 * 1000 * 60 * 60 * 24 );
+			return true;
+		}
+
+		internal static bool TryDaysInMonth( byte& result, ushort year, byte month ) {
+			if( month - 1 > 11 ) { result = 0; return false; }
+
+			result = IsLeapYear( year ) ? PrimitiveTypesParser.DaysInMonth366[month] : PrimitiveTypesParser.DaysInMonth365[month];
+			return true;
+		}
+
+		internal static bool IsTimeValid( byte hours, byte minutes, byte seconds ) {
+			return hours < 24U && minutes < 60U && seconds < 60U;
+		}
+
+		internal static bool IsLeapYear( uint year ) {
+			if( year % 4U != 0 ) return false;
+			if( year % 100U == 0 ) return year % 400U == 0U;
+
+			return true;
+		}
+
+		internal static bool IsDateValid( ushort year, byte month, byte day ) {
+			if( year < 58456U ) {
+				if( month - 1 > 11U ) return false;
+
+				return day <= ( IsLeapYear( year ) ? PrimitiveTypesParser.DaysInMonth366[month] : PrimitiveTypesParser.DaysInMonth365[month] );
+			}
+			else if( year == 58456U ) {
+				if( month - 1 > 4U ) return false;
+				else if( month == 5U ) return day <= 28;
+
+				return day <= ( IsLeapYear( year ) ? PrimitiveTypesParser.DaysInMonth366[month] : PrimitiveTypesParser.DaysInMonth365[month] );
+			}
+
+			return false;
+		}
+
+		internal static bool TryDateToTicks( ulong& result, ushort year, byte month, byte day ) {
+			if( !IsDateValid( year, month, day ) ) { result = 0; return false; }
+
+			var& daysInMonth = IsLeapYear( year ) ? PrimitiveTypesParser.TotalDaysInMonth366 : PrimitiveTypesParser.TotalDaysInMonth365;
+
+			if( day == 0 || day > daysInMonth[month] - daysInMonth[month - 1] ) { result = 0; return false; }
+
+			--year;
+			uint totalDays = ( uint ) year * 365U + year / 4 - year / 100 + year / 400 + daysInMonth[month - 1] + day - 1;
+
+			result = totalDays * ( 10UL * 1000 * 1000 * 60 * 60 * 24 );
+			return true;
+		}
+
+		internal static bool TryTimeToTicks( ulong& result, byte hour, byte minute, byte second ) {
+			if( hour >= 24 || minute >= 60 || second >= 60 ) { result = 0; return false; }
+
+			var totalSeconds = hour * ( 60L * 60 ) + minute * 60L + second;
+			result = totalSeconds * 10000000UL;
+			return true;
+		}
+
+		internal static bool TryAddTicks( ulong& result, ulong ticks, long value ) {
+			if( value >= 0 )
+				return !checkwrap( result = ticks + ( ulong ) value );
+			else
+				return !checkwrap( result = ticks - ( ulong ) -value );
+		}
+
+		internal static bool TrySubtractTicks( ulong& result, ulong ticks, long value ) {
+			if( value >= 0 )
+				return !checkwrap( result = ticks - ( ulong ) value );
+			else
+				return !checkwrap( result = ticks + ( ulong ) -value );
+		}
+
+		public static bool TryAddTicks( ulong& result, ulong ticks, ulong value ) {
+			return !checkwrap( result = ticks + value );
+		}
+
+		public static bool TrySubtractTicks( ulong& result, ulong ticks, ulong value ) {
+			return !checkwrap( result = ticks - value );
+		}
+	}
+}

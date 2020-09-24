@@ -9,8 +9,8 @@ namespace System.IO {
 		public static string GetFileName( string value ) {
 			if( !Assert.IsTrue( value != null ) ) return null;
 
-			var separatorIndex = 0;
-			for( var i = ( int ) value.Length - 1; i >= 0; --i )
+			var separatorIndex = 0U;
+			for( var i = value.Length - 1; i != uint.MaxValue; --i )
 				switch( value[i] ) {
 					case '/':
 					case '\\':
@@ -19,18 +19,19 @@ namespace System.IO {
 				}
 
 		found:
-			return value.Substring( separatorIndex, ( int ) value.Length - separatorIndex );
+			return value.Substring( separatorIndex, value.Length - separatorIndex );
 		}
 
 		public static string GetFileNameWithoutExtension( string value ) {
-			if( !Assert.IsTrue( value != null ) ) return null;
+			if( value == null ) return null;
+			if( value.Length == 0 ) return value;
 
 			var dotIndex = value.LastIndexOf( '.' );
-			if( dotIndex == -1 ) dotIndex = ( int ) value.Length;
+			if( dotIndex == uint.MaxValue ) dotIndex = value.Length;
 			--dotIndex;
 
-			var separatorIndex = 0;
-			for( var i = dotIndex - 1; i >= 0; --i )
+			var separatorIndex = 0U;
+			for( var i = dotIndex - 1; i != uint.MaxValue; --i )
 				switch( value[i] ) {
 					case '/':
 					case '\\':
@@ -40,25 +41,6 @@ namespace System.IO {
 
 		found:
 			return value.Substring( separatorIndex, dotIndex - separatorIndex + 1 );
-		}
-
-		[UnitTest]
-		private static void UnitTest() {
-			Assert.AreEqual( "", Path.GetFileName( "" ) );
-			Assert.AreEqual( "File", Path.GetFileName( "c:\\pathOfA\\File" ) );
-			Assert.AreEqual( "File", Path.GetFileName( "/pathOfA/File" ) );
-			Assert.AreEqual( "File.txt", Path.GetFileName( "a:\\pathOfA\\File.txt" ) );
-			Assert.AreEqual( "Exile.txt", Path.GetFileName( "/mnt/hgfs/pathOf/Exile.txt" ) );
-			Assert.AreEqual( "File", Path.GetFileName( "File" ) );
-			Assert.AreEqual( "File.txt", Path.GetFileName( "File.txt" ) );
-
-			Assert.AreEqual( "", Path.GetFileNameWithoutExtension( "" ) );
-			Assert.AreEqual( "File", Path.GetFileNameWithoutExtension( "c:\\pathOfA\\File" ) );
-			Assert.AreEqual( "File", Path.GetFileNameWithoutExtension( "/pathOfA/File" ) );
-			Assert.AreEqual( "File", Path.GetFileNameWithoutExtension( "a:\\pathOfA\\File.txt" ) );
-			Assert.AreEqual( "Exile", Path.GetFileNameWithoutExtension( "/mnt/hgfs/pathOf/Exile.txt" ) );
-			Assert.AreEqual( "File", Path.GetFileNameWithoutExtension( "File" ) );
-			Assert.AreEqual( "File", Path.GetFileNameWithoutExtension( "File.txt" ) );
 		}
 	}
 }

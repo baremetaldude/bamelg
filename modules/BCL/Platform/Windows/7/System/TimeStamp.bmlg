@@ -1,0 +1,44 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform;
+
+namespace System {
+	public sealed partial struct TimeStamp {
+		internal static ulong UTC_Ticks {
+			get {
+				ulong ticks;
+				NtApi.NtQuerySystemTime( ticks );
+				return ticks;
+			}
+		}
+
+		internal static ulong BootTime_ExcludeSuspend_Ticks {
+			get {
+				ulong ticks;
+				Platform.Kernel32Api.QueryUnbiasedInterruptTime( ticks );
+				return ticks;
+			}
+		}
+
+		// internal static ulong BootTime_IncludeSuspend_Ticks {
+		// 	get {
+		// 		ulong ticks;
+		// 		Platform.KernelBaseApi.QueryInterruptTime( ticks );
+		// 		return ticks;
+		// 	}
+		// }
+
+		internal static ulong BootTime_IncludeSuspend_Ticks { get { return Platform.Kernel32Api.GetTickCount64() * 10000; } }
+
+		public sealed partial struct UTC : IFormattable {
+			private const ulong _ticksSince_1_1_1601 = 504911232000000000UL;
+
+			public static explicit operator DateTimeUTC( thistype value ) { return new DateTimeUTC { Ticks = value.Ticks + _ticksSince_1_1_1601 }; }
+			public static explicit operator thistype( DateTimeUTC value ) { return new thistype { Ticks = value.Ticks - _ticksSince_1_1_1601 }; }
+		}
+	}
+}

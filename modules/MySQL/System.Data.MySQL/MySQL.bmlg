@@ -17,7 +17,7 @@ namespace System.Data.MySQL {
 	public partial class MySQLConnection : System.Net.NetworkClient {
 		private BinaryReader _binaryReader;
 		private BinaryWriter _binaryWriter;
-		private BufferedStream.ReadStream _bufferedReadStream;
+		private BufferedReadStream _bufferedReadStream;
 
 		public MySQLConnectionParameters Parameters;
 
@@ -94,11 +94,11 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return null;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( length == 0 || contents == null ) return "";
 
 			var result = Utf8String.FromUtf8( contents, length );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -108,7 +108,7 @@ namespace System.Data.MySQL {
 			if( length == 0 || isNull ) return null;
 
 			var result = new[length] byte;
-			_bufferedReadStream.Read( &result[0], ( int ) length );
+			_bufferedReadStream.Read( &result[0], ( uint ) length );
 
 			return result;
 		}
@@ -117,21 +117,21 @@ namespace System.Data.MySQL {
 			bool isNull;
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( length == 0 || isNull ) return;
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 		}
 
 		private void WriteNullTerminatedString( Utf8String value ) {
-			_binaryWriter.BaseStream.Write( value.GetChars(), ( int ) value.ByteLength + 1 );
+			_binaryWriter.BaseStream.Write( value.GetChars(), ( uint ) value.ByteLength + 1 );
 		}
 
 		private bool ParseBit( bool& isNull ) {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return false;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return false;
 
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return *contents != 0;
 		}
 
@@ -139,12 +139,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			sbyte result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt8( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -152,12 +152,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			byte result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt8( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -165,12 +165,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			short result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt16( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -178,12 +178,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			ushort result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt16( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -191,12 +191,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			int result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt32( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -204,12 +204,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			uint result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt32( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -217,12 +217,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			long result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseInt64( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -230,12 +230,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			ulong result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseUInt64( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -243,12 +243,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			double result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseDoubleIEEE754( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return ( float ) result;
 		}
 
@@ -256,12 +256,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return 0;
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return 0;
 
 			double result;
 			Assert.IsTrue( PrimitiveTypesParser.TryParseDoubleIEEE754( contents, length, result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -269,12 +269,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return new DateTime( 0 );
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return new DateTime( 0 );
 
 			DateTime result;
 			Assert.IsTrue( DateTime.TryParse( new CStringSpan( contents, length ), result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -282,12 +282,12 @@ namespace System.Data.MySQL {
 			var length = ( uint ) ReadFieldLength( isNull );
 			if( isNull ) return new TimeSpan( 0 );
 
-			var contents = ( byte* ) _bufferedReadStream.Peek( ( int ) length );
+			var contents = ( byte* ) _bufferedReadStream.Peek( ( uint ) length );
 			if( contents == null ) return new TimeSpan( 0 );
 
 			TimeSpan result;
 			Assert.IsTrue( TimeSpan.TryParse( new CStringSpan( contents, length ), result ) );
-			_bufferedReadStream.Drain( ( int ) length );
+			_bufferedReadStream.Drain( ( uint ) length );
 			return result;
 		}
 
@@ -295,7 +295,7 @@ namespace System.Data.MySQL {
 			if( Parameters.Schema == null ) Parameters.Schema = "";
 			if( Parameters.User == null ) Parameters.User = "";
 
-			_binaryReader = new BinaryReader( _bufferedReadStream = new BufferedStream.ReadStream( _stream ) );
+			_binaryReader = new BinaryReader( _bufferedReadStream = new BufferedReadStream( _stream ) );
 			_binaryWriter = new BinaryWriter( _stream );
 
 			if( CheckError() ) {
@@ -424,7 +424,7 @@ namespace System.Data.MySQL {
 
 			_binaryWriter.BaseStream.Write( &header, sizeof( header ) );
 			_binaryWriter.Write( Command.Query.Value() );
-			_binaryWriter.BaseStream.Write( command.GetChars(), ( int ) command.ByteLength );
+			_binaryWriter.BaseStream.Write( command.GetChars(), command.ByteLength );
 			_binaryWriter.Flush();
 
 			return EnsureOK();
@@ -454,12 +454,12 @@ namespace System.Data.MySQL {
 			private bool _usable;
 			private Utf8String _command;
 			private FieldInfo[] Fields;
-			private int _rowCounter;
+			private uint _rowCounter;
 
 			private Binder.Context* _context;
 
 			public Binder.MapperUtf8 Mapper;
-			public int[] OrdinalMapping;
+			public uint[] OrdinalMapping;
 
 			public QueryReader( declaringtype parent, Utf8String command, Binder.Context& context ) {
 				_parent = parent;
@@ -479,11 +479,11 @@ namespace System.Data.MySQL {
 
 					_parent._binaryReader.BaseStream.Read( &header, sizeof( header ) );
 
-					var numberOfFields = ( int ) _parent.ReadFieldLength();
+					var numberOfFields = ( uint ) _parent.ReadFieldLength();
 					Fields = new[numberOfFields] FieldInfo;
-					OrdinalMapping = new[numberOfFields] int default( -1 );
+					OrdinalMapping = new[numberOfFields] uint default( uint.MaxValue );
 
-					for( var i = 0; i < numberOfFields; ++i ) {
+					for( var i = 0U; i < numberOfFields; ++i ) {
 						var& currentField = Fields[i];
 
 						PacketHeader fieldHeader;
@@ -543,7 +543,7 @@ namespace System.Data.MySQL {
 					var& currentField = Fields[i];
 
 					var ordinal = OrdinalMapping[i];
-					var bindable = ordinal != -1;
+					var bindable = ordinal != uint.MaxValue;
 
 					[DisableWarningUnreachable]
 					if( _parent.Trace ) Console.WriteLine( " Reading column[{0}] {1}({2})", i, currentField.Name, currentField.FieldType );
@@ -551,129 +551,129 @@ namespace System.Data.MySQL {
 					switch( currentField.FieldType ) {
 						case FieldType.Bit: {
 								var value = _parent.ParseBit( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.TinyInt: {
 								var value = _parent.ParseInt8( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.UnsignedTinyInt: {
 								var value = _parent.ParseUInt8( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.SmallInt: {
 								var value = _parent.ParseInt16( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.UnsignedSmallInt: {
 								var value = _parent.ParseUInt16( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.MediumInt: {
 								var value = _parent.ParseInt32( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.UnsignedMediumInt: {
 								var value = _parent.ParseUInt32( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Int: {
 								var value = _parent.ParseInt32( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.UnsignedInt: {
 								var value = _parent.ParseUInt32( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.BigInt: {
 								var value = _parent.ParseInt64( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.UnsignedBigInt: {
 								var value = _parent.ParseUInt64( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Float: {
 								var value = _parent.ParseFloat( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Double: {
 								var value = _parent.ParseDouble( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.NewDecimal: {
 								var value = _parent.ParseDouble( isNull ); // TODO add proper decimal support
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.String: {
 								var value = _parent.ReadLengthPrefixedUtf8String( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.VarString: {
 								var value = _parent.ReadLengthPrefixedUtf8String( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Timestamp: {
 								var value = _parent.ParseDateTime( isNull );
 								value.Kind = DateTimeKind.Local; // stored in UTC, but converted to local on retrieval
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.DateTime: {
 								var value = _parent.ParseDateTime( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Date: {
 								var value = _parent.ParseDateTime( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Time: {
 								var value = _parent.ParseTime( isNull );
-								if( bindable ) _context->Binder.SetValue( *_context, ordinal, value );
+								if( bindable ) _context->SetValue( ordinal, value );
 								break;
 							}
 
 						case FieldType.Blob: {
 								if( bindable ) {
 									var value = _parent.ReadLengthPrefixedArray();
-									_context->Binder.SetValue( *_context, ordinal, value );
+									_context->SetValue( ordinal, value );
 								}
 								else
 									_parent.SkipLengthPrefixedArray();
@@ -726,7 +726,7 @@ namespace System.Data.MySQL {
 
 			_binaryWriter.BaseStream.Write( &header, sizeof( header ) );
 			_binaryWriter.Write( Command.Query.Value() );
-			_binaryWriter.BaseStream.Write( command.GetChars(), ( int ) command.ByteLength );
+			_binaryWriter.BaseStream.Write( command.GetChars(), command.ByteLength );
 			_binaryWriter.Flush();
 
 			// ============================================================
@@ -783,9 +783,9 @@ namespace System.Data.MySQL {
 
 			var errorCode = _binaryReader.ReadUInt16();
 
-			var stringLength = ( int ) header.PacketLength - 3;
+			var stringLength = header.PacketLength - 3;
 			var start = _bufferedReadStream.Peek( stringLength );
-			Console.WriteLine( "Server error: {0}", Utf8String.FromUtf8( ( byte* ) start, ( uint ) stringLength ) );
+			Console.WriteLine( "Server error: {0}", Utf8String.FromUtf8( ( byte* ) start, stringLength ) );
 			_bufferedReadStream.Drain( stringLength );
 		}
 

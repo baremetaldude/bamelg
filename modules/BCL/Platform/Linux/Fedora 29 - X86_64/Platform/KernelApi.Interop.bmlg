@@ -12,34 +12,7 @@ namespace Platform.Kernel {
 		public const int _LINUX_CAPABILITY_VERSION = 429392688;
 
 	}
-	public enum GPIOEVENT_EVENT : uint {
-		GPIOEVENT_EVENT_RISING_EDGE =  1,
-		GPIOEVENT_EVENT_FALLING_EDGE = 2,
-	}
-	public enum GPIOEVENT_REQUEST : uint {
-		GPIOEVENT_REQUEST_RISING_EDGE =  1,
-		GPIOEVENT_REQUEST_FALLING_EDGE = 2,
-		GPIOEVENT_REQUEST_BOTH_EDGES =   3,
-	}
-	[Flags]
-	public enum GPIOHANDLE_REQUEST : uint {
-		None =                            0,
-		GPIOHANDLE_REQUEST_INPUT =        1,
-		GPIOHANDLE_REQUEST_OUTPUT =       2,
-		GPIOHANDLE_REQUEST_ACTIVE_LOW =   4,
-		GPIOHANDLE_REQUEST_OPEN_DRAIN =   8,
-		GPIOHANDLE_REQUEST_OPEN_SOURCE = 16,
-	}
-	[Flags]
-	public enum GPIOLINE_FLAG : uint {
-		None =                       0,
-		GPIOLINE_FLAG_KERNEL =       1,
-		GPIOLINE_FLAG_IS_OUT =       2,
-		GPIOLINE_FLAG_ACTIVE_LOW =   4,
-		GPIOLINE_FLAG_OPEN_DRAIN =   8,
-		GPIOLINE_FLAG_OPEN_SOURCE = 16,
-	}
-	public enum IoctlCommand : uint {
+	public enum FileDriverCommand : uint {
 		TIOCPKT_DATA =                              0,
 		GPIOHANDLE_REQUEST_INPUT =                  1,
 		TIOCPKT_FLUSHREAD =                         1,
@@ -108,6 +81,34 @@ namespace Platform.Kernel {
 		GPIO_GET_LINEEVENT_IOCTL =         3224417284,
 		GPIOHANDLE_GET_LINE_VALUES_IOCTL = 3225465864,
 		GPIOHANDLE_SET_LINE_VALUES_IOCTL = 3225465865,
+		GPIO_GET_LINEHANDLE_IOCTL =        3245126659,
+	}
+	public enum GPIOEVENT_EVENT : uint {
+		GPIOEVENT_EVENT_RISING_EDGE =  1,
+		GPIOEVENT_EVENT_FALLING_EDGE = 2,
+	}
+	public enum GPIOEVENT_REQUEST : uint {
+		GPIOEVENT_REQUEST_RISING_EDGE =  1,
+		GPIOEVENT_REQUEST_FALLING_EDGE = 2,
+		GPIOEVENT_REQUEST_BOTH_EDGES =   3,
+	}
+	[Flags]
+	public enum GPIOHANDLE_REQUEST : uint {
+		None =                            0,
+		GPIOHANDLE_REQUEST_INPUT =        1,
+		GPIOHANDLE_REQUEST_OUTPUT =       2,
+		GPIOHANDLE_REQUEST_ACTIVE_LOW =   4,
+		GPIOHANDLE_REQUEST_OPEN_DRAIN =   8,
+		GPIOHANDLE_REQUEST_OPEN_SOURCE = 16,
+	}
+	[Flags]
+	public enum GPIOLINE_FLAG : uint {
+		None =                       0,
+		GPIOLINE_FLAG_KERNEL =       1,
+		GPIOLINE_FLAG_IS_OUT =       2,
+		GPIOLINE_FLAG_ACTIVE_LOW =   4,
+		GPIOLINE_FLAG_OPEN_DRAIN =   8,
+		GPIOLINE_FLAG_OPEN_SOURCE = 16,
 	}
 	public enum ProcessControlActions : int {
 		PR_SET_PTRACER_ANY =          -1,
@@ -305,8 +306,37 @@ namespace Platform.Kernel {
 		SIOCBRDELIF =            35235,
 		SIOCSHWTSTAMP =          35248,
 		SIOCGHWTSTAMP =          35249,
+		SIOCAIPXITFCRT =         35296,
 		SIOCATALKDIFADDR =       35296,
+		SIOCAX25GETUID =         35296,
+		SIOCNRGETPARMS =         35296,
 		SIOCPROTOPRIVATE =       35296,
+		SIOCRSGCAUSE =           35296,
+		SIOCAIPXPRISLT =         35297,
+		SIOCAX25ADDUID =         35297,
+		SIOCNRSETPARMS =         35297,
+		SIOCRSSCAUSE =           35297,
+		SIOCAX25DELUID =         35298,
+		SIOCIPXCFGDATA =         35298,
+		SIOCNRDECOBS =           35298,
+		SIOCRSL2CALL =           35298,
+		SIOCRSSL2CALL =          35298,
+		SIOCAX25NOUID =          35299,
+		SIOCIPXNCPCONN =         35299,
+		SIOCNRRTCTL =            35299,
+		SIOCRSACCEPT =           35299,
+		SIOCAX25BPQADDR =        35300,
+		SIOCNRCTLCON =           35300,
+		SIOCRSCLRRT =            35300,
+		SIOCAX25GETPARMS =       35301,
+		SIOCRSGL2CALL =          35301,
+		SIOCAX25SETPARMS =       35302,
+		SIOCRSGFACILITIES =      35302,
+		SIOCAX25OPTRT =          35303,
+		SIOCAX25CTLCON =         35304,
+		SIOCAX25GETINFO =        35305,
+		SIOCAX25ADDFWD =         35306,
+		SIOCAX25DELFWD =         35307,
 		SIOCDEVPRIVATE =         35312,
 	}
 	public enum SocketProperty : int {
@@ -1190,6 +1220,136 @@ namespace Platform.Kernel {
 		public ulong filter_off;
 		[ExplicitOffset( Offset = 8 )]
 		public ulong flags;
+	}
+	[ExplicitSize( Size = 80 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_icounter_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int cts;
+		[ExplicitOffset( Offset = 4 )]
+		public int dsr;
+		[ExplicitOffset( Offset = 8 )]
+		public int rng;
+		[ExplicitOffset( Offset = 12 )]
+		public int dcd;
+		[ExplicitOffset( Offset = 16 )]
+		public int rx;
+		[ExplicitOffset( Offset = 20 )]
+		public int tx;
+		[ExplicitOffset( Offset = 24 )]
+		public int frame;
+		[ExplicitOffset( Offset = 28 )]
+		public int overrun;
+		[ExplicitOffset( Offset = 32 )]
+		public int parity;
+		[ExplicitOffset( Offset = 36 )]
+		public int brk;
+		[ExplicitOffset( Offset = 40 )]
+		public int buf_overrun;
+		[ExplicitOffset( Offset = 44 )]
+		public int[9] reserved;
+	}
+	[ExplicitSize( Size = 40 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_iso7816 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint tg;
+		[ExplicitOffset( Offset = 8 )]
+		public uint sc_fi;
+		[ExplicitOffset( Offset = 12 )]
+		public uint sc_di;
+		[ExplicitOffset( Offset = 16 )]
+		public uint clk;
+		[ExplicitOffset( Offset = 20 )]
+		public uint[5] reserved;
+	}
+	[ExplicitSize( Size = 168 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_multiport_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int irq;
+		[ExplicitOffset( Offset = 4 )]
+		public int port1;
+		[ExplicitOffset( Offset = 8 )]
+		public byte mask1;
+		[ExplicitOffset( Offset = 9 )]
+		public byte match1;
+		[ExplicitOffset( Offset = 12 )]
+		public int port2;
+		[ExplicitOffset( Offset = 16 )]
+		public byte mask2;
+		[ExplicitOffset( Offset = 17 )]
+		public byte match2;
+		[ExplicitOffset( Offset = 20 )]
+		public int port3;
+		[ExplicitOffset( Offset = 24 )]
+		public byte mask3;
+		[ExplicitOffset( Offset = 25 )]
+		public byte match3;
+		[ExplicitOffset( Offset = 28 )]
+		public int port4;
+		[ExplicitOffset( Offset = 32 )]
+		public byte mask4;
+		[ExplicitOffset( Offset = 33 )]
+		public byte match4;
+		[ExplicitOffset( Offset = 36 )]
+		public int port_monitor;
+		[ExplicitOffset( Offset = 40 )]
+		public int[32] reserved;
+	}
+	[ExplicitSize( Size = 32 )]
+	[Alignment( Boundary = 4 )]
+	public partial struct serial_rs485 {
+		[ExplicitOffset( Offset = 0 )]
+		public uint flags;
+		[ExplicitOffset( Offset = 4 )]
+		public uint delay_rts_before_send;
+		[ExplicitOffset( Offset = 8 )]
+		public uint delay_rts_after_send;
+		[ExplicitOffset( Offset = 12 )]
+		public uint[5] padding;
+	}
+	[ExplicitSize( Size = 72 )]
+	[Alignment( Boundary = 8 )]
+	public partial struct serial_struct {
+		[ExplicitOffset( Offset = 0 )]
+		public int type;
+		[ExplicitOffset( Offset = 4 )]
+		public int line;
+		[ExplicitOffset( Offset = 8 )]
+		public uint port;
+		[ExplicitOffset( Offset = 12 )]
+		public int irq;
+		[ExplicitOffset( Offset = 16 )]
+		public int flags;
+		[ExplicitOffset( Offset = 20 )]
+		public int xmit_fifo_size;
+		[ExplicitOffset( Offset = 24 )]
+		public int custom_divisor;
+		[ExplicitOffset( Offset = 28 )]
+		public int baud_base;
+		[ExplicitOffset( Offset = 32 )]
+		public ushort close_delay;
+		[ExplicitOffset( Offset = 34 )]
+		public sbyte io_type;
+		[ExplicitOffset( Offset = 35 )]
+		public sbyte[1] reserved_char;
+		[ExplicitOffset( Offset = 36 )]
+		public int hub6;
+		[ExplicitOffset( Offset = 40 )]
+		public ushort closing_wait;
+		[ExplicitOffset( Offset = 42 )]
+		public ushort closing_wait2;
+		[ExplicitOffset( Offset = 48 )]
+		public byte* iomem_base;
+		[ExplicitOffset( Offset = 56 )]
+		public ushort iomem_reg_shift;
+		[ExplicitOffset( Offset = 60 )]
+		public uint port_high;
+		[ExplicitOffset( Offset = 64 )]
+		public uintptr iomap_base;
 	}
 	[ExplicitSize( Size = 16 )]
 	[Alignment( Boundary = 2 )]

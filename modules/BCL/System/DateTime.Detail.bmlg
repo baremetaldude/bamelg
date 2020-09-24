@@ -13,8 +13,45 @@ namespace System {
 		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { *( thistype* ) object = stream.ReadDateTime(); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, "S" ); }
-		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { TryParse<char>( builder.GetChars(), ( uint ) builder.Length, *( thistype* ) object ); }
+		void ITextSerializable.Deserialize( void* object, StringBuilder builder, SerializerContext context ) { PrimitiveTypesParser.TryParseDateTime<char>( builder.GetChars(), builder.Length, *( thistype* ) object ); }
 
-		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, this, format ?? "G" ); }
+		public void ToString( StringBuilder builder, string format ) { PrimitiveTypesFormatter.FormatDateTime( builder, ( ulong ) Ticks, Kind, format ?? "G" ); }
+
+		public static DateTime Now { get { return new DateTime( ( long ) DateTimeLocal.Now.Ticks, DateTimeKind.Local ); } }
+		public static DateTime UtcNow { get { return new DateTime( ( long ) DateTimeUTC.UtcNow.Ticks, DateTimeKind.Utc ); } }
+
+		public static explicit operator DateTime( DateTimeUTC value ) { DateTime result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeUTC( DateTime value ) { DateTimeUTC result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+
+		public static explicit operator DateTime( DateTimeLocal value ) { DateTime result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+		public static explicit operator DateTimeLocal( DateTime value ) { DateTimeLocal result; Assert.IsTrue( Convert.TryConvert( &result, value ) ); return result; }
+
+		public DateTime ToLocalTime() {
+			switch( Kind ) {
+				case DateTimeKind.Unspecified:
+					return new DateTime( Ticks, DateTimeKind.Local );
+
+				case DateTimeKind.Utc: {
+						var ticks = Ticks;
+						return new DateTime( ticks + TimeZone.GetLocalFromUtcOffset( ( ulong ) ticks ), DateTimeKind.Local );
+					}
+			}
+
+			return this;
+		}
+
+		public DateTime ToUniversalTime() {
+			switch( Kind ) {
+				case DateTimeKind.Unspecified:
+					return new DateTime( Ticks, DateTimeKind.Utc );
+
+				case DateTimeKind.Local: {
+						var ticks = Ticks;
+						return new DateTime( ticks - TimeZone.GetUtcFromLocalOffset( ( ulong ) ticks ), DateTimeKind.Utc );
+					}
+			}
+
+			return this;
+		}
 	}
 }

@@ -46,7 +46,7 @@ namespace System {
 
 		private static void WriteLineUnsync() {
 			uint written;
-			Kernel32Api.WriteFile( StdOut, NewLine.GetChars(), ( uint ) NewLine.ByteLength, written, nullref );
+			Kernel32Api.WriteFile( StdOut, NewLine.GetChars(), NewLine.ByteLength, written, nullref );
 		}
 
 		public static void Clear() {
@@ -76,7 +76,7 @@ namespace System {
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize / sizeof( *buffer );
+				var bufferLength = Memory.DefaultPageSize / sizeof( *buffer );
 
 				using( _lock.ScopeEnter() ) {
 					foreach( var segment in Unicode.StreamConvertUtf8CharactersToSbcs( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.ByteLength ) )
@@ -98,7 +98,7 @@ namespace System {
 			using( _lock.ScopeEnter() ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( uint ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
 					foreach( var segment in Unicode.StreamConvertUtf16CharactersToSbcs( Environment.DefaultCodePage, buffer, bufferLength, data.GetChars(), data.Length ) )
 						Kernel32Api.WriteFile( StdOut, segment.Start, ( uint ) segment.Count, written, nullref );
@@ -119,10 +119,10 @@ namespace System {
 			using( var page8 = Memory.CachedPages.PopScoped() )
 			using( var page16 = Memory.CachedPages.PopScoped() ) {
 				var buffer8 = ( byte* ) page8.Value;
-				var buffer8Length = ( uint ) Memory.DefaultPageSize / sizeof( *buffer8 );
+				var buffer8Length = Memory.DefaultPageSize / sizeof( *buffer8 );
 
 				var buffer16 = ( char* ) page16.Value;
-				var buffer16Length = ( uint ) Memory.DefaultPageSize / sizeof( *buffer16 );
+				var buffer16Length = Memory.DefaultPageSize / sizeof( *buffer16 );
 
 				using( _lock.ScopeEnter() ) {
 					foreach( var segment16 in Unicode.StreamConvertUtf32CharactersToUtf16( buffer16, buffer16Length, data.GetChars(), data.Length ) )
@@ -173,10 +173,13 @@ namespace System {
 		};
 
 		public static void ApplyAttributes( Console.OutputAttributes& attributes ) {
-			var foregroundColor = CreateIndexedColor( DefaultLabColors, DefaultLabColors.Length, attributes.ForegroundColor );
-			var backgroundColor = CreateIndexedColor( DefaultLabColors, DefaultLabColors.Length, attributes.BackgroundColor );
+			if( attributes.ForegroundColorIndex == uint.MaxValue )
+				attributes.ForegroundColorIndex = CreateIndexedColor( DefaultLabColors, DefaultLabColors.Length, attributes.ForegroundColor );
 
-			Kernel32Api.SetConsoleTextAttribute( StdOut, ( ushort )( ( backgroundColor << 4 ) | foregroundColor ) );
+			if( attributes.BackgroundColorIndex == uint.MaxValue )
+				attributes.BackgroundColorIndex = CreateIndexedColor( DefaultLabColors, DefaultLabColors.Length, attributes.BackgroundColor );
+
+			Kernel32Api.SetConsoleTextAttribute( StdOut, ( ushort )( ( attributes.BackgroundColorIndex << 4 ) | attributes.ForegroundColorIndex ) );
 		}
 
 		public static void ResetAttributes() {
@@ -186,18 +189,17 @@ namespace System {
 			Kernel32Api.SetConsoleTextAttribute( StdOut, ( ushort )( ( backgroundColor << 4 ) | foregroundColor ) );
 		}
 
-		private static int GetIndexedColor( RgbColor& color ) {
-			if( Console.IsTerminalSupportsRGB ) return -1;
+		[System.Runtime.InteropServices.BackendHintReadOnly]
+		private static uint GetIndexedColor( RgbColor& color ) {
+			if( Console.IsTerminalSupportsRGB ) return uint.MaxValue;
 
 			if( Console.IsTerminalSupports16Color )
 				return Console.CreateIndexedColor( Console.DefaultLabColors, DefaultLabColors.Length, color );
 
-			return -1;
+			return uint.MaxValue;
 		}
 
 		public partial struct OutputAttributes {
-			private void OnForegroundColorChanged() { ForegroundColorIndex = Console.GetIndexedColor( ForegroundColor ); }
-			private void OnBackgroundColorChanged() { BackgroundColorIndex = Console.GetIndexedColor( BackgroundColor ); }
 		}
 	}
 }

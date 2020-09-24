@@ -9,6 +9,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System {
+	[RelaxedRelease]
 	public sealed partial class Utf8String {
 		public const Utf8String Empty = "";
 
@@ -55,7 +56,7 @@ namespace System {
 			if( left.Hash != right.Hash ) return false;
 			if( left.Length != right.Length || left.ByteLength != right.ByteLength ) return false;
 
-			return Memory.Compare( left.GetChars(), right.GetChars(), ( int ) left.ByteLength );
+			return Memory.Compare( left.GetChars(), right.GetChars(), left.ByteLength );
 		}
 
 		public static bool operator !=( Utf8String left, Utf8String right ) {
@@ -284,7 +285,7 @@ namespace System {
 			if( cast<RuntimeObjectBase>( this ) == cast<RuntimeObjectBase>( value ) ) return true;
 			if( value.ByteLength > ByteLength ) return false;
 
-			return Memory.Compare( GetChars() + ByteLength - value.ByteLength, value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ByteLength - value.ByteLength, value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( Utf8String value ) {
@@ -293,16 +294,16 @@ namespace System {
 			if( cast<RuntimeObjectBase>( this ) == cast<RuntimeObjectBase>( value ) ) return true;
 			if( value.ByteLength > ByteLength ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
-		public static Utf8String Join( Utf8String separator, Utf8String* values, int count ) {
+		public static Utf8String Join( Utf8String separator, Utf8String* values, uint count ) {
 			if( count == 0 ) return "";
 			if( count == 1 ) return values[0];
 
 			uint totalLength = ( count - 1 ) * separator.Length;
 			uint totalByteLength = ( count - 1 ) * separator.ByteLength;
-			for( int i = 0; i < count; ++i ) {
+			for( var i = 0U; i < count; ++i ) {
 				totalLength += values[i].Length;
 				totalByteLength += values[i].ByteLength;
 			}
@@ -312,7 +313,7 @@ namespace System {
 
 			Memory.Copy( chars, values[0].GetChars(), values[0].ByteLength ); chars += values[0].ByteLength;
 
-			for( int i = 1; i < count; ++i ) {
+			for( var i = 1U; i < count; ++i ) {
 				Memory.Copy( chars, separator.GetChars(), separator.ByteLength ); chars += separator.ByteLength;
 				Memory.Copy( chars, values[i].GetChars(), values[i].ByteLength ); chars += values[i].ByteLength;
 			}
@@ -395,20 +396,20 @@ namespace System {
 			return ( *left - *right ) == 0;
 		}
 
-		public static bool AreEqual( CUtf8String leftString, CUtf8String rightString, int length ) {
+		public static bool AreEqual( CUtf8String leftString, CUtf8String rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
 			if( ( left == null ) & ( right == null ) ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			int n = length;
+			var count = length;
 
-			while( --n >= 0 && *left == *right++ )
+			while( --count != uint.MaxValue && *left == *right++ )
 				if( *left++ == '\0' )
 					return true;
 
-			return n < 0 ? true : *left - *--right == 0;
+			return count == uint.MaxValue ? true : *left - *--right == 0;
 		}
 
 		public bool StartsWith( CUtf8String prefix ) {
@@ -433,7 +434,7 @@ namespace System {
 				continue;
 		}
 
-		public static void Copy( CUtf8String leftString, CUtf8String rightString, int length ) {
+		public static void Copy( CUtf8String leftString, CUtf8String rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
@@ -443,47 +444,32 @@ namespace System {
 			if( length == 0 ) *--left = 0;
 		}
 
-		// Copy 'rightString' to buffer pointed by 'leftString' and fill remaining bytes with zeroes
-		public static void InitializeBuffer( CUtf8String leftString, CUtf8String rightString, int bufferLength ) {
-			var left = leftString.GetChars();
-			var right = rightString.GetChars();
-
-			while( bufferLength != 0 && ( *left++ = *right++ ) != 0 )
-				--bufferLength;
-
-			if( bufferLength == 0 ) *--left = 0;
-			else while( bufferLength != 0 ) {
-				*left++ = 0;
-				--bufferLength;
-			}
-		}
-
 		public bool StartsWith( CUtf8StringSpan value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( CUtf8StringSpan value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( Utf8String value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( Length < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( Utf8String value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( Length < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), value.ByteLength );
 		}
 
 		/// Dangerous operator. Result will correct only while 'value' is alive.
@@ -521,7 +507,7 @@ namespace System {
 			if( left == right && leftString.ByteLength == rightString.ByteLength ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			return Memory.Compare( left, right, ( int ) leftString.ByteLength );
+			return Memory.Compare( left, right, leftString.ByteLength );
 		}
 
 		public static bool operator ==( CUtf8StringSpan& left, CUtf8StringSpan& right ) { return AreEqual( left, right ); }
@@ -541,28 +527,28 @@ namespace System {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( CUtf8StringSpan value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( Utf8String value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( Utf8String value ) {
 			if( value == null || value.ByteLength == 0 ) return false;
 			if( ByteLength < value.ByteLength ) return false;
 
-			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( ByteLength - value.ByteLength ), value.GetChars(), value.ByteLength );
 		}
 	}
 }

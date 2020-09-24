@@ -1,0 +1,59 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+// Set "TimeZone.CurrentTimeZone" and do not use fallback to cruntime stuff.
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Serialization;
+using System.Threading;
+
+using Platform.Libc;
+
+namespace System {
+	public static partial class TimeZone {
+		private static long GetPlatformDefaultLocalFromUtcOffset( ulong time ) {
+			tm bdt;
+			var unixSeconds = ( intptr ) new DateTimeUTC( time ).ToUnixTimeSeconds();
+
+			var local = LibcApi.localtime_r( &unixSeconds, &bdt );
+			if( local == null ) return 0;
+
+			return bdt.tm_gmtoff * TimeSpan.TicksPerSecond;
+		}
+
+		private static long GetPlatformDefaultUtcFromLocalOffset( ulong time ) {
+			var localTime = new DateTimeLocal( time );
+
+			var dateValues = localTime.GetDateValues();
+
+			var hour = localTime.Hour;
+			var minute = localTime.Minute;
+			var second = localTime.Second;
+
+			var bdt = new tm {
+				tm_year = dateValues.Year - 1900,
+				tm_mon = dateValues.Month - 1,
+				tm_mday = dateValues.Day,
+				tm_hour = hour,
+				tm_min = minute,
+				tm_sec = second,
+				tm_yday = dateValues.DayOfYear,
+				tm_wday = ( int ) localTime.DayOfWeek,
+				tm_isdst = -1,
+				tm_gmtoff = 0,
+				tm_zone = null
+			};
+
+			LibcApi.mktime( &bdt );
+			return bdt.tm_gmtoff * TimeSpan.TicksPerSecond;
+		}
+	}
+}

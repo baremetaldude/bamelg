@@ -3,19 +3,12 @@
 //
 
 using System;
-using System.Collections;
-using System.Globalization;
 using System.IO;
 using System.Net;
-using System.Runtime;
-using System.Text;
 using System.Web;
 using System.Xml;
 
-using Platform;
-using Platform.IO;
-
-namespace Dmm {
+namespace DMM {
 	public class CustomHttpServer : HttpServer {
 		public CustomHttpServer() {
 		}
@@ -49,6 +42,7 @@ namespace Dmm {
 					case "/log.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, EmbeddedResources.log_html );
 				}
 
+				SendStatus( HttpStatusCode.NotFound );
 				return null;
 			}
 		}
@@ -87,18 +81,18 @@ namespace Dmm {
 				: base( session ) {
 			}
 
-			DateTime _lastDate;
+			DateTimeUTC _lastDate;
 			bool _fromSpecified = false;
 
 			protected override void ParseLastEventID( CStringSpan& value ) {
-				long lastDate;
-				if( !long.TryParse( value, lastDate ) ) {
+				ulong lastDate;
+				if( !ulong.TryParse( value, lastDate ) ) {
 					StatusCode = HttpStatusCode.BadRequest;
 					return;
 				}
 
 				_fromSpecified = true;
-				_lastDate = new DateTime( lastDate, DateTimeKind.Utc );
+				_lastDate = new DateTimeUTC( lastDate );
 			}
 
 			public override void OnRender() {
@@ -172,7 +166,7 @@ namespace Dmm {
 			}
 
 			public override void OnRender() {
-				var time = Fiber.Now;
+				var time = Fiber.UtcNow;
 				var writer = new XmlWriter( Response );
 
 				using( writer.Tag( "html" ) ) {

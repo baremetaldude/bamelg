@@ -17,14 +17,14 @@ namespace Platform {
 	public static partial struct NtApi {
 		public const CallingConvention DefaultCallingConvention = Environment.CurrentCpu == System.Runtime.CompilerServices.CpuID.X86_32 ? CallingConvention.StdCallX86 : CallingConvention.Default;
 
-		/// @{ Time
+		#region Time
 		public extern static NtStatus NtQuerySystemTime( ulong& systemTime );
 		public extern static bool RtlTimeToSecondsSince1970( ulong& time, uint& elapsedSeconds );
 		public extern static bool RtlTimeToSecondsSince1980( ulong& time, uint& elapsedSeconds );
 
 		public extern static NtStatus RtlLocalTimeToSystemTime( ulong& localTime, ulong& systemTime );
 		public extern static NtStatus RtlSystemTimeToLocalTime( ulong& systemTime, ulong& localTime );
-		/// @}
+		#endregion
 
 		public extern static uint NtGetCurrentProcessorNumber();
 		// public extern static uint NtQueryInformationProcess( ProcessHandle processHandle, PROCESSINFOCLASS processInformationClass, void* processInformation, uint processInformationLength, uint& returnLength );
@@ -38,7 +38,7 @@ namespace Platform {
 		public extern static void RtlProtectHeap( HeapHandle heap, bool readOnly );
 		public extern static NtStatus NtClose( HANDLE handle );
 
-		/// @{
+		#region
 		public extern static void RtlFreeUnicodeString( UNICODE_STRING& value );
 		public extern static void RtlFreeAnsiString( STRING& value );
 		public extern static void RtlFreeOemString( STRING& value );
@@ -52,9 +52,9 @@ namespace Platform {
 		public extern static NtStatus RtlUnicodeToMultiByteSize( uint& bytesInMultiByteString, CUtf16String UnicodeString, uint bytesInUnicodeString );
 		public extern static NtStatus RtlUnicodeToUTF8N( byte* UTF8StringDestination, uint UTF8StringMaxByteCount, uint& UTF8StringActualByteCount, CUtf16String unicodeStringSource, uint unicodeStringWCharCount );
 		public extern static NtStatus RtlUTF8ToUnicodeN( char* unicodeStringDestination, uint unicodeStringMaxWCharCount, uint& unicodeStringActualWCharCount, CUtf8String UTF8StringSource, uint UTF8StringByteCount );
-		/// @}
+		#endregion
 
-		/// @{ undocumented LPC api
+		#region undocumented LPC api
 		/// See http://www.rsdn.ru/article/baseserv/lpc.xml
 		public extern static NtStatus NtCreatePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
 		public extern static NtStatus NtCreateWaitablePort( [Out] PortHandleLpc& portHandle, OBJECT_ATTRIBUTES& objectAttributes, uint maxConnectInfoLength, uint maxDataLength, uint maxPoolUsage );
@@ -69,9 +69,9 @@ namespace Platform {
 		public extern static NtStatus NtListenPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* connectionRequest );
 		public extern static NtStatus NtImpersonateClientOfPort( PortHandleLpc portHandle, LPC_MESSAGE_HEADER* request );
 		// public extern static NtStatus  NtQueryInformationPort( PortHandleLpc portHandle, PORT_INFORMATION_CLASS portInformationClass, void* portInformation, uint length, uint& resultLength );
-		/// @}
+		#endregion
 
-		/// @{ ALPC api
+		#region ALPC api
 		public extern static uint AlpcMaxAllowedMessageLength();
 		public extern static uint AlpcGetHeaderSize( uint flags );
 
@@ -108,7 +108,37 @@ namespace Platform {
 		// public extern static NtStatus NtAlpcDeleteResourceReserve( PortHandleAlpc portHandle, uint flags, ALPC_HANDLE resourceId );
 		// public extern static NtStatus NtAlpcCreateSectionView( PortHandleAlpc portHandle, uint flags, ALPC_DATA_VIEW_ATTR* viewAttributes );
 		// public extern static NtStatus NtAlpcDeleteSectionView( PortHandleAlpc portHandle, uint flags, void* viewBase );
-		/// @}
+		#endregion
+
+		public extern static NtStatus NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS SystemInformationClass, void* SystemInformation, uint SystemInformationLength, uint* ReturnLength );
+
+		public static yield<SYSTEM_PROCESS_INFORMATION*> EnumerateProcess() {
+			uint ntQuerySystemInformationLength;
+			var status = NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS.SystemProcessInformation, null, 0, &ntQuerySystemInformationLength );
+			if( status != NtStatus.STATUS_INFO_LENGTH_MISMATCH ) yield break;
+
+			// fetch:
+			byte[] data;
+			do {
+				ntQuerySystemInformationLength = ntQuerySystemInformationLength + ntQuerySystemInformationLength / 5;
+				data = new[ntQuerySystemInformationLength] byte;
+				status = NtQuerySystemInformation( SYSTEM_INFORMATION_CLASS.SystemProcessInformation, &data[0], ntQuerySystemInformationLength, &ntQuerySystemInformationLength );
+				// Console.WriteLine( "status1={0} ntQuerySystemInformationLength={1}", status1, ntQuerySystemInformationLength );
+			} while( status == NtStatus.STATUS_INFO_LENGTH_MISMATCH );
+			// if( status == NtStatus.STATUS_INFO_LENGTH_MISMATCH ) goto fetch;
+
+			if( status != NtStatus.STATUS_SUCCESS ) yield break;
+
+			var result = ( SYSTEM_PROCESS_INFORMATION* ) &data[0];
+			for( ; ; ) {
+				yield return result;
+
+				var nextOffset = result->NextEntryOffset;
+				if( nextOffset == 0 ) yield break;
+
+				result = ( SYSTEM_PROCESS_INFORMATION* )( ( byte* ) result + nextOffset );
+			}
+		}
 
 		public static void Assert( NtStatus condition, [In] CallerContext& callercontext = nullref ) {
 			if( condition ) return;
@@ -123,6 +153,60 @@ namespace Platform {
 			Assert.PrintContextInfo( callercontext );
 			Console.WriteLine();
 		}
+	}
+
+	public enum SYSTEM_INFORMATION_CLASS {
+		SystemBasicInformation =                0,
+		SystemPerformanceInformation =          2,
+		SystemTimeOfDayInformation =            3,
+		SystemProcessInformation =              5,
+		SystemProcessorPerformanceInformation = 8,
+		SystemInterruptInformation =           23,
+		SystemExceptionInformation =           33,
+		SystemRegistryQuotaInformation =       37,
+		SystemLookasideInformation =           45,
+		SystemCodeIntegrityInformation =      103,
+		SystemPolicyInformation =             134,
+	}
+
+	[StructLayoutSequential]
+	public struct SYSTEM_PROCESS_INFORMATION {
+		public uint NextEntryOffset;
+		public uint NumberOfThreads;
+		public byte[48] Reserved1;
+		public UNICODE_STRING ImageName;
+		public uint BasePriority;
+		public HANDLE UniqueProcessId;
+		public void* Reserved2;
+		public uint HandleCount;
+		public uint SessionId;
+		public void* Reserved3;
+		public uintptr PeakVirtualSize;
+		public uintptr VirtualSize;
+		public void* Reserved4;
+		public uintptr PeakWorkingSetSize;
+		public uintptr WorkingSetSize;
+		public void* Reserved5;
+		public uintptr QuotaPagedPoolUsage;
+		public void* Reserved6;
+		public uintptr QuotaNonPagedPoolUsage;
+		public uintptr PagefileUsage;
+		public uintptr PeakPagefileUsage;
+		public uintptr PrivatePageCount;
+		public ulong[6] Reserved7;
+	}
+
+	[StructLayoutSequential]
+	public struct SYSTEM_THREAD_INFORMATION {
+		public uint[3] Reserved1;
+		public uint Reserved2;
+		public void* StartAddress;
+		public _CLIENT_ID ClientId;
+		public uint Priority;
+		public int BasePriority;
+		public uint ContextSwitchCount;
+		public uint ThreadState;
+		public uint WaitReason;
 	}
 
 	public partial struct UNICODE_STRING {
@@ -236,13 +320,13 @@ namespace Platform {
 	}
 
 	public struct PortHandleAlpc : HANDLE {
-		public PortHandleAlpc( int maxMessageLength = 256 ) {
+		public PortHandleAlpc( uint maxMessageLength = 256 ) {
 			var objectAttributes = default( OBJECT_ATTRIBUTES );
 			objectAttributes.Length = sizeof( objectAttributes );
 			// objectAttributes.Length = sizeof(attributes);
 
 			var portAttributes = default( ALPC_PORT_ATTRIBUTES );
-			portAttributes.MaxMessageLength = ( uint ) maxMessageLength;
+			portAttributes.MaxMessageLength = maxMessageLength;
 			NtApi.NtAlpcCreatePort( &this, &objectAttributes, &portAttributes );
 		}
 	}

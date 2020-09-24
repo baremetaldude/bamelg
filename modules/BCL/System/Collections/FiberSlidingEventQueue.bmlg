@@ -1,4 +1,4 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
@@ -7,21 +7,21 @@
 namespace System.Collections {
 	public class FiberSlidingEventQueue<T> {
 		public struct TimedValue {
-			public DateTime Time;
+			public DateTimeUTC Time;
 			public T Value;
 		}
 
 		private System.IO.Fiber.Event NewEvent = new System.IO.Fiber.Event();
 
-		private TrackableQueue<TimedValue> _values = new TrackableQueue<TimedValue>();
+		private TrackableQueue<TimedValue> _values;
 
-		public readonly TimeSpan Timeframe;
+		public readonly TimeDuration Timeframe;
 
 		public TrackableQueue<TimedValue>.Enumerator GetEnumerator() { return _values.GetEnumerator(); }
 
-		public TimeSpan ElementsTimeframe { get { return _values.Count > 1 ? _values.Last().Time - _values.First().Time : new TimeSpan( 0 ); } }
+		public TimeDuration ElementsTimeframe { get { return _values.Count > 1 ? ( _values.Last().Time - _values.First().Time ).Duration() : new TimeDuration( 0 ); } }
 
-		public int Count { get { return ( int ) _values.Count; } }
+		public uint Count { get { return _values.Count; } }
 		public uint FirstIndex { get { return _values.FirstIndex; } }
 		public uint LastIndex { get { return _values.LastIndex; } }
 
@@ -30,31 +30,43 @@ namespace System.Collections {
 			set { _values.Capacity = value; }
 		}
 
-		public FiberSlidingEventQueue( TimeSpan timeframe ) {
+		public FiberSlidingEventQueue( TimeDuration timeframe ) {
 			Timeframe = timeframe;
+			_values = new TrackableQueue<TimedValue>();
 		}
 
-		public uint Add( DateTime time, T value ) {
+		public FiberSlidingEventQueue( thistype other ) {
+			Timeframe = other.Timeframe;
+			_values = new TrackableQueue<TimedValue>( other._values );
+		}
+
+		public uint Add( DateTimeUTC time, T value ) {
 			Update( time );
 
 			var result = _values.Enqueue( new TimedValue { Time = time, Value = value } );
 
-			NewEvent.Signal();
+			FiberAwakeListeners();
 			return result;
 		}
 
 		public bool IsValid( uint index ) { return _values.IsValid( index ); }
 
+		public void FiberAwakeListeners() { NewEvent.Signal(); }
 		public void FiberWaitEvent() { NewEvent.Wait(); }
+		public bool FiberTryWaitEvent( TimeDuration time ) { return NewEvent.TryWait( time ); }
 
-		public int Update( DateTime time ) {
+		public void Clear() {
+			_values.Clear();
+		}
+
+		public int Update( DateTimeUTC time ) {
 			int dropped = 0;
 
 		start_remove:
 			if( Count > 0 ) {
 				var top = _values.Peek().Time;
 
-				if( ( time - top ) >= Timeframe ) {
+				if( ( time - top ).Duration() >= Timeframe ) {
 					_values.Dequeue();
 					++dropped;
 
@@ -67,6 +79,6 @@ namespace System.Collections {
 
 		public TimedValue this[uint index] { get { return _values[index]; } }
 		public T Value[uint index] { get { return _values[index].Value; } }
-		public DateTime Time[uint index] { get { return _values[index].Time; } }
+		public DateTimeUTC Time[uint index] { get { return _values[index].Time; } }
 	}
 }

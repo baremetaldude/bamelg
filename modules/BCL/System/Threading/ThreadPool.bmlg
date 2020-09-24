@@ -9,11 +9,11 @@ using System.Runtime;
 namespace System.Threading {
 	public static partial struct ThreadPool {
 		/// @{ not thread-safe
-		public static void Initialize( int maxThreads = 0 ) {
-			MaxThreads = maxThreads > 0 ? maxThreads : Environment.ProcessorCount * 4;
+		public static void Initialize( uint maxThreads = 0 ) {
+			MaxThreads = maxThreads != 0 ? maxThreads : Environment.ProcessorCount * 4;
 		}
 
-		public static int MaxThreads {
+		public static uint MaxThreads {
 			get { return _implMaxThreads; }
 			set { _implMaxThreads = value; }
 		}

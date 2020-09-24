@@ -8,6 +8,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System {
+	[RelaxedRelease]
 	public sealed partial class SbcsString {
 		public const SbcsString Empty = "";
 
@@ -108,7 +109,7 @@ namespace System {
 			if( left.Hash != right.Hash ) return false;
 			if( left.Length != right.Length ) return false;
 
-			return Memory.Compare( left.GetChars(), right.GetChars(), ( int ) left.ByteLength );
+			return Memory.Compare( left.GetChars(), right.GetChars(), left.ByteLength );
 		}
 
 		public static bool operator !=( SbcsString left, SbcsString right ) {
@@ -151,14 +152,14 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( SbcsString value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.Length * sizeof( this[0] ) );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.Length * sizeof( this[0] ) );
 		}
 
 		public thistype ToUpper() {
@@ -218,7 +219,7 @@ namespace System {
 
 		end:
 			if( startIndex > endIndex ) return "";
-			return FromSBCS( CodePage, GetChars() + startIndex, ( uint )( endIndex - startIndex + 1 ) );
+			return FromSBCS( CodePage, GetChars() + startIndex, endIndex - startIndex + 1 );
 		}
 
 		/// @ Conversion from SBCS
@@ -278,7 +279,7 @@ namespace System {
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize;
+				var bufferLength = Memory.DefaultPageSize;
 
 				uint encodedCharsCount, charsCount;
 				Unicode.GetUtf8ByteCountInUtf16( memory, limitBytes, charsCount, encodedCharsCount );
@@ -371,7 +372,7 @@ namespace System {
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize;
+				var bufferLength = Memory.DefaultPageSize;
 
 				uint charsCount16;
 				Unicode.GetUtf32ByteCountInUtf16( memory, limitChars, charsCount16 );
@@ -476,16 +477,16 @@ namespace System {
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize;
+				var bufferLength = Memory.DefaultPageSize;
 
 				var minLength = Math.Min( Length, value.Length );
 
-				var start = 0;
+				var start = 0U;
 				var remaining = minLength;
 
-				for( int block = 0, blockCount = ( int )( ( minLength + Memory.DefaultPageSize - 1 ) / Memory.DefaultPageSize ); block < blockCount; block += Memory.DefaultPageSize ) {
+				for( uint block = 0U, blockCount = ( minLength + Memory.DefaultPageSize - 1 ) / Memory.DefaultPageSize; block < blockCount; block += Memory.DefaultPageSize ) {
 					var end = Math.Min( remaining, start + Memory.DefaultPageSize );
-					Encoding.GetBytes( CodePage, rightChars + start, ( uint )( end - start ), buffer, bufferLength );
+					Encoding.GetBytes( CodePage, rightChars + start, end - start, buffer, bufferLength );
 
 					for( var i = start; i < end; ++i ) {
 						var leftChar = leftChars[i];
@@ -503,9 +504,6 @@ namespace System {
 
 			if( Length == value.Length ) return 0;
 			return Length.CompareTo( value.Length );
-
-			// var sbcs = FromUtf16( CodePage, value );
-			// return CompareTo( sbcs );
 		}
 
 		public int CompareTo( CUtf32StringSpan value ) {
@@ -555,20 +553,22 @@ namespace System {
 			return ( *left - *right ) == 0;
 		}
 
-		public static bool AreEqual( CString leftString, CString rightString, int length ) {
+		public static bool AreEqual( CString leftString, CString rightString, uint length ) {
 			var left = leftString.GetChars();
 			var right = rightString.GetChars();
 
 			if( left == right ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			int n = length;
+			for( var i = 0U; i < length; ++i ) {
+				if( *left == *right++ ) {
+					if( *left++ == '\0' )
+						return true;
+				}
+				else return false;
+			}
 
-			while( --n >= 0 && *left == *right++ )
-				if( *left++ == '\0' )
-					return true;
-
-			return n < 0 ? true : *left - *--right == 0;
+			return true;
 		}
 
 		/// Dangerous operator. Result will correct while 'value' is alive.
@@ -639,7 +639,7 @@ namespace System {
 		public uint ByteLength { get { return Length; } }
 
 		public CStringSpan( byte* location, uint length ) { Location = location; Length = length; }
-		public CStringSpan( byte* location, byte* end ) { Assert.IsTrue( end >= location ); Location = location; Length = ( uint )( end - location ); }
+		public CStringSpan( byte* location, byte* end ) { System.Diagnostics.Debug.Assert( end >= location ); Location = location; Length = ( uint )( end - location ); }
 		public CStringSpan( sbyte* location, uint length ) { Location = cast<byte*>( location ); Length = length; }
 
 		public uint GetHashCode() { return CString.ComputeHashCode( Location, Length ); }
@@ -653,7 +653,7 @@ namespace System {
 			if( left == right && leftString.Length == rightString.Length ) return true;
 			if( ( left == null ) | ( right == null ) ) return false;
 
-			return Memory.Compare( left, right, ( int ) leftString.Length );
+			return Memory.Compare( left, right, leftString.Length );
 		}
 
 		public static bool operator ==( CStringSpan& left, CStringSpan& right ) { return AreEqual( left, right ); }
@@ -675,28 +675,28 @@ namespace System {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( CStringSpan value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 
 		public bool StartsWith( SbcsString value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars(), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars(), value.GetChars(), value.ByteLength );
 		}
 
 		public bool EndsWith( SbcsString value ) {
 			if( value == null || value.Length == 0 ) return false;
 			if( Length < value.Length ) return false;
 
-			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), ( int ) value.ByteLength );
+			return Memory.Compare( GetChars() + ( Length - value.Length ), value.GetChars(), value.ByteLength );
 		}
 	}
 }

@@ -37,21 +37,15 @@ namespace Platform.IO {
 		}
 
 		public EventLoop() {
-			_dispatchThread = Thread.CurrentThread;
-			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
-		}
-
-		~EventLoop() {
-			_dispatchThread.Join();
 		}
 
 		public override void Dispose() {
 			ExecuteTasks();
 
 			using( _consoleQuitLock.LockRegion() )
-				if( _consoleQuitHandlerIndex != -1 ) {
+				if( _consoleQuitHandlerIndex != uint.MaxValue ) {
 					CtrlCListeners.RemoveAt( _consoleQuitHandlerIndex );
-					_consoleQuitHandlerIndex = -1;
+					_consoleQuitHandlerIndex = uint.MaxValue;
 				}
 
 			if( _fiberDispatch ) {
@@ -86,6 +80,7 @@ namespace Platform.IO {
 		}
 
 		public void QueueAPC( void* object, void* method ) {
+			Debug.Assert( _dispatchThread._thread != ThreadHandle.Invalid );
 			// Console.WriteLine( "{0} sending APC from {1} to {2}", thismethod, ThreadHandle.CurrentThreadID, _dispatchThread._threadId );
 			Assert.IsTrue( Kernel32Api.QueueUserAPC( bitcast<Kernel32Api.APCProc>( method ), _dispatchThread._thread, bitcast<uintptr>( object ) ) != 0 );
 		}
@@ -94,6 +89,7 @@ namespace Platform.IO {
 
 		private bool _exitRequestPending = false;
 		public void RequestExit() {
+			if( _dispatchThread == null ) { _quitRequest = true; return; }
 			if( _dispatchThread.IsCurrent ) { _quitRequest = true; return; }
 			if( atomic( _exitRequestPending = true ) ) return;
 
@@ -102,6 +98,7 @@ namespace Platform.IO {
 
 		private bool _updateRequestPending = false;
 		public void RequestUpdateEventList() {
+			if( _dispatchThread == null ) return;
 			if( _dispatchThread.IsCurrent ) return;
 			if( atomic( _updateRequestPending = true ) ) return;
 
@@ -110,7 +107,8 @@ namespace Platform.IO {
 
 		private bool _newTasksRequestPending = false;
 		protected override void NotifyNewDispatcherTasks() {
-			if( _dispatchThread.IsCurrent & !_dispatching ) return;
+			if( _dispatchThread == null ) return;
+			if( _dispatchThread.IsCurrent ) return;
 			if( atomic( _newTasksRequestPending = true ) ) return;
 
 			QueueAPC( this, memberinfo( NewTasksAPC ).Address );
@@ -118,8 +116,8 @@ namespace Platform.IO {
 
 		private List<EventSink> _eventSinks = new List<EventSink>();
 
-		private List<HANDLE> _waitEvents = new List<HANDLE>( ( int ) MAXIMUM_WAIT_OBJECTS );
-		private PoolIndexManager _indexManager = new PoolIndexManager( ( int ) MAXIMUM_WAIT_OBJECTS ) { Expandable = false };
+		private List<HANDLE> _waitEvents = new List<HANDLE>( MAXIMUM_WAIT_OBJECTS );
+		private PoolIndexManager _indexManager = new PoolIndexManager( MAXIMUM_WAIT_OBJECTS ) { Expandable = false };
 
 		private const uint WAIT_OBJECT_0 = 0;
 		private const uint WAIT_IO_COMPLETION = 192, WAIT_TIMEOUT = 258;
@@ -130,7 +128,7 @@ namespace Platform.IO {
 			get { return _indexManager.Count < _indexManager.Capacity; }
 		}
 
-		public void Dispatch() {
+		private void DispatchWorker() {
 			TraceDispatchStarted();
 			_dispatching = true;
 
@@ -152,7 +150,7 @@ namespace Platform.IO {
 				uint waitTimeout = Kernel32Api.INFINITE;
 
 				var timeout = GetWaitTime();
-				if( timeout != TimeSpan.MaxValue ) {
+				if( timeout != TimeDuration.MaxValue ) {
 					var newTimeout = ( ulong ) timeout.TotalMilliseconds;
 					uint newTimeout32;
 					if( newTimeout >= int.MaxValue ) newTimeout32 = uint.MaxValue - 1; // wait finite amount of time
@@ -169,11 +167,11 @@ namespace Platform.IO {
 
 				atomic( ++PollId, Relaxed );
 				// Console.WriteLine( "_waitEvents.Count={0}", _waitEvents.Count );
-				var waitResult = !useSleep ? Kernel32Api.WaitForMultipleObjectsEx( ( uint ) _waitEvents.Count, _waitEvents.GetBuffer(), false, waitTimeout, true ) : Kernel32Api.SleepEx( waitTimeout, true );
+				var waitResult = !useSleep ? Kernel32Api.WaitForMultipleObjectsEx( _waitEvents.Count, _waitEvents.GetBuffer(), false, waitTimeout, true ) : Kernel32Api.SleepEx( waitTimeout, true );
 				// Console.WriteLine( "waitResult={0}", waitResult );
 
-				UnbiasedNow = DateTime.UnbiasedNow;
-				UtcNow = DateTime.UtcNow;
+				UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+				UtcNow = DateTimeUTC.UtcNow;
 				TraceEndWait( waitResult );
 
 				switch( waitResult ) {
@@ -209,12 +207,34 @@ namespace Platform.IO {
 			Dispose();
 		}
 
+		public void Dispatch() {
+			_dispatchThread = Thread.CurrentThread;
+			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
+
+			DispatchWorker();
+
+			_dispatchThread.Join();
+		}
+
+		public void BeginDispatch( Utf8String threadName = null ) {
+			_dispatchThread = Thread.Start( DPC.Create<EventLoop>( @this => {
+				@this.DispatchWorker();
+			}, this ) );
+		}
+
+		public void EndDispatch() {
+			if( _dispatchThread == null ) return;
+
+			_dispatchThread.Join();
+			_dispatchThread = null;
+		}
+
 		// No more than MAXIMUM_WAIT_OBJECTS == 64 event sinks in single event loop
 		public abstract class EventSink {
 			public EventLoop Parent;
 			public abstract HANDLE EventHandle { get; } ///< Handle passed to 'WaitForMultipleObjectsEx'
 
-			public int PoolID = -1; ///< Index of EventSink in array of 'HANDLE' passed to 'WaitForMultipleObjectsEx'
+			public uint PoolID = uint.MaxValue; ///< Index of EventSink in array of 'HANDLE' passed to 'WaitForMultipleObjectsEx'
 
 			public abstract void OnEvent();
 
@@ -230,10 +250,10 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			/// @{
+			#region
 			public void Register() { Register( Parent, EventHandle ); }
 			public void Unregister() { Unregister( Parent, EventHandle ); }
-			/// @}
+			#endregion
 
 			protected void Register( EventLoop parent, HANDLE handle ) {
 				EnsureEventSinkNotRegistered( parent );
@@ -243,11 +263,11 @@ namespace Platform.IO {
 				parent.TraceEventSinkRegistered( this );
 			}
 
-			protected int RegisterHandle( EventLoop parent, HANDLE handle ) {
-				if( !parent.HasFreeSinks ) return -1;
+			protected uint RegisterHandle( EventLoop parent, HANDLE handle ) {
+				if( !parent.HasFreeSinks ) return uint.MaxValue;
 
 				var poolID = parent._indexManager.Allocate();
-				if( poolID == -1 ) return -1;
+				if( poolID == uint.MaxValue ) return uint.MaxValue;
 
 				if( poolID >= parent._eventSinks.Count ) {
 					parent._waitEvents.Add( handle );
@@ -266,11 +286,11 @@ namespace Platform.IO {
 				EnsureEventSinkRegistered( parent );
 
 				var poolId = PoolID;
-				PoolID = -1;
+				PoolID = uint.MaxValue;
 				UnregisterHandle( parent, poolId );
 			}
 
-			protected void UnregisterHandle( EventLoop parent, int poolID ) {
+			protected void UnregisterHandle( EventLoop parent, uint poolID ) {
 				parent._indexManager.Deallocate( poolID );
 				parent._waitEvents[poolID] = _eventPlaceholder;
 				parent._eventSinks[poolID] = null; // 'this' may be destroyed after that statement
@@ -278,13 +298,13 @@ namespace Platform.IO {
 
 			[Conditional( ConditionString = "DEBUG" )]
 			protected void EnsureEventSinkRegistered( EventLoop parent ) {
-				if( PoolID == -1 )
+				if( PoolID == uint.MaxValue )
 					Assert.Fail( "EventSink not registered!" );
 			}
 
 			[Conditional( ConditionString = "DEBUG" )]
 			protected void EnsureEventSinkNotRegistered( EventLoop parent ) {
-				if( PoolID != -1 )
+				if( PoolID != uint.MaxValue )
 					Assert.Fail( "EventSink already registered!" );
 			}
 		}
@@ -359,12 +379,12 @@ namespace Platform.IO {
 			}
 		}
 
-		private int _consoleQuitHandlerIndex = -1;
+		private uint _consoleQuitHandlerIndex = uint.MaxValue;
 		private static Mutex _consoleQuitLock = new Mutex();
 
 		public void CatchConsoleQuit() {
 			using( _consoleQuitLock.LockRegion() )
-				if( _consoleQuitHandlerIndex == -1 ) {
+				if( _consoleQuitHandlerIndex == uint.MaxValue ) {
 					_consoleQuitHandlerIndex = CtrlCListeners.Count;
 					CtrlCListeners.Add( this );
 				}
@@ -389,17 +409,19 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		public override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return _dispatchThread?.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return _dispatchThread != null; } }
 
 		#endregion
 
-		/// @{ Tracing
+		#region Tracing
+
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchStarted() {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch started: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch started: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -407,7 +429,7 @@ namespace Platform.IO {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -419,7 +441,7 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private void TraceBeginWait( int eventCount, uint milliseconds ) {
+		private void TraceBeginWait( uint eventCount, uint milliseconds ) {
 			if( !Tracing ) return;
 
 			TypedReference timeout = milliseconds;
@@ -453,6 +475,6 @@ namespace Platform.IO {
 				Console.WriteLine( "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
 		}
 
-		/// @}
+		#endregion
 	}
 }

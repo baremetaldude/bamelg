@@ -33,7 +33,7 @@ namespace Platform.IO {
 		private List<pollfd> _polledDescriptors = new List<pollfd>();
 		private List<EventSink> _eventSinks = new List<EventSink>();
 		private PoolIndexManager _indexManager = new PoolIndexManager( 32 );
-		private List<int> _readyIndices = new List<int>( 32 ); // attempt to make polling slightly cache-friendly
+		private List<uint> _readyIndices = new List<uint>( 32 ); // attempt to make polling slightly cache-friendly
 
 		private NotificationEmitter _notificationEmitter = new NotificationEmitter( this );
 
@@ -93,13 +93,13 @@ namespace Platform.IO {
 		public void RequestUpdateEventList() { if( !DispatchThread.IsCurrent ) _notificationEmitter.RequestUpdate(); }
 		protected override void NotifyNewDispatcherTasks() { _notificationEmitter.NotifyNewDispatcherTasks(); }
 
-		/// @{ Dispatching
+		#region Dispatching
 		public Utf8String ThreadName;
 		public Platform.Libc.pthread_t DispatchThread = Platform.Libc.pthread_t.CurrentThread;
 
-		internal int _dispatchingIndex;
+		internal uint _dispatchingIndex;
 
-		public void UnregisterHandle( int poolID ) {
+		public void UnregisterHandle( uint poolID ) {
 			_indexManager.Deallocate( poolID );
 			_polledDescriptors[poolID] = new pollfd { Handle = IOHandle.Invalid, ListenedEvents = PollEvents.None, RaisedEvents = PollEvents.None };
 			_eventSinks[poolID] = null; // 'this' may be destroyed after that statement
@@ -119,7 +119,7 @@ namespace Platform.IO {
 				var @this = info->Item1;
 
 				pthread_t.Name = @this.ThreadName;
-				@this.DispatchThread = pthread_t.CurrentThread;
+				atomic( @this.DispatchThread = Platform.Libc.pthread_t.CurrentThread, Relaxed );
 				info->Item2->Post(); // info dies now
 
 				@this.Dispatch();
@@ -164,7 +164,7 @@ namespace Platform.IO {
 				var pollTimeout = -1;
 
 				var alarmTimeout = GetWaitTime();
-				if( alarmTimeout != TimeSpan.MaxValue ) {
+				if( alarmTimeout != TimeDuration.MaxValue ) {
 					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
 					pollTimeout = newTimeout;
 				}
@@ -188,15 +188,15 @@ namespace Platform.IO {
 					}
 				}
 
-				UnbiasedNow = DateTime.UnbiasedNow;
-				UtcNow = DateTime.UtcNow;
+				UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+				UtcNow = DateTimeUTC.UtcNow;
 
 				OnAlarm();
 
 				var sourcesBuffer = _eventSinks.GetBuffer();
 
 				_readyIndices.Clear();
-				for( var i = 0; i < _polledDescriptors.Count; ++i ) {
+				for( var i = 0U; i < _polledDescriptors.Count; ++i ) {
 					var& @event = eventBuffer[i];
 
 					if( @event.RaisedEvents != 0 ) {
@@ -206,7 +206,7 @@ namespace Platform.IO {
 					}
 				}
 
-				for( var j = 0; j < _readyIndices.Count; ++j ) {
+				for( var j = 0U; j < _readyIndices.Count; ++j ) {
 					_dispatchingIndex = _readyIndices[j];
 
 					var& @event = eventBuffer[_dispatchingIndex];
@@ -231,9 +231,9 @@ namespace Platform.IO {
 			int polledDescriptors;
 
 			var oldEventCount = _polledDescriptors.Count;
-			if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.AddRange( externalEvents, ( int ) externalEventCount );
+			if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.AddRange( externalEvents, externalEventCount );
 			finally {
-				if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.RemoveAt( oldEventCount, ( int ) externalEventCount );
+				if( externalEvents != null && externalEventCount > 0 ) _polledDescriptors.RemoveAt( oldEventCount, externalEventCount );
 			}
 
 			for( ; ; ) {
@@ -245,7 +245,7 @@ namespace Platform.IO {
 				var pollTimeout = externalPollTimeout;
 
 				var alarmTimeout = GetWaitTime();
-				if( alarmTimeout != TimeSpan.MaxValue ) {
+				if( alarmTimeout != TimeDuration.MaxValue ) {
 					var newTimeout = ( int ) alarmTimeout.TotalMilliseconds;
 					if( pollTimeout < 0 ) pollTimeout = newTimeout;
 					else pollTimeout = Math.Max( 0, Math.Min( pollTimeout, newTimeout ) );
@@ -257,8 +257,8 @@ namespace Platform.IO {
 				polledDescriptors = LibcApi.poll( eventBuffer, _polledDescriptors.Count.ToUnsigned(), pollTimeout );
 				TraceEventsArrived( polledDescriptors );
 
-				UnbiasedNow = DateTime.UnbiasedNow;
-				UtcNow = DateTime.UtcNow;
+				UnbiasedNow = TimeStamp.BootTime_ExcludeSuspend.Now;
+				UtcNow = DateTimeUTC.UtcNow;
 				var readyAlarms = FindReadyAlarms();
 
 				if( polledDescriptors <= 0 ) { // notify signals, timeout
@@ -274,7 +274,7 @@ namespace Platform.IO {
 				var sourcesBuffer = _eventSinks.GetBuffer();
 
 				_readyIndices.Clear();
-				for( var i = 0; i < oldEventCount; ++i ) {
+				for( var i = 0U; i < oldEventCount; ++i ) {
 					var& @event = eventBuffer[i];
 
 					if( @event.RaisedEvents != 0 ) {
@@ -289,7 +289,7 @@ namespace Platform.IO {
 				if( readyAlarms )
 					ExecuteReadyAlarms();
 
-				for( var j = 0; j < _readyIndices.Count; ++j ) {
+				for( var j = 0U; j < _readyIndices.Count; ++j ) {
 					_dispatchingIndex = _readyIndices[j];
 
 					var& @event = eventBuffer[_dispatchingIndex];
@@ -312,7 +312,7 @@ namespace Platform.IO {
 			return polledDescriptors;
 		}
 
-		/// @}
+		#endregion
 
 		public abstract class EventSink {
 			public EventLoop Parent; ///< Event loop holding/polling this EventSink
@@ -331,7 +331,7 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			protected int RegisterHandle( IOHandle handle, PollEvents events ) {
+			protected uint RegisterHandle( IOHandle handle, PollEvents events ) {
 				var poolID = Parent._indexManager.Allocate();
 				if( poolID >= Parent._eventSinks.Count ) {
 					Parent._polledDescriptors.Add( new pollfd { Handle = handle, ListenedEvents = events, RaisedEvents = PollEvents.None } );
@@ -355,8 +355,8 @@ namespace Platform.IO {
 				set { if( _listenedEvents != value ) { _listenedEvents = value; NotifyEventModification( EventHandle ); } }
 			}
 
-			public PollEvents _listenedEvents; ///< If you need to update '_listenedEvents' outside of 'OnEvent' call 'NotifyEventModification' method
-			public int PoolID = -1;            ///< Index of EventSink in array of 'pollfd' passed to 'poll'
+			public PollEvents _listenedEvents;  ///< If you need to update '_listenedEvents' outside of 'OnEvent' call 'NotifyEventModification' method
+			public uint PoolID = uint.MaxValue; ///< Index of EventSink in array of 'pollfd' passed to 'poll'
 
 			public EventSinkHandle( EventLoop parent )
 				: base( parent ) {
@@ -364,13 +364,13 @@ namespace Platform.IO {
 
 			[Conditional( ConditionString = "DEBUG" )]
 			protected void EnsureEventSinkRegistered() {
-				if( PoolID == -1 )
+				if( PoolID == uint.MaxValue )
 					Assert.Fail( "EventSink not registered!" );
 			}
 
 			[Conditional( ConditionString = "DEBUG" )]
 			protected void EnsureEventSinkNotRegistered() {
-				if( PoolID != -1 )
+				if( PoolID != uint.MaxValue )
 					Assert.Fail( "EventSink already registered!" );
 			}
 
@@ -387,7 +387,7 @@ namespace Platform.IO {
 				EnsureEventSinkRegistered();
 
 				var poolId = PoolID;
-				PoolID = -1;
+				PoolID = uint.MaxValue;
 				Parent.UnregisterHandle( poolId );
 			}
 
@@ -438,13 +438,17 @@ namespace Platform.IO {
 			public override void OnEvent( pollfd& @event ) {
 				using( var page = Memory.CachedPages.PopScoped() ) {
 					var buffer = ( byte* ) page.Value;
-					var bufferLength = ( int ) Memory.DefaultPageSize;
+					var bufferLength = Memory.DefaultPageSize;
 
 					while( _notificationPipe[PipeHandle.ReadEnd].AvailableBytes > 0 ) {
-						int readen;
-						_notificationPipe[PipeHandle.ReadEnd].Read( buffer, bufferLength, readen );
+						uint readen;
+						if( !_notificationPipe[PipeHandle.ReadEnd].Read( readen, buffer, bufferLength ) ) {
+							atomic( _exitRequestPending = false, Relaxed );
+							atomic( Parent._quitRequest = true, Relaxed );
+							break;
+						}
 
-						for( var i = 0; i < readen; ++i ) {
+						for( var i = 0U; i < readen; ++i ) {
 							switch( ( NotificationCommand ) buffer[i] ) {
 								case NotificationCommand.Exit: atomic( _exitRequestPending = false ); Parent._quitRequest = true; break;
 								case NotificationCommand.Update: atomic( _updateRequestPending = false ); break;
@@ -456,7 +460,8 @@ namespace Platform.IO {
 			}
 
 			private void SendCommand( NotificationCommand command ) {
-				_notificationPipe[PipeHandle.WriteEnd].Write( &command, sizeof( command ) );
+				uint totalWritten = 0;
+				_notificationPipe[PipeHandle.WriteEnd].Write( totalWritten, &command, sizeof( command ) );
 			}
 
 			public void RequestExit() { if( !atomic( _exitRequestPending = true ) ) { SendCommand( NotificationCommand.Exit ); } } // dont overwhelm pipe
@@ -495,11 +500,11 @@ namespace Platform.IO {
 				_notificationPending = false;
 
 				for( var available = _notificationPipe[PipeHandle.ReadEnd].AvailableBytes; available > 0; available = _notificationPipe[PipeHandle.ReadEnd].AvailableBytes ) {
-					for( var bytes = 0; bytes < available; ) {
-						int readen;
+					for( var bytes = 0U; bytes < available; ) {
+						uint readen;
 
 						NotificationCommand command;
-						_notificationPipe[PipeHandle.ReadEnd].Read( &command, sizeof( command ), readen );
+						_notificationPipe[PipeHandle.ReadEnd].Read( readen, &command, sizeof( command ) );
 						bytes += sizeof( command );
 
 						switch( command ) {
@@ -512,7 +517,8 @@ namespace Platform.IO {
 			}
 
 			private void SendCommand( NotificationCommand command ) {
-				_notificationPipe[PipeHandle.WriteEnd].Write( &command, sizeof( command ) );
+				uint written;
+				_notificationPipe[PipeHandle.WriteEnd].Write( written, &command, sizeof( command ) );
 			}
 
 			public void Notify() { if( !atomic( _notificationPending = true ) ) SendCommand( NotificationCommand.Update ); }
@@ -722,18 +728,19 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		public override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return DispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return DispatchThread != pthread_t.Invalid; } }
 
 		#endregion
 
-		#region tracing
+		#region Tracing
 
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchStarted() {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch started: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch started: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -741,7 +748,7 @@ namespace Platform.IO {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleNormal ) )
-				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTime.UtcNow );
+				Console.WriteLine( "EventLoop dispatch finished: {0}", DateTimeUTC.UtcNow );
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
@@ -763,7 +770,7 @@ namespace Platform.IO {
 		}
 
 		[Conditional( ConditionString = TraceConditionString )]
-		private void TraceBeginWait( int eventCount, int milliseconds ) {
+		private void TraceBeginWait( uint eventCount, int milliseconds ) {
 			if( !Tracing ) return;
 
 			using( Console.AttributedRegion( TraceStyleHigh ) )

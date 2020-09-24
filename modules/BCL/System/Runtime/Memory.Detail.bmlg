@@ -8,11 +8,11 @@ using System.Collections;
 
 namespace System.Runtime {
 	public static partial struct Memory {
-		public const int DefaultAllocationAlignment = PlatformAllocationAlignment; // minimal alignment of memory segment returned by '_implAllocate'
-		public const int DefaultPageSize = PlatformDefaultPageSize;
+		public const uint DefaultAllocationAlignment = PlatformAllocationAlignment; // minimal alignment of memory segment returned by '_implAllocate'
+		public const uint DefaultPageSize = PlatformDefaultPageSize;
 
-		public const int DefaultPageReserveSize = PlatformDefaultPageReserveSize; // aka allocation granularity in windows
-		public const int DefaultPageReserveCount = PlatformDefaultPageReserveSize / PlatformDefaultPageSize;
+		public const uint DefaultPageReserveSize = PlatformDefaultPageReserveSize; // aka allocation granularity in windows
+		public const uint DefaultPageReserveCount = PlatformDefaultPageReserveSize / PlatformDefaultPageSize;
 
 		private const string TraceDefine = "MEMORY_TRACE";
 
@@ -37,7 +37,7 @@ namespace System.Runtime {
 
 		public struct BufferScope : IDisposable {
 			public void* Location;
-			public int Length;
+			public uint Length;
 
 			public void Dispose() {
 				if( Length >= DefaultPageSize )
@@ -47,7 +47,7 @@ namespace System.Runtime {
 			}
 		}
 
-		public static BufferScope GetTemporary( int length ) {
+		public static BufferScope GetTemporary( uint length ) {
 			void* result;
 
 			if( length >= DefaultPageSize )
@@ -118,7 +118,7 @@ namespace System.Runtime {
 
 			for( var i = 0U; i < destination.Length; ++i ) {
 				var bytesToCopy = Math.Min( destination[i].Count, source.Count );
-				System.Runtime.Memory.Copy( destination[i].Start, source.Start, bytesToCopy );
+				Copy( destination[i].Start, source.Start, bytesToCopy );
 				result += bytesToCopy;
 
 				source.Start = ( byte* ) source.Start + bytesToCopy;
@@ -145,7 +145,7 @@ namespace System.Runtime {
 
 			for( var i = 0U; i < source.Length; ++i ) {
 				var bytesToCopy = Math.Min( destination.Count, source[i].Count );
-				System.Runtime.Memory.Copy( destination.Start, source[i].Start, bytesToCopy );
+				Copy( destination.Start, source[i].Start, bytesToCopy );
 				result += bytesToCopy;
 
 				destination.Start = ( byte* ) destination.Start + bytesToCopy;
@@ -167,5 +167,208 @@ namespace System.Runtime {
 		}
 
 		public static CachingStack<void*> CachedPages { get { return RuntimeObjectBase._cachedMemoryPages; } }
+
+		private static void FillBuffer( byte* buffer, uint bufferLength, byte* value, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+
+			while( bufferLength != 0 ) {
+				--bufferLength;
+				if( ( *left++ = *right++ ) == 0 ) break;
+			}
+
+			if( bufferLength == 0 && terminate ) *--left = 0;
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = 0;
+				--bufferLength;
+			}
+		}
+
+		private static void FillBuffer( char* buffer, uint bufferLength, char* value, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+
+			while( bufferLength != 0 ) {
+				--bufferLength;
+				if( ( *left++ = *right++ ) == 0 ) break;
+			}
+
+			if( bufferLength == 0 && terminate ) *--left = '\0';
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = '\0';
+				--bufferLength;
+			}
+		}
+
+		private static void FillBuffer( uint* buffer, uint bufferLength, uint* value, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+
+			while( bufferLength != 0 ) {
+				--bufferLength;
+				if( ( *left++ = *right++ ) == 0 ) break;
+			}
+
+			if( bufferLength == 0 && terminate ) *--left = 0;
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = 0;
+				--bufferLength;
+			}
+		}
+
+		private static void FillBuffer( byte* buffer, uint bufferLength, byte* value, uint valueLength, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+			var minLength = Math.Min( bufferLength, valueLength );
+
+			Copy( left, right, minLength );
+			left += minLength;
+			bufferLength -= minLength;
+
+			if( bufferLength == 0 && terminate ) *--left = 0;
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = 0;
+				--bufferLength;
+			}
+		}
+
+		private static void FillBuffer( char* buffer, uint bufferLength, char* value, uint valueLength, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+			var minLength = Math.Min( bufferLength, valueLength );
+
+			Copy( left, right, minLength );
+			left += minLength;
+			bufferLength -= minLength;
+
+			if( bufferLength == 0 && terminate ) *--left = '\0';
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = '\0';
+				--bufferLength;
+			}
+		}
+
+		private static void FillBuffer( uint* buffer, uint bufferLength, uint* value, uint valueLength, bool terminate, bool zeroFill ) {
+			var left = buffer;
+			var right = value;
+			var minLength = Math.Min( bufferLength, valueLength );
+
+			Copy( left, right, minLength );
+			left += minLength;
+			bufferLength -= minLength;
+
+			if( bufferLength == 0 && terminate ) *--left = 0;
+			else if( zeroFill ) while( bufferLength != 0 ) {
+				*left++ = 0;
+				--bufferLength;
+			}
+		}
+
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, CString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, false, true ); }
+		public static void FillTerminatedBuffer( sbyte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, true, true ); }
+		public static void FillNonTerminatedBuffer( sbyte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, false, true ); }
+
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, CString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, CString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, false, true ); }
+		public static void FillTerminatedBuffer( byte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, true, true ); }
+		public static void FillNonTerminatedBuffer( byte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, false, true ); }
+
+		public static void FillTerminatedBuffer( char* buffer, uint bufferLength, CUtf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( char* buffer, uint bufferLength, CUtf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( char* buffer, uint bufferLength, CUtf16StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( char* buffer, uint bufferLength, CUtf16StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+		public static void FillTerminatedBuffer( char* buffer, uint bufferLength, Utf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( char* buffer, uint bufferLength, Utf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+
+		public static void FillTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, true ); }
+		public static void FillNonTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, true ); }
+		public static void FillTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+		public static void FillTerminatedBuffer( uint* buffer, uint bufferLength, Utf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, true ); }
+		public static void FillNonTerminatedBuffer( uint* buffer, uint bufferLength, Utf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, true ); }
+
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, CString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, false, false ); }
+		public static void CopyToTerminatedBuffer( sbyte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, true, false ); }
+		public static void CopyToNonTerminatedBuffer( sbyte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( ( byte* ) buffer, bufferLength, value.GetChars(), value.ByteLength, false, false ); }
+
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, CString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, CString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, CStringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, SbcsString value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, CUtf8StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, false, false ); }
+		public static void CopyToTerminatedBuffer( byte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, true, false ); }
+		public static void CopyToNonTerminatedBuffer( byte* buffer, uint bufferLength, Utf8String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.ByteLength, false, false ); }
+
+		public static void CopyToTerminatedBuffer( char* buffer, uint bufferLength, CUtf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( char* buffer, uint bufferLength, CUtf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( char* buffer, uint bufferLength, CUtf16StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( char* buffer, uint bufferLength, CUtf16StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+		public static void CopyToTerminatedBuffer( char* buffer, uint bufferLength, Utf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( char* buffer, uint bufferLength, Utf16String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+
+		public static void CopyToTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), true, false ); }
+		public static void CopyToNonTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), false, false ); }
+		public static void CopyToTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( uint* buffer, uint bufferLength, CUtf32StringSpan value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+		public static void CopyToTerminatedBuffer( uint* buffer, uint bufferLength, Utf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, true, false ); }
+		public static void CopyToNonTerminatedBuffer( uint* buffer, uint bufferLength, Utf32String value ) { FillBuffer( buffer, bufferLength, value.GetChars(), value.Length, false, false ); }
+
+		public static bool BoundsCheck( uint arrayLength, uint index ) {
+			return index < arrayLength;
+		}
+
+		public static bool BoundsCheck( uint arrayLength, int index ) {
+			return index >= 0 && ( uint ) index < arrayLength;
+		}
+
+		public static bool BoundsCheck( uint arrayLength, uint startIndex, uint accessLength ) {
+			if( startIndex >= arrayLength ) return false;
+			if( accessLength > arrayLength || startIndex + accessLength > arrayLength ) return false;
+
+			return true;
+		}
+
+		public static bool BoundsCheck_Reverse( uint arrayLength, uint startIndex, uint accessLength ) {
+			if( startIndex >= arrayLength ) return false;
+			if( accessLength > arrayLength ) return false;
+			if( startIndex + 1 < accessLength ) return false;
+
+			return true;
+		}
 	}
 }

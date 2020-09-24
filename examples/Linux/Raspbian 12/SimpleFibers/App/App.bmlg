@@ -1,0 +1,105 @@
+﻿//
+// Created by $USER
+//
+
+using System;
+using System.IO;
+
+using Platform.IO;
+using Platform.Libc;
+
+namespace Example {
+	public partial class App {
+		const int Pages = 4;
+
+		[FiberStatic]
+		static int FiberLocalData = 123;
+
+		[FiberStatic]
+		[Alignment( Boundary = 64 )]
+		static System.Numerics.Matrix4x4 OverAlignedMatrix;
+
+		[EntryPoint]
+		private static void Main() {
+			System.Threading.ThreadPool.Initialize( 1 );
+
+			var eventLoop = new EventLoop() { Tracing = true };
+			eventLoop.CatchExitSignals(); // convert signals to events
+
+			eventLoop.BeginInvoke( Worker );
+
+			eventLoop.Dispatch(); // wait until RequestExit
+			Console.WriteLine( "Finished" );
+		}
+
+		private static Fiber.Barrier _barrier = new Fiber.Barrier( 2 ); // NOTE: '_barrier' would be destroyed if declared in 'Worker()'
+
+		private static void Worker() {
+			Fiber.Start( Pages, () => {
+				System.Numerics.Matrix4x4 mat;
+				Assert.AreEqual( 0, ( cast<intptr>( &mat ) & 15 ) );
+				Assert.AreEqual( 0, ( cast<intptr>( &OverAlignedMatrix ) & 63 ) );
+			}, "alignment_checker" );
+
+			// @{ execute all code without context switch
+			for( var i = 0; i < 3; ++i ) {
+				Fiber.Start( Pages, () => {
+					Console.WriteLine( "CONTINUOUS: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
+
+					Console.WriteLine( "CONTINUOUS: FiberLocalData={0} &FiberLocalData={1}", FiberLocalData, &FiberLocalData );
+					++FiberLocalData;
+
+					Console.WriteLine( "CONTINUOUS: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
+				}, "cont" + i );
+			}
+			// @}
+
+			// @{ use barrier to syncronize fibers
+			Fiber.Start( Pages, () => {
+				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
+				_barrier.Wait();
+				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
+			}, "bar0" );
+
+			Fiber.Start( Pages, () => {
+				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
+				_barrier.Wait();
+				Console.WriteLine( "BARRIER: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
+			}, "bar1" );
+			// @}
+
+			// @}
+
+			// @{ use of 'Fiber.Sleep'
+			Fiber.Start( Pages, () => {
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, pthread_t.CurrentThread, DateTimeUTC.UtcNow );
+				Fiber.Sleep( 1000 );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, pthread_t.CurrentThread, DateTimeUTC.UtcNow );
+
+				Fiber.FiberManager.CurrentEventLoop.RequestExit();
+			}, "slp0" );
+
+			Fiber.Start( Pages, () => {
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] started at {2}", Fiber.Current, pthread_t.CurrentThread, DateTimeUTC.UtcNow );
+				Fiber.Sleep( 1000 );
+				Console.WriteLine( "SLEEP: Fiber [{0}] in thread [{1}] finished at {2}", Fiber.Current, pthread_t.CurrentThread, DateTimeUTC.UtcNow );
+			}, "slp1" );
+			// @}
+
+			// @{ move blocking code to thread pool
+			Fiber.Start( Pages, () => {
+				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] started", Fiber.Current, pthread_t.CurrentThread );
+
+				using( Fiber.AsyncCompletionRegion() ) { // following region executed in thread pool
+					Console.WriteLine( "\tWorker thread [{0}] started", pthread_t.CurrentThread );
+					pthread_t.Sleep( TimeDuration.FromMilliseconds( 1000 ) );
+
+					Console.WriteLine( "\tWorker thread [{0}] finished", pthread_t.CurrentThread );
+				}
+
+				Console.WriteLine( "TP: Fiber [{0}] in thread [{1}] finished", Fiber.Current, pthread_t.CurrentThread );
+			}, "tp0" );
+			// @}
+		}
+	}
+}

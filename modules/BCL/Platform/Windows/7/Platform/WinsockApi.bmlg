@@ -22,7 +22,7 @@ namespace Platform {
 		public extern static int WSACleanup();
 
 		public extern static SocketHandle socket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol );
-		
+
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsasocketa
 		public static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOA& protocolInfo, SocketGroup group, SocketCreateFlags flags ) { return WSASocket( ( int ) family, type, protocol, protocolInfo, group, flags ); }
 		[BackendSymbol( Name = "WSASocketA" )]
@@ -48,25 +48,25 @@ namespace Platform {
 
 		public extern static int WSAIoctl( SocketHandle socket, uint dwIoControlCode, void* inBuffer, uint cbInBuffer, void* outBuffer, uint cbOutBuffer, uint& bytesReturned, OVERLAPPED& overlapped, WsaIOCompletionRoutine completionRoutine );
 
-		public extern static SocketHandle accept( SocketHandle socket, sockaddr* addr, int& addrlen );
-		public extern static SocketHandle WSAAccept( SocketHandle socket, sockaddr* addr, int& addrlen, LPCONDITIONPROC lpfnCondition, uintptr callbackData );
+		public extern static SocketHandle accept( SocketHandle socket, sockaddr* addr, uint& addrlen );
+		public extern static SocketHandle WSAAccept( SocketHandle socket, sockaddr* addr, uint& addrlen, LPCONDITIONPROC lpfnCondition, uintptr callbackData );
 
-		public extern static int bind( SocketHandle socket, sockaddr* name, int namelen );
-		public extern static int listen( SocketHandle socket, int backlog );
+		public extern static int bind( SocketHandle socket, sockaddr* name, uint namelen );
+		public extern static int listen( SocketHandle socket, uint backlog );
 
 		public extern static int connect( SocketHandle socket, sockaddr* name, int namelen );
 		public extern static int WSAConnect( SocketHandle socket, sockaddr* name, int namelen, WSABUF& callerData, WSABUF& calleeData, QOS& SQOS, QOS& GQOS );
 
-		public extern static int send( SocketHandle socket, void* buffer, int length, int flags );
+		public extern static int send( SocketHandle socket, void* buffer, uint length, int flags );
 		public extern static int WSASend( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesSent, uint flags, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
 		public extern static int WSASendDisconnect( SocketHandle socket, WSABUF& outboundDisconnectData );
 		public extern static int WSASendMsg( SocketHandle socket, WSAMSG& msg, uint flags, uint& numberOfBytesSent, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
-		public extern static int WSASendTo( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesSent, uint dwFlags, sockaddr* to, int toLength, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
+		public extern static int WSASendTo( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesSent, uint dwFlags, sockaddr* to, uint toLength, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
 
-		public extern static int recv( SocketHandle socket, void* buffer, int length, int flags );
+		public extern static int recv( SocketHandle socket, void* buffer, uint length, int flags );
 		public extern static int WSARecv( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesReceived, uint& flags, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
 		public extern static int WSARecvDisconnect( SocketHandle socket, WSABUF& inboundDisconnectData );
-		public extern static int WSARecvFrom( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesRecvd, uint& flags, sockaddr* from, int& fromlen, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
+		public extern static int WSARecvFrom( SocketHandle socket, WSABUF* buffers, uint bufferCount, uint& numberOfBytesRecvd, uint& flags, sockaddr* from, uint& fromlen, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
 		// public extern static int WSARecvMsg( SocketHandle socket, WSAMSG& msg, uint& numberOfBytesReceived, WSAOVERLAPPED& overlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE completionRoutine );
 
 		public functor void LPWSAOVERLAPPED_COMPLETION_ROUTINE( SystemErrorCode error, uint transferred, WSAOVERLAPPED& overlapped, uint flags );
@@ -87,8 +87,6 @@ namespace Platform {
 		public extern static int getaddrinfo( CString pNodeName, CString pServiceName, addrinfo* pHints, addrinfo** ppResult );
 		public extern static void freeaddrinfo( addrinfo* pAddrInfo );
 
-		public static readonly WinsockInitializer Instance = new WinsockInitializer();
-
 		internal static void GetExtensions() {
 			using( var socket = new SocketHandleTCP() ) {
 				GetExtension( socket, "ConnectEx", GuidConnectEx, &ConnectEx );
@@ -97,7 +95,7 @@ namespace Platform {
 
 		public static SystemErrorCode GetExtension( SocketHandle socket, string name, [In] Guid& functionId, void* fn ) {
 			uint SIO_GET_EXTENSION_FUNCTION_POINTER = 3355443206;
-			if( WinsockApi.WSAIoctl( socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &functionId, ( uint ) sizeof( functionId ), fn, ( uint ) sizeof( fn ), 0U, nullref, null ) != 0 ) {
+			if( WinsockApi.WSAIoctl( socket, SIO_GET_EXTENSION_FUNCTION_POINTER, &functionId, sizeof( functionId ), fn, sizeof( fn ), 0U, nullref, null ) != 0 ) {
 				var error = Kernel32Api.LastError;
 				// Console.WriteLine( "WSAIoctl: Unable to get required extension {0}( {1} ) - {2}", name, functionId, error );
 				return error;
@@ -108,7 +106,7 @@ namespace Platform {
 
 		public static SystemErrorCode SetTcpKeepAlive( SocketHandle socket, tcp_keepalive& settings ) {
 			uint SIO_KEEPALIVE_VALS = 2550136836;
-			if( WinsockApi.WSAIoctl( socket, SIO_KEEPALIVE_VALS, &settings, ( uint ) sizeof( settings ), null, 0, 0U, nullref, null ) != 0 ) {
+			if( WinsockApi.WSAIoctl( socket, SIO_KEEPALIVE_VALS, &settings, sizeof( settings ), null, 0, 0U, nullref, null ) != 0 ) {
 				var error = Kernel32Api.LastError;
 				// Console.WriteLine( "WSAIoctl: Unable to set keep-alive values" );
 				return error;
@@ -117,8 +115,8 @@ namespace Platform {
 			return SystemErrorCode.NO_ERROR;
 		}
 
-		private const Guid GuidAcceptEx = "{B5367DF1-CBAC-11CF-95CA-00805F48A192}";
-		private const Guid GuidConnectEx = "{25A207B9-DDF3-4660-8EE9-76E58C74063E}";
+		private const Guid GuidAcceptEx = Guid.Parse( "{B5367DF1-CBAC-11CF-95CA-00805F48A192}" );
+		private const Guid GuidConnectEx = Guid.Parse( "{25A207B9-DDF3-4660-8EE9-76E58C74063E}" );
 
 		public static readonly FnConnectEx ConnectEx;
 		public functor Boolean32 FnConnectEx( SocketHandle socket, sockaddr* name, int namelen, void* sendBuffer, uint sendDataLength, uint& bytesSent, OVERLAPPED& overlapped );
@@ -294,21 +292,21 @@ namespace Platform {
 			return WinsockApi.setsockopt( this, SocketOptionLevel.SOL_SOCKET, SocketOption.SO_UPDATE_ACCEPT_CONTEXT, &listenHandle, sizeof( listenHandle ) ) == 0;
 		}
 
-		public SystemErrorCode Listen( int backlog ) {
+		public SystemErrorCode Listen( uint backlog ) {
 			if( WinsockApi.listen( this, backlog ) != 0 ) return Kernel32Api.LastError;
 			return SystemErrorCode.NO_ERROR;
 		}
 
-		public SystemErrorCode Bind( void* address, int addressLength ) {
+		public SystemErrorCode Bind( void* address, uint addressLength ) {
 			if( WinsockApi.bind( this, ( sockaddr* ) address, addressLength ) != 0 ) return Kernel32Api.LastError;
 			return SystemErrorCode.NO_ERROR;
 		}
 
-		public SystemErrorCode SendTo( TimeSpan timeout, void* address, int addressLength, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.SendTo( timeout, this, address, addressLength, buffer, count, total ); }
-		public SystemErrorCode ReceiveFrom( TimeSpan timeout, void* address, int addressLength, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReceiveFrom( timeout, this, address, addressLength, buffer, count, total ); }
+		public SystemErrorCode SendTo( TimeDuration timeout, uint& totalTransmitted, void* address, uint addressLength, void* buffer, uint count ) { return System.IO.Fiber.FiberInfo.Manager.SendTo( timeout, totalTransmitted, this, address, addressLength, buffer, count ); }
+		public SystemErrorCode ReceiveFrom( TimeDuration timeout, uint& totalReceived, void* address, uint addressLength, void* buffer, uint count ) { return System.IO.Fiber.FiberInfo.Manager.ReceiveFrom( timeout, totalReceived, this, address, addressLength, buffer, count ); }
 
-		public SystemErrorCode SendTo( void* address, int addressLength, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.SendTo( TimeSpan.Zero, this, address, addressLength, buffer, count, total ); }
-		public SystemErrorCode ReceiveFrom( void* address, int addressLength, void* buffer, int count, int& total ) { return System.IO.Fiber.FiberInfo.Manager.ReceiveFrom( TimeSpan.Zero, this, address, addressLength, buffer, count, total ); }
+		public SystemErrorCode SendTo( void* address, uint& totalTransmitted, uint addressLength, void* buffer, uint count ) { return System.IO.Fiber.FiberInfo.Manager.SendTo( TimeDuration.Zero, totalTransmitted, this, address, addressLength, buffer, count ); }
+		public SystemErrorCode ReceiveFrom( void* address, uint& totalReceived, uint addressLength, void* buffer, uint count ) { return System.IO.Fiber.FiberInfo.Manager.ReceiveFrom( TimeDuration.Zero, totalReceived, this, address, addressLength, buffer, count ); }
 	}
 
 	public struct SocketHandleTCP : SocketHandle {
@@ -353,7 +351,7 @@ namespace Platform {
 
 	public struct WsaAddress {
 		public sockaddr Address;
-		public int Length;
+		public uint Length;
 
 		public WsaAddress( IPv4Endpoint endpoint ) {
 			var nativeEndpoint = ( sockaddr_in ) endpoint;
@@ -434,7 +432,7 @@ namespace Platform {
 				sin6_addr = endpoint.Address,
 				sin6_port = endpoint.Port,
 				sin6_flowinfo = 0,
-				sin6_scope_id = endpoint.ScopeId
+				sin6_scope_id = endpoint.ZoneId
 			};
 		}
 
@@ -442,7 +440,7 @@ namespace Platform {
 			return new System.Net.IPv6Endpoint {
 				Address = endpoint.sin6_addr,
 				Port = endpoint.sin6_port,
-				ScopeId = endpoint.sin6_scope_id
+				ZoneId = endpoint.sin6_scope_id
 			};
 		}
 

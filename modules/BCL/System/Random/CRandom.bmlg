@@ -13,9 +13,8 @@ namespace System.Random {
 			Seed = ( long ) Environment.CpuTickCount;
 		}
 
-		public CRandom( long seed ) {
-			Seed = seed;
-		}
+		public CRandom( long seed ) { Seed = seed; }
+		public CRandom( ulong seed ) { Seed = ( long ) seed; }
 
 		[ForceInline]
 		private void UpdateSeed() {
@@ -39,6 +38,12 @@ namespace System.Random {
 
 		[ForceInline]
 		public int NextInt( int minValue, int maxValueInclusive ) { return NextInt() % ( maxValueInclusive - minValue + 1 ) + minValue; }
+
+		[ForceInline]
+		public uint NextUInt( uint maxValueExclusive ) { return NextUInt() % maxValueExclusive; }
+
+		[ForceInline]
+		public uint NextUInt( uint minValue, uint maxValueInclusive ) { return NextUInt() % ( maxValueInclusive - minValue + 1 ) + minValue; }
 
 		[Inline]
 		public ushort NextUShort() {
@@ -70,7 +75,7 @@ namespace System.Random {
 			return ( cast<int>( Seed >> 16 ) & int.MaxValue ) * ( max - min ) * IntReciprocal + min;
 		}
 
-		public void Fill( byte* start, int count ) {
+		public void Fill( byte* start, uint count ) {
 			while( count >= 4 ) { unaligned( *( uint* ) start ) = NextUInt(); start += 4; count -= 4; }
 			while( count >= 2 ) { unaligned( *( ushort* ) start ) = NextUShort(); start += 2; count -= 2; }
 			while( count >= 1 ) { unaligned( *( byte* ) start ) = NextByte(); start += 1; count -= 1; }

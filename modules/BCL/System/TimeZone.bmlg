@@ -1,0 +1,442 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.Collections;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
+using System.Net.Mail;
+using System.Serialization;
+using System.Threading;
+
+namespace System {
+	public static partial class TimeZone {
+		[ThreadStatic]
+		public static BinaryConverter CurrentTimeZone;
+
+		public static long GetLocalFromUtcOffset( DateTime utcTime ) { Debug.Assert( utcTime.Kind == DateTimeKind.Utc ); return GetLocalFromUtcOffset( ( ulong ) utcTime.Ticks ); }
+		public static long GetLocalFromUtcOffset( DateTimeUTC utcTime ) { return GetLocalFromUtcOffset( utcTime.Ticks ); }
+
+		public static long GetUtcFromLocalOffset( DateTime localTime ) { Debug.Assert( localTime.Kind == DateTimeKind.Local ); return GetUtcFromLocalOffset( ( ulong ) localTime.Ticks ); }
+		public static long GetUtcFromLocalOffset( DateTimeLocal localTime ) { return GetUtcFromLocalOffset( localTime.Ticks ); }
+
+		public static long GetLocalFromUtcOffset( ulong time ) {
+			if( CurrentTimeZone != null ) return CurrentTimeZone.GetLocalTimeOffset( time );
+
+			return GetPlatformDefaultLocalFromUtcOffset( time );
+		}
+
+		public static long GetUtcFromLocalOffset( ulong time ) {
+			if( CurrentTimeZone != null ) return CurrentTimeZone.GetUtcTimeOffset( time );
+
+			return GetPlatformDefaultUtcFromLocalOffset( time );
+		}
+
+		public class BinaryReader {
+			public byte VersionV1 = byte.MaxValue, VersionV2 = byte.MaxValue;
+
+			public int[] TransitionsV1;
+			public long[] TransitionsV2;
+
+			public TimeInfo[] TimeInfoV1, TimeInfoV2;
+			public byte[] OffsetIndexV1, OffsetIndexV2;
+			public uint FirstNonDST1 = uint.MaxValue, FirstNonDST2 = uint.MaxValue;
+
+			public byte[] AbbreviationsV1, AbbreviationsV2;
+			public byte[] LocalIndicatorV1, LocalIndicatorV2;
+			public byte[] WallIndicatorV1, WallIndicatorV2;
+			public LeapInfoV1[] LeapV1;
+			public LeapInfoV2[] LeapV2;
+
+			public BinaryReader() {
+			}
+
+			public struct TimeInfo {
+				public int Offset;
+				public byte IsDST;
+				public byte AbbreviationOffset;
+			}
+
+			public struct LeapInfoV1 {
+				public uint Time;
+				public uint Count;
+			}
+
+			public struct LeapInfoV2 {
+				public ulong Time;
+				public uint Count;
+			}
+
+			static BinaryReader ParseFile( string fileName ) {
+				using( var file = File.OpenRead( fileName ) ) {
+					if( file == null ) return null;
+
+					return ParseStream( file );
+				}
+			}
+
+			static BinaryReader ParseFile( Utf8String fileName ) {
+				using( var file = File.OpenRead( fileName ) ) {
+					if( file == null ) return null;
+
+					return ParseStream( file );
+				}
+			}
+
+			static BinaryReader ParseStream( IStream stream ) {
+				using( var reader = new System.IO.BinaryReader( stream ) ) {
+					if( reader.ReadUInt32() != 0x66695A54 ) return null; // TZif
+
+					var result = new BinaryReader();
+					{
+						var fileVersion = reader.ReadUInt8();
+						switch( fileVersion ) {
+							case 0: result.VersionV1 = 1; break;
+							case 0x32: result.VersionV1 = 2; break;
+							case 0x33: result.VersionV1 = 3; break;
+						}
+					}
+
+					reader.BaseStream.Drain( 15 );
+
+					uint localIndicatorCount = reader.ReadUInt32BigEndian();
+					uint wallIndicatorCount = reader.ReadUInt32BigEndian();
+					uint leapSecondCount = reader.ReadUInt32BigEndian();
+					uint transitionsCount = reader.ReadUInt32BigEndian();
+					uint localTimeTypeCount = reader.ReadUInt32BigEndian();
+					uint abbreviationsLength = reader.ReadUInt32BigEndian();
+
+					if( localIndicatorCount > localTimeTypeCount ) return null;
+					if( wallIndicatorCount > localTimeTypeCount ) return null;
+
+					result.TransitionsV1 = new[transitionsCount] int;
+					result.OffsetIndexV1 = new[transitionsCount] byte;
+					result.TimeInfoV1 = new[localTimeTypeCount] TimeInfo;
+					result.LocalIndicatorV1 = new[localIndicatorCount] byte;
+					result.WallIndicatorV1 = new[wallIndicatorCount] byte;
+					result.LeapV1 = new[leapSecondCount] LeapInfoV1;
+
+					for( var i = 0U; i < transitionsCount; ++i )
+						result.TransitionsV1[i] = reader.ReadInt32BigEndian();
+
+					for( var i = 0U; i < transitionsCount; ++i )
+						result.OffsetIndexV1[i] = reader.ReadUInt8();
+
+					for( var i = 0U; i < localTimeTypeCount; ++i ) {
+						result.TimeInfoV1[i].Offset = reader.ReadInt32BigEndian();
+						result.TimeInfoV1[i].IsDST = reader.ReadUInt8();
+						result.TimeInfoV1[i].AbbreviationOffset = reader.ReadUInt8();
+
+						if( result.FirstNonDST1 == uint.MaxValue && result.TimeInfoV1[i].IsDST == 0 ) result.FirstNonDST1 = i;
+					}
+
+					if( result.FirstNonDST1 == uint.MaxValue ) result.FirstNonDST1 = 0;
+
+					result.AbbreviationsV1 = new[abbreviationsLength] byte;
+					reader.ReadValues( &result.AbbreviationsV1[0], abbreviationsLength );
+
+					for( var i = 0U; i < leapSecondCount; ++i ) {
+						result.LeapV1[i].Time = reader.ReadUInt32BigEndian();
+						result.LeapV1[i].Count = reader.ReadUInt32BigEndian();
+					}
+
+					for( var i = 0U; i < wallIndicatorCount; ++i )
+						result.WallIndicatorV1[i] = reader.ReadUInt8();
+
+					for( var i = 0U; i < localIndicatorCount; ++i )
+						result.LocalIndicatorV1[i] = reader.ReadUInt8();
+
+					if( result.VersionV1 >= 2 ) {
+						if( reader.ReadUInt32() != 0x66695A54 ) return null; // TZif
+						{
+							var fileVersion = reader.ReadUInt8();
+							switch( fileVersion ) {
+								case 0: result.VersionV2 = 1; break;
+								case 0x32: result.VersionV2 = 2; break;
+								case 0x33: result.VersionV2 = 3; break;
+							}
+						}
+
+						reader.BaseStream.Drain( 15 );
+
+						localIndicatorCount = reader.ReadUInt32BigEndian();
+						wallIndicatorCount = reader.ReadUInt32BigEndian();
+						leapSecondCount = reader.ReadUInt32BigEndian();
+						transitionsCount = reader.ReadUInt32BigEndian();
+						localTimeTypeCount = reader.ReadUInt32BigEndian();
+						abbreviationsLength = reader.ReadUInt32BigEndian();
+
+						if( localIndicatorCount > localTimeTypeCount ) return null;
+						if( wallIndicatorCount > localTimeTypeCount ) return null;
+
+						result.TransitionsV2 = new[transitionsCount] long;
+						result.OffsetIndexV2 = new[transitionsCount] byte;
+						result.TimeInfoV2 = new[localTimeTypeCount] TimeInfo;
+						result.LocalIndicatorV2 = new[localIndicatorCount] byte;
+						result.WallIndicatorV2 = new[wallIndicatorCount] byte;
+						result.LeapV2 = new[leapSecondCount] LeapInfoV2;
+
+						for( var i = 0U; i < transitionsCount; ++i ) {
+							result.TransitionsV2[i] = reader.ReadInt64BigEndian();
+						}
+
+						for( var i = 0U; i < transitionsCount; ++i ) {
+							result.OffsetIndexV2[i] = reader.ReadUInt8();
+						}
+
+						for( var i = 0U; i < localTimeTypeCount; ++i ) {
+							result.TimeInfoV2[i].Offset = reader.ReadInt32BigEndian();
+							result.TimeInfoV2[i].IsDST = reader.ReadUInt8();
+							result.TimeInfoV2[i].AbbreviationOffset = reader.ReadUInt8();
+
+							if( result.FirstNonDST2 == uint.MaxValue && result.TimeInfoV2[i].IsDST == 0 ) result.FirstNonDST2 = i;
+						}
+
+						if( result.FirstNonDST2 == uint.MaxValue ) result.FirstNonDST2 = 0;
+
+						result.AbbreviationsV2 = new[abbreviationsLength] byte;
+						reader.ReadValues( &result.AbbreviationsV2[0], abbreviationsLength );
+
+						for( var i = 0U; i < leapSecondCount; ++i ) {
+							result.LeapV2[i].Time = reader.ReadUInt64BigEndian();
+							result.LeapV2[i].Count = reader.ReadUInt32BigEndian();
+						}
+
+						for( var i = 0U; i < wallIndicatorCount; ++i )
+							result.WallIndicatorV2[i] = reader.ReadUInt8();
+
+						for( var i = 0U; i < localIndicatorCount; ++i )
+							result.LocalIndicatorV2[i] = reader.ReadUInt8();
+					}
+
+					return result;
+				}
+			}
+		}
+
+		public class BinaryConverter : IBinarySerializable, IFormattable {
+			internal ulong[] TransitionsSorted;
+			internal long[] Offsets;
+			internal byte[] OffsetIndex;
+
+			internal ulong[] TransitionsTree;
+			internal byte[] OffsetIndex2;
+
+			internal ulong Transition_Min, Transition_Max;
+			internal long Transition_Min_Offset, Transition_Max_Offset;
+
+			public string Name;
+
+			internal BinaryConverter( string name ) {
+				Name = name;
+			}
+
+			public static BinaryConverter FromStream( System.IO.BinaryReader reader, SerializerContext context ) {
+				var result = new BinaryConverter( "" );
+				reader.Read( result, context );
+				return result;
+			}
+
+			public BinaryConverter( string name, BinaryReader reader, long offset = 0 ) {
+				Name = name;
+
+				if( reader.VersionV1 >= 2 ) {
+					TransitionsSorted = new[reader.TransitionsV2.Length] ulong;
+					TransitionsTree = new[reader.TransitionsV2.Length] ulong;
+
+					OffsetIndex = reader.OffsetIndexV2;
+					OffsetIndex2 = new[reader.OffsetIndexV2.Length] byte;
+					Offsets = new[reader.TimeInfoV2.Length] long;
+
+					for( var i = 0U; i < reader.TransitionsV2.Length; ++i ) {
+						if( reader.TransitionsV2[i] <= long.MaxValue / -TimeSpan.TicksPerSecond ) TransitionsSorted[i] = 0;
+						else TransitionsSorted[i] = ( ulong )( reader.TransitionsV2[i] * 10000000L ) + TimeDuration.Ticks_1970_1_1;
+					}
+
+					for( var i = 0U; i < reader.TimeInfoV2.Length; ++i )
+						Offsets[i] = reader.TimeInfoV2[i].Offset * 10000000L + offset;
+
+					MakeTree( 0, reader.TransitionsV2.Length, 0 );
+
+					if( TransitionsSorted.Length > 0 ) {
+						Transition_Max_Offset = Offsets[OffsetIndex[TransitionsSorted.Length - 1]];
+						Transition_Min_Offset = Offsets[OffsetIndex[reader.FirstNonDST2]];
+
+						Transition_Min = TransitionsSorted[0];
+						Transition_Max = TransitionsSorted[TransitionsSorted.Length - 1];
+					}
+				}
+				else if( reader.VersionV1 == 1 ) {
+					TransitionsSorted = new[reader.TransitionsV1.Length] ulong;
+					TransitionsTree = new[reader.TransitionsV1.Length] ulong;
+
+					OffsetIndex = reader.OffsetIndexV1;
+					OffsetIndex2 = new[reader.OffsetIndexV1.Length] byte;
+					Offsets = new[reader.TimeInfoV1.Length] long;
+
+					for( var i = 0U; i < reader.TransitionsV1.Length; ++i ) {
+						if( reader.TransitionsV2[i] <= int.MaxValue / -TimeSpan.TicksPerSecond ) TransitionsSorted[i] = 0;
+						else TransitionsSorted[i] = ( ulong )( reader.TransitionsV1[i] * 10000000L ) + TimeDuration.Ticks_1970_1_1;
+					}
+
+					for( var i = 0U; i < reader.TimeInfoV1.Length; ++i )
+						Offsets[i] = reader.TimeInfoV1[i].Offset * 10000000L + offset;
+
+					MakeTree( 0, reader.TransitionsV1.Length, 0 );
+
+					if( TransitionsSorted.Length > 0 ) {
+						Transition_Max_Offset = Offsets[OffsetIndex[TransitionsSorted.Length - 1]];
+						Transition_Min_Offset = Offsets[OffsetIndex[reader.FirstNonDST1]];
+
+						Transition_Min = TransitionsSorted[0];
+						Transition_Max = TransitionsSorted[TransitionsSorted.Length - 1];
+					}
+				}
+
+				TransitionsSorted = null;
+				OffsetIndex = null;
+			}
+
+			public BinaryConverter CloneWithOffset( string name, TimeSpan offset ) { return CloneWithOffset( name, offset.Ticks ); }
+
+			public BinaryConverter CloneWithOffset( string name, long offset ) {
+				if( Name == name && offset == 0 ) return this;
+
+				var result = new BinaryConverter( name ) {
+					TransitionsTree = TransitionsTree,
+					Offsets = new[Offsets.Length] long,
+					OffsetIndex2 = OffsetIndex2,
+
+					Transition_Min = Transition_Min,
+					Transition_Max = Transition_Max
+				};
+
+				result.Transition_Min_Offset = Transition_Min_Offset + offset;
+				result.Transition_Max_Offset = Transition_Max_Offset + offset;
+
+				for( var i = 0U; i < Offsets.Length; ++i )
+					result.Offsets[i] = Offsets[i] + offset;
+
+				return result;
+			}
+
+			private void MakeTree( uint dstIndex, uint subLength, uint start ) {
+				if( subLength == 0 ) return;
+				var center = BinaryTreeCommon.GetCenter( subLength );
+
+				TransitionsTree[dstIndex] = TransitionsSorted[start + center];
+				OffsetIndex2[dstIndex] = OffsetIndex[start + center];
+				MakeTree( 2 * dstIndex + 1, center, start );
+				MakeTree( 2 * dstIndex + 2, subLength - center - 1, start + center + 1 );
+			}
+
+			public long GetLocalTimeOffset( ulong utcTicks ) {
+				if( TransitionsTree.Length == 0 ) return 0;
+
+				var transitions2 = &TransitionsTree[0];
+				var transitionsLength = TransitionsTree.Length;
+
+				if( utcTicks >= Transition_Max ) return Transition_Max_Offset;
+				if( utcTicks < Transition_Min ) return Transition_Min_Offset;
+
+				var resultIndex = transitionsLength;
+				for( var index = 0U; index < transitionsLength; ) {
+					if( transitions2[index] <= utcTicks ) {
+						resultIndex = index;
+						index = index * 2 + 2;
+					}
+					else {
+						index = index * 2 + 1;
+					}
+				}
+
+				return Offsets[OffsetIndex2[resultIndex]];
+			}
+
+			public long GetUtcTimeOffset( ulong localTicks ) {
+				if( TransitionsTree.Length == 0 ) return 0;
+
+				var transitions2 = &TransitionsTree[0];
+				var transitionsLength = TransitionsTree.Length;
+
+				if( localTicks - ( ulong ) Transition_Max_Offset >= Transition_Max ) return Transition_Max_Offset;
+				if( localTicks - ( ulong ) Transition_Min_Offset < Transition_Min ) return Transition_Min_Offset;
+
+				var resultIndex = transitionsLength;
+				for( var index = 0U; index < transitionsLength; ) {
+					if( transitions2[index] + ( ulong ) Offsets[OffsetIndex2[index]] <= localTicks ) {
+						resultIndex = index;
+						index = index * 2 + 2;
+					}
+					else {
+						index = index * 2 + 1;
+					}
+				}
+
+				return Offsets[OffsetIndex2[resultIndex]];
+			}
+
+			void IBinarySerializable.Serialize( BinaryWriter writer, SerializerContext context ) {
+				writer.Write( Name );
+				writer.Write( Transition_Min );
+				writer.Write( Transition_Max );
+				writer.Write( Transition_Min_Offset );
+				writer.Write( Transition_Max_Offset );
+
+				writer.WriteArray( TransitionsTree );
+				writer.WriteArray( Offsets );
+				writer.WriteArray( OffsetIndex2 );
+			}
+
+			void IBinarySerializable.Deserialize( void* object, System.IO.BinaryReader reader, SerializerContext context ) {
+				Name = reader.ReadUtf16String();
+				reader.Read( Transition_Min );
+				reader.Read( Transition_Max );
+				reader.Read( Transition_Min_Offset );
+				reader.Read( Transition_Max_Offset );
+
+				TransitionsTree = reader.ReadUInt64Array();
+				Offsets = reader.ReadInt64Array();
+				OffsetIndex2 = reader.ReadUInt8Array();
+			}
+
+			public static bool operator ==( BinaryConverter left, BinaryConverter right ) {
+				if( left == null && right == null ) return true;
+				if( left == null || right == null ) return false;
+
+				if( left.Name != right.Name ) return false;
+				if( left.Transition_Min != right.Transition_Min ) return false;
+				if( left.Transition_Max != right.Transition_Max ) return false;
+				if( left.Transition_Min_Offset != right.Transition_Min_Offset ) return false;
+				if( left.Transition_Max_Offset != right.Transition_Max_Offset ) return false;
+
+				if( left.TransitionsTree.Length != right.TransitionsTree.Length ) return false;
+				if( left.Offsets.Length != right.Offsets.Length ) return false;
+				if( left.OffsetIndex2.Length != right.OffsetIndex2.Length ) return false;
+
+				if( !System.Runtime.Memory.Compare( &left.TransitionsTree[0], &right.TransitionsTree[0], left.TransitionsTree.Length * sizeof( left.TransitionsTree[0] ) ) ) return false;
+				if( !System.Runtime.Memory.Compare( &left.Offsets[0], &right.Offsets[0], left.Offsets.Length * sizeof( left.Offsets[0] ) ) ) return false;
+				if( !System.Runtime.Memory.Compare( &left.OffsetIndex2[0], &right.OffsetIndex2[0], left.OffsetIndex2.Length * sizeof( left.OffsetIndex2[0] ) ) ) return false;
+
+				return true;
+			}
+
+			public void ToString( StringBuilder builder, string format ) {
+				builder.Append( "Name=" ); builder.Append( Name );
+				builder.Append( " Transition_Min=" ); builder.Append( Transition_Min );
+				builder.Append( " Transition_Max=" ); builder.Append( Transition_Max );
+				builder.Append( " Transition_Min_Offset=" ); builder.Append( Transition_Min_Offset );
+				builder.Append( " Transition_Max_Offset=" ); builder.Append( Transition_Max_Offset );
+				builder.Append( " TransitionsTree=" ); builder.Append( TransitionsTree?.Length );
+				builder.Append( " Offsets=" ); builder.Append( Offsets?.Length );
+				builder.Append( " OffsetIndex2=" ); builder.Append( OffsetIndex2?.Length );
+			}
+
+			public static bool operator !=( BinaryConverter left, BinaryConverter right ) { return !( left == right ); }
+		}
+	}
+}

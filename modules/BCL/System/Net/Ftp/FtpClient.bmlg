@@ -1,16 +1,16 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
 //
 
-using System.IO;
 using System.Collections;
+using System.IO;
 using System.Text;
 
 namespace System.Net.Ftp {
 	public partial class FtpClient : System.Net.NetworkClient {
-		public bool Trace = true;
+		public bool Trace = false;
 
 		public struct FtpCapabilities {
 			public bool EPRT { get; set; }
@@ -124,7 +124,7 @@ namespace System.Net.Ftp {
 			if( line == null ) return FtpStatusCode.Undefined;
 
 			int code;
-			uint remaining = ( uint ) line.Length;
+			uint remaining = line.Length;
 			var start = line.GetChars();
 
 			if( !int.TryFetch( start, remaining, code, true, false ) ) {
@@ -202,7 +202,7 @@ namespace System.Net.Ftp {
 			return WaitResponse();
 		}
 
-		private static TextParsingStatus TryFetchFeature( char* buffer, uint length, CUtf16StringSpan& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
+		private static Convert.ConversionResult TryFetchFeature( char* buffer, uint length, CUtf16StringSpan& parsedResult, uint& readen = nullref, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) {
 			return PrimitiveTypesParser.TryTokenize( ( text, textLength ) => {
 				var result = 0U;
 
@@ -229,7 +229,7 @@ namespace System.Net.Ftp {
 				if( line == null ) return FtpStatusCode.Undefined;
 
 				int code;
-				uint remaining = ( uint ) line.Length;
+				uint remaining = line.Length;
 				var start = line.GetChars();
 
 				if( !int.TryFetch( start, remaining, code, true, false ) ) {
@@ -288,7 +288,7 @@ namespace System.Net.Ftp {
 				if( line == null ) return FtpStatusCode.Undefined;
 
 				int code;
-				uint remaining = ( uint ) line.Length;
+				uint remaining = line.Length;
 				var start = line.GetChars();
 
 				if( !int.TryFetch( start, remaining, code, true, false ) ) {
@@ -372,7 +372,7 @@ namespace System.Net.Ftp {
 			return WaitResponse();
 		}
 
-		public FtpStatusCode Pwd() {
+		public FtpStatusCode GetWorkingDirectory() {
 			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
 
 			_writer.Write( "PWD" );
@@ -406,6 +406,17 @@ namespace System.Net.Ftp {
 			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
 
 			_writer.Write( "QUIT" );
+
+			FlushCommand();
+
+			return WaitResponse();
+		}
+
+		public FtpStatusCode CreateDirectory( string path ) {
+			if( _writer == null ) return LastStatus = FtpStatusCode.ConnectionClosed;
+
+			_writer.Write( "MKD " );
+			_writer.Write( path );
 
 			FlushCommand();
 
@@ -493,11 +504,11 @@ namespace System.Net.Ftp {
 
 			return result;
 		}
-	
+
 		public FtpStatusCode ReadText( string remotePath, string& fileContents ) {
 			var stream = new MemoryStream();
 			var result = ReadFile( remotePath, stream );
-			
+
 			stream.Position = 0;
 			using( var reader = new StreamReader( stream ) )
 				fileContents = reader.ReadAllText();
@@ -565,8 +576,8 @@ namespace System.Net.Ftp {
 			if( WaitResponse( lastLine ) == FtpStatusCode.EnteringPassive ) {
 				var braceStart = lastLine.IndexOf( '(' );
 				var braceEnd = lastLine.IndexOf( ')' );
-				if( braceStart == -1 ) return null;
-				if( braceEnd == -1 ) return null;
+				if( braceStart == uint.MaxValue ) return null;
+				if( braceEnd == uint.MaxValue ) return null;
 
 				var parsePosition = lastLine.GetChars() + braceStart + 1;
 				var remaining = ( uint )( braceEnd - braceStart - 1 );
@@ -621,7 +632,7 @@ namespace System.Net.Ftp {
 		}
 
 		public FtpStatusCode LastStatus { get; private set; }
-		
+
 		private class FtpDataClient : System.Net.NetworkClient {
 			public FtpDataClient() {
 			}

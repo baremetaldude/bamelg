@@ -1,0 +1,28 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+
+using Platform.Libc;
+
+namespace Platform.Kernel {
+	public struct SemaphoreHandle : IOHandle {
+		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
+
+		public SemaphoreHandle() { LibcApi.Assert( this = bitcast<thistype>( LibcApi.eventfd( 0, EventHandleCreateFlag.EFD_SEMAPHORE | EventHandleCreateFlag.EFD_NONBLOCK | EventHandleCreateFlag.EFD_CLOEXEC ) ) ); }
+		public SemaphoreHandle( uint value ) { LibcApi.Assert( this = bitcast<thistype>( LibcApi.eventfd( value, EventHandleCreateFlag.EFD_SEMAPHORE | EventHandleCreateFlag.EFD_NONBLOCK | EventHandleCreateFlag.EFD_CLOEXEC ) ) ); }
+
+		public ulong Decrement() {
+			ulong result;
+			LibcApi.AssertErrno( LibcApi.read( this, &result, sizeof( result ) ) );
+			return result;
+		}
+
+		public void Increment( ulong value = 1 ) {
+			LibcApi.AssertErrno( LibcApi.write( this, &value, sizeof( value ) ) );
+		}
+	}
+}

@@ -9,7 +9,7 @@ using System.Text;
 
 namespace System.IO {
 	public class StreamReader : ITextReader {
-		private BufferedStream.ReadStream _stream;
+		private BufferedReadStream _stream;
 		private Unicode.ByteOrderMark _bom = Unicode.ByteOrderMark.Unknown;
 		private StringBuilder _builder = new StringBuilder();
 
@@ -23,22 +23,22 @@ namespace System.IO {
 
 		public StreamReader( IStream stream, Unicode.ByteOrderMark bom ) {
 			_bom = bom;
-			_stream = stream as BufferedStream.ReadStream;
-			if( _stream == null ) _stream = new BufferedStream.ReadStream( stream );
+			_stream = stream as BufferedReadStream;
+			if( _stream == null ) _stream = new BufferedReadStream( stream );
 		}
 
 		public StreamReader( IStream stream, bool detectBOM ) {
-			_stream = stream as BufferedStream.ReadStream;
-			if( _stream == null ) _stream = new BufferedStream.ReadStream( stream );
+			_stream = stream as BufferedReadStream;
+			if( _stream == null ) _stream = new BufferedReadStream( stream );
 
 			if( detectBOM ) {
-				int bomHeaderLength;
+				uint bomHeaderLength;
 
-				for( var i = 1; i <= 4; ++i ) { // peek up to 4 bytes
+				for( var i = 1U; i <= 4; ++i ) { // peek up to 4 bytes
 					var data = _stream.Peek( i );
 					if( data == null ) break;
 
-					_bom = Unicode.DetectByteOrderMark( data, ( uint ) _stream.Count, bomHeaderLength );
+					_bom = Unicode.DetectByteOrderMark( data, _stream.Count, bomHeaderLength );
 
 					if( _bom != Unicode.ByteOrderMark.Unknown ) {
 						_stream.Drain( bomHeaderLength );
@@ -105,7 +105,7 @@ namespace System.IO {
 							var bufferedBytes = _stream.Count;
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
-							_builder.AppendSBCS( CodePage, dataStart, ( int ) bufferedBytes );
+							_builder.AppendSBCS( CodePage, dataStart, bufferedBytes );
 							_stream.Drain( bufferedBytes );
 
 							if( _stream.Peek( 1 ) == null ) break;
@@ -117,7 +117,7 @@ namespace System.IO {
 							var bufferedBytes = _stream.Count;
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
-							_builder.Append( new CUtf8StringSpan( dataStart, ( uint ) bufferedBytes ) );
+							_builder.Append( new CUtf8StringSpan( dataStart, bufferedBytes ) );
 							_stream.Drain( bufferedBytes );
 
 							if( _stream.Peek( 1 ) == null ) break;
@@ -129,7 +129,7 @@ namespace System.IO {
 							var bufferedChars = _stream.Count / sizeof( char );
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
 
-							_builder.Append( new CUtf16StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_builder.Append( new CUtf16StringSpan( dataStart, bufferedChars ) );
 							_stream.Drain( bufferedChars * sizeof( char ) );
 
 							if( _stream.Peek( sizeof( char ) ) == null ) break;
@@ -141,8 +141,8 @@ namespace System.IO {
 							var bufferedChars = _stream.Count / sizeof( char );
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
 
-							System.Runtime.Memory.PerformBswap2( dataStart, ( uint ) bufferedChars );
-							_builder.Append( new CUtf16StringSpan( dataStart, ( uint ) bufferedChars ) );
+							System.Runtime.Memory.PerformBswap2( dataStart, bufferedChars );
+							_builder.Append( new CUtf16StringSpan( dataStart, bufferedChars ) );
 							_stream.Drain( bufferedChars * sizeof( char ) );
 
 							if( _stream.Peek( sizeof( char ) ) == null ) break;
@@ -156,7 +156,7 @@ namespace System.IO {
 							var bufferedChars = _stream.Count / sizeof( uint );
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
 
-							_builder.Append( new CUtf32StringSpan( dataStart, ( uint ) bufferedChars ) );
+							_builder.Append( new CUtf32StringSpan( dataStart, bufferedChars ) );
 							_stream.Drain( bufferedChars * sizeof( uint ) );
 
 							if( _stream.Peek( sizeof( uint ) ) == null ) break;
@@ -168,8 +168,8 @@ namespace System.IO {
 							var bufferedChars = _stream.Count / sizeof( uint );
 
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
-							System.Runtime.Memory.PerformBswap4( dataStart, ( uint ) bufferedChars );
-							_builder.Append( new CUtf32StringSpan( dataStart, ( uint ) bufferedChars ) );
+							System.Runtime.Memory.PerformBswap4( dataStart, bufferedChars );
+							_builder.Append( new CUtf32StringSpan( dataStart, bufferedChars ) );
 							_stream.Drain( bufferedChars * sizeof( uint ) );
 
 							if( _stream.Peek( sizeof( uint ) ) == null ) break;
@@ -185,7 +185,7 @@ namespace System.IO {
 		}
 
 		private bool ReadLine( StringBuilder builder, string* fastString ) {
-			var stringStart = -1;
+			var stringStart = uint.MaxValue;
 
 			builder.Clear();
 			if( _stream.Peek( 1 ) == null ) return false;
@@ -198,7 +198,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedBytes = _stream.Count;
 
-							for( var i = 0; i < bufferedBytes; ++i ) {
+							for( var i = 0U; i < bufferedBytes; ++i ) {
 								var data = ( byte* ) _stream.Peek( i + 1 );
 
 								var isLF = data[i] == '\n';
@@ -212,20 +212,20 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromSBCS( CodePage, data + stringStart, ( uint )( i - stringStart ) );
+										*fastString = string.FromSBCS( CodePage, data + stringStart, i - stringStart );
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 									else {
-										builder.AppendSBCS( CodePage, data + stringStart, ( int )( i - stringStart ) );
+										builder.AppendSBCS( CodePage, data + stringStart, i - stringStart );
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
@@ -234,23 +234,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedBytes );
 								return bufferedBytes != 0;
 							}
 
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
-							builder.AppendSBCS( CodePage, dataStart + stringStart, ( int )( bufferedBytes - stringStart ) );
+							builder.AppendSBCS( CodePage, dataStart + stringStart, bufferedBytes - stringStart );
 							_stream.Drain( bufferedBytes );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( 1 ) == null ) {
 								return true;
@@ -264,7 +264,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedBytes = _stream.Count;
 
-							for( var i = 0; i < bufferedBytes; ++i ) {
+							for( var i = 0U; i < bufferedBytes; ++i ) {
 								var data = ( byte* ) _stream.Peek( i + 1 );
 
 								var isLF = data[i] == '\n';
@@ -278,20 +278,20 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromUtf8( data + stringStart, ( uint )( i - stringStart ) );
+										*fastString = string.FromUtf8( data + stringStart, i - stringStart );
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
 									}
 									else {
-										builder.Append( new CUtf8StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
+										builder.Append( new CUtf8StringSpan( data + stringStart, i - stringStart ) );
 										_stream.Drain( i + 1 );
 										if( isCR ) SkipLF();
 										return true;
@@ -300,23 +300,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedBytes );
 								return bufferedBytes != 0;
 							}
 
 							var dataStart = ( byte* ) _stream.Peek( 1 );
 
-							builder.Append( new CUtf8StringSpan( dataStart + stringStart, ( uint )( bufferedBytes - stringStart ) ) );
+							builder.Append( new CUtf8StringSpan( dataStart + stringStart, bufferedBytes - stringStart ) );
 							_stream.Drain( bufferedBytes );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( 1 ) == null ) {
 								return true;
@@ -330,7 +330,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedChars = _stream.Count / sizeof( char );
 
-							for( var i = 0; i < bufferedChars; ++i ) {
+							for( var i = 0U; i < bufferedChars; ++i ) {
 								var data = ( char_littleendian* ) _stream.Peek( ( i + 1 ) * sizeof( char ) );
 
 								var isLF = data[i] == '\n';
@@ -344,20 +344,20 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromUtf16( data + stringStart, ( uint )( i - stringStart ) );
+										*fastString = string.FromUtf16( data + stringStart, i - stringStart );
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
 									}
 									else {
-										builder.Append( new CUtf16StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
+										builder.Append( new CUtf16StringSpan( data + stringStart, i - stringStart ) );
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2LE();
 										return true;
@@ -366,23 +366,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedChars * sizeof( char ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
 
-							builder.Append( new CUtf16StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
+							builder.Append( new CUtf16StringSpan( dataStart + stringStart, bufferedChars - stringStart ) );
 							_stream.Drain( bufferedChars * sizeof( char ) );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( sizeof( char ) ) == null ) {
 								return true;
@@ -396,7 +396,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedChars = _stream.Count / sizeof( char );
 
-							for( var i = 0; i < bufferedChars; ++i ) {
+							for( var i = 0U; i < bufferedChars; ++i ) {
 								var data = ( char_bigendian* ) _stream.Peek( ( i + 1 ) * sizeof( char ) );
 
 								var isLF = data[i] == '\n';
@@ -410,23 +410,23 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
 									}
 
 									var stringStartPtr = ( char* )( data + stringStart );
-									System.Runtime.Memory.PerformBswap2( stringStartPtr, ( uint )( i - stringStart ) );
+									System.Runtime.Memory.PerformBswap2( stringStartPtr, i - stringStart );
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromUtf16( stringStartPtr, ( uint )( i - stringStart ) );
+										*fastString = string.FromUtf16( stringStartPtr, i - stringStart );
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
 									}
 									else {
-										builder.Append( new CUtf16StringSpan( stringStartPtr, ( uint )( i - stringStart ) ) );
+										builder.Append( new CUtf16StringSpan( stringStartPtr, i - stringStart ) );
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF2BE();
 										return true;
@@ -435,23 +435,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedChars * sizeof( char ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( char* ) _stream.Peek( sizeof( char ) );
-							System.Runtime.Memory.PerformBswap2( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) );
-							builder.Append( new CUtf16StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
+							System.Runtime.Memory.PerformBswap2( dataStart + stringStart, bufferedChars - stringStart );
+							builder.Append( new CUtf16StringSpan( dataStart + stringStart, bufferedChars - stringStart ) );
 							_stream.Drain( bufferedChars * sizeof( char ) );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( sizeof( char ) ) == null ) {
 								return true;
@@ -465,7 +465,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedChars = _stream.Count / sizeof( uint );
 
-							for( var i = 0; i < bufferedChars; ++i ) {
+							for( var i = 0U; i < bufferedChars; ++i ) {
 								var data = ( uint_littleendian* ) _stream.Peek( ( i + 1 ) * sizeof( uint ) );
 
 								var isLF = data[i] == '\n';
@@ -479,20 +479,20 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
 									}
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromUtf32( data + stringStart, ( uint )( i - stringStart ) );
+										*fastString = string.FromUtf32( data + stringStart, i - stringStart );
 										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
 									}
 									else {
-										builder.Append( new CUtf32StringSpan( data + stringStart, ( uint )( i - stringStart ) ) );
+										builder.Append( new CUtf32StringSpan( data + stringStart, i - stringStart ) );
 										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4LE();
 										return true;
@@ -501,23 +501,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedChars * sizeof( uint ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
 
-							builder.Append( new CUtf32StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
+							builder.Append( new CUtf32StringSpan( dataStart + stringStart, bufferedChars - stringStart ) );
 							_stream.Drain( bufferedChars * sizeof( uint ) );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( sizeof( uint ) ) == null ) {
 								return true;
@@ -531,7 +531,7 @@ namespace System.IO {
 						while( true ) {
 							var bufferedChars = _stream.Count / sizeof( uint );
 
-							for( var i = 0; i < bufferedChars; ++i ) {
+							for( var i = 0U; i < bufferedChars; ++i ) {
 								var data = ( uint_bigendian* ) _stream.Peek( ( i + 1 ) * sizeof( uint ) );
 
 								var isLF = data[i] == '\n';
@@ -545,23 +545,23 @@ namespace System.IO {
 
 									hasCR = isCR;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4BE();
 										return true;
 									}
 
 									var stringStartPtr = ( uint* )( data + stringStart );
-									System.Runtime.Memory.PerformBswap4( stringStartPtr, ( uint )( i - stringStart ) );
+									System.Runtime.Memory.PerformBswap4( stringStartPtr, i - stringStart );
 
 									if( builder.Length == 0 && fastString != null ) {
-										*fastString = string.FromUtf32( stringStartPtr, ( uint )( i - stringStart ) );
+										*fastString = string.FromUtf32( stringStartPtr, i - stringStart );
 										_stream.Drain( ( i + 1 ) * sizeof( char ) );
 										if( isCR ) SkipLF4BE();
 										return true;
 									}
 									else {
-										builder.Append( new CUtf32StringSpan( stringStartPtr, ( uint )( i - stringStart ) ) );
+										builder.Append( new CUtf32StringSpan( stringStartPtr, i - stringStart ) );
 										_stream.Drain( ( i + 1 ) * sizeof( uint ) );
 										if( isCR ) SkipLF4BE();
 										return true;
@@ -570,23 +570,23 @@ namespace System.IO {
 								else {
 									hasCR = false;
 
-									if( stringStart == -1 ) {
+									if( stringStart == uint.MaxValue ) {
 										stringStart = i;
 									}
 								}
 							}
 
-							if( stringStart == -1 ) {
+							if( stringStart == uint.MaxValue ) {
 								_stream.Drain( bufferedChars * sizeof( uint ) );
 								return bufferedChars != 0;
 							}
 
 							var dataStart = ( uint* ) _stream.Peek( sizeof( uint ) );
-							System.Runtime.Memory.PerformBswap4( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) );
-							builder.Append( new CUtf32StringSpan( dataStart + stringStart, ( uint )( bufferedChars - stringStart ) ) );
+							System.Runtime.Memory.PerformBswap4( dataStart + stringStart, bufferedChars - stringStart );
+							builder.Append( new CUtf32StringSpan( dataStart + stringStart, bufferedChars - stringStart ) );
 							_stream.Drain( bufferedChars * sizeof( uint ) );
 
-							stringStart = -1;
+							stringStart = uint.MaxValue;
 
 							if( _stream.Peek( sizeof( uint ) ) == null ) {
 								return true;

@@ -14,9 +14,9 @@ using Platform.Libc;
 namespace Platform.IO {
 	// Must be used with non-blocking sockets inside Fibers or with blocking sockets(in ST/MT environment)
 	public class NetworkStream : IStream {
-		public TimeSpan ConnectTimeout { get; set; }
-		public TimeSpan WriteTimeout { get; set; }
-		public TimeSpan ReadTimeout { get; set; }
+		public TimeDuration ConnectTimeout { get; set; }
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
 
 		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
 		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
@@ -129,14 +129,14 @@ namespace Platform.IO {
 			return true;
 		}
 
-		public int Read( void* buffer, int count ) {
+		public uint Read( void* buffer, uint count ) {
 			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
 			var data = ( byte* ) buffer;
 
-			var transmitted = 0;
+			var transmitted = 0U;
 		restart_Receive:
-			var error = _handle.Read( ReadTimeout, data, count, transmitted );
+			var error = _handle.Read( ReadTimeout, transmitted, data, count );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
 				return transmitted;
@@ -145,20 +145,23 @@ namespace Platform.IO {
 			return transmitted;
 		}
 
-		public void Write( void* buffer, int count ) {
-			if( !_handle.IsValid || count == 0 || buffer == null ) return;
+		public uint Write( void* buffer, uint count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
 
+			var transmitted = 0U;
 		restart_Send:
-			var error = _handle.Write( WriteTimeout, buffer, count );
+			var error = _handle.Write( WriteTimeout, transmitted, buffer, count );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
-				return;
+				return transmitted;
 			}
+
+			return transmitted;
 		}
 
-		public int Read( vararg MemorySegment segments ) {
+		public uint Read( vararg MemorySegment segments ) {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
-			int totalReaden;
+			uint totalReaden;
 
 		restart_Receive:
 			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
@@ -170,24 +173,48 @@ namespace Platform.IO {
 			return totalReaden;
 		}
 
-		public void Write( vararg MemorySegment segments ) {
+		public uint Write( vararg MemorySegment segments ) {
 			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
 
+			uint totalWritten = 0U;
 		restart_Send:
-			var error = _handle.Write( WriteTimeout, vararg( ( iovec* ) segments, segments.Length ) );
+			var error = _handle.Write( WriteTimeout, totalWritten, vararg( ( iovec* ) segments, segments.Length ) );
 			if( error != SystemError.None ) {
 				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
-				return;
+				return totalWritten;
 			}
+
+			return totalWritten;
 		}
 
 		public void Flush( FlushKind flushKind = FlushKind.DeepWrite ) {
 		}
 
+		public bool IsClosed() {
+			return bitcast<SocketHandleTCP>( _handle ).IsClosed();
+		}
+
+		public void EnableKeepAlive( TimeDuration timeout, TimeDuration interval, uint count ) {
+			EnableKeepAlive( ( uint ) timeout.TotalSeconds, ( uint ) interval.TotalSeconds, count );
+		}
+
+		public void EnableKeepAlive( uint timeout, uint interval, uint count ) {
+			var tcp = bitcast<SocketHandleTCP>( _handle );
+			tcp.KeepAliveEnabled = true;
+
+			tcp.KeepAliveProbesMax = count;
+			tcp.KeepAliveIdleSeconds = timeout;
+			tcp.KeepAliveProbingIntervalSeconds = interval;
+		}
+
+		public void DisableKeepAlive() {
+			bitcast<SocketHandleTCP>( _handle ).KeepAliveEnabled = false;
+		}
+
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
-		
-		MemoryMappedView IStream.CreateReadView( intptr offset, intptr length ) { return null; }
-		MemoryMappedView IStream.CreateWriteView( intptr offset, intptr length ) { return null; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
 	}
 }

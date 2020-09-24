@@ -1,0 +1,322 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using System;
+using System.IO;
+using System.Net;
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace Platform.IO {
+	public class SerialPortStream : IStream {
+		public TimeDuration ConnectTimeout { get; set; }
+		public TimeDuration WriteTimeout { get; set; }
+		public TimeDuration ReadTimeout { get; set; }
+
+		public static IPlatformErrorHandler DefaultErrorHandler = PlatformErrorHandlerNull.Instance;
+		public IPlatformErrorHandler ErrorHandler = DefaultErrorHandler;
+
+		public StreamCapabilities Capabilities { get { return StreamCapabilities.Read | StreamCapabilities.Write | StreamCapabilities.VectoredIO | StreamCapabilities.Timeout; } }
+		public StreamingBufferInfo* BufferInfo { get { return null; } }
+
+		public bool CloseHandle { get; set; } = true;
+		public string Context;
+
+		private FileHandle _handle = FileHandle.Invalid;
+		public FileHandle Handle {
+			get { return _handle; }
+			set { Close(); _handle = value; }
+		}
+
+		public SerialPortStream() { }
+		public SerialPortStream( FileHandle handle ) { _handle = handle; }
+
+		~SerialPortStream() { Close(); }
+		public override void Dispose() { Close(); base.Dispose(); }
+
+		public void Close() {
+			if( CloseHandle ) _handle.Close();
+			else _handle = FileHandle.Invalid;
+		}
+
+		protected PlatformErrorAction OnLastError( string operation, IFormattable context, SystemError errorCode ) { return ErrorHandler.OnError( operation, context, errorCode ); }
+		protected PlatformErrorAction OnLastError( string operation, SystemError errorCode ) { return ErrorHandler.OnError( operation, Context, errorCode ); }
+
+		public static FileStream CreateReadStream( CUtf8String name ) { var result = new FileStream(); if( !result.OpenRead( name ) ) return null; return result; }
+		public static FileStream CreateWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) { var result = new FileStream(); if( !result.OpenWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateReadWriteStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) { var result = new FileStream(); if( !result.OpenReadWrite( name, permission, createNew, truncateExistingData ) ) return null; return result; }
+		public static FileStream CreateAppendStream( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true ) { var result = new FileStream(); if( !result.OpenAppend( name, permission, createNew ) ) return null; return result; }
+
+		public TerminalControlSignal GetFlags() {
+			var flags = TerminalControlSignal.None; // TerminalControlSignal flags; // make VG happy
+		restart:
+			if( LibcApi.ioctl( _handle, FileDriverCommand.TIOCMGET, &flags ) < 0 ) {
+				var error = LibcApi.LastError;
+
+				if( error != SystemError.None ) {
+					if( OnLastError( "GetFlags", error ) == PlatformErrorAction.Restart ) goto restart;
+				}
+			}
+
+			return flags;
+		}
+
+		public void SetFlags( TerminalControlSignal flag ) {
+		restart:
+			if( LibcApi.ioctl( _handle, FileDriverCommand.TIOCMSET, &flag ) < 0 ) {
+				var error = LibcApi.LastError;
+
+				if( error != SystemError.None ) {
+					if( OnLastError( "SetFlags", error ) == PlatformErrorAction.Restart ) goto restart;
+					return;
+				}
+			}
+		}
+
+		private void SetFlag( TerminalControlSignal flag, bool value ) {
+		restart:
+			if( LibcApi.ioctl( _handle, value ? FileDriverCommand.TIOCMBIS : FileDriverCommand.TIOCMBIC, &flag ) < 0 ) {
+				var error = LibcApi.LastError;
+
+				if( error != SystemError.None ) {
+					if( OnLastError( "SetFlag", error ) == PlatformErrorAction.Restart ) goto restart;
+					return;
+				}
+			}
+		}
+
+		public SystemError WaitFlags( TimeDuration timeout, TerminalControlSignal flags ) {
+			using( Fiber.AsyncCompletionRegion() )
+			using( new AlarmRegion( timeout ) )
+				return RawWaitFlags( flags );
+		}
+
+		public SystemError WaitFlags( TerminalControlSignal flags ) {
+			using( Fiber.AsyncCompletionRegion() )
+				return RawWaitFlags( flags );
+		}
+
+		private SystemError RawWaitFlags( TerminalControlSignal flags ) {
+		restart:
+			if( LibcApi.ioctl( _handle, FileDriverCommand.TIOCMIWAIT, &flags ) < 0 ) {
+				var error = LibcApi.LastError;
+
+				if( error != SystemError.None )
+					if( OnLastError( "WaitFlags", error ) == PlatformErrorAction.Restart )
+						goto restart;
+
+				return error;
+			}
+
+			return SystemError.None;
+		}
+
+		public serial_icounter_struct GetCounters() {
+			var result = default( serial_icounter_struct );
+
+		restart:
+			if( LibcApi.ioctl( _handle, FileDriverCommand.TIOCGICOUNT, &result ) < 0 ) {
+				var error = LibcApi.LastError;
+
+				if( OnLastError( "GetCounters", error ) == PlatformErrorAction.Restart )
+					goto restart;
+			}
+
+			return result;
+		}
+
+		public int InputQueueLength {
+			get {
+				int result = 0;
+				if( LibcApi.ioctl( _handle, FileDriverCommand.FIONREAD, &result ) < 0 ) return -1;
+				return result;
+			}
+		}
+
+		public int OutputQueueLength {
+			get {
+				int result = 0;
+				if( LibcApi.ioctl( _handle, FileDriverCommand.TIOCOUTQ, &result ) < 0 ) return -1;
+				return result;
+			}
+		}
+
+		public bool ST {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_ST ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_ST, value ); }
+		}
+
+		public bool SR {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_SR ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_SR, value ); }
+		}
+
+		public bool LE {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_LE ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_LE, value ); }
+		}
+
+		public bool DSR {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_DSR ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_DSR, value ); }
+		}
+
+		public bool RTS {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_RTS ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_RTS, value ); }
+		}
+
+		public bool DTR {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_DTR ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_DTR, value ); }
+		}
+
+		public bool CTS {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_CTS ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_CTS, value ); }
+		}
+
+		public bool DCD {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_CAR ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_CAR, value ); }
+		}
+
+		public bool RNG {
+			get { return ( GetFlags() & TerminalControlSignal.TIOCM_RNG ) != 0; }
+			set { SetFlag( TerminalControlSignal.TIOCM_RNG, value ); }
+		}
+
+		public bool OpenRead( CUtf8String name ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, FileOpenFlags.O_RDONLY, 0 );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = true ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_WRONLY | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public bool OpenReadWrite( CUtf8String name, Permission permission = ( Permission ) 0b110110110, bool createNew = true, bool truncateExistingData = false ) {
+			if( !Assert.IsTrue( !name.IsNullOrEmpty ) ) return false;
+			Close();
+
+			var exists = FileHandle.Exists( name );
+
+			Context = ( string ) name;
+
+			IOHandle handle;
+		restart_Open:
+			var error = IOHandle.Open( handle, name, ( createNew ? FileOpenFlags.O_CREAT : ( FileOpenFlags ) 0 ) | FileOpenFlags.O_RDWR | ( truncateExistingData ? FileOpenFlags.O_TRUNC : ( FileOpenFlags ) 0 ), permission );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Open", error ) == PlatformErrorAction.Restart ) goto restart_Open;
+				return false;
+			}
+
+			if( !exists ) LibcApi.fchmod( handle, permission ); // override umask
+
+			_handle = bitcast<FileHandle>( handle );
+			return true;
+		}
+
+		public uint Read( void* buffer, uint count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
+
+			var data = ( byte* ) buffer;
+
+			var transmitted = 0U;
+		restart_Receive:
+			var error = _handle.Read( ReadTimeout, transmitted, data, count );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return transmitted;
+			}
+
+			return transmitted;
+		}
+
+		public uint Write( void* buffer, uint count ) {
+			if( !_handle.IsValid || count == 0 || buffer == null ) return 0;
+			uint totalWritten = 0U;
+
+		restart_Send:
+			var error = _handle.Write( WriteTimeout, totalWritten, buffer, count );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return totalWritten;
+			}
+
+			return totalWritten;
+		}
+
+		public uint Read( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+			uint totalReaden;
+
+		restart_Receive:
+			var error = _handle.Read( ReadTimeout, totalReaden, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Read", error ) == PlatformErrorAction.Restart ) goto restart_Receive;
+				return totalReaden;
+			}
+
+			return totalReaden;
+		}
+
+		public uint Write( vararg MemorySegment segments ) {
+			Assert.IsTrue( AdaptationLayer.IsMemorySegmentLayoutEqualsToIovec );
+
+			uint totalWritten = 0U;
+
+		restart_Send:
+			var error = _handle.Write( WriteTimeout, totalWritten, vararg( ( iovec* ) segments, segments.Length ) );
+			if( error != SystemError.None ) {
+				if( OnLastError( "Write", error ) == PlatformErrorAction.Restart ) goto restart_Send;
+				return totalWritten;
+			}
+
+			return totalWritten;
+		}
+
+		void IStream.Flush( FlushKind flushKind ) { }
+
+		long IStream.Position { get { return 0; } }
+		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
+
+		MemoryMappedView IStream.CreateReadView( uintptr offset, uintptr length ) { return null; }
+		MemoryMappedView IStream.CreateWriteView( uintptr offset, uintptr length ) { return null; }
+	}
+}

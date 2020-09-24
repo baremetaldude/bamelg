@@ -20,7 +20,7 @@ namespace Platform.Kernel {
 			this = bitcast<IOHandle>( handle );
 		}
 
-		public static SystemError Open( IOHandle& result, CUtf8String name, FctlFlags flags, int permissions ) {
+		public static SystemError Open( IOHandle& result, CUtf8String name, FileOpenFlags flags, uint permissions ) {
 			var resultCode = result.OpenBlocking( name, flags, permissions );
 			if( !result.IsValid ) return resultCode;
 			return SystemError.None;
@@ -57,24 +57,26 @@ namespace Platform.Kernel {
 		}
 
 		// \param source must be mmap'able
-		public SystemError SendFile( TimeSpan timeout, IOHandle source, intptr offset, intptr length, intptr& transferred ) {
+		public SystemError SendFile( TimeDuration timeout, IOHandle source, uintptr offset, uintptr length, uintptr& transferred, bool setBlocking = true ) {
 			if( Fiber.IsFiberExecuting ) {
 				using( Fiber.AsyncCompletionRegion() ) {
-					// @{ IsNonBlocking = false;
-					FctlFlags options;
-					if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
-						return LibcApi.LastError;
+					FileStatusFlags options;
+					if( setBlocking ) { // NOTE this can affect parallel reads
+						if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
+							return LibcApi.LastError;
 
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), false );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+						if( BitOperations.MaskTest( options.Value(), FileStatusFlags.O_NONBLOCK.Value() ) ) {
+							// &= ~O_NONBLOCK
+							LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), false ) ) );
+						}
+						else setBlocking = false;
+					}
 
 					var result = SendFile( timeout, source, offset, length, transferred );
 
-					// @{ IsNonBlocking = true;
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), true );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+					if( setBlocking ) {
+						LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
+					}
 
 					return result;
 				}
@@ -83,16 +85,12 @@ namespace Platform.Kernel {
 				using( new AlarmRegion( timeout ) ) {
 					transferred = 0;
 
-					// int totalSyscalls = 0;
-					// finally { Console.WriteLine( "totalSyscalls={0}", totalSyscalls ); }
-
 					for( ; ; ) {
-						intptr currentOffset = offset;
+						uintptr currentOffset = offset;
 						var result = LibcApi.sendfile( this, source, &currentOffset, ( uintptr ) length );
-						intptr written = currentOffset - offset;
+						uintptr written = currentOffset - offset;
 						offset = currentOffset;
 						transferred += written;
-						// ++totalSyscalls;
 
 						if( result <= 0 ) return LibcApi.LastError;
 						if( transferred >= length ) return SystemError.None;
@@ -101,24 +99,26 @@ namespace Platform.Kernel {
 			}
 		}
 
-		public SystemError ReceiveFile( TimeSpan timeout, IOHandleBlocking destination, intptr offset, intptr length, intptr& transferred ) {
+		public SystemError ReceiveFile( TimeDuration timeout, IOHandleBlocking destination, uintptr offset, uintptr length, uintptr& transferred, bool setBlocking = true ) {
 			if( Fiber.IsFiberExecuting ) {
 				using( Fiber.AsyncCompletionRegion() ) {
-					// @{ IsNonBlocking = false;
-					FctlFlags options;
-					if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
-						return LibcApi.LastError;
+					FileStatusFlags options;
+					if( setBlocking ) { // NOTE this can affect parallel writes
+						if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
+							return LibcApi.LastError;
 
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), false );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+						if( BitOperations.MaskTest( options.Value(), FileStatusFlags.O_NONBLOCK.Value() ) ) {
+							// &= ~O_NONBLOCK
+							LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), false ) ) );
+						}
+						else setBlocking = false;
+					}
 
 					var result = ReceiveFile( timeout, destination, offset, length, transferred );
 
-					// @{ IsNonBlocking = true;
-					options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), true );
-					LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
-					// @}
+					if( setBlocking ) {
+						LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
+					}
 
 					return result;
 				}
@@ -137,25 +137,25 @@ namespace Platform.Kernel {
 
 					int prevRcvLowWatermark = 0;
 
-					// SO_RCVLOWAT didnt work with splice
 					// var isTcpSocket = LibcApi.getsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) == 0;
 					// finally {
-					//	if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) );
+					// 	if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &prevRcvLowWatermark, sizeof( prevRcvLowWatermark ) ) );
 					// }
 
 					var pipeSize = pipes[PipeHandle.WriteEnd].PipeSize;
+					ulong offset2 = offset;
 
 					for( ; ; ) {
 						var fillPipeSize = ( int ) Math.Min( length - transferred, pipeSize );
 						// if( isTcpSocket ) LibcApi.AssertErrno( LibcApi.setsockopt( this, SocketPropertyGroup.SOL_SOCKET, SocketProperty.SO_RCVLOWAT, &fillPipeSize, sizeof( fillPipeSize ) ) );
+
 						var flags = SpliceFlags.SPLICE_F_MOVE;
-						if( transferred + fillPipeSize > length ) flags |= SpliceFlags.SPLICE_F_MORE;
+						if( transferred + fillPipeSize < length ) flags |= SpliceFlags.SPLICE_F_MORE;
 
 						var fillPipeResult = LibcApi.splice( this, null, pipes[PipeHandle.WriteEnd], null, ( uint ) fillPipeSize, flags );
 						if( fillPipeResult <= 0 ) return LibcApi.LastError;
 						var readen = fillPipeResult;
 
-						long offset2 = offset;
 						var drainPipeResult = LibcApi.splice( pipes[PipeHandle.ReadEnd], null, destination, &offset2, ( uint ) readen, flags );
 						if( drainPipeResult <= 0 ) return LibcApi.LastError;
 						var written = drainPipeResult;
@@ -169,15 +169,15 @@ namespace Platform.Kernel {
 			}
 		}
 
-		protected SystemError WriteNonBlocking( TimeSpan timeout, vararg iovec data ) {
+		protected SystemError WriteNonBlocking( TimeDuration timeout, uint& totalTransmitted, vararg iovec data ) {
 			if( data.Length == 0 ) return SystemError.None;
 
 			if( Fiber.IsFiberExecuting ) {
-				return Fiber.FiberManager.WriteNonBlocking( timeout, this, data, ( int ) data.Length );
+				return Fiber.FiberManager.WriteNonBlocking( timeout, totalTransmitted, this, data, data.Length );
 			}
 			else {
 				using( new AlarmRegion( timeout ) ) {
-					var totalWritten = LibcApi.writev( this, data, data.Length.ToSigned() );
+					var totalWritten = LibcApi.writev( this, data, data.Length );
 					if( totalWritten < 0 ) {
 						var lastError = LibcApi.LastError;
 						if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
@@ -191,11 +191,11 @@ namespace Platform.Kernel {
 		}
 
 		// All bytes will be sent or error returned
-		protected SystemError WriteNonBlocking( TimeSpan timeout, void* buffer, int count ) {
+		protected SystemError WriteNonBlocking( TimeDuration timeout, uint& totalTransmitted, void* buffer, uint count ) {
 			if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemError.None;
 
 			if( Fiber.IsFiberExecuting ) {
-				return Fiber.FiberManager.WriteNonBlocking( timeout, this, buffer, count );
+				return Fiber.FiberManager.WriteNonBlocking( timeout, totalTransmitted, this, buffer, count );
 			}
 			else {
 				using( new AlarmRegion( timeout ) ) {
@@ -203,23 +203,27 @@ namespace Platform.Kernel {
 					if( totalWritten < 0 ) {
 						var lastError = LibcApi.LastError;
 						if( lastError == SystemError.EINTR ) lastError = SystemError.ETIMEDOUT;
+
+						totalTransmitted = 0;
 						return lastError;
 					}
 
+					totalTransmitted = ( uint ) totalWritten;
 					return SystemError.None;
 				}
 			}
 		}
 
-		protected SystemError ReadNonBlocking( TimeSpan timeout, int& totalReceived, vararg iovec data ) {
+		protected SystemError ReadNonBlocking( TimeDuration timeout, uint& totalReceived, vararg iovec data ) {
 			if( Fiber.IsFiberExecuting ) {
-				return Fiber.FiberManager.ReadNonBlocking( timeout, this, data, ( int ) data.Length, totalReceived );
+				return Fiber.FiberManager.ReadNonBlocking( timeout, totalReceived, this, data, data.Length );
 			}
 			else {
-				if( timeout <= TimeSpan.Zero ) {
-					totalReceived = LibcApi.readv( this, &data[0], data.Length.ToSigned() );
-					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+				if( timeout == TimeDuration.Zero ) {
+					var readResult = LibcApi.readv( this, &data[0], data.Length );
+					if( readResult < 0 ) { totalReceived = 0; return LibcApi.LastError; }
 
+					totalReceived = ( uint ) readResult;
 					return SystemError.None;
 				}
 				else {
@@ -235,30 +239,32 @@ namespace Platform.Kernel {
 
 					if( polledDescriptors == 0 ) return SystemError.ETIMEDOUT;
 
-					totalReceived = LibcApi.readv( this, &data[0], data.Length.ToSigned() );
-					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+					var readResult = LibcApi.readv( this, &data[0], data.Length );
+					if( readResult < 0 ) { totalReceived = 0; return LibcApi.LastError; }
 
+					totalReceived = ( uint ) readResult;
 					return SystemError.None;
 				}
 			}
 		}
 
 		// Less than 'count' bytes can be received
-		protected SystemError ReadNonBlocking( TimeSpan timeout, void* buffer, int count, int& totalReceived ) {
+		protected SystemError ReadNonBlocking( TimeDuration timeout, uint& totalReceived, void* buffer, uint count ) {
 			totalReceived = 0;
 			if( !Assert.IsTrue( buffer != null && count > 0 ) ) return SystemError.None;
 
 			if( Fiber.IsFiberExecuting ) {
-				return Fiber.FiberManager.ReadNonBlocking( timeout, this, buffer, count, totalReceived );
+				return Fiber.FiberManager.ReadNonBlocking( timeout, totalReceived, this, buffer, count );
 			}
 			else {
-				if( timeout <= TimeSpan.Zero ) {
-					totalReceived = LibcApi.read( this, buffer, count );
-					if( totalReceived < 0 ) {
+				if( timeout == TimeDuration.Zero ) {
+					var readen = LibcApi.read( this, buffer, count );
+					if( readen < 0 ) {
 						totalReceived = 0;
 						return LibcApi.LastError;
 					}
 
+					totalReceived = ( uint ) readen;
 					return SystemError.None;
 				}
 				else {
@@ -274,15 +280,16 @@ namespace Platform.Kernel {
 
 					if( polledDescriptors == 0 ) return SystemError.ETIMEDOUT;
 
-					totalReceived = LibcApi.read( this, buffer, count );
-					if( totalReceived < 0 ) { totalReceived = 0; return LibcApi.LastError; }
+					var readen = LibcApi.read( this, buffer, count );
+					if( readen < 0 ) { totalReceived = 0; return LibcApi.LastError; }
 
+					totalReceived = ( uint ) readen;
 					return SystemError.None;
 				}
 			}
 		}
 
-		protected SystemError OpenBlocking( CUtf8String name, FctlFlags flags, int permissions ) {
+		protected SystemError OpenBlocking( CUtf8String name, FileOpenFlags flags, uint permissions ) {
 			var result = SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() ) {
@@ -293,36 +300,36 @@ namespace Platform.Kernel {
 			return result;
 		}
 
-		public SystemError RawWrite( vararg iovec vectors ) {
+		public SystemError RawWrite( uint& transmitted, vararg iovec vectors ) {
 			if( vectors.Length == 0 ) return SystemError.None;
 
-			var transmitted = 0;
+			transmitted = 0;
 
-			var bufferLength = 0;
+			var bufferLength = 0U;
 			foreach( var vector in vectors )
-				bufferLength += ( int ) vector.iov_len;
+				bufferLength += ( uint ) vector.iov_len;
 
 			do {
-				var written = LibcApi.writev( this, &vectors[0], vectors.Length.ToSigned() );
+				var written = LibcApi.writev( this, &vectors[0], vectors.Length );
 				if( written < 0 ) return LibcApi.LastError;
 
-				transmitted += written;
+				transmitted += ( uint ) written;
 			} while( transmitted < bufferLength );
 
 			return SystemError.None;
 		}
 
-		protected SystemError WriteBlocking( TimeSpan timeout, vararg iovec vectors ) {
+		protected SystemError WriteBlocking( TimeDuration timeout, uint& transmitted, vararg iovec vectors ) {
 			if( vectors.Length == 0 ) return SystemError.None;
 
 			EnsureBlocking();
 
 			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
-				return RawWrite( vararg( vectors, vectors.Length ) );
+				return RawWrite( transmitted, vararg( vectors, vectors.Length ) );
 		}
 
-		public SystemError RawRead( int& transmitted, vararg iovec vectors ) {
+		public SystemError RawRead( uint& transmitted, vararg iovec vectors ) {
 			transmitted = 0;
 			if( vectors.Length == 0 ) return SystemError.None;
 
@@ -331,17 +338,17 @@ namespace Platform.Kernel {
 				bufferLength += ( int ) vector.iov_len;
 
 			do {
-				var readen = LibcApi.readv( this, &vectors[0], vectors.Length.ToSigned() );
+				var readen = LibcApi.readv( this, &vectors[0], vectors.Length );
 				if( readen == 0 ) return SystemError.None;
 				if( readen < 0 ) return LibcApi.LastError;
 
-				transmitted += readen;
+				transmitted += ( uint ) readen;
 			} while( transmitted < bufferLength );
 
 			return SystemError.None;
 		}
 
-		protected SystemError ReadBlocking( TimeSpan timeout, int& transmitted, vararg iovec vectors ) {
+		protected SystemError ReadBlocking( TimeDuration timeout, uint& transmitted, vararg iovec vectors ) {
 			transmitted = 0;
 			if( vectors.Length == 0 ) return SystemError.None;
 
@@ -351,15 +358,16 @@ namespace Platform.Kernel {
 				return RawRead( transmitted, vararg( vectors, vectors.Length ) );
 		}
 
-		public SystemError RawWrite( void* buffer, int bufferLength ) {
+		public SystemError RawWrite( uint& transmitted, void* buffer, uint bufferLength ) {
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
-			var transmitted = 0;
+			transmitted = 0U;
 
 			do {
-				var written = LibcApi.write( this, ( byte* ) buffer + transmitted, bufferLength );
-				if( written < 0 ) return LibcApi.LastError;
+				var writeResult = LibcApi.write( this, ( byte* ) buffer + transmitted, bufferLength );
+				if( writeResult < 0 ) return LibcApi.LastError;
 
+				var written = ( uint ) writeResult;
 				transmitted += written;
 				bufferLength -= written;
 			} while( transmitted < bufferLength );
@@ -368,23 +376,24 @@ namespace Platform.Kernel {
 		}
 
 		// Less than 'count' bytes can be transmitted
-		protected SystemError WriteBlocking( TimeSpan timeout, void* buffer, int bufferLength ) {
+		protected SystemError WriteBlocking( TimeDuration timeout, uint& transmitted, void* buffer, uint bufferLength ) {
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
-				return RawWrite( buffer, bufferLength );
+				return RawWrite( transmitted, buffer, bufferLength );
 		}
 
-		public SystemError RawRead( void* buffer, int bufferLength, int& transmitted, bool fullBlock = false ) {
+		public SystemError RawRead( uint& transmitted, void* buffer, uint bufferLength, bool fullBlock = false ) {
 			transmitted = 0;
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
 			do {
-				var readen = LibcApi.read( this, ( byte* ) buffer + transmitted, bufferLength );
-				if( readen == 0 ) break;
-				if( readen < 0 ) return LibcApi.LastError;
+				var readResult = LibcApi.read( this, ( byte* ) buffer + transmitted, bufferLength );
+				if( readResult == 0 ) break;
+				if( readResult < 0 ) return LibcApi.LastError;
 
+				var readen = ( uint ) readResult;
 				transmitted += readen;
 				bufferLength -= readen;
 			} while( fullBlock && transmitted < bufferLength );
@@ -395,16 +404,16 @@ namespace Platform.Kernel {
 		// Less than 'count' bytes can be transmitted
 		// if 'fullBlock' == true then try to accumulate full buffer
 		// if 'fullBlock' == false then try to fetch any available data
-		protected SystemError ReadBlocking( TimeSpan timeout, void* buffer, int bufferLength, int& transmitted, bool fullBlock = false ) {
+		protected SystemError ReadBlocking( TimeDuration timeout, uint& transmitted, void* buffer, uint bufferLength, bool fullBlock = false ) {
 			transmitted = 0;
 			if( !Assert.IsTrue( buffer != null && bufferLength > 0 ) ) return SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() )
 			using( new AlarmRegion( timeout ) )
-				return RawRead( buffer, bufferLength, transmitted, fullBlock );
+				return RawRead( transmitted, buffer, bufferLength, fullBlock );
 		}
 
-		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FctlFlags flags, SymlinkFollowOption symlinkFollowOption ) {
+		protected SystemError OpenAtBlocking( IOHandle parent, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption symlinkFollowOption ) {
 			using( Fiber.AsyncCompletionRegion() ) {
 				this = bitcast<FileHandle>( LibcApi.openat( parent, name, flags, symlinkFollowOption ) );
 				if( !IsValid ) return LibcApi.LastError;
@@ -414,46 +423,46 @@ namespace Platform.Kernel {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.FD_CLOEXEC ) != 0;
+				return ( options & FileDescriptorFlags.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.FD_CLOEXEC.Value(), value );
+				options = ( FileDescriptorFlags ) BitOperations.MaskSet( options.Value(), FileDescriptorFlags.FD_CLOEXEC.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFD, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFD, options ) );
 			}
 		}
 
 		public bool IsNonBlocking {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.O_NONBLOCK ) != 0;
+				return ( options & FileStatusFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
+				options = ( FileStatusFlags ) BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
 			}
 		}
 
-		public int AvailableBytes {
+		public uint AvailableBytes {
 			get {
-				int result;
-				LibcApi.AssertErrno( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &result ) );
+				uint result;
+				LibcApi.AssertErrno( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &result ) );
 				return result;
 			}
 		}
@@ -463,12 +472,13 @@ namespace Platform.Kernel {
 
 			using( var page = Memory.CachedPages.PopScoped() ) {
 				var buffer = ( byte* ) page.Value;
-				var bufferLength = ( uint ) Memory.DefaultPageSize;
+				var bufferLength = Memory.DefaultPageSize;
 
 				while( available > 0 ) {
-					var readen = LibcApi.read( this, buffer, Math.Min( available, ( int ) bufferLength ) );
-					if( readen <= 0 ) break;
+					var readResult = LibcApi.read( this, buffer, Math.Min( available, bufferLength ) );
+					if( readResult <= 0 ) break;
 
+					var readen = ( uint ) readResult;
 					available -= readen;
 				}
 			}
@@ -482,7 +492,7 @@ namespace Platform.Kernel {
 			builder.AppendFormat( " ID={0} nonblock={1} cloexec={2}", ID, IsNonBlocking, IsClosedOnExec );
 
 			int availableBytes;
-			if( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
+			if( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
 			else builder.AppendFormat( " AvailableBytes={0}", "---" );
 		}
 
@@ -493,37 +503,37 @@ namespace Platform.Kernel {
 		}
 	}
 
-	// Some handles like file handles cannot be polled via select/poll/epoll ( bad linux/BSD programmers, no such scary things in Win32 )
+	// Some handles like file handles cannot be polled via select/poll/epoll/kqueue ( bad Linux/BSD programmers, no such scary things in Win32 )
 	public struct IOHandleBlocking : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public SystemError Write( vararg iovec data ) { return WriteBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
-		public SystemError Write( void* buffer, int count ) { return WriteBlocking( TimeSpan.Zero, buffer, count ); }
+		public SystemError Write( uint& totalTransmitted, void* buffer, uint count ) { return WriteBlocking( TimeDuration.Zero, totalTransmitted, buffer, count ); }
+		public SystemError Write( uint& totalTransmitted, vararg iovec data ) { return WriteBlocking( TimeDuration.Zero, totalTransmitted, vararg( data, data.Length ) ); }
 
-		public SystemError Read( int& totalReaden, vararg iovec data ) { return ReadBlocking( TimeSpan.Zero, totalReaden, vararg( data, data.Length ) ); }
-		public SystemError Read( void* buffer, int count, int& totalReceived ) { return ReadBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+		public SystemError Read( uint& totalReceived, void* buffer, uint count ) { return ReadBlocking( TimeDuration.Zero, totalReceived, buffer, count ); }
+		public SystemError Read( uint& totalReaden, vararg iovec data ) { return ReadBlocking( TimeDuration.Zero, totalReaden, vararg( data, data.Length ) ); }
 
-		public SystemError Write( TimeSpan timeout, vararg iovec data ) { return WriteBlocking( timeout, vararg( data, data.Length ) ); }
-		public SystemError Write( TimeSpan timeout, void* buffer, int count ) { return WriteBlocking( timeout, buffer, count ); }
+		public SystemError Write( TimeDuration timeout, uint& totalTransmitted, void* buffer, uint count ) { return WriteBlocking( timeout, totalTransmitted, buffer, count ); }
+		public SystemError Write( TimeDuration timeout, uint& totalTransmitted, vararg iovec data ) { return WriteBlocking( timeout, totalTransmitted, vararg( data, data.Length ) ); }
 
-		public SystemError Read( TimeSpan timeout, int& totalReaden, vararg iovec data ) { return ReadBlocking( timeout, totalReaden, vararg( data, data.Length ) ); }
-		public SystemError Read( TimeSpan timeout, void* buffer, int count, int& totalReceived ) { return ReadBlocking( timeout, buffer, count, totalReceived ); }
+		public SystemError Read( TimeDuration timeout, uint& totalReceived, void* buffer, uint count ) { return ReadBlocking( timeout, totalReceived, buffer, count ); }
+		public SystemError Read( TimeDuration timeout, uint& totalReaden, vararg iovec data ) { return ReadBlocking( timeout, totalReaden, vararg( data, data.Length ) ); }
 	}
 
 	// Sockets, pipes, character devices works fine with O_NONBLOCK allows efficient multiplexing in event loop
 	public struct IOHandleNonBlocking : IOHandle {
 		public static new thistype Invalid { get { return bitcast<thistype>( basetype.Invalid ); } }
 
-		public SystemError Write( vararg iovec data ) { return WriteNonBlocking( TimeSpan.Zero, vararg( data, data.Length ) ); }
-		public SystemError Write( void* buffer, int count ) { return WriteNonBlocking( TimeSpan.Zero, buffer, count ); }
+		public SystemError Write( uint& totalTransmitted, void* buffer, uint count ) { return WriteNonBlocking( TimeDuration.Zero, totalTransmitted, buffer, count ); }
+		public SystemError Write( uint& totalTransmitted, vararg iovec data ) { return WriteNonBlocking( TimeDuration.Zero, totalTransmitted, vararg( data, data.Length ) ); }
 
-		public SystemError Read( int& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeSpan.Zero, totalReceived, vararg( data, data.Length ) ); }
-		public SystemError Read( void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( TimeSpan.Zero, buffer, count, totalReceived ); }
+		public SystemError Read( uint& totalReceived, void* buffer, uint count ) { return ReadNonBlocking( TimeDuration.Zero, totalReceived, buffer, count ); }
+		public SystemError Read( uint& totalReceived, vararg iovec data ) { return ReadNonBlocking( TimeDuration.Zero, totalReceived, vararg( data, data.Length ) ); }
 
-		public SystemError Write( TimeSpan timeout, vararg iovec data ) { return WriteNonBlocking( timeout, vararg( data, data.Length ) ); }
-		public SystemError Write( TimeSpan timeout, void* buffer, int count ) { return WriteNonBlocking( timeout, buffer, count ); }
+		public SystemError Write( TimeDuration timeout, uint& totalTransmitted, void* buffer, uint count ) { return WriteNonBlocking( timeout, totalTransmitted, buffer, count ); }
+		public SystemError Write( TimeDuration timeout, uint& totalTransmitted, vararg iovec data ) { return WriteNonBlocking( timeout, totalTransmitted, vararg( data, data.Length ) ); }
 
-		public SystemError Read( TimeSpan timeout, int& totalReceived, vararg iovec data ) { return ReadNonBlocking( timeout, totalReceived, vararg( data, data.Length ) ); }
-		public SystemError Read( TimeSpan timeout, void* buffer, int count, int& totalReceived ) { return ReadNonBlocking( timeout, buffer, count, totalReceived ); }
+		public SystemError Read( TimeDuration timeout, uint& totalReceived, void* buffer, uint count ) { return ReadNonBlocking( timeout, totalReceived, buffer, count ); }
+		public SystemError Read( TimeDuration timeout, uint& totalReceived, vararg iovec data ) { return ReadNonBlocking( timeout, totalReceived, vararg( data, data.Length ) ); }
 	}
 }

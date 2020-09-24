@@ -27,7 +27,6 @@ namespace System.Serialization {
 			_mapper = mapper;
 			_context = &context;
 
-			bool isNull;
 			using( var builder1 = StringBuilder.CachedBuilders.PopScoped() ) {
 				var valueFormatter = builder1.Value;
 
@@ -36,32 +35,31 @@ namespace System.Serialization {
 						var name = idMapping.Key;
 
 						switch( mapper.Binder.Mappings[idMapping.Value].GetType() ) {
-							case typeof( bool ): { bool value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( bool ): { bool value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							case typeof( sbyte ):
 							case typeof( short_littleendian ):
 							case typeof( short_bigendian ):
 							case typeof( int_littleendian ):
-							case typeof( int_bigendian ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( int_bigendian ): { int value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 							case typeof( long_littleendian ):
-							case typeof( long_bigendian ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( long_bigendian ): { long value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							case typeof( byte ):
 							case typeof( ushort_littleendian ):
 							case typeof( ushort_bigendian ):
 							case typeof( uint_littleendian ):
-							case typeof( uint_bigendian ): { int value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( uint_bigendian ): { int value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 							case typeof( ulong_littleendian ):
-							case typeof( ulong_bigendian ): { long value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( ulong_bigendian ): { long value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							case typeof( float_littleendian ):
 							case typeof( float_bigendian ):
 							case typeof( double_littleendian ):
-							case typeof( double_bigendian ): { double value; context.Binder.GetValue( context, idMapping.Value, value ); _writer.Property( name, value ); } break;
+							case typeof( double_bigendian ): { double value; context.Binder.GetValue( context.Object, idMapping.Value, value ); _writer.Property( name, value ); } break;
 
 							default:
-								context.Binder.GetValue( context, idMapping.Value, valueFormatter, isNull );
-								if( isNull ) {
+								if( !context.Binder.GetValue( context.Object, idMapping.Value, valueFormatter ) ) {
 									_writer.PropertyStart( name );
 									_writer.Null();
 								}

@@ -3,7 +3,7 @@
   <PropertyGroup>
     <NativeTargetPlatform>Windows</NativeTargetPlatform>
     <NativeTargetPlatformVersion>7</NativeTargetPlatformVersion>
-    <RootNamespace>Example</RootNamespace>
+    <RootNamespace>DMM</RootNamespace>
     <SbcsStringCodepage>866</SbcsStringCodepage>
   </PropertyGroup>
   <PropertyGroup>
@@ -36,7 +36,7 @@
     <OptimizationLevel>0</OptimizationLevel>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
-    <CmdArgs></CmdArgs>
+    <CmdArgs>/trace /verbose</CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <BuildType>Release</BuildType>
@@ -45,7 +45,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
-    <CmdArgs></CmdArgs>
+    <CmdArgs>/trace /verbose</CmdArgs>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Distribution|AnyCPU' ">
     <BuildType>Distribution</BuildType>
@@ -54,13 +54,16 @@
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>4</WarningLevel>
     <DebugSymbols>false</DebugSymbols>
-    <CmdArgs></CmdArgs>
+    <CmdArgs>/trace /verbose</CmdArgs>
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="App.Config\App.Config.bmlg" />
     <Compile Include="App.Config\App.Config.$(BuildType).bmlg" />
     <Compile Include="App\**\*.bmlg" />
     <EmbeddedResource Include="Resources\**\*" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="$(ModulesFolder)\BCL\Optional\CodePage\Encoding.$(SbcsStringCodepage).bmlg" />
   </ItemGroup>
   <Import Project="$(MSBuildProgramFiles32)\Bamelg\Bamelg.MSBuild.targets" />
   <!--Target Name="BeforeBuild"> ... </Target-->

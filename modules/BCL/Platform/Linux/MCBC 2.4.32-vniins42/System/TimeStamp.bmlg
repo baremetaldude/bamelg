@@ -1,0 +1,87 @@
+﻿//
+// Created by Eugeny Grishul
+//
+// See license at http://bamelg.com/license.txt
+//
+
+using Platform.Kernel;
+using Platform.Libc;
+
+namespace System {
+	public sealed partial struct TimeStamp {
+		private enum MonotonicSource {
+			None,       // UTC
+			ProcUptime, // /proc/uptime
+			Syscall,    // clock_gettime(CLOCK_MONOTONIC)
+		}
+
+		private static MonotonicSource _monotonicSource = MonotonicSource.None;
+
+		static TimeStamp() {
+			{
+				timespec result;
+				if( RealTimeApi.clock_gettime( ClockType.CLOCK_MONOTONIC, result ) == 0 ) {
+					_monotonicSource = MonotonicSource.Syscall;
+					return;
+				}
+			}
+
+			{
+				ulong result2;
+				if( GetProcUptime( result2 ) )
+					_monotonicSource = MonotonicSource.ProcUptime;
+			}
+		}
+
+		private static bool GetProcUptime( ulong& result ) {
+			byte[50] buffer;
+
+			IOHandle uptimeHandle;
+			var error = IOHandle.RawOpen( uptimeHandle, "/proc/uptime", FileOpenFlags.O_RDONLY, 0 );
+			if( error != SystemError.None ) return false;
+
+			using( uptimeHandle ) {
+				uint readen;
+				error = uptimeHandle.RawRead( readen, buffer, buffer.Length );
+				if( error != SystemError.None ) return false;
+
+				byte* parsePosition = &buffer[0];
+				uint remaining = ( uint ) readen;
+
+				ulong seconds;
+				uint milliseconds;
+
+				if( !ulong.TryFetch( parsePosition, remaining, seconds ) || remaining == 0 ) return false;
+				if( *parsePosition++ != '.' || --remaining == 0 ) return false;
+
+				if( !uint.TryFetch( parsePosition, remaining, milliseconds ) ) return false;
+
+				result = TimeDuration.FromMilliseconds( seconds * 1000U + milliseconds * 10U ).Ticks;
+
+				return true;
+			}
+		}
+
+		internal static ulong UTC_Ticks { get { return ( ulong ) timespec.UtcNow.DateTimeTicks; } }
+
+		internal static ulong BootTime_ExcludeSuspend_Ticks {
+			get {
+				ulong ticks = 0;
+
+				switch( _monotonicSource ) {
+					case MonotonicSource.ProcUptime: if( !GetProcUptime( ticks ) ) return 0; break;
+					case MonotonicSource.Syscall: ticks = timespec.MonotonicTime.TimeDurationTicks; break;
+				}
+
+				return ticks;
+			}
+		}
+
+		internal static ulong BootTime_IncludeSuspend_Ticks { get { return BootTime_ExcludeSuspend_Ticks; } }
+
+		public sealed partial struct UTC : IFormattable {
+			public static explicit operator DateTimeUTC( thistype value ) { return new DateTimeUTC { Ticks = value.Ticks }; }
+			public static explicit operator thistype( DateTimeUTC value ) { return new thistype { Ticks = value.Ticks }; }
+		}
+	}
+}

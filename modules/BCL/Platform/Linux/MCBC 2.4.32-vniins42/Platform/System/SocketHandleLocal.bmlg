@@ -27,11 +27,11 @@ namespace Platform.Kernel {
 
 		public SystemError Connect( Utf8String path ) {
 			var endpoint = new sockaddr_un( path );
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
 		public SystemError Connect( sockaddr_un& endpoint ) {
-			return ConnectNonBlocking( TimeSpan.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
+			return ConnectNonBlocking( TimeDuration.Zero, ( sockaddr* ) &endpoint, sizeof( endpoint ) );
 		}
 
 		public bool Bind( Utf8String path ) {
