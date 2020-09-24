@@ -108,7 +108,7 @@ namespace Platform.Gtk {
 			widget->Invalidate();
 			widget->ReleaseReference();
 
-			return false; // удаляем
+			return false; // delete
 		}
 
 		public GdkEventMask GdkEvents {
@@ -390,6 +390,11 @@ namespace Platform.Gtk {
 			set { GtkApi.gtk_toggle_button_set_active( &this, value ); }
 		}
 
+		public bool IsInconsistent {
+			get { return GtkApi.gtk_toggle_button_get_inconsistent( &this ); }
+			set { GtkApi.gtk_toggle_button_set_inconsistent( &this, value ); }
+		}
+
 		public static new thistype* Create() {
 			var result = GtkApi.gtk_toggle_button_new();
 			result->IsVisible = true;
@@ -483,7 +488,6 @@ namespace Platform.Gtk {
 		}
 
 		public void AddItem( Utf8String text ) { GtkApi.gtk_combo_box_append_text( &this, text ); }
-		public void AddItem( SbcsString text ) { GtkApi.gtk_combo_box_append_text( &this, new CUtf8String( text.GetChars() ) ); }
 
 		public void InsertItem( int position, Utf8String text ) { GtkApi.gtk_combo_box_insert_text( &this, position, text ); }
 		public void RemoveItem( int position ) { GtkApi.gtk_combo_box_remove_text( &this, position ); }
@@ -669,8 +673,8 @@ namespace Platform.Gtk {
 			public static new GType TypeID { get { return GtkApi.gtk_notebook_get_type(); } }
 		}
 
-		public GtkWidget* AddPage( GtkWidget* title, GtkWidget* content ) { GtkApi.gtk_notebook_append_page( &this, content, title ); return content; }
-		public GtkWidget* AddPage( Utf8String title, GtkWidget* content ) { GtkApi.gtk_notebook_append_page( &this, content, GtkLabel.Create( title ) ); return content; }
+		public int AddPage( GtkWidget* title, GtkWidget* content ) { return GtkApi.gtk_notebook_append_page( &this, content, title ); }
+		public int AddPage( Utf8String title, GtkWidget* content ) { return GtkApi.gtk_notebook_append_page( &this, content, GtkLabel.Create( title ) ); }
 
 		public GtkWidget* Page[int index] { get { return GtkApi.gtk_notebook_get_nth_page( &this, index ); } }
 		public GtkWidget* GetPageLabel( GtkWidget* page ) { return GtkApi.gtk_notebook_get_tab_label( &this, page ); }
@@ -790,6 +794,8 @@ namespace Platform.Gtk {
 		public void SetPadding( uint padding_top, uint padding_bottom, uint padding_left, uint padding_right ) { GtkApi.gtk_alignment_set_padding( &this, padding_top, padding_bottom, padding_left, padding_right ); }
 
 		public static thistype* Create( GtkWidget* widget, float xalign, float yalign ) {
+			if( widget == null ) return null;
+
 			var result = Create( xalign, yalign, 0, 0 );
 			result->SetPadding( 0, 0, 0, 0 );
 			result->Add( widget );
@@ -803,6 +809,8 @@ namespace Platform.Gtk {
 		}
 
 		public static thistype* Create( GtkWidget* widget, float xalign, float yalign, float xscale, float yscale, uint padding_top, uint padding_bottom, uint padding_left, uint padding_right ) {
+			if( widget == null ) return null;
+
 			var result = Create( xalign, yalign, xscale, yscale );
 			result->SetPadding( padding_top, padding_bottom, padding_left, padding_right );
 			result->Add( widget );
@@ -810,6 +818,8 @@ namespace Platform.Gtk {
 		}
 
 		public static thistype* Create( GtkWidget* widget, uint padding_top, uint padding_bottom, uint padding_left, uint padding_right ) {
+			if( widget == null ) return null;
+
 			var result = Create( 0.5f, 0.5f, 1, 1 );
 			result->SetPadding( padding_top, padding_bottom, padding_left, padding_right );
 			result->Add( widget );
@@ -905,9 +915,24 @@ namespace Platform.Gtk {
 			set { GtkApi.gtk_tree_view_column_set_fixed_width( &this, value ); }
 		}
 
+		public int MinWidth {
+			get { return GtkApi.gtk_tree_view_column_get_min_width( &this ); }
+			set { GtkApi.gtk_tree_view_column_set_min_width( &this, value ); }
+		}
+
 		public int MaxWidth {
 			get { return GtkApi.gtk_tree_view_column_get_max_width( &this ); }
 			set { GtkApi.gtk_tree_view_column_set_max_width( &this, value ); }
+		}
+
+		public bool Expand {
+			get { return GtkApi.gtk_tree_view_column_get_expand( &this ); }
+			set { GtkApi.gtk_tree_view_column_set_expand( &this, value ); }
+		}
+
+		public float Alignment {
+			get { return GtkApi.gtk_tree_view_column_get_alignment( &this ); }
+			set { GtkApi.gtk_tree_view_column_set_alignment( &this, value ); }
 		}
 	}
 
@@ -1144,8 +1169,12 @@ namespace Platform.Gtk {
 			GtkApi.gtk_box_pack_start( &this, widget, false, false, 0 );
 		}
 
-		public void Insert( GtkWidget* widget ) {
-			GtkApi.gtk_box_pack_end( &this, widget, false, false, 0 );
+		public void PackStart( GtkWidget* widget, bool expand = false, bool fill = false, uint padding = 0 ) {
+			GtkApi.gtk_box_pack_start( &this, widget, expand, fill, padding );
+		}
+
+		public void PackEnd( GtkWidget* widget, bool expand = false, bool fill = false, uint padding = 0 ) {
+			GtkApi.gtk_box_pack_end( &this, widget, expand, fill, padding );
 		}
 
 		public bool IsHomogeneous {
@@ -1189,6 +1218,65 @@ namespace Platform.Gtk {
 		}
 	}
 
+
+	public partial struct GtkRange {
+		public new partial struct Class {
+			public static new GType TypeID { get { return GtkApi.gtk_range_get_type(); } }
+		}
+
+		public void SetRange( double min, double max ) {
+			if( min >= max ) IsVisible = false;
+			else {
+				GtkApi.gtk_range_set_range( &this, min, max );
+				IsVisible = true;
+			}
+		}
+
+		public double Value {
+			get { return GtkApi.gtk_range_get_value( &this ); }
+			set { if( Value != value ) GtkApi.gtk_range_set_value( &this, value ); }
+		}
+
+		public bool Invert {
+			set { GtkApi.gtk_range_set_inverted( &this, value ); }
+		}
+	}
+
+	public partial struct GtkScale {
+		public new partial struct Class {
+			public static new GType TypeID { get { return GtkApi.gtk_scale_get_type(); } }
+		}
+
+		public bool ShowLabel {
+			set { GtkApi.gtk_scale_set_draw_value( &this, value ); }
+		}
+	}
+
+	public partial struct GtkHScale {
+		public new partial struct Class {
+			public static new GType TypeID { get { return GtkApi.gtk_hscale_get_type(); } }
+		}
+
+		public static thistype* Create( double min, double max, double step ) {
+			var result = ( GtkHScale* ) GtkApi.gtk_hscale_new_with_range( min, max, step );
+			result->IsVisible = true;
+			return result;
+		}
+	}
+
+	public partial struct GtkVScale {
+		public new partial struct Class {
+			public static new GType TypeID { get { return GtkApi.gtk_vscale_get_type(); } }
+		}
+
+		public static thistype* Create( double min, double max, double step ) {
+			var result = ( GtkVScale* ) GtkApi.gtk_vscale_new_with_range( min, max, step );
+			result->IsVisible = true;
+			return result;
+		}
+	}
+
+
 	public partial struct GtkHBox {
 		public new partial struct Class {
 			public static new GType TypeID { get { return GtkApi.gtk_hbox_get_type(); } }
@@ -1211,24 +1299,6 @@ namespace Platform.Gtk {
 			result->IsVisible = true;
 			return result;
 		}
-	}
-
-	public partial struct GtkRange {
-		public new partial struct Class {
-			public static new GType TypeID { get { return GtkApi.gtk_range_get_type(); } }
-		}
-
-		public void SetRange( double min, double max ) {
-			if( min >= max ) IsVisible = false;
-			else {
-				GtkApi.gtk_range_set_range( &this, min, max );
-				IsVisible = true;
-			}
-		}
-
-		public double Value {
-			get { return GtkApi.gtk_range_get_value( &this ); }
-			set { if( Value != value ) GtkApi.gtk_range_set_value( &this, value ); } }
 	}
 
 	public partial struct GtkScrollbar {

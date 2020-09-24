@@ -144,6 +144,7 @@ namespace System.IO {
 		public static bool EnsureReadable( this IStream @this, StreamingBufferInfo* bufferInfo, int count ) {
 			Debug.Assert( bufferInfo != null );
 			Debug.Assert( bufferInfo == @this.BufferInfo );
+			Debug.Assert( count <= bufferInfo->Capacity );
 
 			if( bufferInfo->AvailableToRead >= count ) return true;
 

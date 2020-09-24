@@ -9,6 +9,7 @@ using System.Runtime;
 using System.Text;
 
 namespace System {
+	[RelaxedRelease]
 	public sealed partial class Utf8String {
 		public const Utf8String Empty = "";
 
@@ -441,21 +442,6 @@ namespace System {
 				--length;
 
 			if( length == 0 ) *--left = 0;
-		}
-
-		// Copy 'rightString' to buffer pointed by 'leftString' and fill remaining bytes with zeroes
-		public static void InitializeBuffer( CUtf8String leftString, CUtf8String rightString, int bufferLength ) {
-			var left = leftString.GetChars();
-			var right = rightString.GetChars();
-
-			while( bufferLength != 0 && ( *left++ = *right++ ) != 0 )
-				--bufferLength;
-
-			if( bufferLength == 0 ) *--left = 0;
-			else while( bufferLength != 0 ) {
-				*left++ = 0;
-				--bufferLength;
-			}
 		}
 
 		public bool StartsWith( CUtf8StringSpan value ) {

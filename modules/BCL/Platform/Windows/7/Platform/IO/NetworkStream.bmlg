@@ -189,6 +189,41 @@ namespace Platform.IO {
 		int IStream.Read( vararg MemorySegment segments ) { var result = 0; foreach( var segment in segments ) result += Read( segment.Start, ( int ) segment.Count ); return result; }
 		void IStream.Write( vararg MemorySegment segments ) { foreach( var segment in segments ) Write( segment.Start, ( int ) segment.Count ); }
 
+		public bool IsClosed() {
+			return false;
+		}
+
+		public void EnableKeepAlive( TimeSpan timeout, TimeSpan interval ) {
+			EnableKeepAlive( ( int ) timeout.TotalMilliseconds, ( int ) interval.TotalMilliseconds );
+		}
+
+		private const uint SIO_KEEPALIVE_VALS = 2550136836;
+		public void EnableKeepAlive( int timeout, int interval ) {
+			// Defaults in:
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveTime
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveInterval
+			// HKLM\SYSTEM\CurrentControlSet\Services\Tcpip\Parameters\TcpMaxDataRetransmissions  is set to 10 and cannot be changed
+
+			var setting = new tcp_keepalive {
+				onoff = 1,
+				keepalivetime = ( uint ) timeout,
+				keepaliveinterval = ( uint ) interval
+			};
+
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, ( uint ) sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
+
+		public void DisableKeepAlive() {
+			var setting = default( tcp_keepalive );
+
+			uint SIO_KEEPALIVE_VALS = 2550136836;
+			if( WinsockApi.WSAIoctl( _handle, SIO_KEEPALIVE_VALS, &setting, ( uint ) sizeof( setting ), null, 0, 0U, nullref, null ) != 0 ) {
+				// var error = Kernel32Api.LastError;
+			}
+		}
+
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 

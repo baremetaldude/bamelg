@@ -48,6 +48,7 @@ namespace Example {
 						case "/time.html": return new EmbeddedResourceHandler( this, System.Net.Mime.MediaTypeNames.Text.Html, new MemorySegment( EmbeddedResources.time_html ) );
 					}
 
+					SendStatus( HttpStatusCode.NotFound );
 					return null;
 				}
 			}
@@ -87,7 +88,7 @@ namespace Example {
 							Response.WriteLine();
 
 							WriteEventEnd();
-							
+
 							Flush();
 							if( Session.StreamError ) break;
 

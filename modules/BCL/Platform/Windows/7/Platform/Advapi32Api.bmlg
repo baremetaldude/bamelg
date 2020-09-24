@@ -15,7 +15,7 @@ namespace Platform {
 	[DllImport( Image = "ADVAPI32.dll" )]
 	[CallingConvention( Value = NtApi.DefaultCallingConvention )]
 	public static partial struct Advapi32Api {
-		/// @{ Registry
+		#region Registry
 		/// Limits:
 		///		Key name: 255 characters
 		///		Value name: 16383 characters
@@ -217,7 +217,7 @@ namespace Platform {
 		public extern static SystemErrorCode RegQueryMultipleValues( HKEY key, VALENTW* values, uint count, void* valueBuf, uint& totalSize );
 
 		public extern static SystemErrorCode RegCloseKey( HKEY key );
-		/// @}
+		#endregion
 
 		public extern static bool ImpersonateNamedPipeClient( NamedPipeHandle pipe );
 		public extern static bool RevertToSelf();

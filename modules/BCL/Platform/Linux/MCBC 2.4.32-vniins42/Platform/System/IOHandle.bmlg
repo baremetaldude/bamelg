@@ -20,7 +20,7 @@ namespace Platform.Kernel {
 			this = bitcast<IOHandle>( handle );
 		}
 
-		public static SystemError RawOpen( IOHandle& result, CUtf8String name, FctlFlags flags, int permissions ) {
+		public static SystemError RawOpen( IOHandle& result, CUtf8String name, FileOpenFlags flags, int permissions ) {
 			var error = SystemError.None;
 
 			result = bitcast<IOHandle>( LibcApi.open( name, flags, permissions ) );
@@ -29,7 +29,7 @@ namespace Platform.Kernel {
 			return error;
 		}
 
-		public static SystemError Open( IOHandle& result, CUtf8String name, FctlFlags flags, int permissions ) {
+		public static SystemError Open( IOHandle& result, CUtf8String name, FileOpenFlags flags, int permissions ) {
 			var resultCode = result.OpenBlocking( name, flags, permissions );
 			if( !result.IsValid ) return resultCode;
 			return SystemError.None;
@@ -178,7 +178,7 @@ namespace Platform.Kernel {
 			}
 		}
 
-		protected SystemError OpenBlocking( CUtf8String name, FctlFlags flags, int permissions ) {
+		protected SystemError OpenBlocking( CUtf8String name, FileOpenFlags flags, int permissions ) {
 			var result = SystemError.None;
 
 			using( Fiber.AsyncCompletionRegion() ) {
@@ -302,46 +302,46 @@ namespace Platform.Kernel {
 
 		public bool IsClosedOnExec {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.FD_CLOEXEC ) != 0;
+				return ( options & FileDescriptorFlags.FD_CLOEXEC ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFD, 0 ) ) )
+				FileDescriptorFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileDescriptorFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFD, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.FD_CLOEXEC.Value(), value );
+				options = ( FileDescriptorFlags ) BitOperations.MaskSet( options.Value(), FileDescriptorFlags.FD_CLOEXEC.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFD, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFD, options ) );
 			}
 		}
 
 		public bool IsNonBlocking {
 			get {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return false;
 
-				return ( options & FctlFlags.O_NONBLOCK ) != 0;
+				return ( options & FileStatusFlags.O_NONBLOCK ) != 0;
 			}
 			set {
-				FctlFlags options;
-				if( !LibcApi.AssertErrno( options = ( FctlFlags ) LibcApi.fcntl( this, FctlCommand.F_GETFL, 0 ) ) )
+				FileStatusFlags options;
+				if( !LibcApi.AssertErrno( options = ( FileStatusFlags ) LibcApi.fcntl( this, FileDescriptorCommand.F_GETFL, 0 ) ) )
 					return;
 
-				options = ( FctlFlags ) BitOperations.MaskSet( options.Value(), FctlFlags.O_NONBLOCK.Value(), value );
+				options = ( FileStatusFlags ) BitOperations.MaskSet( options.Value(), FileStatusFlags.O_NONBLOCK.Value(), value );
 
-				LibcApi.AssertErrno( LibcApi.fcntl( this, FctlCommand.F_SETFL, options ) );
+				LibcApi.AssertErrno( LibcApi.fcntl( this, FileDescriptorCommand.F_SETFL, options ) );
 			}
 		}
 
 		public int AvailableBytes {
 			get {
 				int result;
-				LibcApi.AssertErrno( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &result ) );
+				LibcApi.AssertErrno( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &result ) );
 				return result;
 			}
 		}
@@ -370,7 +370,7 @@ namespace Platform.Kernel {
 			builder.AppendFormat( " ID={0} nonblock={1} cloexec={2}", ID, IsNonBlocking, IsClosedOnExec );
 
 			int availableBytes;
-			if( LibcApi.ioctl( this, IoctlCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
+			if( LibcApi.ioctl( this, FileDriverCommand.FIONREAD, &availableBytes ) >= 0 ) builder.AppendFormat( " AvailableBytes={0}", availableBytes );
 			else builder.AppendFormat( " AvailableBytes={0}", "---" );
 		}
 

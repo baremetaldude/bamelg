@@ -13,7 +13,10 @@ namespace System {
 		public const char MaxValue = ( char ) 0x7FFF;
 		public const char MinValue = ( char ) ~MaxValue;
 
-		public string ToString() { return PrimitiveTypesFormatter.FormatChar( this ); }
+		public SbcsString ToSbcsString() { return PrimitiveTypesFormatter.FormatCharSbcs( this ); }
+		public Utf8String ToUtf8String() { return PrimitiveTypesFormatter.FormatCharUtf8( this ); }
+		public Utf16String ToString() { return PrimitiveTypesFormatter.FormatCharUtf16( this ); }
+		public Utf32String ToUtf32String() { return PrimitiveTypesFormatter.FormatCharUtf32( this ); }
 
 		public uint GetHashCode() { return this; }
 		public int CompareTo( char value ) { return value == this ? 0 : this > value ? 1 : -1; }
@@ -549,7 +552,7 @@ namespace System {
 		public static bool TryParse( Utf32String input, float& value ) { return PrimitiveTypesParser.TryParseSingleIEEE754( input.GetChars(), input.Length, value ); }
 
 		public int CompareTo( [In] thistype& value ) { return value == this ? 0 : this > value ? 1 : -1; }
-	
+
 		public SbcsString ToSbcsString() { return PrimitiveTypesFormatter.FormatFloatingPointSbcs( this ); }
 		public Utf8String ToUtf8String() { return PrimitiveTypesFormatter.FormatFloatingPointUtf8( this ); }
 		public Utf16String ToString() { return PrimitiveTypesFormatter.FormatFloatingPointUtf16( this ); }

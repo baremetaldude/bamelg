@@ -10,7 +10,6 @@ namespace Platform.Kernel {
 	public partial struct cap_user_header_t {
 		public cap_user_header_t() {
 			version = KernelApi._LINUX_CAPABILITY_VERSION;
-			pid = LibcApi.getpid();
 		}
 	}
 
@@ -247,6 +246,15 @@ namespace Platform.Kernel {
 			}
 		}
 
+		public static SystemError gettid( uintptr& tid ) {
+			var code = raw_syscall( SystemCall.gettid );
+			if( bitcast<uintptr>( code ) > uint.MaxValue - RawErrorsMax )
+				return ( SystemError ) - code;
+
+			tid = ( uintptr ) code;
+			return SystemError.None;
+		}
+
 		public static SystemError setresuid( uintptr e, uintptr r, uintptr s ) {
 			var code = raw_syscall( SystemCall.setresuid, cast<intptr>( e ), cast<intptr>( r ), cast<intptr>( s ) );
 			if( bitcast<uintptr>( code ) > uint.MaxValue - RawErrorsMax ) {
@@ -288,5 +296,20 @@ namespace Platform.Kernel {
 			return SystemError.None;
 		}
 
+	}
+
+	public partial struct serial_icounter_struct : System.IFormattable {
+		public void ToString( System.StringBuilder builder, string format ) {
+			builder.Append( "cts=" ); builder.Append( cts );
+			builder.Append( " dsr=" ); builder.Append( dsr );
+			builder.Append( " rng=" ); builder.Append( rng );
+			builder.Append( " dcd=" ); builder.Append( dcd );
+			builder.Append( " rx=" ); builder.Append( rx );
+			builder.Append( " tx=" ); builder.Append( tx );
+			builder.Append( " frame=" ); builder.Append( frame );
+			builder.Append( " overrun=" ); builder.Append( overrun );
+			builder.Append( " parity=" ); builder.Append( parity );
+			builder.Append( " buf_overrun=" ); builder.Append( buf_overrun );
+		}
 	}
 }

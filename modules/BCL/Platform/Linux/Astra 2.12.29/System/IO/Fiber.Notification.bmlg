@@ -163,14 +163,14 @@ namespace System.IO {
 				public SystemError WaitForWrite( TimeSpan timeout, IOHandle handle ) {
 					TraceWait( CurrentFiber, thismethod, timeout );
 
-					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLOUT );
+					var result = Wait( timeout, handle, EPOLL_EVENTS.EPOLLOUT | EPOLL_EVENTS.EPOLLRDHUP | EPOLL_EVENTS.EPOLLHUP );
 
 					if( result != SystemError.None ) return result;
 					if( ( CurrentFiber->_waitEvents & ~EPOLL_EVENTS.EPOLLOUT ) != 0 ) return SystemError.ECONNRESET;
 					return SystemError.None;
 				}
 
-				/// @{ IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
+				#region IO completion. Designed to work with non-blocking handles. Blocks fiber until completion or timeout
 
 				public SystemError ConnectNonBlocking( TimeSpan timeout, SocketHandle socket, sockaddr* address, int addressLength ) {
 					socket.EnsureNonBlocking();
@@ -220,6 +220,7 @@ namespace System.IO {
 					else {
 						TraceNonBlockingWrite( socket, SystemError.None, written, count, totalWritten );
 
+						buffer = cast<byte*>( buffer ) + written;
 						totalWritten += written;
 						count -= written;
 						if( count > 0 && written > 0 ) goto restart; // ensure all bytes are send
@@ -312,9 +313,9 @@ namespace System.IO {
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ EventLoop support
+				#region EventLoop support
 
 				private FiberReadyEventSink _fiberReadyEventSink;
 				private FiberIOEventSink _fiberIOEventSink;
@@ -376,9 +377,9 @@ namespace System.IO {
 					}
 				}
 
-				/// @}
+				#endregion
 
-				/// @{ Tracing
+				#region Tracing
 
 				[Conditional( ConditionString = TraceConditionString )]
 				private static void TraceIONotify( FiberInfo* fiber, epoll_event& @event ) {
@@ -408,7 +409,7 @@ namespace System.IO {
 					Trace.Write( "Fiber: [{0:D2}] Handle {1} read: errno={2} readen={3} count={4} avail={5} total={6}", *CurrentFiber, socket.ID, errno, readen, count, socket.AvailableBytes, bytesReceived );
 				}
 
-				/// @}
+				#endregion
 			}
 		}
 	}

@@ -129,6 +129,7 @@ namespace System.Net {
 					case "/stat.json": return new HttpStatisticPageHandler( this );
 				}
 
+				SendStatus( HttpStatusCode.NotFound );
 				return null;
 			}
 
@@ -183,10 +184,7 @@ namespace System.Net {
 								TraceClientRequest( this );
 
 								Handler = CreateHandler();
-								if( Handler == null ) {
-									SendStatus( HttpStatusCode.NotFound );
-									goto parseNext;
-								}
+								if( Handler == null ) goto parseNext; // CreateHandler() must send appropriate status code
 
 								if( Handler.GetType().IsOverriden( memberinfo( RequestHandler.OnParameterParsed ) ) )
 									if( _parser._queryEnd != null )
@@ -237,7 +235,7 @@ namespace System.Net {
 				}
 			}
 
-			public void SendStatus( HttpStatusCode code ) {
+			protected void SendStatus( HttpStatusCode code ) {
 				TraceResponseStatus( this, code );
 
 				var formatter = new PrimitiveTypesFormatter.Formatter();
@@ -669,7 +667,8 @@ namespace System.Net {
 
 			public bool XFrameOptions { get; set; }
 
-			public DateTime LastModified = System.Runtime.CompilerServices.CompilerInfo.BuildDate;
+			private static DateTime DefaultLastModified = System.Runtime.CompilerServices.CompilerInfo.BuildDate.Floor( new TimeSpan( TimeSpan.TicksPerSecond ) );
+			public DateTime LastModified = DefaultLastModified;
 
 			public override bool CheckModifiedSince( DateTime date ) {
 				return LastModified > date;
@@ -727,8 +726,6 @@ namespace System.Net {
 					Response.AppendLine( "<body>" );
 					{
 						Response.AppendLine( "<p>Welcome to Bamelg embedded HTTP server!</p>" );
-						Response.AppendLine( "<p>Define custom 'SessionHandler' and override 'CreateSession'</p>" );
-
 					}
 					Response.AppendLine( "</body>" );
 				}

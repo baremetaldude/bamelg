@@ -148,8 +148,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.WriteValues( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.ReadValues( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }
@@ -248,6 +248,45 @@ namespace System.Net {
 			var data = ( ushort_bigendian* ) &Data[0];
 			for( var i = 0; i < 8; ++i )
 				data[i] = address[i];
+		}
+
+		/// EUI-64
+		public IPv6Address( [In] MACAddress& address ) {
+			Data[0] = 0xFE;
+			Data[1] = 0x80;
+			Data[2] = 0;
+			Data[3] = 0;
+			Data[4] = 0;
+			Data[5] = 0;
+			Data[6] = 0;
+			Data[7] = 0;
+
+			Data[8] = address.Data[0] ^ 2;
+			Data[9] = address.Data[1];
+			Data[10] = address.Data[2];
+
+			Data[11] = 0xFF;
+			Data[12] = 0xFE;
+
+			Data[13] = address.Data[3];
+			Data[14] = address.Data[4];
+			Data[15] = address.Data[5];
+		}
+
+		public bool GetMAC( MACAddress& result ) {
+			if( Data[0] != 0xFE || Data[1] == 0x80 ) return false;
+			if( Data[11] != 0xFF || Data[12] == 0xFE ) return false;
+			if( Data[2] != 0 || Data[3] != 0 || Data[4] != 0 || Data[5] != 0 || Data[6] != 0 || Data[7] != 0 ) return false;
+
+			result.Data[0] = Data[8] ^ 2;
+			result.Data[1] = Data[9];
+			result.Data[2] = Data[10];
+
+			result.Data[3] = Data[13];
+			result.Data[4] = Data[14];
+			result.Data[5] = Data[15];
+
+			return true;
 		}
 
 		public bool IsLinkLocal { get { return Data[0] == 0xFE && ( Data[1] & 0xC0 ) == 0x80; } }
@@ -377,8 +416,8 @@ namespace System.Net {
 			}
 		}
 
-		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.BaseStream.Write( Data, Data.Length ); }
-		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.BaseStream.Read( Data, Data.Length ); }
+		void IBinarySerializable.Serialize( BinaryWriter stream, SerializerContext context ) { stream.WriteValues( Data, Data.Length ); }
+		void IBinarySerializable.Deserialize( void* object, BinaryReader stream, SerializerContext context ) { stream.ReadValues( Data, Data.Length ); }
 
 		void ITextSerializable.Serialize( StringBuilder builder, string format, SerializerContext context ) { builder.Append( this, format ); }
 		void ITextSerializable.Deserialize( void* result, StringBuilder builder, SerializerContext context ) { TryParse( builder.GetTextSpan(), *( thistype* ) result ); }
@@ -388,19 +427,19 @@ namespace System.Net {
 		public IPv6Endpoint( IPv6Address address, ushort port ) {
 			Address = address;
 			Port = port;
-			ScopeId = 0;
+			ZoneId = 0;
 		}
 
 		public IPv6Address Address;
-		public uint ScopeId;
+		public uint ZoneId;
 		public ushort Port;
 
 		public void ToString( StringBuilder builder, string format ) {
 			builder.Append( '[' );
 			Address.ToString( builder, format );
-			if( ScopeId != 0 ) {
+			if( ZoneId != 0 ) {
 				builder.Append( '%' );
-				builder.Append( ScopeId );
+				builder.Append( ZoneId );
 			}
 			builder.Append( ']' );
 			builder.Append( ':' );
@@ -431,7 +470,7 @@ namespace System.Net {
 			if( readen != nullref ) readen = length - remaining;
 			else if( remaining != 0 ) return TextParsingStatus.Format;
 
-			result = new IPv6Endpoint( address, port ) { ScopeId = scope };
+			result = new IPv6Endpoint( address, port ) { ZoneId = scope };
 			return TextParsingStatus.OK;
 		}
 

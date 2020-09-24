@@ -232,7 +232,7 @@ namespace System {
 
 		[Conditional( ConditionString = "DEBUG" )]
 		private static void EnsureSameKind( [In] DateTime& left, [In] DateTime& right ) {
-			Debug.Assert( left.Kind == right.Kind, string.Format( "left.Kind={0} right.Kind={1}", left.Kind, right.Kind ) );
+			Debug.Assert( left.Kind == right.Kind );
 		}
 
 		public static TimeSpan operator -( [In] DateTime& left, [In] DateTime& right ) { EnsureSameKind( left, right ); return new TimeSpan( left.Ticks - right.Ticks ); }

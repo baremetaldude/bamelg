@@ -22,7 +22,7 @@ namespace Platform {
 		public extern static int WSACleanup();
 
 		public extern static SocketHandle socket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol );
-		
+
 		/// https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-wsasocketa
 		public static SocketHandle WSASocket( ADDRESS_FAMILY family, SocketType type, IPPROTO protocol, [In] WSAPROTOCOL_INFOA& protocolInfo, SocketGroup group, SocketCreateFlags flags ) { return WSASocket( ( int ) family, type, protocol, protocolInfo, group, flags ); }
 		[BackendSymbol( Name = "WSASocketA" )]
@@ -434,7 +434,7 @@ namespace Platform {
 				sin6_addr = endpoint.Address,
 				sin6_port = endpoint.Port,
 				sin6_flowinfo = 0,
-				sin6_scope_id = endpoint.ScopeId
+				sin6_scope_id = endpoint.ZoneId
 			};
 		}
 
@@ -442,7 +442,7 @@ namespace Platform {
 			return new System.Net.IPv6Endpoint {
 				Address = endpoint.sin6_addr,
 				Port = endpoint.sin6_port,
-				ScopeId = endpoint.sin6_scope_id
+				ZoneId = endpoint.sin6_scope_id
 			};
 		}
 
@@ -458,12 +458,12 @@ namespace Platform {
 		public WSADATA WSAData;
 
 		public WinsockInitializer() {
-			Assert.AreEqual( 0, WinsockApi.WSAStartup( 0x0202, WSAData ) );
-			WinsockApi.GetExtensions();
+			// Assert.AreEqual( 0, WinsockApi.WSAStartup( 0x0202, WSAData ) );
+			// WinsockApi.GetExtensions();
 		}
 
 		~WinsockInitializer() {
-			Assert.AreEqual( 0, WinsockApi.WSACleanup() );
+			// Assert.AreEqual( 0, WinsockApi.WSACleanup() );
 		}
 	}
 

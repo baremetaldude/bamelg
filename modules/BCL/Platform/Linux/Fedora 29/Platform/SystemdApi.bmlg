@@ -59,13 +59,8 @@ namespace Platform.Systemd {
 			var isAbstract = ServiceNotifyPath.GetChars()[0] == ( byte ) '@';
 
 			ServiceNotifyEndpoint = new sockaddr_un( ServiceNotifyPath );
-			if( isAbstract ) {
-				Console.WriteLine( "abstract" );
+			if( isAbstract )
 				ServiceNotifyEndpoint.sun_path[0] = 0;
-			}
-			else {
-				Console.WriteLine( "not abstract" );
-			}
 
 			ServiceNotifySocket = new SocketHandleLocal( __socket_type.SOCK_DGRAM, true );
 

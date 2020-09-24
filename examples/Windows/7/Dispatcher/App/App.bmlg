@@ -3,7 +3,6 @@
 //
 
 using System;
-using System.Threading;
 
 using Platform;
 using Platform.IO;
@@ -16,9 +15,17 @@ namespace Example {
 				// Tracing = true,
 				// TracingAlarmQueue = true
 			} ) {
+				WSADATA WSAData;
+				Assert.AreEqual( 0, WinsockApi.WSAStartup( 0x0202, WSAData ) );
+
+				for( var i = 0; i < 100; ++i )
+					WinsockApi.GetExtensions();
+
+				Assert.AreEqual( 0, WinsockApi.WSACleanup() );
+
 				eventLoop.CatchConsoleQuit();
 
-				eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
+				// eventLoop.Invoke( () => Console.WriteLine( "'Invoke()' from same thread" ) );
 				eventLoop.BeginInvoke( () => Console.WriteLine( "deferred 'Invoke()' from same thread" ) );
 
 				eventLoop.BeginInvoke( () => {
@@ -75,7 +82,7 @@ namespace Example {
 					eventLoop.RemoveAlarm( alignedUtcAlarm );
 					eventLoop.RemoveAlarm( alignedToUtcUnbiasedAlarm );
 					eventLoop.RemoveAlarm( alignedUnbiasedAlarm );
-					//eventLoop.RequestExit();
+					// eventLoop.RequestExit();
 				} );
 
 				eventLoop.ScheduleUnbiased( TimeSpan.FromSeconds( 8 ), () => {

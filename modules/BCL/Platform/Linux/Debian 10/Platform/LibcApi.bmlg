@@ -38,18 +38,18 @@ namespace Platform.Libc {
 		public extern static int prctl( ProcessControlActions action, uintptr arg2 = 0, uintptr arg3 = 0, uintptr arg4 = 0, uintptr arg5 = 0 );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/open.2.html
-		public extern static IOHandle open( CUtf8String name, FctlFlags flags, int permissions );
+		public extern static IOHandle open( CUtf8String name, FileOpenFlags flags, int permissions );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl.2.html
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/ioctl_list.2.html
-		public extern static int ioctl( IOHandle handle, IoctlCommand option, void* result );
-		public extern static int fcntl( IOHandle handle, FctlCommand option, FctlFlags value );
+		public extern static int ioctl( IOHandle handle, FileDriverCommand option, void* result );
+		public extern static int fcntl( IOHandle handle, FileDescriptorCommand option, int value );
 
 		/// http://www.kernel.org/doc/man-pages/online/pages/man2/openat.2.html
-		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FctlFlags flags, SymlinkFollowOption option );
+		public extern static IOHandle openat( IOHandle directory, CUtf8String name, FileOpenFlags flags, SymlinkFollowOption option );
 
 		///  http://www.kernel.org/doc/man-pages/online/pages/man3/sem_open.3.html
-		public extern static sem_t* sem_open( CUtf8String name, FctlFlags oflag, int permissions, uint initialValue );
+		public extern static sem_t* sem_open( CUtf8String name, FileOpenFlags oflag, int permissions, uint initialValue );
 
 		public static bool Assert( int code, [In] CallerContext& callercontext = nullref ) {
 			if( code != 0 ) {
@@ -88,15 +88,34 @@ namespace Platform.Libc {
 			return true;
 		}
 
+		public static bool TryGetMACAddress( Utf8String interfaceName, IPv4Address address, MACAddress& result ) {
+			var fd = LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_DGRAM, IPProtocol.IPPROTO_IP );
+			if( fd == -1 ) return false;
+
+			var s = default( arpreq );
+			*( sockaddr_in* ) &s.arp_pa = new sockaddr_in( address, 0 );
+
+			System.Runtime.Memory.FillTerminatedBuffer( ( byte* ) &s.arp_dev[0], sizeof( s.arp_dev ), interfaceName );
+
+			using( var socket = bitcast<SocketHandle>( fd ) )
+				if( LibcApi.ioctl( socket, ( FileDriverCommand ) SocketIOControl.SIOCGARP, &s ) < 0 ) {
+					LibcApi.AssertErrno( -1 );
+					return false;
+				}
+
+			result = *( MACAddress* ) &s.arp_ha.sa_data[0];
+			return true;
+		}
+
 		public static bool TryGetMACAddress( Utf8String interfaceName, MACAddress& result ) {
 			var fd = LibcApi.socket( ProtocolFamily.PF_INET, __socket_type.SOCK_DGRAM, IPProtocol.IPPROTO_IP );
 			if( fd == -1 ) return false;
 
 			ifreq s;
-			CString.Copy( new CString( s.ifr_ifrn.ifrn_name ), new CString( interfaceName.GetChars() ), sizeof( s.ifr_ifrn.ifrn_name ) );
+			System.Runtime.Memory.FillTerminatedBuffer( ( byte* ) &s.ifr_ifrn.ifrn_name[0], sizeof( s.ifr_ifrn.ifrn_name ), interfaceName );
 
 			using( var socket = bitcast<SocketHandle>( fd ) )
-				if( LibcApi.ioctl( socket, ( IoctlCommand ) SocketIOControl.SIOCGIFHWADDR, &s ) < 0 )
+				if( LibcApi.ioctl( socket, ( FileDriverCommand ) SocketIOControl.SIOCGIFHWADDR, &s ) < 0 )
 					return false;
 
 			result = *( MACAddress* ) &s.ifr_ifru.ifru_addr.sa_data[0];
@@ -189,6 +208,23 @@ namespace Platform.Libc {
 		public uint_bigendian Address;
 	}
 
+	public partial struct in6_addr {
+		public in6_addr( IPv6Address& address ) {
+			Address = address;
+		}
+
+		[Overlapped( Offset = 0 )]
+		public IPv6Address Address;
+
+		public static explicit operator thistype( IPv6Address& address ) {
+			return new thistype( address );
+		}
+
+		public static explicit operator IPv6Address( thistype& @this ) {
+			return @this.Address;
+		}
+	}
+
 	public partial struct sockaddr_in : IFormattable {
 		public sockaddr_in( IPv4Address& address, ushort port ) {
 			ProtocolFamily = ProtocolFamily.PF_INET;
@@ -224,11 +260,11 @@ namespace Platform.Libc {
 		}
 
 		public static explicit operator sockaddr_in6( IPv6Endpoint& endpoint ) {
-			return new sockaddr_in6( endpoint.Address, endpoint.Port );
+			return new sockaddr_in6( endpoint.Address, endpoint.Port ) { sin6_scope_id = endpoint.ZoneId };
 		}
 
 		public static explicit operator IPv6Endpoint( sockaddr_in6& @this ) {
-			return new IPv6Endpoint( new IPv6Address( @this.Address ), @this.Port );
+			return new IPv6Endpoint( new IPv6Address( @this.Address ), @this.Port ) { ZoneId = @this.sin6_scope_id };
 		}
 
 		public Platform.Libc.ProtocolFamily ProtocolFamily { get { return ( Platform.Libc.ProtocolFamily ) sin6_family; } set { sin6_family = value.Value(); } }
@@ -256,11 +292,11 @@ namespace Platform.Libc {
 				Memory.Clear( &sun_path[path.ByteLength + 2], sun_path.Length - path.ByteLength - 2 );
 			}
 			else {
-			if( !Assert.IsTrue( path.ByteLength + 1 < sun_path.Length ) ) return;
+				if( !Assert.IsTrue( path.ByteLength + 1 < sun_path.Length ) ) return;
 
-			ProtocolFamily = ProtocolFamily.PF_UNIX;
-			Memory.Copy( &sun_path[0], path.GetChars(), path.ByteLength + 1 );
-		}
+				ProtocolFamily = ProtocolFamily.PF_UNIX;
+				Memory.Copy( &sun_path[0], path.GetChars(), path.ByteLength + 1 );
+			}
 		}
 
 		public bool IsAbstract { get { return sun_path[0] == 0; } }
@@ -269,6 +305,16 @@ namespace Platform.Libc {
 
 		public new void ToString( StringBuilder builder, string format ) {
 			builder.AppendFormat( "{{ Path='{0}' }}", new CUtf8String( &sun_path[0] ) );
+		}
+	}
+
+	public partial struct sockaddr_storage : IFormattable {
+		public new void ToString( StringBuilder builder, string format ) {
+			switch( ss_family ) {
+				case ProtocolFamily.PF_INET: cast<sockaddr_in*>( &this )->ToString( builder, format ); break;
+				case ProtocolFamily.PF_INET6: cast<sockaddr_in6*>( &this )->ToString( builder, format ); break;
+				case ProtocolFamily.PF_UNIX: cast<sockaddr_un*>( &this )->ToString( builder, format ); break;
+			}
 		}
 	}
 
@@ -529,23 +575,32 @@ namespace Platform.Libc {
 	}
 
 	public struct AlarmRegion : IDisposable {
+		private struct TimerHolder {
+			PosixTimerHandle Handle;
+
+			~TimerHolder() { Handle.Close(); }
+		}
+
 		private TimeSpan _timeout;
+
+		[ThreadStatic]
+		private static TimerHolder _timer = new TimerHolder { Handle = PosixTimerHandle.Invalid };
 
 		public AlarmRegion( TimeSpan timeout ) {
 			_timeout = timeout;
 			if( timeout <= TimeSpan.Zero ) return;
 
-			LibcApi.SignalInstallHandler( AlarmSignalHandler, SignalCode.SIGALRM ); 
-			LibcApi.SignalUnblock( SignalCode.SIGALRM ); 
+			if( _timer.Handle == PosixTimerHandle.Invalid )
+				_timer.Handle = PosixTimerHandle.CreateThreadTimeout();
 
-			var @new = new itimerval { it_interval = default( timeval ), it_value = new timeval( timeout ) };
-			LibcApi.AssertErrno( LibcApi.setitimer( 0, &@new, null ) );
+			var interval = new itimerspec { it_interval = default( timespec ), it_value = new timespec( timeout ) };
+			_timer.Handle.SetInterval( interval );
 		}
 
 		public void Dispose() {
 			if( _timeout <= TimeSpan.Zero ) return;
 
-			LibcApi.SignalBlock( SignalCode.SIGALRM ); 
+			_timer.Handle.Stop();
 		}
 
 		private static void AlarmSignalHandler( int signal ) {

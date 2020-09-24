@@ -573,6 +573,8 @@ namespace System {
 		public static TextParsingStatus TryFetchSpecificChar( char*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
 		public static TextParsingStatus TryFetchSpecificChar( uint*& buffer, uint& remaining, char value ) { if( remaining == 0 ) return TextParsingStatus.Format; var result = *buffer == value; if( result ) { ++buffer; --remaining; } return result ? TextParsingStatus.OK : TextParsingStatus.Format; }
 
+		public static TextParsingStatus TryFetchChar( char*& buffer, uint& remaining, char& value ) { if( remaining == 0 ) return TextParsingStatus.Format; value = *buffer++; --remaining; return TextParsingStatus.OK; }
+
 		/// @{ parse 1-byte strings
 		public static TextParsingStatus TryFetchBool( byte*& buffer, uint& remaining, bool& parsedResult, bool trimLeadingWhitespace = true, bool trimTrailingWhitespace = true ) { uint readen; var result = TryFetchBool<byte>( buffer, remaining, parsedResult, readen, trimLeadingWhitespace, trimTrailingWhitespace ); if( result ) { buffer += readen; remaining -= readen; } return result; }
 

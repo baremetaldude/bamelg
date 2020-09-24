@@ -206,6 +206,27 @@ namespace Platform.IO {
 			}
 		}
 
+		public bool IsClosed(){
+			return bitcast<SocketHandleTCP>( _handle ).IsClosed();
+		}
+
+		public void EnableKeepAlive( TimeSpan timeout, TimeSpan interval, int count ) {
+			EnableKeepAlive( ( int ) timeout.TotalSeconds, ( int ) interval.TotalSeconds, count );
+		}
+
+		public void EnableKeepAlive( int timeout, int interval, int count ) {
+			var tcp = bitcast<SocketHandleTCP>( _handle );
+			tcp.KeepAliveEnabled = true;
+
+			tcp.KeepAliveProbesMax = count;
+			tcp.KeepAliveIdleSeconds = timeout;
+			tcp.KeepAliveProbingIntervalSeconds = interval;
+		}
+
+		public void DisableKeepAlive() {
+			bitcast<SocketHandleTCP>( _handle ).KeepAliveEnabled = false;
+		}
+
 		long IStream.Position { get { return 0; } }
 		long IStream.Seek( long offset, SeekOrigin origin ) { return 0; }
 

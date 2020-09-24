@@ -122,6 +122,30 @@ namespace System.Threading {
 			};
 		}
 
+		public static DPC* Create<T0, T1, T2, T3>( Functors.Action<T0, T1, T2, T3> action, T0 p0, T1 p1, T2 p2, T3 p3 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				P4 = p3,
+				OnAction = data => {
+					var passedTask = ( DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3, passedTask->P4 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Functors.Action<T0, T1, T2, T3>, T0, T1, T2, T3>* ) data;
+				}
+			};
+		}
+
 		public static DPC* Create( Delegates.Action action ) {
 			if( action == null ) return null;
 
@@ -165,7 +189,6 @@ namespace System.Threading {
 
 		public static DPC* Create<T0, T1>( Delegates.Action<T0, T1> action, T0 p0, T1 p1 ) {
 			if( action == null ) return null;
-			if( action == null ) return null;
 
 			return heapalloc DPC<Delegates.Action<T0, T1>, T0, T1> {
 				P0 = action,
@@ -182,6 +205,29 @@ namespace System.Threading {
 				},
 				OnDispose = data => {
 					heapfree ( DPC<Delegates.Action<T0, T1>, T0, T1>* ) data;
+				}
+			};
+		}
+
+		public static DPC* Create<T0, T1, T2>( Delegates.Action<T0, T1, T2> action, T0 p0, T1 p1, T2 p2 ) {
+			if( action == null ) return null;
+
+			return heapalloc DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2> {
+				P0 = action,
+				P1 = p0,
+				P2 = p1,
+				P3 = p2,
+				OnAction = data => {
+					var passedTask = ( DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+				},
+				OnActionDispose = data => {
+					var passedTask = ( DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>* ) data;
+					passedTask->P0( passedTask->P1, passedTask->P2, passedTask->P3 );
+					heapfree passedTask;
+				},
+				OnDispose = data => {
+					heapfree ( DPC<Delegates.Action<T0, T1, T2>, T0, T1, T2>* ) data;
 				}
 			};
 		}
@@ -218,4 +264,5 @@ namespace System.Threading {
 	public struct DPC<T0, T1> : DPC { public T0 P0; public T1 P1; }
 	public struct DPC<T0, T1, T2> : DPC { public T0 P0; public T1 P1; public T2 P2; }
 	public struct DPC<T0, T1, T2, T3> : DPC { public T0 P0; public T1 P1; public T2 P2; public T3 P3; }
+	public struct DPC<T0, T1, T2, T3, T4> : DPC { public T0 P0; public T1 P1; public T2 P2; public T3 P3; public T4 P4; }
 }

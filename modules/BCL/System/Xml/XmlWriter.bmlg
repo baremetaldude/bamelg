@@ -274,8 +274,10 @@ namespace System.Xml {
 
 		public void WriteUnescaped( string escapedValue ) {
 			switch( _state ) {
-				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+				case State.Start:
 				case State.Control: _state = State.Content; _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
+
+				case State.Opening: _state = State.Content; _formatter.Append( '>' ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Content: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInValue ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.Comment: _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
 				case State.AttributeSingleQuotedValue: TryWriteEscaped( _escapeStart, IndexOfEscapeCharacterInSingleQuotedAttribute ); _formatter.Append( escapedValue ); _escapeStart = _formatter.Length; break;
@@ -283,7 +285,13 @@ namespace System.Xml {
 			}
 		}
 
-		public void Write( TypedReference value, string format = "" ) {
+		public void Write( TypedReference value ) {
+			StartWrite();
+
+			_formatter.Append( value );
+		}
+
+		public void WriteFormatted( TypedReference value, string format = "" ) {
 			StartWrite();
 
 			_formatter.Append( value, format );

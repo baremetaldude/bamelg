@@ -27,26 +27,28 @@ namespace System.IO {
 
 			TextEncodingKind = textEncodingKind;
 
-			var writeByteOrderMark = false;
-			switch( headerStyle ) {
-				case ByteOrderMarkHeader.Auto: {
-						writeByteOrderMark = ( stream.Capabilities & StreamCapabilities.Seek ) != 0 && stream.Seek( 0, SeekOrigin.Current ) == 0;
-					} break;
+			if( _stream != null ) {
+				var writeByteOrderMark = false;
+				switch( headerStyle ) {
+					case ByteOrderMarkHeader.Auto: {
+							writeByteOrderMark = ( stream.Capabilities & StreamCapabilities.Seek ) != 0 && stream.Seek( 0, SeekOrigin.Current ) == 0;
+						} break;
 
-				case ByteOrderMarkHeader.Force: writeByteOrderMark = true; break;
-				case ByteOrderMarkHeader.Skip: break;
-			}
-
-			if( writeByteOrderMark ) {
-				Unicode.ByteOrderMark bom;
-
-				switch( TextEncodingKind ) {
-					case TextEncodingKind.Utf8: bom = Unicode.ByteOrderMark.Utf8; break;
-					case TextEncodingKind.Utf16: bom = typeof( int ) == typeof( int_littleendian ) ? Unicode.ByteOrderMark.Utf16LittleEndian : Unicode.ByteOrderMark.Utf16BigEndian; break;
-					case TextEncodingKind.Utf32: bom = typeof( int ) == typeof( int_littleendian ) ? Unicode.ByteOrderMark.Utf32LittleEndian : Unicode.ByteOrderMark.Utf32BigEndian; break;
+					case ByteOrderMarkHeader.Force: writeByteOrderMark = true; break;
+					case ByteOrderMarkHeader.Skip: break;
 				}
 
-				_stream.Write( Unicode.GetByteOrderMark( bom ) );
+				if( writeByteOrderMark ) {
+					Unicode.ByteOrderMark bom;
+
+					switch( TextEncodingKind ) {
+						case TextEncodingKind.Utf8: bom = Unicode.ByteOrderMark.Utf8; break;
+						case TextEncodingKind.Utf16: bom = typeof( int ) == typeof( int_littleendian ) ? Unicode.ByteOrderMark.Utf16LittleEndian : Unicode.ByteOrderMark.Utf16BigEndian; break;
+						case TextEncodingKind.Utf32: bom = typeof( int ) == typeof( int_littleendian ) ? Unicode.ByteOrderMark.Utf32LittleEndian : Unicode.ByteOrderMark.Utf32BigEndian; break;
+					}
+
+					_stream.Write( Unicode.GetByteOrderMark( bom ) );
+				}
 			}
 		}
 
@@ -86,6 +88,21 @@ namespace System.IO {
 
 		private void TryFlush( FlushKind flushKind, uint limit ) {
 			Debug.Assert( !IsDisposed );
+
+			if( _stream == null ) {
+				switch( flushKind ) {
+					case FlushKind.Write:
+					case FlushKind.DeepWrite:
+					case FlushKind.SynchronizeWrite:
+						if( ( uint ) _buffer.Length >= limit ) {
+							Console.Write( _buffer );
+							_buffer.Length = 0;
+						}
+						break;
+				}
+
+				return;
+			}
 
 			switch( flushKind ) {
 				case FlushKind.Write:
@@ -240,7 +257,8 @@ namespace System.IO {
 		}
 
 		private void WriteUtf16( char* chars, uint charCount ) {
-			WriteEncodedBytes( _stream, chars, charCount, TextEncodingKind, CodePageID );
+			if( _stream == null ) System.Console.Write( new CUtf16StringSpan( chars, charCount ) );
+			else WriteEncodedBytes( _stream, chars, charCount, TextEncodingKind, CodePageID );
 		}
 
 		public static void WriteEncodedBytes( IStream stream, char* chars, uint charCount, TextEncodingKind textEncodingKind, CodePageID codePageID = Environment.DefaultCodePage ) {

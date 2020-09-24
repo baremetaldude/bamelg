@@ -37,12 +37,6 @@ namespace Platform.IO {
 		}
 
 		public EventLoop() {
-			_dispatchThread = Thread.CurrentThread;
-			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
-		}
-
-		~EventLoop() {
-			_dispatchThread.Join();
 		}
 
 		public override void Dispose() {
@@ -86,6 +80,7 @@ namespace Platform.IO {
 		}
 
 		public void QueueAPC( void* object, void* method ) {
+			Debug.Assert( _dispatchThread._thread != ThreadHandle.Invalid );
 			// Console.WriteLine( "{0} sending APC from {1} to {2}", thismethod, ThreadHandle.CurrentThreadID, _dispatchThread._threadId );
 			Assert.IsTrue( Kernel32Api.QueueUserAPC( bitcast<Kernel32Api.APCProc>( method ), _dispatchThread._thread, bitcast<uintptr>( object ) ) != 0 );
 		}
@@ -94,6 +89,7 @@ namespace Platform.IO {
 
 		private bool _exitRequestPending = false;
 		public void RequestExit() {
+			if( _dispatchThread == null ) { _quitRequest = true; return; }
 			if( _dispatchThread.IsCurrent ) { _quitRequest = true; return; }
 			if( atomic( _exitRequestPending = true ) ) return;
 
@@ -102,6 +98,7 @@ namespace Platform.IO {
 
 		private bool _updateRequestPending = false;
 		public void RequestUpdateEventList() {
+			if( _dispatchThread == null ) return;
 			if( _dispatchThread.IsCurrent ) return;
 			if( atomic( _updateRequestPending = true ) ) return;
 
@@ -110,7 +107,8 @@ namespace Platform.IO {
 
 		private bool _newTasksRequestPending = false;
 		protected override void NotifyNewDispatcherTasks() {
-			if( _dispatchThread.IsCurrent & !_dispatching ) return;
+			if( _dispatchThread == null ) return;
+			if( _dispatchThread.IsCurrent ) return;
 			if( atomic( _newTasksRequestPending = true ) ) return;
 
 			QueueAPC( this, memberinfo( NewTasksAPC ).Address );
@@ -130,7 +128,7 @@ namespace Platform.IO {
 			get { return _indexManager.Count < _indexManager.Capacity; }
 		}
 
-		public void Dispatch() {
+		private void DispatchWorker() {
 			TraceDispatchStarted();
 			_dispatching = true;
 
@@ -209,6 +207,28 @@ namespace Platform.IO {
 			Dispose();
 		}
 
+		public void Dispatch() {
+			_dispatchThread = Thread.CurrentThread;
+			_dispatchThread._thread = Kernel32Api.OpenThread( ThreadAccessRights.THREAD_SET_CONTEXT, false, _dispatchThread._threadId );
+
+			DispatchWorker();
+
+			_dispatchThread.Join();
+		}
+
+		public void BeginDispatch( Utf8String threadName = null ) {
+			_dispatchThread = Thread.Start( DPC.Create<EventLoop>( @this => {
+				@this.DispatchWorker();
+			}, this ) );
+		}
+
+		public void EndDispatch() {
+			if( _dispatchThread == null ) return;
+
+			_dispatchThread.Join();
+			_dispatchThread = null;
+		}
+
 		// No more than MAXIMUM_WAIT_OBJECTS == 64 event sinks in single event loop
 		public abstract class EventSink {
 			public EventLoop Parent;
@@ -230,10 +250,10 @@ namespace Platform.IO {
 
 			public sealed override uint GetHashCode() { return base.GetHashCode(); }
 
-			/// @{
+			#region
 			public void Register() { Register( Parent, EventHandle ); }
 			public void Unregister() { Unregister( Parent, EventHandle ); }
-			/// @}
+			#endregion
 
 			protected void Register( EventLoop parent, HANDLE handle ) {
 				EnsureEventSinkNotRegistered( parent );
@@ -389,11 +409,13 @@ namespace Platform.IO {
 
 		#region Dispatcher
 
-		public override bool IsDispatchingThread { get { return _dispatchThread.IsCurrent; } }
+		public sealed override bool IsDispatchingThread { get { return _dispatchThread?.IsCurrent; } }
+		public sealed override bool IsDispatchingStarted { get { return _dispatchThread != null; } }
 
 		#endregion
 
-		/// @{ Tracing
+		#region Tracing
+
 		[Conditional( ConditionString = TraceConditionString )]
 		private void TraceDispatchStarted() {
 			if( !Tracing ) return;
@@ -453,6 +475,6 @@ namespace Platform.IO {
 				Console.WriteLine( "EventSink '{0}'({1}) unregistered. Handle={2}", eventSink.GetType(), bitcast<void*>( eventSink ), eventSink.EventHandle.ID );
 		}
 
-		/// @}
+		#endregion
 	}
 }

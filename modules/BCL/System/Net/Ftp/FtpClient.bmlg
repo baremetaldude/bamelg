@@ -1,16 +1,16 @@
-//
+﻿//
 // Created by Eugeny Grishul
 //
 // See license at http://bamelg.com/license.txt
 //
 
-using System.IO;
 using System.Collections;
+using System.IO;
 using System.Text;
 
 namespace System.Net.Ftp {
 	public partial class FtpClient : System.Net.NetworkClient {
-		public bool Trace = true;
+		public bool Trace = false;
 
 		public struct FtpCapabilities {
 			public bool EPRT { get; set; }
@@ -493,11 +493,11 @@ namespace System.Net.Ftp {
 
 			return result;
 		}
-	
+
 		public FtpStatusCode ReadText( string remotePath, string& fileContents ) {
 			var stream = new MemoryStream();
 			var result = ReadFile( remotePath, stream );
-			
+
 			stream.Position = 0;
 			using( var reader = new StreamReader( stream ) )
 				fileContents = reader.ReadAllText();
@@ -621,7 +621,7 @@ namespace System.Net.Ftp {
 		}
 
 		public FtpStatusCode LastStatus { get; private set; }
-		
+
 		private class FtpDataClient : System.Net.NetworkClient {
 			public FtpDataClient() {
 			}

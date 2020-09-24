@@ -4,6 +4,7 @@
 // See license at http://bamelg.com/license.txt
 //
 
+using System.Collections;
 using System.Diagnostics;
 using System.IO;
 using System.Serialization;
@@ -21,15 +22,26 @@ namespace System.Net {
 		public bool DefferedAccept = true;
 
 		public bool ReusePort = false;     // for multithreaded accept
+
+		public int MaximumSegmentSize = 0; // 0 - use system default, for debug-purpose only since it interface-specific setting
+		public TimeSpan RetransmitTimeout = TimeSpan.Zero; // TimeSpan.Zero - use system default
 		// @}
 
 		// @{ stats
 		public int ActiveSessionCount = 0; // active clients (keepalive and not)
 		public int PeakActiveSessionCount = 0;
 		public int TotalAcceptedClientCount = 0; // total accepted clients
+		protected HashSet<SessionHandler> ActiveSessions;
 		/// @}
 
 		protected abstract SessionHandler CreateSession( IStream stream );
+
+		public void CancelAllSessions() {
+			if( ActiveSessions == null ) return;
+
+			foreach( var session in ActiveSessions )
+				session.DispatchingFiber.Cancel();
+		}
 
 		/// @{ listen on TCP port
 		public bool Listen( IPv4Endpoint endpoint ) { return _implListen( endpoint ); }
@@ -58,28 +70,34 @@ namespace System.Net {
 			/// Buffered write stream
 			public IStream WriteStream;
 
-			public StreamingBufferInfo* _readStreamBuffer, _writeStreamBuffer;
+			public StreamingBufferInfo* ReadStreamBuffer, WriteStreamBuffer;
+
+			public Fiber DispatchingFiber;
 
 			public SessionHandler( declaringtype parent, IStream stream ) {
 				Server = parent;
 
 				Stream = stream;
-				ReadStream = Stream.GetBufferedReadStream( _readStreamBuffer, parent.MaxClientRequestLength );
-				WriteStream = Stream.GetBufferedWriteStream( _writeStreamBuffer, parent.ResponseBufferLength );
+				ReadStream = Stream.GetBufferedReadStream( ReadStreamBuffer, parent.MaxClientRequestLength );
+				WriteStream = Stream.GetBufferedWriteStream( WriteStreamBuffer, parent.ResponseBufferLength );
 			}
 
 			public void StartFiber() {
-				var worker = Fiber.Start( Server.ClientFiberStackPages, data => {
+				DispatchingFiber = Fiber.Start( Server.ClientFiberStackPages, data => {
 					var& @this = *bitcast<thistype*>( &data );
 
 					@this.Worker();
 					@this.OnExit();
 
+					@this.Server.ActiveSessions?.Remove( @this );
+
 					--@this.Server.ActiveSessionCount;
 					@this.ReleaseReference();
 				}, bitcast<void*>( this ), Server.ClientFiberName );
 
-				if( worker.IsValid ) {
+				if( DispatchingFiber.IsValid ) {
+					Server.ActiveSessions?.Add( this );
+
 					++Server.TotalAcceptedClientCount;
 					++Server.ActiveSessionCount;
 					if( Server.ActiveSessionCount > Server.PeakActiveSessionCount ) Server.PeakActiveSessionCount = Server.ActiveSessionCount;
