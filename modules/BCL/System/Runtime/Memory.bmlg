@@ -266,19 +266,19 @@ namespace System.Runtime {
 		}
 
 		[ForceInline]
-		public static void Copy<T>( T* destination, T* source, uintptr length ) { memcpy( destination, source, sizeof( T ) * length, false ); }
+		public static void Copy<T>( T* destination, T* source, uintptr length ) { memcpy( destination, source, sizeof( T ) * length, 1, false ); }
 
 		[ForceInline]
-		public static void Copy( void* destination, void* source, uintptr length ) { memcpy( destination, source, length, false ); }
+		public static void Copy( void* destination, void* source, uintptr length ) { memcpy( destination, source, length, 1, false ); }
 
 		[ForceInline]
-		public static void Move( void* destination, void* source, uintptr length ) { memmove( destination, source, length, false ); }
+		public static void Move( void* destination, void* source, uintptr length ) { memmove( destination, source, length, 1, false ); }
 
 		[ForceInline]
-		public static void Clear( void* destination, uintptr length ) { memset( destination, ( byte ) 0, length, false ); }
+		public static void Clear( void* destination, uintptr length ) { memset( destination, ( byte ) 0, length, 1, false ); }
 
 		[ForceInline]
-		public static void Fill( void* destination, byte value, uintptr length ) { memset( destination, value, length, false ); }
+		public static void Fill( void* destination, byte value, uintptr length ) { memset( destination, value, length, 1, false ); }
 
 		public enum PrefetchAccessType : uint {
 			Read,
@@ -302,13 +302,13 @@ namespace System.Runtime {
 		internal extern static void Prefetch( void* start, [EvaluateConstant] [StrictField] PrefetchAccessType accessType, [EvaluateConstant] [StrictField] PrefetchLocality locality, [EvaluateConstant] [StrictField] PrefetchCacheType cacheType );
 
 		/// https://llvm.org/docs/LangRef.html#int-memcpy
-		internal extern static void memcpy( void* destination, void* source, uintptr length, [EvaluateConstant] bool isVolatile );
+		internal extern static void memcpy( void* destination, void* source, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
 
 		/// https://llvm.org/docs/LangRef.html#llvm-memmove-intrinsic
-		internal extern static void memmove( void* destination, void* source, uintptr length, [EvaluateConstant] bool isVolatile );
+		internal extern static void memmove( void* destination, void* source, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
 
 		/// https://llvm.org/docs/LangRef.html#llvm-memset-intrinsics
-		internal extern static void memset( void* destination, byte value, uintptr length, [EvaluateConstant] bool isVolatile );
+		internal extern static void memset( void* destination, byte value, uintptr length, [EvaluateConstant] int align, [EvaluateConstant] bool isVolatile );
 
 		// @{ Support for LLVM atomics
 		/// http://llvm.org/docs/LangRef.html#i_fence
